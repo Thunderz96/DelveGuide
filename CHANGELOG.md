@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.2] - 2026-03-14
+### Fixed
+- Restored DelveGuide.lua after file corruption
+- Minimap button updated to left-drag pattern (consistent with NightPulse/MidnightCheck)
+- Fixed angle calculation in minimap drag handler
+
 ## [1.0.1] - 2026-03-13
 ### Changed
 - Minimap button: switched from right-drag to left-drag (RegisterForDrag pattern, consistent with MidnightCheck)
