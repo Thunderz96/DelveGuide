@@ -408,11 +408,17 @@ local function CreateMinimapButton()
     btn:SetScript("OnDragStart",function(self)
         self:LockHighlight()
         self:SetScript("OnUpdate",function()
-            local cx,cy=GetCursorPosition(); local scale=self:GetEffectiveScale()
-            local mx=Minimap:GetLeft()+Minimap:GetWidth()/2; local my=Minimap:GetBottom()+Minimap:GetHeight()/2
-            local angle=math.atan2(cy/scale-my,cx/scale-mx)
-            DelveGuideDB.minimapAngle=math.deg(angle)
-            minimapBtn:SetPoint("CENTER",Minimap,"CENTER",math.cos(angle)*80,math.sin(angle)*80)
+            -- Use the same scale-corrected math as NightPulse/MidnightCheck:
+            -- divide cursor position by effective scale, then subtract minimap center.
+            local cx,cy = GetCursorPosition()
+            local scale = self:GetEffectiveScale()
+            local mx = Minimap:GetLeft() + Minimap:GetWidth()  / 2
+            local my = Minimap:GetBottom() + Minimap:GetHeight() / 2
+            local relX = cx / scale - mx
+            local relY = cy / scale - my
+            local angle = math.atan2(relY, relX)
+            DelveGuideDB.minimapAngle = math.deg(angle)
+            minimapBtn:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle)*80, math.sin(angle)*80)
         end)
     end)
     btn:SetScript("OnDragStop",function(self) self:UnlockHighlight(); self:SetScript("OnUpdate",nil) end)
