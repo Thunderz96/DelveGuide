@@ -43,10 +43,13 @@ local function InitSavedVars()
     if DelveGuideDB.widgetClickOpens == nil then DelveGuideDB.widgetClickOpens = false end
     if not DelveGuideDB.widgetTiers then DelveGuideDB.widgetTiers = {S=true,A=true,B=true,C=true,D=true,F=true} end
     if DelveGuideDB.widgetLocked == nil then DelveGuideDB.widgetLocked = false end
+    if DelveGuideDB.checklistEnabled == nil then DelveGuideDB.checklistEnabled = true end
+    -- checklistDismissed is session-only; reset on every load
+    DelveGuideDB.checklistDismissed = false
 end
 
 local activeDelves, activeVariants, rawScanResults = {}, {}, {}
-local minimapBtn, currentAngle, compactWidget, UpdateCompactWidget
+local minimapBtn, currentAngle, compactWidget, UpdateCompactWidget, RefreshCurrentTab
 
 local function ReadVariantFromWidgetSet(setID)
     if not setID or setID == 0 then return {} end
@@ -275,20 +278,69 @@ local function RenderDelves()
     cf:SetHeight(y+20)
 end
 
+local function GetSpecRec()
+    local idx = GetSpecialization and GetSpecialization()
+    if not idx then return nil end
+    local specID = select(1, GetSpecializationInfo(idx))
+    if not specID then return nil end
+    return DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID], specID
+end
+
 local function RenderCurios()
     local cf=NewContentFrame(); local y=10
-    y=y+CreateHeader(cf,y,"Curios Rankings  --  S=Best  |  F=Worst")+4; y=y+4
-    y=y+CreateRow(cf,y,"|cFFFFD700-- Season 1 Recommended Valeera Loadouts --|r")
-    y=y+CreateRow(cf,y,"|cFF00FF00Safe / Progression:|r Mantle of Stars (Combat) + Motionless Nulltide (Utility)")
-    y=y+CreateRow(cf,y,"|cFFFF4444Speed / Farming:|r   Sanctum's Edict (Combat) + Ebon Crown of Subjugation (Utility)")
+    EnsureFontFiles(); local _,_,rH=GetScaledSizes()
+
+    -- ── Spec recommendation block ──────────────────────────────
+    local rec, specID = GetSpecRec()
+    y=y+CreateHeader(cf,y,"Curios Rankings  --  S=Best  |  F=Worst")+4
+
+    if rec then
+        -- Highlight row background
+        local hi=cf:CreateTexture(nil,"BACKGROUND"); hi:SetPoint("TOPLEFT",cf,"TOPLEFT",2,-(y-1))
+        hi:SetSize(WINDOW_W-52,rH*3+14); hi:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+        hi:SetGradient("HORIZONTAL",CreateColor(0,0.4,1,0.18),CreateColor(0,0.4,1,0))
+        local bar=cf:CreateTexture(nil,"ARTWORK"); bar:SetPoint("TOPLEFT",cf,"TOPLEFT",2,-(y-1))
+        bar:SetSize(3,rH*3+14); bar:SetColorTexture(0,0.6,1,1)
+        y=y+CreateRow(cf,y,string.format("|cFF00BFFFYour Spec:|r |cFFFFFFFF%s|r  |cFF888888(specID %d)|r", rec.spec, specID))
+        y=y+CreateRow(cf,y,string.format("|cFF00FF88Recommended:|r  Combat: |cFFFFD700%s|r   Utility: |cFFFFD700%s|r   Valeera: |cFF00CFFF%s|r", rec.combat, rec.utility, rec.companion))
+        if rec.notes then
+            y=y+CreateRow(cf,y,"|cFF888888"..rec.notes.."|r")
+        end
+        y=y+6
+        y=y+CreateRow(cf,y,"|cFFFF8844[Nemesis Warning]|r Mandate of Sacred Death procs require profession nodes. Nullaeus arena has none — swap to Overflowing Voidspire or Ebon Crown.")
+        y=y+8
+    else
+        y=y+CreateRow(cf,y,"|cFF888888No spec data available — enter the world to detect your specialization.|r")
+        y=y+8
+    end
+
+    -- ── General loadout reference ──────────────────────────────
+    y=y+CreateRow(cf,y,"|cFFFFD700-- General Loadout Reference --|r")
+    y=y+CreateRow(cf,y,"|cFF00FF00Safe / Progression:|r  Sanctum's Edict (Combat)  +  Ebon Crown of Subjugation (Utility)")
+    y=y+CreateRow(cf,y,"|cFFFF4444Speed / Farming:|r    Porcelain Blade Tip (Combat)  +  Mandate of Sacred Death (Utility)")
     y=y+CreateRow(cf,y,"|cFF555555"..string.rep("-",90).."|r")+4
+
+    -- ── Full curio table with spec badges ─────────────────────
+    local specCombat  = rec and rec.combat  or nil
+    local specUtility = rec and rec.utility or nil
     for _,ctype in ipairs({"Combat","Utility"}) do
+        local specPick = ctype=="Combat" and specCombat or specUtility
         y=y+4; y=y+CreateRow(cf,y,TypeColor(ctype).." Curios")
         y=y+CreateRow(cf,y,"|cFF888888"..string.format("%-4s  %-32s  %s","Rank","Name","Effect").."|r")
         for _,c in ipairs(DelveGuideData.curios) do
-            if c.curiotype==ctype then y=y+CreateRow(cf,y,string.format("[%s]  %-32s  %s",GradeColor(c.ranking),c.name,c.description)) end
+            if c.curiotype==ctype then
+                local badge = (c.name==specPick) and "|cFF00FF88[Your Spec] |r" or ""
+                -- Highlight the recommended row
+                if c.name==specPick then
+                    local fw=cf:CreateTexture(nil,"BACKGROUND"); fw:SetPoint("TOPLEFT",cf,"TOPLEFT",2,-(y-1))
+                    fw:SetSize(WINDOW_W-52,rH+2); fw:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+                    fw:SetGradient("HORIZONTAL",CreateColor(0,1,0.3,0.15),CreateColor(0,1,0.3,0))
+                end
+                y=y+CreateRow(cf,y,string.format("%s[%s]  %-32s  %s",badge,GradeColor(c.ranking),c.name,c.description))
+            end
         end; y=y+8
-    end; cf:SetHeight(y+20)
+    end
+    cf:SetHeight(y+20)
 end
 
 local function CreateLootRow(parent, y, item)
@@ -419,6 +471,13 @@ local function RenderSettings()
     end
     y = y + 30 + 8
 
+    -- Pre-Entry Checklist
+    y = y + CreateRow(cf, y, "|cFFFFD700Pre-Entry Checklist|r") + 6
+    y = y + MakeSettingCheckbox(cf, y,
+        "Show checklist when targeting a delve entrance  |cFF888888(or: /dg check)|r",
+        function() return DelveGuideDB.checklistEnabled end,
+        function(checked) DelveGuideDB.checklistEnabled = checked end) + 8
+
     -- Font Scale
     y = y + CreateRow(cf, y, "|cFFFFD700Font Scale|r") + 6
     local fsDesc = cf:CreateFontString(nil, "OVERLAY")
@@ -523,7 +582,178 @@ local function SwitchTab(key)
     local r=tabRenderers[key]; if r then r(); scrollFrame:SetVerticalScroll(0) end
 end
 
-local function RefreshCurrentTab() if currentTabKey then SwitchTab(currentTabKey) end end
+RefreshCurrentTab = function() if currentTabKey then SwitchTab(currentTabKey) end end
+
+-- ============================================================
+-- PRE-ENTRY CHECKLIST
+-- ============================================================
+local checklistFrame
+
+local function RunChecklistScan()
+    local results = {}
+
+    -- 1. Coffer Key shards (100 shards = 1 key)
+    local keyInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
+    local shards = keyInfo and keyInfo.quantity or 0
+    local hasKey = shards >= 100
+    table.insert(results, {
+        label = string.format("Coffer Key  |cFF888888(%d/600 shards)|r", shards),
+        ok    = hasKey,
+        tip   = not hasKey and "You need at least 100 shards (1 key) to open a Bountiful Coffer." or nil,
+    })
+
+    -- 2. Trovehunter's Bounty active as an aura
+    local hasBountyAura = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
+        and C_UnitAuras.GetPlayerAuraBySpellID(1254631) ~= nil
+    -- 3. Trovehunter's Bounty in bags (fallback check)
+    local bountyCount = C_Item.GetItemCount(265714, true) or 0
+    if hasBountyAura then
+        table.insert(results, { label="Trovehunter's Bounty  |cFF00FF44(Active)|r", ok=true })
+    elseif bountyCount > 0 then
+        table.insert(results, {
+            label = string.format("Trovehunter's Bounty  |cFFFFD700(%d in bags — not active)|r", bountyCount),
+            ok    = false,
+            tip   = "Right-click the item to activate it before entering.",
+        })
+    else
+        table.insert(results, {
+            label = "Trovehunter's Bounty  |cFFFF4444(None)|r",
+            ok    = false,
+            tip   = "Pick one up from the Delver's Journey rewards or the vendor.",
+        })
+    end
+
+    -- 4. Valeera companion — C_DelvesUI.GetCompanionInfoForActivePlayer() returns
+    -- the companionID (11 = Valeera). Role detection requires the config frame to
+    -- have been opened this session; if not, we show "check manually".
+    local valerraOk, valerraLabel = false, "|cFFFF4444Not detected|r"
+    pcall(function()
+        if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then
+            local companionID = C_DelvesUI.GetCompanionInfoForActivePlayer()
+            if companionID and companionID > 0 then
+                local roleNames = { [0]="DPS", [1]="Healer", [2]="Tank" }
+                local role = DelvesCompanionConfigurationFrame
+                    and DelvesCompanionConfigurationFrame.selectedRole
+                local roleStr = role and roleNames[role] or "check role"
+                valerraOk    = true
+                valerraLabel = "|cFF00FF44Present|r  |cFF888888(" .. roleStr .. ")|r"
+            end
+        end
+    end)
+    table.insert(results, {
+        label = "Valeera  " .. valerraLabel,
+        ok    = valerraOk,
+        tip   = not valerraOk and "Open the companion panel to configure Valeera." or nil,
+    })
+
+    return results
+end
+
+local function ShowChecklist(force)
+    if not force then
+        if not DelveGuideDB.checklistEnabled then return end
+        if DelveGuideDB.checklistDismissed then return end
+    end
+
+    -- Build frame lazily
+    if not checklistFrame then
+        local f = CreateFrame("Frame", "DelveGuideChecklist", UIParent, "BackdropTemplate")
+        f:SetSize(340, 160)
+        f:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
+        f:SetFrameStrata("DIALOG")
+        f:SetBackdrop({
+            bgFile   = "Interface\\ChatFrame\\ChatFrameBackground",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile=false, tileSize=16, edgeSize=14,
+            insets={left=4,right=4,top=4,bottom=4}
+        })
+        f:SetBackdropColor(0.06, 0.06, 0.06, 0.95)
+        f:SetBackdropBorderColor(1, 0.7, 0, 0.9)
+
+        local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        title:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -10)
+        title:SetText("|cFFFFD700[DelveGuide]|r  Pre-Entry Checklist")
+
+        -- Close button
+        local closeBtn = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+        closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
+        closeBtn:SetScript("OnClick", function()
+            DelveGuideDB.checklistDismissed = true
+            f:Hide()
+        end)
+
+        -- Row pool (4 rows max)
+        f.rows = {}
+        for i = 1, 4 do
+            local row = f:CreateFontString(nil, "OVERLAY")
+            row:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 11)
+            row:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -(24 + (i-1)*22))
+            row:SetWidth(316)
+            row:SetJustifyH("LEFT")
+            f.rows[i] = row
+        end
+
+        -- "Don't show again this session" checkbox
+        local cb = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
+        cb:SetSize(20, 20)
+        cb:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 8, 8)
+        cb:SetChecked(false)
+        cb:SetScript("OnClick", function(self)
+            DelveGuideDB.checklistDismissed = self:GetChecked()
+        end)
+        local cblbl = f:CreateFontString(nil, "OVERLAY")
+        cblbl:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 10)
+        cblbl:SetPoint("LEFT", cb, "RIGHT", 2, 0)
+        cblbl:SetText("|cFF888888Don't show again this session|r")
+
+        checklistFrame = f
+    end
+
+    -- Populate rows
+    local results = RunChecklistScan()
+    local frameH = 44 + #results * 22
+    checklistFrame:SetHeight(frameH)
+
+    for i, row in ipairs(checklistFrame.rows) do
+        local r = results[i]
+        if r then
+            local icon
+            if r.ok == true then
+                icon = "|cFF00FF44✔|r "
+            elseif r.ok == false then
+                icon = "|cFFFF4444✘|r "
+            else
+                icon = "|cFFFF8844?|r "  -- unknown
+            end
+            local text = icon .. r.label
+            if r.tip then text = text .. "  |cFF888888" .. r.tip .. "|r" end
+            row:SetText(text)
+            row:Show()
+        else
+            row:Hide()
+        end
+    end
+
+    checklistFrame:Show()
+end
+
+local function OnTargetChanged()
+    if not DelveGuideDB.checklistEnabled then return end
+    if DelveGuideDB.checklistDismissed then return end
+    -- UnitName("target") returns a secret string in Midnight 12.0 —
+    -- wrap the comparison in pcall to avoid ADDON_ACTION_BLOCKED taint.
+    local matched = false
+    if DelveGuideData and DelveGuideData.delves then
+        for _, d in ipairs(DelveGuideData.delves) do
+            local ok, result = pcall(function()
+                local targetName = UnitName("target")
+                return targetName and targetName == d.name
+            end)
+            if ok and result then matched = true; break end
+        end
+    end
+    if matched then ShowChecklist(false) end
+end
 
 local function CreateMainWindow()
     local f=CreateFrame("Frame","DelveGuideFrame",UIParent,"BackdropTemplate")
@@ -854,6 +1084,48 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         end
         if found==0 then print("|cFFFF4444No delves found.|r") end
         print("|cFF00BFFF[DelveGuide]|r === END ===")
+    elseif msg=="check" then
+        ShowChecklist(true)
+    elseif msg=="checkdebug" then
+        print("|cFF00BFFF[DelveGuide]|r === Valeera Role Debug ===")
+        local id = C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer and C_DelvesUI.GetCompanionInfoForActivePlayer()
+        print("  companionID: " .. tostring(id))
+        if id and id > 0 then
+            for roleType, roleName in pairs({[0]="DPS",[1]="Heal",[2]="Tank"}) do
+                local node    = C_DelvesUI.GetRoleNodeForCompanion    and C_DelvesUI.GetRoleNodeForCompanion(roleType, id)
+                local subtree = C_DelvesUI.GetRoleSubtreeForCompanion and C_DelvesUI.GetRoleSubtreeForCompanion(roleType, id)
+                print(string.format("  %s: node=%s  subtree=%s", roleName, tostring(node), tostring(subtree)))
+            end
+        end
+        local f = DelvesCompanionConfigurationFrame
+        if f then
+            print("  frame.selectedRole: " .. tostring(f.selectedRole))
+            if f.RoleDropdown then print("  RoleDropdown.selectedValue: " .. tostring(f.RoleDropdown.selectedValue)) end
+        end
+        -- Check active trait configs
+        if C_Traits and C_Traits.GetActiveConfigID then
+            print("  activeConfigID: " .. tostring(C_Traits.GetActiveConfigID()))
+        end
+        print("|cFF00BFFF[DelveGuide]|r === End ===")
+        -- Also scan auras
+        local i = 1
+        while true do
+            local aura = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex and C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
+            if not aura then break end
+            print(string.format("  aura[%d] spellID=%d  %s", i, aura.spellId or 0, aura.name or "?"))
+            i = i + 1
+        end
+    elseif msg=="specinfo" then
+        local idx = GetSpecialization and GetSpecialization()
+        if not idx then print("|cFF00BFFF[DelveGuide]|r GetSpecialization() returned nil"); return end
+        local specID, specName = GetSpecializationInfo(idx)
+        print(string.format("|cFF00BFFF[DelveGuide]|r specIndex=%d  specID=%d  specName=%s", idx, specID or -1, specName or "nil"))
+        local rec = DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID]
+        if rec then
+            print(string.format("|cFF00BFFF[DelveGuide]|r Rec found: Combat=%s  Utility=%s", rec.combat, rec.utility))
+        else
+            print("|cFF00BFFF[DelveGuide]|r No rec entry for specID "..tostring(specID))
+        end
     elseif msg=="help" then
         print("|cFF00BFFF[DelveGuide]|r Commands:")
         print("  |cFFFFFF00/dg|r             — Toggle window")
@@ -863,6 +1135,9 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg font [#]|r    — Set font scale, e.g. |cFFFFFF00/dg font 1.2|r  (0.6 – 2.0)")
         print("  |cFFFFFF00/dg map|r         — Open world map")
         print("  |cFFFFFF00/dg dump|r        — Print raw POI data (debug)")
+        print("  |cFFFFFF00/dg check|r       — Show pre-entry checklist")
+        print("  |cFFFFFF00/dg checkdebug|r  — Scan auras to find Valeera role spell ID")
+        print("  |cFFFFFF00/dg specinfo|r    — Show your detected spec ID (debug)")
         print("  |cFFFFFF00/dg help|r        — Show this help")
     elseif msg=="widget" then
         DelveGuideDB.widgetHidden = not DelveGuideDB.widgetHidden
@@ -887,6 +1162,7 @@ end
 local loadFrame=CreateFrame("Frame")
 loadFrame:RegisterEvent("ADDON_LOADED"); loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 loadFrame:RegisterEvent("AREA_POIS_UPDATED"); loadFrame:RegisterEvent("SCENARIO_COMPLETED")
+loadFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED"); loadFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 loadFrame:SetScript("OnEvent",function(self,event,arg1)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
         InitSavedVars(); CreateMinimapButton(); CreateCompactWidget()
@@ -898,6 +1174,10 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
     elseif event=="AREA_POIS_UPDATED" then
         ScanActiveVariants(); UpdateCompactWidget()
         if mainFrame and mainFrame:IsShown() and currentTabKey=="delves" then SwitchTab("delves") end
+    elseif event=="ACTIVE_TALENT_GROUP_CHANGED" then
+        if mainFrame and mainFrame:IsShown() and currentTabKey=="curios" then SwitchTab("curios") end
+    elseif event=="PLAYER_TARGET_CHANGED" then
+        OnTargetChanged()
     elseif event=="SCENARIO_COMPLETED" then
         local scenarioName=C_Scenario.GetInfo(); if not scenarioName then return end
         local isDelve=false
