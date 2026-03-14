@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.4] - 2026-03-14
+### Fixed
+- Minimap button: assign btn upvalue before drag callbacks (nil crash fix)
+- Minimap button: exact NightPulse drag math and background texture
+
 ## [1.0.2] - 2026-03-14
 ### Fixed
 - Restored DelveGuide.lua after file corruption

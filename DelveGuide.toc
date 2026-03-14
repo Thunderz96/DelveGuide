@@ -2,7 +2,7 @@
 ## Title: DelveGuide
 ## Notes: A reference guide for Midnight Delves - rankings, curios, loot, and more.
 ## Author: You
-## Version: 1.0.2
+## Version: 1.0.4
 ## SavedVariables: DelveGuideDB
 
 DelveGuide_Data.lua

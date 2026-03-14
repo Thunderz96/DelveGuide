@@ -391,44 +391,85 @@ function DelveGuide.Toggle()
     if mainFrame:IsShown() then mainFrame:Hide() else mainFrame:Show() end
 end
 
-local minimapBtn=nil
-local function UpdateMinimapPos()
-    local a=math.rad(DelveGuideDB.minimapAngle or 45)
-    minimapBtn:SetPoint("CENTER",Minimap,"CENTER",math.cos(a)*80,math.sin(a)*80)
+-- Minimap button — mirrors NightPulse's MinimapButton.lua exactly.
+local minimapBtn = nil
+local currentAngle  -- stored in radians, matches NightPulse pattern
+
+local function UpdateMinimapPos(angle)
+    minimapBtn:SetPoint("CENTER", Minimap, "CENTER",
+        math.cos(angle) * 80,
+        math.sin(angle) * 80)
 end
+
+local function SaveMinimapAngle()
+    if DelveGuideDB then
+        DelveGuideDB.minimapAngle = math.deg(currentAngle)
+    end
+end
+
 local function CreateMinimapButton()
-    local btn=CreateFrame("Button","DelveGuideMinimapButton",Minimap)
-    btn:SetSize(32,32); btn:SetFrameStrata("MEDIUM"); btn:SetFrameLevel(8)
-    local icon=btn:CreateTexture(nil,"BACKGROUND"); icon:SetTexture("Interface\\Icons\\INV_Misc_Map09")
-    icon:SetSize(20,20); icon:SetPoint("CENTER"); icon:SetTexCoord(0.1,0.9,0.1,0.9)
-    local border=btn:CreateTexture(nil,"OVERLAY"); border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-    border:SetSize(54,54); border:SetPoint("TOPLEFT",btn,"TOPLEFT",-11,11)
+    local btn = CreateFrame("Button", "DelveGuideMinimapButton", Minimap)
+    btn:SetSize(32, 32)
+    btn:SetFrameLevel(8)
     btn:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+
+    -- Background circle (same as NightPulse)
+    local bg = btn:CreateTexture(nil, "BACKGROUND")
+    bg:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+    bg:SetSize(20, 20)
+    bg:SetPoint("CENTER")
+
+    -- Icon — map icon for DelveGuide
+    local icon = btn:CreateTexture(nil, "ARTWORK")
+    icon:SetTexture("Interface\\Icons\\INV_Misc_Map09")
+    icon:SetSize(20, 20)
+    icon:SetPoint("CENTER")
+    icon:SetTexCoord(0.1, 0.9, 0.1, 0.9)
+
+    -- Tracking border ring (same offset as NightPulse — TOPLEFT with no extra offset)
+    local border = btn:CreateTexture(nil, "OVERLAY")
+    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    border:SetSize(54, 54)
+    border:SetPoint("TOPLEFT")
+
+    -- Assign to upvalue NOW so UpdateMinimapPos and drag callbacks can reference it
+    minimapBtn = btn
+
+    -- Restore saved angle, default to 45 degrees
+    local savedDeg = (DelveGuideDB and DelveGuideDB.minimapAngle) or 45
+    currentAngle = math.rad(savedDeg)
+    UpdateMinimapPos(currentAngle)
+
+    -- Drag to reposition — exact same math as NightPulse
     btn:RegisterForDrag("LeftButton")
-    btn:SetScript("OnDragStart",function(self)
+    btn:SetScript("OnDragStart", function(self)
         self:LockHighlight()
-        self:SetScript("OnUpdate",function()
-            -- Use the same scale-corrected math as NightPulse/MidnightCheck:
-            -- divide cursor position by effective scale, then subtract minimap center.
-            local cx,cy = GetCursorPosition()
+        self:SetScript("OnUpdate", function()
+            local xpos, ypos = GetCursorPosition()
             local scale = self:GetEffectiveScale()
-            local mx = Minimap:GetLeft() + Minimap:GetWidth()  / 2
-            local my = Minimap:GetBottom() + Minimap:GetHeight() / 2
-            local relX = cx / scale - mx
-            local relY = cy / scale - my
-            local angle = math.atan2(relY, relX)
-            DelveGuideDB.minimapAngle = math.deg(angle)
-            minimapBtn:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle)*80, math.sin(angle)*80)
+            xpos = xpos / scale - Minimap:GetLeft() - Minimap:GetWidth()  / 2
+            ypos = ypos / scale - Minimap:GetBottom() - Minimap:GetHeight() / 2
+            currentAngle = math.atan2(ypos, xpos)
+            UpdateMinimapPos(currentAngle)
         end)
     end)
-    btn:SetScript("OnDragStop",function(self) self:UnlockHighlight(); self:SetScript("OnUpdate",nil) end)
-    btn:SetScript("OnClick",function() DelveGuide.Toggle() end)
-    btn:SetScript("OnEnter",function(self)
-        GameTooltip:SetOwner(self,"ANCHOR_LEFT"); GameTooltip:AddLine("|cFF00BFFFDelveGuide|r")
-        GameTooltip:AddLine("Left-click: open/close",1,1,1); GameTooltip:AddLine("Left-drag: reposition",0.7,0.7,0.7); GameTooltip:Show()
+
+    btn:SetScript("OnDragStop", function(self)
+        self:UnlockHighlight()
+        self:SetScript("OnUpdate", nil)
+        SaveMinimapAngle()
     end)
-    btn:SetScript("OnLeave",function() GameTooltip:Hide() end)
-    minimapBtn=btn; UpdateMinimapPos()
+
+    btn:SetScript("OnClick", function() DelveGuide.Toggle() end)
+
+    btn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddLine("|cFF00BFFFDelveGuide|r")
+        GameTooltip:AddLine("Left-Click to open/close.", 1, 1, 1)
+        GameTooltip:AddLine("Drag to reposition.", 0.7, 0.7, 0.7)
+        GameTooltip:Show()
+    end)
+    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
 SLASH_DELVEGUIDE1="/delveguide"; SLASH_DELVEGUIDE2="/dg"
