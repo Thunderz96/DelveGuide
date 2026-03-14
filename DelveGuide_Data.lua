@@ -111,22 +111,22 @@ DelveGuideData.curios = {
 -- SECTION 4: NOTABLE LOOT
 -- ============================================================
 DelveGuideData.loot = {
-    { name="Withered Saptor's Paw",        slot="Trinket", notes="Crits grant Agility / main stat" },
-    { name="Desecrated Chalice",           slot="Trinket", notes="Tank: on-damage versatility + damage" },
-    { name="Ever-Collapsing Void Fissure", slot="Trinket", notes="On-use ramping haste" },
-    { name="Glorious Crusader's Keepsake", slot="Trinket", notes="RNG incarnate idol" },
-    { name="Holy Retributor's Order",      slot="Trinket", notes="On-hit damage + heal" },
-    { name="Lost Idol of the Hash'ey",     slot="Trinket", notes="On-hit summons a companion" },
-    { name="Sealed Chaos Urn",             slot="Trinket", notes="On-use all-stat buff" },
-    { name="Sylvan Wakrapuku",             slot="Trinket", notes="On-hit physical proc" },
-    { name="Void-Reaper's Libram",         slot="Trinket", notes="Damage proc + crit buff" },
-    { name="Ultradon Cuirass",             slot="Trinket", notes="Tank on-use absorb" },
-    { name="Gift of Light",                slot="Trinket", notes="Healer: on-hit ally stat buff" },
-    { name="Cosmic Bell",                  slot="Trinket", notes="Healer on-use" },
-    { name="Consecrated Chalice",          slot="Trinket", notes="Healer on-use absorb" },
-    { name="Lightgrasp Worldroot",         slot="Weapon",  notes="Staff with a delve-only banish ability" },
-    { name="Radiant Foil",                 slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
-    { name="Abyss Sabre",                  slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
+    { name="Withered Saptor's Paw",        id=251782, slot="Trinket", notes="Crits grant Agility / main stat" },
+    { name="Desecrated Chalice",           id=251790, slot="Trinket", notes="Tank: on-damage versatility + damage" },
+    { name="Ever-Collapsing Void Fissure", id=251786, slot="Trinket", notes="On-use ramping haste" },
+    { name="Glorious Crusader's Keepsake", id=251792, slot="Trinket", notes="RNG incarnate idol" },
+    { name="Holy Retributor's Order",      id=251791, slot="Trinket", notes="On-hit damage + heal" },
+    { name="Lost Idol of the Hash'ey",     id=251783, slot="Trinket", notes="On-hit summons a companion" },
+    { name="Sealed Chaos Urn",             id=251787, slot="Trinket", notes="On-use all-stat buff" },
+    { name="Sylvan Wakrapuku",             id=251784, slot="Trinket", notes="On-hit physical proc" },
+    { name="Void-Reaper's Libram",         id=251785, slot="Trinket", notes="Damage proc + crit buff" },
+    { name="Ultradon Cuirass",             id=264694, slot="Trinket", notes="Tank on-use absorb" },
+    { name="Gift of Light",                id=251788, slot="Trinket", notes="Healer: on-hit ally stat buff" },
+    { name="Cosmic Bell",                  id=264701, slot="Trinket", notes="Healer on-use" },
+    { name="Consecrated Chalice",          id=251789, slot="Trinket", notes="Healer on-use absorb" },
+    { name="Lightgrasp Worldroot",         id=251935, slot="Weapon",  notes="Staff with a delve-only banish ability" },
+    { name="Radiant Foil",                 id=251885, slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
+    { name="Abyss Sabre",                  id=251884, slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
 }
 
 

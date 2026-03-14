@@ -12,12 +12,13 @@ local BASE_ROW_SIZE    = 11
 local BASE_ROW_HEIGHT  = 18
 
 local TABS = {
-    { label = "Delves",  key = "delves"  },
-    { label = "Curios",  key = "curios"  },
-    { label = "Loot",    key = "loot"    },
-    { label = "History", key = "history" },
-    { label = "Future",  key = "future"  },
-    { label = "Debug",   key = "debug"   },
+    { label = "Delves",   key = "delves"   },
+    { label = "Curios",   key = "curios"   },
+    { label = "Loot",     key = "loot"     },
+    { label = "History",  key = "history"  },
+    { label = "Future",   key = "future"   },
+    { label = "Settings", key = "settings" },
+    { label = "Debug",    key = "debug"    },
 }
 
 local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2444, 2413, 2405 }
@@ -33,13 +34,19 @@ local ZONE_NAMES = {
 
 local function InitSavedVars()
     if not DelveGuideDB then
-        DelveGuideDB = { minimapAngle=225, windowX=nil, windowY=nil, fontScale=1.0, history={} }
+        DelveGuideDB = { minimapAngle=225, windowX=nil, windowY=nil, fontScale=1.0, history={}, minimapHidden=false, widgetHidden=false, widgetX=nil, widgetY=nil, widgetClickOpens=false }
     end
     if not DelveGuideDB.fontScale then DelveGuideDB.fontScale = 1.0 end
     if not DelveGuideDB.history then DelveGuideDB.history = {} end
+    if DelveGuideDB.minimapHidden == nil then DelveGuideDB.minimapHidden = false end
+    if DelveGuideDB.widgetHidden == nil then DelveGuideDB.widgetHidden = false end
+    if DelveGuideDB.widgetClickOpens == nil then DelveGuideDB.widgetClickOpens = false end
+    if not DelveGuideDB.widgetTiers then DelveGuideDB.widgetTiers = {S=true,A=true,B=true,C=true,D=true,F=true} end
+    if DelveGuideDB.widgetLocked == nil then DelveGuideDB.widgetLocked = false end
 end
 
 local activeDelves, activeVariants, rawScanResults = {}, {}, {}
+local minimapBtn, currentAngle, compactWidget, UpdateCompactWidget
 
 local function ReadVariantFromWidgetSet(setID)
     if not setID or setID == 0 then return {} end
@@ -112,11 +119,14 @@ local function GradeColor(g) return (DelveGuideData.gradeColors[g] or "|cFFFFFFF
 local zoneColors={["Zul'Aman"]="|cFFFF8C00",["Quel'Thalas"]="|cFF00CED1",["Voidstorm"]="|cFFBF5FFF",["Harandar"]="|cFF7FFF00",["Quel'Danas"]="|cFFFF69B4"}
 local function ZoneColor(z) return (zoneColors[z] or "|cFFCCCCCC")..z.."|r" end
 local typeColors={Combat="|cFFFF4444",Utility="|cFF44AAFF"}
+local RANK_COLORS={S="|cFF00FF44",A="|cFF66FF44",B="|cFFAAFF44",C="|cFFFFFF44",D="|cFFFF8844",F="|cFFFF4444"}
 local function TypeColor(t) return (typeColors[t] or "|cFFFFFFFF")..t.."|r" end
 
 local function SetDelveWaypoint(pin)
     C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(pin.mapID,pin.x,pin.y))
-    OpenWorldMap(pin.mapID)
+    -- Defer OpenWorldMap out of the click handler's execution chain to avoid tainting
+    -- the secure map frame (ADDON_ACTION_BLOCKED: Frame:SetPropagateMouseClicks)
+    C_Timer.After(0, function() OpenWorldMap(pin.mapID) end)
     print("|cFF00BFFF[DelveGuide]|r Waypoint set: |cFFFFD700"..pin.name.."|r")
 end
 local function FindPinByName(name)
@@ -195,6 +205,31 @@ local function CreateDelveRow(parent,y,d)
     return rH
 end
 
+local function FormatResetTime(secs)
+    if not secs or secs <= 0 then return "|cFFFF4444Now|r" end
+    local d = math.floor(secs / 86400)
+    local h = math.floor((secs % 86400) / 3600)
+    local m = math.floor((secs % 3600) / 60)
+    if d > 0 then return string.format("%dd %dh", d, h)
+    elseif h > 0 then return string.format("%dh %dm", h, m)
+    else return string.format("|cFFFF4444%dm|r", m) end
+end
+
+local function GetWeeklyVaultData()
+    local delveCount, slots, acts = 0, 0, {}
+    if Enum and Enum.WeeklyRewardItemTierType and Enum.WeeklyRewardItemTierType.World then
+        local ok, data = pcall(C_WeeklyRewards.GetActivities, Enum.WeeklyRewardItemTierType.World)
+        if ok and type(data) == "table" then
+            for _, a in ipairs(data) do
+                if a.progress > delveCount then delveCount = a.progress end
+                if a.progress >= a.threshold then slots = slots + 1 end
+                table.insert(acts, a)
+            end
+        end
+    end
+    return delveCount, slots, acts
+end
+
 local function RenderDelves()
     local cf=NewContentFrame(); local y=10
     local vc=0; for _ in pairs(activeVariants) do vc=vc+1 end
@@ -210,6 +245,20 @@ local function RenderDelves()
     local note=vc>0 and "  |cFF44FF44("..vc.." active today)|r" or "  |cFFAAAAAA(use /dg scan)|r"
     y=y+CreateHeader(cf,y,"Delve Rankings -- S=Fastest | F=Slowest"..note)+4
     y=y+CreateRow(cf,y,string.format("|cFF3088FFWeekly Items:|r  Trovehunter's Bounty: %s   |   Beacon of Hope: %s",troveText,beaconText))
+    local delveCount,_,vaultActs=GetWeeklyVaultData()
+    if #vaultActs>0 then
+        local parts={}
+        for _,a in ipairs(vaultActs) do
+            local done=a.progress>=a.threshold
+            local ilvlText=a.level and a.level>0 and ("|cFFFFD700"..a.level.." ilvl|r") or "|cFF888888?|r"
+            if done then
+                table.insert(parts,string.format("|cFF00FF44✓ Slot %d|r (%s)",a.index or #parts+1,ilvlText))
+            else
+                table.insert(parts,string.format("|cFF888888Slot %d:|r %d/%d needed",a.index or #parts+1,a.progress,a.threshold))
+            end
+        end
+        y=y+CreateRow(cf,y,string.format("|cFF3088FFGreat Vault:|r  %d delve(s) this week  —  %s",delveCount,table.concat(parts,"  |  ")))
+    end
     y=y+8
     y=y+CreateRow(cf,y,"|cFFAAAAAA"..string.format("%-6s  %-22s  %-14s  %s","Rank","Delve","Zone","Variant / Flags").."|r")
     y=y+CreateRow(cf,y,"|cFF555555"..string.rep("-",90).."|r")+2
@@ -242,14 +291,39 @@ local function RenderCurios()
     end; cf:SetHeight(y+20)
 end
 
+local function CreateLootRow(parent, y, item)
+    EnsureFontFiles(); local _, rSize, rH = GetScaledSizes()
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(220, rH); btn:SetPoint("TOPLEFT", parent, "TOPLEFT", 8, -y+1)
+    local nameFS = btn:CreateFontString(nil, "OVERLAY")
+    nameFS:SetFont(ROW_FONT_FILE, rSize); nameFS:SetAllPoints(btn); nameFS:SetJustifyH("LEFT")
+    if item.id then
+        nameFS:SetText("|cFF00BFFF"..item.name.."|r")
+        btn:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetHyperlink(string.format("item:%d::::::::::::1:13648", item.id))
+            GameTooltip:Show()
+        end)
+        btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    else
+        nameFS:SetText(item.name)
+    end
+    local notesFS = parent:CreateFontString(nil, "OVERLAY")
+    notesFS:SetFont(ROW_FONT_FILE, rSize)
+    notesFS:SetPoint("TOPLEFT", parent, "TOPLEFT", 236, -y)
+    notesFS:SetWidth(parent:GetWidth() - 244); notesFS:SetJustifyH("LEFT"); notesFS:SetText(item.notes)
+    return rH
+end
+
 local function RenderLoot()
     local cf=NewContentFrame(); local y=10
     y=y+CreateHeader(cf,y,"Notable Loot  --  Trinkets & Weapons from Midnight Delves")+4
+    y=y+CreateRow(cf,y,"|cFF888888Hover an item name to preview its tooltip.|r")+4
     for _,slot in ipairs({"Trinket","Weapon"}) do
         y=y+4; y=y+CreateRow(cf,y,"|cFFFFD700"..slot.."s|r")
         y=y+CreateRow(cf,y,"|cFF888888"..string.format("%-36s  %s","Item Name","Effect / Notes").."|r")
         for _,item in ipairs(DelveGuideData.loot) do
-            if item.slot==slot then y=y+CreateRow(cf,y,string.format("|cFF00BFFF%-36s|r  %s",item.name,item.notes)) end
+            if item.slot==slot then y=y+CreateLootRow(cf,y,item) end
         end; y=y+8
     end
     y=y+8; y=y+CreateRow(cf,y,"|cFFFFD700-- Midnight Delve iLvl Scaling --|r")
@@ -274,6 +348,108 @@ local function RenderFuture()
             if f.category==cat then y=y+CreateRow(cf,y,"|cFFCCCCCC* |r"..f.note)+2 end
         end; y=y+8
     end; cf:SetHeight(y+20)
+end
+
+local function MakeSettingCheckbox(parent, y, labelText, getValue, onToggle)
+    EnsureFontFiles(); local _, rSize = GetScaledSizes()
+    local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
+    cb:SetSize(24, 24)
+    cb:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -y)
+    cb:SetChecked(getValue())
+    local lbl = parent:CreateFontString(nil, "OVERLAY")
+    lbl:SetFont(ROW_FONT_FILE, rSize)
+    lbl:SetPoint("LEFT", cb, "RIGHT", 6, 0)
+    lbl:SetText(labelText)
+    cb:SetScript("OnClick", function(self) onToggle(self:GetChecked()) end)
+    return 30
+end
+
+local function RenderSettings()
+    local cf = NewContentFrame(); local y = 10
+    EnsureFontFiles(); local _, rSize, rH = GetScaledSizes()
+
+    y = y + CreateHeader(cf, y, "Settings") + 8
+
+    -- Minimap
+    y = y + CreateRow(cf, y, "|cFFFFD700Minimap|r") + 6
+    y = y + MakeSettingCheckbox(cf, y,
+        "Show minimap button  |cFF888888(or: /dg minimap)|r",
+        function() return not DelveGuideDB.minimapHidden end,
+        function(checked)
+            DelveGuideDB.minimapHidden = not checked
+            if minimapBtn then
+                if DelveGuideDB.minimapHidden then minimapBtn:Hide() else minimapBtn:Show() end
+            end
+        end) + 8
+
+    -- Compact Widget
+    y = y + CreateRow(cf, y, "|cFFFFD700Compact Widget|r") + 6
+    y = y + MakeSettingCheckbox(cf, y,
+        "Show compact floating widget  |cFF888888(or: /dg widget)|r",
+        function() return not DelveGuideDB.widgetHidden end,
+        function(checked)
+            DelveGuideDB.widgetHidden = not checked
+            if compactWidget then
+                if DelveGuideDB.widgetHidden then compactWidget:Hide() else compactWidget:Show() end
+            end
+        end)
+    y = y + MakeSettingCheckbox(cf, y,
+        "Click widget to open/close main window",
+        function() return DelveGuideDB.widgetClickOpens end,
+        function(checked) DelveGuideDB.widgetClickOpens = checked end)
+    -- Tier filter
+    y = y + 4
+    y = y + CreateRow(cf, y, "|cFFAAAAAAAAWidget tier filter — show active variants at these rankings:|r") + 6
+    EnsureFontFiles()
+    local allRanks = {"S","A","B","C","D","F"}
+    for i, rank in ipairs(allRanks) do
+        local cb = CreateFrame("CheckButton", nil, cf, "UICheckButtonTemplate")
+        cb:SetSize(22, 22)
+        cb:SetPoint("TOPLEFT", cf, "TOPLEFT", 10 + (i-1)*80, -y)
+        cb:SetChecked(DelveGuideDB.widgetTiers[rank])
+        local lbl = cf:CreateFontString(nil, "OVERLAY")
+        lbl:SetFont(ROW_FONT_FILE, 11)
+        lbl:SetPoint("LEFT", cb, "RIGHT", 2, 0)
+        lbl:SetText((RANK_COLORS[rank] or "|cFFFFFFFF")..rank.."|r")
+        local r = rank
+        cb:SetScript("OnClick", function(self)
+            DelveGuideDB.widgetTiers[r] = self:GetChecked()
+            UpdateCompactWidget()
+        end)
+    end
+    y = y + 30 + 8
+
+    -- Font Scale
+    y = y + CreateRow(cf, y, "|cFFFFD700Font Scale|r") + 6
+    local fsDesc = cf:CreateFontString(nil, "OVERLAY")
+    fsDesc:SetFont(ROW_FONT_FILE, rSize)
+    fsDesc:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
+    fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 – 2.0)", DelveGuideDB.fontScale))
+    y = y + rH + 4
+
+    local function MakeFontScaleBtn(label, xOff, delta)
+        local b = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+        b:SetSize(36, 22); b:SetText(label)
+        b:SetPoint("TOPLEFT", cf, "TOPLEFT", xOff, -y)
+        b:SetScript("OnClick", function()
+            DelveGuideDB.fontScale = math.max(0.6, math.min(2.0, DelveGuideDB.fontScale + delta))
+            fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 – 2.0)", DelveGuideDB.fontScale))
+            RefreshCurrentTab()
+        end)
+    end
+    MakeFontScaleBtn("A-", 10, -0.1)
+    MakeFontScaleBtn("A+", 52, 0.1)
+    local resetBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    resetBtn:SetSize(60, 22); resetBtn:SetText("Reset")
+    resetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
+    resetBtn:SetScript("OnClick", function()
+        DelveGuideDB.fontScale = 1.0
+        fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 – 2.0)", DelveGuideDB.fontScale))
+        RefreshCurrentTab()
+    end)
+    y = y + 30
+
+    cf:SetHeight(y + 20)
 end
 
 local function RenderDebug()
@@ -301,19 +477,40 @@ end
 
 local function RenderHistory()
     local cf=NewContentFrame(); local y=10
-    y=y+CreateHeader(cf,y,"Delve Run History (Last 50 Runs)")+4
+    y=y+CreateHeader(cf,y,"Delve Run History  —  Weekly Great Vault Summary")+4
     if not DelveGuideDB.history or #DelveGuideDB.history==0 then
         y=y+CreateRow(cf,y,"|cFF888888No runs recorded yet. Go complete a Delve!|r")
     else
-        y=y+CreateRow(cf,y,"|cFF888888"..string.format("%-20s  %-24s","Date & Time","Delve Completed").."|r")
-        y=y+CreateRow(cf,y,"|cFF555555"..string.rep("-",90).."|r")+4
+        -- Group runs by WoW week (resetKey), legacy entries keyed as 0
+        local weeks,weekOrder={},{}
         for _,run in ipairs(DelveGuideDB.history) do
-            y=y+CreateRow(cf,y,string.format("|cFFCCCCCC%-20s|r  |cFF00BFFF%-24s|r",run.date,run.name))
+            local key=run.resetKey or 0
+            if not weeks[key] then weeks[key]={}; table.insert(weekOrder,key) end
+            table.insert(weeks[key],run)
+        end
+        table.sort(weekOrder,function(a,b)
+            if a==0 then return false end; if b==0 then return true end; return a>b
+        end)
+        for _,key in ipairs(weekOrder) do
+            local runs=weeks[key]; local count=#runs
+            local weekLabel=key==0 and "|cFF888888Earlier / Legacy Runs|r"
+                or ("|cFFFFD700Week of "..date("%b %d, %Y",key).."|r")
+            local vaultText
+            if count>=8 then vaultText="|cFF00FF44All 3 vault slots unlocked ✓|r"
+            elseif count>=4 then vaultText=string.format("|cFFFFFF002/3 vault slots|r  |cFF888888(%d more for 3rd)|r",8-count)
+            elseif count>=1 then vaultText=string.format("|cFFFF88441/3 vault slots|r  |cFF888888(%d more for 2nd)|r",4-count)
+            else vaultText="|cFFFF4444No vault slots|r" end
+            y=y+8
+            y=y+CreateRow(cf,y,weekLabel.."  |cFF888888"..count.." run(s)|r  —  "..vaultText)
+            y=y+CreateRow(cf,y,"|cFF555555"..string.rep("-",80).."|r")+2
+            for _,run in ipairs(runs) do
+                y=y+CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  |cFF00BFFF%s|r",run.date,run.name))
+            end
         end
     end; cf:SetHeight(y+20)
 end
 
-local tabRenderers={delves=RenderDelves,curios=RenderCurios,loot=RenderLoot,history=RenderHistory,future=RenderFuture,debug=RenderDebug}
+local tabRenderers={delves=RenderDelves,curios=RenderCurios,loot=RenderLoot,history=RenderHistory,future=RenderFuture,settings=RenderSettings,debug=RenderDebug}
 local mainFrame,tabButtons,currentTabKey=nil,{},nil
 
 local function SwitchTab(key)
@@ -345,11 +542,7 @@ local function CreateMainWindow()
     f.TrackerText=f:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall"); f.TrackerText:SetPoint("TOPRIGHT",f,"TOPRIGHT",-40,-14)
     f.UpdateTracker=function()
         local keysInfo=C_CurrencyInfo.GetCurrencyInfo(3310); local shards=keysInfo and keysInfo.quantity or 0
-        local completed=0
-        if Enum and Enum.WeeklyRewardItemTierType and Enum.WeeklyRewardItemTierType.World then
-            local ok,acts=pcall(C_WeeklyRewards.GetActivities,Enum.WeeklyRewardItemTierType.World)
-            if ok and type(acts)=="table" then for _,a in ipairs(acts) do if a.progress>=a.threshold then completed=completed+1 end end end
-        end
+        local delveCount,vaultSlots=GetWeeklyVaultData()
         local wqCount=0
         for _,z in ipairs({2393,2437,2395,2444,2413,2405,2424}) do
             local quests=C_TaskQuest.GetQuestsOnMap(z)
@@ -360,18 +553,13 @@ local function CreateMainWindow()
                 end
             end end
         end
-        f.TrackerText:SetText(string.format("|cFFFFD700Keys:|r %d/600  |  |cFF00BFFFVault:|r %d/8  |  |cFF00FF88Shard WQs:|r %d",shards,completed,wqCount))
+        local resetSecs=C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
+        local resetText=resetSecs and FormatResetTime(resetSecs) or "|cFF888888?|r"
+        f.TrackerText:SetText(string.format(
+            "|cFFFFD700Keys:|r %d/600  |  |cFF00BFFFDelves:|r %d  |cFF888888(Vault %d/8)|r  |  |cFF00FF88WQs:|r %d  |  |cFFAAAA00Reset:|r %s",
+            shards,delveCount,vaultSlots,wqCount,resetText))
     end
     f:HookScript("OnShow",f.UpdateTracker)
-    local function MakeFontBtn(label,xOff,onClick,tip)
-        local b=CreateFrame("Button",nil,f,"UIPanelButtonTemplate"); b:SetSize(28,18)
-        b:SetPoint("TOPRIGHT",f,"TOPRIGHT",xOff,-12); b:SetText(label); b:SetScript("OnClick",onClick)
-        b:SetScript("OnEnter",function(self) GameTooltip:SetOwner(self,"ANCHOR_BOTTOM"); GameTooltip:AddLine(tip)
-            GameTooltip:AddLine(string.format("|cFFAAAAAACurrent: %.1fx|r",DelveGuideDB.fontScale)); GameTooltip:Show() end)
-        b:SetScript("OnLeave",function() GameTooltip:Hide() end)
-    end
-    MakeFontBtn("A-",-200,function() DelveGuideDB.fontScale=math.max(0.6,DelveGuideDB.fontScale-0.1); RefreshCurrentTab() end,"Decrease text size")
-    MakeFontBtn("A+",-230,function() DelveGuideDB.fontScale=math.min(2.0,DelveGuideDB.fontScale+0.1); RefreshCurrentTab() end,"Increase text size")
     local tabW=(WINDOW_W-32)/#TABS
     for i,td in ipairs(TABS) do
         local btn=CreateFrame("Button","DelveGuideTab_"..td.key,f); btn:SetSize(tabW-4,TAB_HEIGHT)
@@ -391,9 +579,163 @@ function DelveGuide.Toggle()
     if mainFrame:IsShown() then mainFrame:Hide() else mainFrame:Show() end
 end
 
+-- Compact floating widget
+local RANK_ORDER  = {S=1,A=2,B=3,C=4,D=5,F=6}
+local W_HEADER_H  = 28   -- title row + divider
+local W_LINE_H    = 18   -- height per variant line
+local W_PAD       = 10   -- bottom padding
+local W_MAX_LINES = 8
+
+UpdateCompactWidget = function()
+    if not compactWidget or not compactWidget:IsShown() then return end
+    -- Build filtered+sorted list of active variants
+    local tiers = DelveGuideDB.widgetTiers or {}
+    local entries = {}
+    if DelveGuideData and DelveGuideData.delves then
+        local seen = {}
+        for _, d in ipairs(DelveGuideData.delves) do
+            if activeVariants[d.variant] and not seen[d.variant] and tiers[d.ranking] then
+                seen[d.variant] = true
+                table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+            end
+        end
+    end
+    table.sort(entries, function(a,b)
+        return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99)
+    end)
+    -- Update variant line pool
+    local n = math.min(#entries, W_MAX_LINES)
+    if n == 0 then
+        compactWidget.varLines[1].label:SetText("|cFF888888No active variants|r")
+        compactWidget.varLines[1].pin = nil
+        compactWidget.varLines[1]:ClearAllPoints()
+        compactWidget.varLines[1]:SetPoint("TOPLEFT", compactWidget, "TOPLEFT", 8, -(W_HEADER_H+4))
+        compactWidget.varLines[1]:Show()
+        n = 1
+        for i = 2, W_MAX_LINES do compactWidget.varLines[i]:Hide() end
+    else
+        for i = 1, W_MAX_LINES do
+            local line = compactWidget.varLines[i]
+            local e = entries[i]
+            if e then
+                local rc = RANK_COLORS[e.ranking] or "|cFFFFFFFF"
+                local pin = FindPinByName(e.delve)
+                local nameText = pin and ("|cFF00CFFF"..e.variant.."|r") or e.variant
+                line.label:SetText(rc.."["..e.ranking.."]|r  "..nameText)
+                line.pin = pin
+                line:ClearAllPoints()
+                line:SetPoint("TOPLEFT", compactWidget, "TOPLEFT", 8, -(W_HEADER_H+4+(i-1)*W_LINE_H))
+                line:Show()
+            else line:Hide() end
+        end
+    end
+    -- Reposition keys line and resize frame
+    local keysY = -(W_HEADER_H + 4 + n*W_LINE_H + 6)
+    compactWidget.keysLine:ClearAllPoints()
+    compactWidget.keysLine:SetPoint("TOPLEFT", compactWidget, "TOPLEFT", 8, keysY)
+    compactWidget:SetHeight(W_HEADER_H + 4 + n*W_LINE_H + 6 + W_LINE_H + W_PAD)
+    local keysInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
+    compactWidget.keysLine:SetText(string.format("|cFFFFD700Keys:|r %d/600", keysInfo and keysInfo.quantity or 0))
+end
+
+local function CreateCompactWidget()
+    local f = CreateFrame("Frame", "DelveGuideCompactWidget", UIParent, "BackdropTemplate")
+    f:SetSize(220, 80)
+    f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", function(self)
+        if DelveGuideDB.widgetLocked then return end
+        self.dragging = true; self:StartMoving()
+    end)
+    f:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        DelveGuideDB.widgetX = self:GetLeft(); DelveGuideDB.widgetY = self:GetTop()
+        C_Timer.After(0.05, function() self.dragging = false end)
+    end)
+    f:SetScript("OnMouseUp", function(self, btn)
+        if btn == "LeftButton" and not self.dragging and DelveGuideDB.widgetClickOpens then
+            DelveGuide.Toggle()
+        end
+    end)
+    if DelveGuideDB.widgetX then
+        f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", DelveGuideDB.widgetX, DelveGuideDB.widgetY)
+    else f:SetPoint("CENTER", UIParent, "CENTER", 0, 250) end
+    f:SetFrameStrata("MEDIUM")
+    f:SetBackdrop({bgFile="Interface\\ChatFrame\\ChatFrameBackground",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",
+        tile=false,tileSize=16,edgeSize=12,insets={left=3,right=3,top=3,bottom=3}})
+    f:SetBackdropColor(0.08, 0.08, 0.08, 0.88)
+    f:SetBackdropBorderColor(0.15, 0.5, 1, 0.8)
+    f:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:AddLine("|cFF00BFFFDelveGuide|r"); GameTooltip:AddLine("Drag to reposition.", 0.7, 0.7, 0.7)
+        if DelveGuideDB.widgetClickOpens then GameTooltip:AddLine("Click to open/close.", 1, 1, 1) end
+        GameTooltip:Show()
+    end)
+    f:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    -- Title
+    local titleFS = f:CreateFontString(nil, "OVERLAY")
+    titleFS:SetFont(GameFontNormal:GetFont() or "Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    titleFS:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -9); titleFS:SetText("|cFF00BFFFDelveGuide|r")
+    -- Lock button
+    local lockBtn = CreateFrame("Button", nil, f)
+    lockBtn:SetSize(14, 14); lockBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -7, -7)
+    lockBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+    local function RefreshLock()
+        if DelveGuideDB.widgetLocked then
+            lockBtn:SetNormalTexture("Interface\\BUTTONS\\LockButton-Locked-Up")
+        else
+            lockBtn:SetNormalTexture("Interface\\BUTTONS\\LockButton-Unlocked-Up")
+        end
+    end
+    lockBtn:SetScript("OnClick", function()
+        DelveGuideDB.widgetLocked = not DelveGuideDB.widgetLocked
+        RefreshLock()
+    end)
+    lockBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddLine(DelveGuideDB.widgetLocked and "|cFFFF4444Locked|r — click to unlock" or "|cFF44FF44Unlocked|r — click to lock")
+        GameTooltip:Show()
+    end)
+    lockBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    RefreshLock()
+    -- Divider
+    local div = f:CreateTexture(nil, "ARTWORK")
+    div:SetColorTexture(0.15, 0.5, 1, 0.35); div:SetSize(204, 1)
+    div:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -26)
+    -- Variant line pool
+    local sf = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
+    f.varLines = {}
+    for i = 1, W_MAX_LINES do
+        local btn = CreateFrame("Button", nil, f)
+        btn:SetSize(204, W_LINE_H)
+        btn:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestLogTitleHighlight", "ADD")
+        local fs = btn:CreateFontString(nil, "OVERLAY")
+        fs:SetFont(sf, 11); fs:SetAllPoints(); fs:SetJustifyH("LEFT")
+        btn.label = fs
+        btn:SetScript("OnClick", function(self)
+            if self.pin then SetDelveWaypoint(self.pin) end
+        end)
+        btn:SetScript("OnEnter", function(self)
+            if self.pin then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:AddLine("|cFFFFD700"..self.pin.name.."|r")
+                GameTooltip:AddLine("Click to open map & set waypoint", 0, 1, 0.5)
+                GameTooltip:Show()
+            end
+        end)
+        btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        btn:Hide()
+        f.varLines[i] = btn
+    end
+    -- Keys line (always visible)
+    f.keysLine = f:CreateFontString(nil, "OVERLAY")
+    f.keysLine:SetFont(sf, 11); f.keysLine:SetWidth(204); f.keysLine:SetJustifyH("LEFT")
+    f.keysLine:SetText("|cFFFFD700Keys:|r --")
+    if DelveGuideDB.widgetHidden then f:Hide() end
+    compactWidget = f
+    UpdateCompactWidget()
+end
+
 -- Minimap button — mirrors NightPulse's MinimapButton.lua exactly.
-local minimapBtn = nil
-local currentAngle  -- stored in radians, matches NightPulse pattern
 
 local function UpdateMinimapPos(angle)
     minimapBtn:SetPoint("CENTER", Minimap, "CENTER",
@@ -439,6 +781,11 @@ local function CreateMinimapButton()
     local savedDeg = (DelveGuideDB and DelveGuideDB.minimapAngle) or 45
     currentAngle = math.rad(savedDeg)
     UpdateMinimapPos(currentAngle)
+
+    -- Hide if the user previously disabled it
+    if DelveGuideDB and DelveGuideDB.minimapHidden then
+        btn:Hide()
+    end
 
     -- Drag to reposition — exact same math as NightPulse
     btn:RegisterForDrag("LeftButton")
@@ -507,6 +854,28 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         end
         if found==0 then print("|cFFFF4444No delves found.|r") end
         print("|cFF00BFFF[DelveGuide]|r === END ===")
+    elseif msg=="help" then
+        print("|cFF00BFFF[DelveGuide]|r Commands:")
+        print("  |cFFFFFF00/dg|r             — Toggle window")
+        print("  |cFFFFFF00/dg scan|r        — Rescan active delve variants")
+        print("  |cFFFFFF00/dg minimap|r     — Toggle minimap button")
+        print("  |cFFFFFF00/dg widget|r      — Toggle compact floating widget")
+        print("  |cFFFFFF00/dg font [#]|r    — Set font scale, e.g. |cFFFFFF00/dg font 1.2|r  (0.6 – 2.0)")
+        print("  |cFFFFFF00/dg map|r         — Open world map")
+        print("  |cFFFFFF00/dg dump|r        — Print raw POI data (debug)")
+        print("  |cFFFFFF00/dg help|r        — Show this help")
+    elseif msg=="widget" then
+        DelveGuideDB.widgetHidden = not DelveGuideDB.widgetHidden
+        if compactWidget then
+            if DelveGuideDB.widgetHidden then compactWidget:Hide() else compactWidget:Show() end
+        end
+        print("|cFF00BFFF[DelveGuide]|r Compact widget: "..(DelveGuideDB.widgetHidden and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
+    elseif msg=="minimap" then
+        DelveGuideDB.minimapHidden = not DelveGuideDB.minimapHidden
+        if minimapBtn then
+            if DelveGuideDB.minimapHidden then minimapBtn:Hide() else minimapBtn:Show() end
+        end
+        print("|cFF00BFFF[DelveGuide]|r Minimap button: " .. (DelveGuideDB.minimapHidden and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
     elseif msg:sub(1,4)=="font" then
         local val=tonumber(msg:sub(6))
         if val then DelveGuideDB.fontScale=math.max(0.6,math.min(2.0,val)); RefreshCurrentTab()
@@ -520,13 +889,14 @@ loadFrame:RegisterEvent("ADDON_LOADED"); loadFrame:RegisterEvent("PLAYER_ENTERIN
 loadFrame:RegisterEvent("AREA_POIS_UPDATED"); loadFrame:RegisterEvent("SCENARIO_COMPLETED")
 loadFrame:SetScript("OnEvent",function(self,event,arg1)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
-        InitSavedVars(); CreateMinimapButton()
+        InitSavedVars(); CreateMinimapButton(); CreateCompactWidget()
         print("|cFF00BFFF[DelveGuide]|r Loaded! |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
         self:UnregisterEvent("ADDON_LOADED")
     elseif event=="PLAYER_ENTERING_WORLD" then
-        ScanActiveVariants(); if mainFrame and mainFrame:IsShown() then RefreshCurrentTab() end
+        ScanActiveVariants(); UpdateCompactWidget()
+        if mainFrame and mainFrame:IsShown() then RefreshCurrentTab() end
     elseif event=="AREA_POIS_UPDATED" then
-        ScanActiveVariants()
+        ScanActiveVariants(); UpdateCompactWidget()
         if mainFrame and mainFrame:IsShown() and currentTabKey=="delves" then SwitchTab("delves") end
     elseif event=="SCENARIO_COMPLETED" then
         local scenarioName=C_Scenario.GetInfo(); if not scenarioName then return end
@@ -535,7 +905,9 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             for _,d in ipairs(DelveGuideData.delves) do if d.name==scenarioName then isDelve=true; break end end
         end
         if isDelve then
-            table.insert(DelveGuideDB.history,1,{name=scenarioName,date=date("%Y-%m-%d %H:%M")})
+            local secsUntilReset=C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
+            local resetKey=secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
+            table.insert(DelveGuideDB.history,1,{name=scenarioName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey})
             if #DelveGuideDB.history>50 then table.remove(DelveGuideDB.history) end
             print("|cFF00BFFF[DelveGuide]|r Logged completion: |cFF00FF44"..scenarioName.."|r")
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
