@@ -1,0 +1,9 @@
+## Interface: 120000, 120001
+## Title: DelveGuide
+## Notes: A reference guide for Midnight Delves - rankings, curios, loot, and more.
+## Author: You
+## Version: 1.0.0
+## SavedVariables: DelveGuideDB
+
+DelveGuide_Data.lua
+DelveGuide.lua

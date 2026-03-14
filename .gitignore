@@ -1,0 +1,9 @@
+*.zip
+WTF/
+SavedVariables/
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.claude/

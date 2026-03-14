@@ -1,0 +1,12 @@
+package-as: DelveGuide
+
+ignore:
+  - .github
+  - .gitignore
+  - .pkgmeta
+  - .claude
+  - CHANGELOG.md
+  - LICENSE
+  - README.md
+
+enable-nolib-creation: no
