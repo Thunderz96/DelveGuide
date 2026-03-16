@@ -4,6 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
+local ADDON_VERSION    = "1.2.0"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -17,8 +18,42 @@ local TABS = {
     { label = "Loot",     key = "loot"     },
     { label = "History",  key = "history"  },
     { label = "Future",   key = "future"   },
+    { label = "Roster",   key = "roster"   },
     { label = "Settings", key = "settings" },
     { label = "Debug",    key = "debug"    },
+}
+
+local CHANGELOG = {
+    {
+        version = "1.2.0",
+        date    = "2026-03-15",
+        entries = {
+            "Roster tab — track all level-80+ alts' weekly delves, shards, ilvl, and vault slots",
+            "Roster: per-character remove button with confirmation dialog",
+            "Fixed: targeting a delve entrance no longer triggers a taint error",
+        },
+    },
+    {
+        version = "1.1.0",
+        date    = "2026-03-14",
+        entries = {
+            "Settings tab — minimap, compact widget, tier filter, font scale",
+            "Compact floating widget with tier filter and lock button",
+            "Clickable delve names open the map and set a waypoint",
+            "Loot tab item tooltips on hover",
+            "Weekly reset timer and Great Vault tracker in the header",
+            "Coffer Key shard tracker in the header bar",
+            "/dg help command listing all slash commands",
+        },
+    },
+    {
+        version = "1.0.0",
+        date    = "2026-03-01",
+        entries = {
+            "Initial release — delve rankings, curio DB, loot tables, run history",
+            "Active variant scanner, minimap button, font scale setting",
+        },
+    },
 }
 
 local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2444, 2413, 2405 }
@@ -46,6 +81,9 @@ local function InitSavedVars()
     if DelveGuideDB.checklistEnabled == nil then DelveGuideDB.checklistEnabled = true end
     -- checklistDismissed is session-only; reset on every load
     DelveGuideDB.checklistDismissed = false
+    if not DelveGuideDB.roster then DelveGuideDB.roster = {} end
+    -- lastSeenVersion drives the "what's new" popup (nil = never shown)
+    if DelveGuideDB.lastSeenVersion == nil then DelveGuideDB.lastSeenVersion = nil end
 end
 
 local activeDelves, activeVariants, rawScanResults = {}, {}, {}
@@ -233,6 +271,68 @@ local function GetWeeklyVaultData()
     return delveCount, slots, acts
 end
 
+-- Snapshot the current character's state into SavedVariables.
+-- Called ONCE on PLAYER_ENTERING_WORLD — no polling, no OnUpdate.
+-- Only caches characters level 80+ (current expansion).
+local function CacheCurrentChar()
+    if (UnitLevel("player") or 0) < 80 then return end
+
+    local name  = UnitName("player") or "Unknown"
+    local realm = GetRealmName()     or "Unknown"
+    local charKey = name .. "-" .. realm
+
+    local specName = "?"
+    pcall(function()
+        local idx = GetSpecialization()
+        if idx then
+            local _, sName = GetSpecializationInfo(idx)
+            if sName then specName = sName end
+        end
+    end)
+
+    local ilvl = 0
+    pcall(function()
+        local _, overall = GetAverageItemLevel()
+        ilvl = math.floor(overall or 0)
+    end)
+
+    -- Coffer Key shards (currency 3310 — confirmed in RunChecklistScan)
+    local shards = 0
+    pcall(function()
+        local info = C_CurrencyInfo.GetCurrencyInfo(3310)
+        if info then shards = info.quantity or 0 end
+    end)
+
+    -- Trovehunter's Bounty in bags (item 265714)
+    local bounty = C_Item.GetItemCount(265714, true) or 0
+
+    -- Weekly delves from history, matched against current reset window
+    local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
+    local resetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
+    local delveCount = 0
+    if resetKey and DelveGuideDB.history then
+        for _, h in ipairs(DelveGuideDB.history) do
+            if h.resetKey == resetKey then delveCount = delveCount + 1 end
+        end
+    end
+
+    -- Vault slots — reuse existing helper
+    local _, vaultSlots = GetWeeklyVaultData()
+
+    DelveGuideDB.roster[charKey] = {
+        name       = name,
+        realm      = realm,
+        specName   = specName,
+        ilvl       = ilvl,
+        shards     = shards,
+        bounty     = bounty,
+        delveCount = delveCount,
+        vaultSlots = vaultSlots,
+        lastSeen   = date("%Y-%m-%d"),
+        resetKey   = resetKey,
+    }
+end
+
 local function RenderDelves()
     local cf=NewContentFrame(); local y=10
     local vc=0; for _ in pairs(activeVariants) do vc=vc+1 end
@@ -416,6 +516,103 @@ local function MakeSettingCheckbox(parent, y, labelText, getValue, onToggle)
     return 30
 end
 
+-- ---- What's New popup ----
+local changelogFrame
+
+local function ShowChangelogPopup()
+    if not changelogFrame then
+        local BACKDROP = {
+            bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile = true, tileSize = 32, edgeSize = 16,
+            insets = { left=4, right=4, top=4, bottom=4 },
+        }
+        local f = CreateFrame("Frame", "DelveGuideChangelogFrame", UIParent, "BackdropTemplate")
+        f:SetSize(440, 460)
+        f:SetBackdrop(BACKDROP)
+        f:SetBackdropColor(0, 0, 0, 0.95)
+        f:SetBackdropBorderColor(0.1, 0.5, 1, 1)
+        f:SetFrameStrata("DIALOG")
+        f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
+        f:SetScript("OnDragStart", f.StartMoving)
+        f:SetScript("OnDragStop",  f.StopMovingOrSizing)
+        f:SetPoint("CENTER")
+
+        -- Title bar
+        local bar = f:CreateTexture(nil, "ARTWORK")
+        bar:SetPoint("TOPLEFT",  f, "TOPLEFT",  4, -4)
+        bar:SetPoint("TOPRIGHT", f, "TOPRIGHT", -4, -4)
+        bar:SetHeight(28); bar:SetColorTexture(0.05, 0.25, 0.55, 0.95)
+
+        local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        title:SetPoint("TOPLEFT", f, "TOPLEFT", 14, -10)
+        title:SetText("|cFF3399FFDelveGuide|r  —  What's New")
+
+        local closeBtn = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+        closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -2, -2)
+        closeBtn:SetScript("OnClick", function() f:Hide() end)
+
+        -- Scroll area
+        local scrollFrame = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
+        scrollFrame:SetPoint("TOPLEFT",     f, "TOPLEFT",  12,  -40)
+        scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -30, 44)
+
+        local content = CreateFrame("Frame", nil, scrollFrame)
+        content:SetWidth(scrollFrame:GetWidth() or 380)
+        scrollFrame:SetScrollChild(content)
+
+        -- Populate content
+        local ROW_FONT  = "Fonts\\FRIZQT__.TTF"
+        local cy = 0
+        local isFirst = true
+
+        for _, block in ipairs(CHANGELOG) do
+            -- Version header
+            local verLabel = content:CreateFontString(nil, "OVERLAY")
+            verLabel:SetFont(ROW_FONT, isFirst and 13 or 11)
+            verLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -cy)
+            verLabel:SetWidth(content:GetWidth())
+            if isFirst then
+                verLabel:SetText("|cFF3399FFv" .. block.version .. "|r  |cFF888888— " .. block.date .. "|r")
+            else
+                verLabel:SetText("|cFF666666v" .. block.version .. "  — " .. block.date .. "|r")
+            end
+            cy = cy + (isFirst and 20 or 17)
+
+            -- Entries
+            for _, entry in ipairs(block.entries) do
+                local bullet = content:CreateFontString(nil, "OVERLAY")
+                bullet:SetFont(ROW_FONT, isFirst and 11 or 10)
+                bullet:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -cy)
+                bullet:SetWidth(content:GetWidth() - 10)
+                bullet:SetJustifyH("LEFT")
+                if isFirst then
+                    bullet:SetText("|cFFCCCCCC• " .. entry .. "|r")
+                else
+                    bullet:SetText("|cFF555555• " .. entry .. "|r")
+                end
+                bullet:SetWordWrap(true)
+                cy = cy + bullet:GetStringHeight() + 4
+            end
+
+            cy = cy + (isFirst and 12 or 8)
+            isFirst = false
+        end
+
+        content:SetHeight(math.max(cy, 10))
+
+        -- "Got it!" button
+        local okBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+        okBtn:SetSize(100, 26); okBtn:SetText("Got it!")
+        okBtn:SetPoint("BOTTOM", f, "BOTTOM", 0, 10)
+        okBtn:SetScript("OnClick", function() f:Hide() end)
+
+        changelogFrame = f
+    end
+
+    changelogFrame:Show()
+end
+
 local function RenderSettings()
     local cf = NewContentFrame(); local y = 10
     EnsureFontFiles(); local _, rSize, rH = GetScaledSizes()
@@ -506,7 +703,15 @@ local function RenderSettings()
         fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 – 2.0)", DelveGuideDB.fontScale))
         RefreshCurrentTab()
     end)
-    y = y + 30
+    y = y + 30 + 16
+
+    -- Changelog
+    y = y + CreateRow(cf, y, "|cFFFFD700About|r") + 6
+    local clBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    clBtn:SetSize(160, 26); clBtn:SetText("View Changelog")
+    clBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
+    clBtn:SetScript("OnClick", ShowChangelogPopup)
+    y = y + 34
 
     cf:SetHeight(y + 20)
 end
@@ -532,6 +737,144 @@ local function RenderDebug()
             else y=y+CreateRow(cf,y,"   |cFF555555(no texts in widget set)|r") end
         end
     end; cf:SetHeight(y+20)
+end
+
+local function RenderRoster()
+    local cf = NewContentFrame(); local y = 10
+    EnsureFontFiles(); local _, rSize, rH = GetScaledSizes()
+
+    y = y + CreateHeader(cf, y, "Roster  —  All Characters  |cFF888888(updates on login)|r") + 4
+
+    local currentName  = UnitName("player") or "?"
+    local currentRealm = GetRealmName()     or "?"
+    local currentKey   = currentName .. "-" .. currentRealm
+
+    local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
+    local currentResetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
+
+    local roster = DelveGuideDB.roster or {}
+
+    -- Column x positions (pixel offsets from left of content frame)
+    local COL = { name=8, spec=160, ilvl=278, shards=322, bounty=385, delves=438, vault=480, seen=522, del=626 }
+
+    -- Header row
+    local function MakeHeaderCol(x, w, text)
+        local fs = cf:CreateFontString(nil, "OVERLAY")
+        fs:SetFont(ROW_FONT_FILE, rSize)
+        fs:SetPoint("TOPLEFT", cf, "TOPLEFT", x, -y)
+        fs:SetWidth(w); fs:SetJustifyH("LEFT")
+        fs:SetTextColor(0.67, 0.67, 0.67, 1)
+        fs:SetText(text)
+    end
+    MakeHeaderCol(COL.name,   148, "Character")
+    MakeHeaderCol(COL.spec,   114, "Spec")
+    MakeHeaderCol(COL.ilvl,    60, "iLvl")
+    MakeHeaderCol(COL.shards,  60, "Shards")
+    MakeHeaderCol(COL.bounty,  50, "Bounty")
+    MakeHeaderCol(COL.delves,  40, "Delves")
+    MakeHeaderCol(COL.vault,   40, "Vault")
+    MakeHeaderCol(COL.seen,   100, "Last Seen")
+    y = y + rH
+
+    local sep = cf:CreateTexture(nil, "OVERLAY")
+    sep:SetPoint("TOPLEFT", cf, "TOPLEFT", 4, -y)
+    sep:SetSize(WINDOW_W - 60, 1); sep:SetColorTexture(0.3, 0.3, 0.3, 0.6)
+    y = y + 6
+
+    -- Sort: current char first, then alphabetical
+    local keys = {}
+    for k in pairs(roster) do keys[#keys + 1] = k end
+    table.sort(keys, function(a, b)
+        if a == currentKey then return true end
+        if b == currentKey then return false end
+        return a < b
+    end)
+
+    if #keys == 0 then
+        y = y + CreateRow(cf, y, "|cFF888888No characters cached yet — log in on each alt to populate their row.|r")
+    else
+        for _, k in ipairs(keys) do
+            local c         = roster[k]
+            local isCurrent = (k == currentKey)
+            local isStale   = currentResetKey and c.resetKey and (c.resetKey ~= currentResetKey)
+            local alpha     = isStale and 0.45 or 1.0
+
+            -- Row highlight for current char
+            if isCurrent then
+                local fill = cf:CreateTexture(nil, "BACKGROUND")
+                fill:SetPoint("TOPLEFT", cf, "TOPLEFT", 2, -(y - 1))
+                fill:SetSize(WINDOW_W - 56, rH + 2)
+                fill:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+                fill:SetGradient("HORIZONTAL", CreateColor(0, 0.4, 1, 0.18), CreateColor(0, 0.4, 1, 0))
+                local bar = cf:CreateTexture(nil, "ARTWORK")
+                bar:SetPoint("TOPLEFT", cf, "TOPLEFT", 2, -(y - 1))
+                bar:SetSize(3, rH + 2); bar:SetColorTexture(0, 0.6, 1, 1)
+            end
+
+            local function MakeCol(x, w, text, justify)
+                local fs = cf:CreateFontString(nil, "OVERLAY")
+                fs:SetFont(ROW_FONT_FILE, rSize)
+                fs:SetPoint("TOPLEFT", cf, "TOPLEFT", x, -y)
+                fs:SetWidth(w); fs:SetJustifyH(justify or "LEFT")
+                fs:SetAlpha(alpha); fs:SetText(text)
+            end
+
+            local nameText = isCurrent
+                and ("|cFF00CFFF" .. c.name .. "|r  |cFF888888" .. c.realm .. "|r")
+                or (c.name .. "  |cFF666666" .. c.realm .. "|r")
+
+            local shardsText = (c.shards or 0) >= 100
+                and ("|cFF00FF44" .. (c.shards or 0) .. "|r")
+                or  tostring(c.shards or 0)
+
+            local bountyText = (c.bounty or 0) > 0
+                and ("|cFF00FF44" .. (c.bounty or 0) .. "|r")
+                or  "|cFF666666--|r"
+
+            local vaultText = (c.vaultSlots or 0) > 0
+                and ("|cFF00FF44" .. (c.vaultSlots or 0) .. "|r")
+                or  "|cFF888888—|r"
+
+            local staleTag = isStale and " |cFF888888[prev week]|r" or ""
+
+            MakeCol(COL.name,   148, nameText)
+            MakeCol(COL.spec,   114, c.specName or "?")
+            MakeCol(COL.ilvl,    38, c.ilvl and c.ilvl > 0 and tostring(c.ilvl) or "|cFF888888?|r", "RIGHT")
+            MakeCol(COL.shards,  60, shardsText)
+            MakeCol(COL.bounty,  45, bountyText)
+            MakeCol(COL.delves,  38, tostring(c.delveCount or 0), "RIGHT")
+            MakeCol(COL.vault,   38, vaultText, "RIGHT")
+            MakeCol(COL.seen,   100, "|cFF888888" .. (c.lastSeen or "?") .. "|r" .. staleTag)
+
+            -- Delete button — only for non-current characters
+            if not isCurrent then
+                local capK = k
+                local capName = c.name
+                local delBtn = CreateFrame("Button", nil, cf)
+                delBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", COL.del, -y)
+                delBtn:SetSize(18, rH)
+                local delLabel = delBtn:CreateFontString(nil, "OVERLAY")
+                delLabel:SetFont(ROW_FONT_FILE, rSize)
+                delLabel:SetPoint("CENTER"); delLabel:SetText("|cFFFF4444x|r")
+                delBtn:SetScript("OnEnter", function(self)
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetText("Remove " .. capName .. " from roster", 1, 1, 1, 1, true)
+                    GameTooltip:Show()
+                end)
+                delBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+                delBtn:SetScript("OnClick", function()
+                    local dialog = StaticPopup_Show("DELVEGUIDE_CONFIRM_REMOVE_CHAR", capName)
+                    if dialog then dialog.data = capK end
+                end)
+            end
+
+            y = y + rH + 2
+        end
+    end
+
+    y = y + 12
+    y = y + CreateRow(cf, y, "|cFF555555Log in on each alt to cache their data. Greyed rows = previous week.|r")
+    cf:SetHeight(y + 20)
 end
 
 local function RenderHistory()
@@ -563,13 +906,15 @@ local function RenderHistory()
             y=y+CreateRow(cf,y,weekLabel.."  |cFF888888"..count.." run(s)|r  —  "..vaultText)
             y=y+CreateRow(cf,y,"|cFF555555"..string.rep("-",80).."|r")+2
             for _,run in ipairs(runs) do
-                y=y+CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  |cFF00BFFF%s|r",run.date,run.name))
+                local tierStr=run.tier and ("  |cFF888888["..run.tier.."]|r") or ""
+                local vaultStr=run.vaultIlvl and ("  |cFFFFD700★ "..run.vaultIlvl.." ilvl|r") or ""
+                y=y+CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  |cFF00BFFF%s|r",run.date,run.name)..tierStr..vaultStr)
             end
         end
     end; cf:SetHeight(y+20)
 end
 
-local tabRenderers={delves=RenderDelves,curios=RenderCurios,loot=RenderLoot,history=RenderHistory,future=RenderFuture,settings=RenderSettings,debug=RenderDebug}
+local tabRenderers={delves=RenderDelves,curios=RenderCurios,loot=RenderLoot,history=RenderHistory,future=RenderFuture,roster=RenderRoster,settings=RenderSettings,debug=RenderDebug}
 local mainFrame,tabButtons,currentTabKey=nil,{},nil
 
 local function SwitchTab(key)
@@ -1084,6 +1429,8 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         end
         if found==0 then print("|cFFFF4444No delves found.|r") end
         print("|cFF00BFFF[DelveGuide]|r === END ===")
+    elseif msg=="roster" then
+        DelveGuide.Toggle(); SwitchTab("roster")
     elseif msg=="check" then
         ShowChecklist(true)
     elseif msg=="checkdebug" then
@@ -1126,6 +1473,14 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         else
             print("|cFF00BFFF[DelveGuide]|r No rec entry for specID "..tostring(specID))
         end
+    elseif msg=="testrun" then
+        -- DEV ONLY: simulate a delve completion for the first delve in the DB
+        local testName = DelveGuideData and DelveGuideData.delves and DelveGuideData.delves[1] and DelveGuideData.delves[1].name or "Test Delve"
+        local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
+        local resetKey = secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
+        table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610})
+        print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run — |cFF00FF44"..testName.."|r")
+        if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
     elseif msg=="help" then
         print("|cFF00BFFF[DelveGuide]|r Commands:")
         print("  |cFFFFFF00/dg|r             — Toggle window")
@@ -1135,6 +1490,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg font [#]|r    — Set font scale, e.g. |cFFFFFF00/dg font 1.2|r  (0.6 – 2.0)")
         print("  |cFFFFFF00/dg map|r         — Open world map")
         print("  |cFFFFFF00/dg dump|r        — Print raw POI data (debug)")
+        print("  |cFFFFFF00/dg roster|r      — Open Roster tab")
         print("  |cFFFFFF00/dg check|r       — Show pre-entry checklist")
         print("  |cFFFFFF00/dg checkdebug|r  — Scan auras to find Valeera role spell ID")
         print("  |cFFFFFF00/dg specinfo|r    — Show your detected spec ID (debug)")
@@ -1159,6 +1515,20 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     else DelveGuide.Toggle() end
 end
 
+StaticPopupDialogs["DELVEGUIDE_CONFIRM_REMOVE_CHAR"] = {
+    text          = "Remove %s from your roster?",
+    button1       = "Remove",
+    button2       = "Cancel",
+    OnAccept      = function(self)
+        DelveGuideDB.roster[self.data] = nil
+        RefreshCurrentTab()
+    end,
+    timeout       = 0,
+    whileDead     = true,
+    hideOnEscape  = true,
+    preferredIndex = 3,
+}
+
 local loadFrame=CreateFrame("Frame")
 loadFrame:RegisterEvent("ADDON_LOADED"); loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 loadFrame:RegisterEvent("AREA_POIS_UPDATED"); loadFrame:RegisterEvent("SCENARIO_COMPLETED")
@@ -1169,27 +1539,79 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
         print("|cFF00BFFF[DelveGuide]|r Loaded! |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
         self:UnregisterEvent("ADDON_LOADED")
     elseif event=="PLAYER_ENTERING_WORLD" then
-        ScanActiveVariants(); UpdateCompactWidget()
+        -- Defer C_AreaPoiInfo calls — running them inline taints the secure map frame
+        C_Timer.After(0, function() ScanActiveVariants(); UpdateCompactWidget() end)
+        CacheCurrentChar()
         if mainFrame and mainFrame:IsShown() then RefreshCurrentTab() end
+        if DelveGuideDB.lastSeenVersion ~= ADDON_VERSION then
+            DelveGuideDB.lastSeenVersion = ADDON_VERSION
+            C_Timer.After(3, ShowChangelogPopup)
+        end
     elseif event=="AREA_POIS_UPDATED" then
-        ScanActiveVariants(); UpdateCompactWidget()
+        C_Timer.After(0, function() ScanActiveVariants(); UpdateCompactWidget() end)
         if mainFrame and mainFrame:IsShown() and currentTabKey=="delves" then SwitchTab("delves") end
     elseif event=="ACTIVE_TALENT_GROUP_CHANGED" then
         if mainFrame and mainFrame:IsShown() and currentTabKey=="curios" then SwitchTab("curios") end
     elseif event=="PLAYER_TARGET_CHANGED" then
         OnTargetChanged()
     elseif event=="SCENARIO_COMPLETED" then
-        local scenarioName=C_Scenario.GetInfo(); if not scenarioName then return end
+        local scenarioName=C_Scenario.GetInfo()
+        if not scenarioName then return end
+        -- In Midnight 12.0, C_Scenario.GetInfo() returns the generic "Delves" for all delve completions.
+        -- Also fall back to matching specific names in case Blizzard changes this later.
         local isDelve=false
-        if DelveGuideData and DelveGuideData.delves then
-            for _,d in ipairs(DelveGuideData.delves) do if d.name==scenarioName then isDelve=true; break end end
+        pcall(function() isDelve=(scenarioName=="Delves") end)
+        if not isDelve and DelveGuideData and DelveGuideData.delves then
+            for _,d in ipairs(DelveGuideData.delves) do
+                local ok,match=pcall(function() return d.name==scenarioName end)
+                if ok and match then isDelve=true; break end
+            end
         end
         if isDelve then
+            -- Get the actual delve name from the zone — more specific than the generic "Delves" scenario name
+            local runName="Unknown Delve"
+            pcall(function()
+                local zone=GetRealZoneText()
+                if zone and zone~="" then runName=zone end
+            end)
+
             local secsUntilReset=C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
             local resetKey=secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
-            table.insert(DelveGuideDB.history,1,{name=scenarioName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey})
+
+            -- Capture delve tier from instance difficulty name
+            local tier="?"
+            local tierNum=nil
+            pcall(function()
+                local _,_,_,diffName=GetInstanceInfo()
+                if diffName and diffName~="" then
+                    tier=diffName
+                    tierNum=tonumber(diffName:match("%d+"))
+                end
+            end)
+
+            -- Vault ilvl: look up from static table first, fall back to C_WeeklyRewards
+            local vaultIlvl=nil
+            if tierNum and DelveGuideData.tierRewards and DelveGuideData.tierRewards[tierNum] then
+                vaultIlvl=DelveGuideData.tierRewards[tierNum].vault
+            else
+                pcall(function()
+                    if Enum and Enum.WeeklyRewardItemTierType then
+                        local data=C_WeeklyRewards.GetActivities(Enum.WeeklyRewardItemTierType.World)
+                        if data then
+                            for _,a in ipairs(data) do
+                                if a.level and a.level>0 and a.progress>=a.threshold then
+                                    if not vaultIlvl or a.level>vaultIlvl then vaultIlvl=a.level end
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+
+            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,vaultIlvl=vaultIlvl})
             if #DelveGuideDB.history>50 then table.remove(DelveGuideDB.history) end
-            print("|cFF00BFFF[DelveGuide]|r Logged completion: |cFF00FF44"..scenarioName.."|r")
+            local vaultStr=vaultIlvl and ("  |cFFFFD700★ "..vaultIlvl.." ilvl vault|r") or ""
+            print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r  |cFF888888["..tier.."]|r"..vaultStr)
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
         end
     end

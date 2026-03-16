@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0] - 2026-03-15
+
+### Added
+
+- Roster tab — track all level-80+ alts' weekly delves, shards, ilvl, and vault slots
+- Roster: per-character remove button (x) with confirmation dialog
+- "What's New" popup on version update — shows once per version, re-openable from Settings
+- "View Changelog" button in Settings tab
+
+### Fixed
+
+- Targeting a delve entrance no longer triggers a taint error (secret string compare)
+
 ## [1.1.0] - 2026-03-14
 
 ### Added
