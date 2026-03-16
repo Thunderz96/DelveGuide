@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.2.0"
+local ADDON_VERSION    = "1.2.1"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -24,6 +24,14 @@ local TABS = {
 }
 
 local CHANGELOG = {
+    {
+        version = "1.2.1",
+        date    = "2026-03-16",
+        entries = {
+            "Fixed: opening world map no longer triggers ADDON_ACTION_BLOCKED (SetPassThroughButtons taint)",
+            "Waypoint click now sets the pin silently — press M to open your map and navigate",
+        },
+    },
     {
         version = "1.2.0",
         date    = "2026-03-15",
@@ -165,10 +173,10 @@ local function TypeColor(t) return (typeColors[t] or "|cFFFFFFFF")..t.."|r" end
 
 local function SetDelveWaypoint(pin)
     C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(pin.mapID,pin.x,pin.y))
-    -- Defer OpenWorldMap out of the click handler's execution chain to avoid tainting
-    -- the secure map frame (ADDON_ACTION_BLOCKED: Frame:SetPropagateMouseClicks)
-    C_Timer.After(0, function() OpenWorldMap(pin.mapID) end)
-    print("|cFF00BFFF[DelveGuide]|r Waypoint set: |cFFFFD700"..pin.name.."|r")
+    -- Do NOT call OpenWorldMap() — even deferred it triggers SetPassThroughButtons()
+    -- on WaypointLocationDataProvider pins inside a secure frame chain, causing taint.
+    -- User can press M to open the map and see the waypoint.
+    print("|cFF00BFFF[DelveGuide]|r Waypoint set: |cFFFFD700"..pin.name.."|r |cFF888888(press M to open map)|r")
 end
 local function FindPinByName(name)
     for _,p in ipairs(DelveGuideData.mapPins) do if p.name==name then return p end end
@@ -1313,9 +1321,10 @@ end
 -- Minimap button — mirrors NightPulse's MinimapButton.lua exactly.
 
 local function UpdateMinimapPos(angle)
+    local radius = (Minimap:GetWidth() / 2) + 10
     minimapBtn:SetPoint("CENTER", Minimap, "CENTER",
-        math.cos(angle) * 80,
-        math.sin(angle) * 80)
+        math.cos(angle) * radius,
+        math.sin(angle) * radius)
 end
 
 local function SaveMinimapAngle()

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1] - 2026-03-16
+
+### Fixed
+
+- Opening the world map no longer triggers `ADDON_ACTION_BLOCKED` (SetPassThroughButtons taint)
+- Waypoint clicks now set the pin silently — press M to open your map and navigate
+
 ## [1.2.0] - 2026-03-15
 
 ### Added
