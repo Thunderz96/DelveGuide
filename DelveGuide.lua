@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.3.0"
+local ADDON_VERSION    = "1.3.1"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -24,6 +24,14 @@ local TABS = {
 }
 
 local CHANGELOG = {
+    {
+        version = "1.3.1",
+        date    = "2026-03-16",
+        entries = {
+            "Fixed: HUD now closes on delve completion (SCENARIO_COMPLETED + ZONE_CHANGED events)",
+            "Settings: added HUD enable/disable toggle",
+        },
+    },
     {
         version = "1.3.0",
         date    = "2026-03-16",
@@ -105,6 +113,7 @@ local function InitSavedVars()
     if not DelveGuideDB.widgetTiers then DelveGuideDB.widgetTiers = {S=true,A=true,B=true,C=true,D=true,F=true} end
     if DelveGuideDB.widgetLocked == nil then DelveGuideDB.widgetLocked = false end
     if DelveGuideDB.hudLocked == nil then DelveGuideDB.hudLocked = false end
+    if DelveGuideDB.hudEnabled == nil then DelveGuideDB.hudEnabled = true end
     if DelveGuideDB.checklistEnabled == nil then DelveGuideDB.checklistEnabled = true end
     -- checklistDismissed is session-only; reset on every load
     DelveGuideDB.checklistDismissed = false
@@ -706,6 +715,16 @@ local function RenderSettings()
         "Show checklist when targeting a delve entrance  |cFF888888(or: /dg check)|r",
         function() return DelveGuideDB.checklistEnabled end,
         function(checked) DelveGuideDB.checklistEnabled = checked end) + 8
+
+    -- In-Run HUD
+    y = y + CreateRow(cf, y, "|cFFFFD700In-Run HUD|r") + 6
+    y = y + MakeSettingCheckbox(cf, y,
+        "Auto-show HUD when inside a Delve  |cFF888888(or: /dg hud)|r",
+        function() return DelveGuideDB.hudEnabled end,
+        function(checked)
+            DelveGuideDB.hudEnabled = checked
+            if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
+        end) + 8
 
     -- Font Scale
     y = y + CreateRow(cf, y, "|cFFFFD700Font Scale|r") + 6

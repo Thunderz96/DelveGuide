@@ -142,7 +142,7 @@ end
 local function UpdateHUD()
     if not hudFrame then BuildHUD() end
 
-    if not IsInsideDelve() then
+    if not IsInsideDelve() or (DelveGuideDB and not DelveGuideDB.hudEnabled) then
         hudFrame:Hide()
         return
     end
@@ -234,11 +234,18 @@ end
 local hudEvents = CreateFrame("Frame")
 hudEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
 hudEvents:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+hudEvents:RegisterEvent("ZONE_CHANGED")
 hudEvents:RegisterEvent("PLAYER_LEAVING_WORLD")
 hudEvents:RegisterEvent("SCENARIO_CRITERIA_UPDATE")
+hudEvents:RegisterEvent("SCENARIO_COMPLETED")
 
 hudEvents:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_LEAVING_WORLD" then
+        if hudFrame then hudFrame:Hide() end
+        return
+    end
+    -- Delve completed — hide immediately, no zone check needed
+    if event == "SCENARIO_COMPLETED" then
         if hudFrame then hudFrame:Hide() end
         return
     end
