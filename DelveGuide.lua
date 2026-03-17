@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.3.1"
+local ADDON_VERSION    = "1.3.4"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -16,6 +16,7 @@ local TABS = {
     { label = "Delves",   key = "delves"   },
     { label = "Curios",   key = "curios"   },
     { label = "Loot",     key = "loot"     },
+    { label = "Nullaeus", key = "nullaeus" },
     { label = "History",  key = "history"  },
     { label = "Future",   key = "future"   },
     { label = "Roster",   key = "roster"   },
@@ -24,6 +25,32 @@ local TABS = {
 }
 
 local CHANGELOG = {
+    {
+        version = "1.3.4",
+        date    = "2026-03-17",
+        entries = {
+            "New tab: Nullaeus — dedicated Season 1 Nemesis guide",
+            "Covers location, unlock requirements, all mechanics (Umbral Rage, Oblivion Shell), phase transitions, recommended setup, tips, and rewards",
+            "Includes Beacon of Hope workflow for earning the weekly Bounty without entering Torment's Rise",
+        },
+    },
+    {
+        version = "1.3.3",
+        date    = "2026-03-17",
+        entries = {
+            "Tracking Restored Coffer Keys (item 3028) — shown in compact widget, checklist, roster, and Delves tab",
+            "Checklist: coffer key check now passes if you have a Restored Coffer Key, even without 100 shards",
+            "Roster: restored key count shown next to shard total as +(N)r",
+        },
+    },
+    {
+        version = "1.3.2",
+        date    = "2026-03-17",
+        entries = {
+            "Fixed: HUD showing in Zul'Aman overworld (seamless sub-zone name bleeding into detection)",
+            "Detection now requires C_Scenario.IsInScenario() — zone name alone is no longer sufficient",
+        },
+    },
     {
         version = "1.3.1",
         date    = "2026-03-16",
@@ -347,6 +374,9 @@ local function CacheCurrentChar()
     -- Trovehunter's Bounty in bags (item 265714)
     local bounty = C_Item.GetItemCount(265714, true) or 0
 
+    -- Restored Coffer Keys in bags (item 3028)
+    local restoredKeys = C_Item.GetItemCount(3028, true) or 0
+
     -- Weekly delves from history, matched against current reset window
     local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
     local resetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
@@ -365,8 +395,9 @@ local function CacheCurrentChar()
         realm      = realm,
         specName   = specName,
         ilvl       = ilvl,
-        shards     = shards,
-        bounty     = bounty,
+        shards       = shards,
+        restoredKeys = restoredKeys,
+        bounty       = bounty,
         delveCount = delveCount,
         vaultSlots = vaultSlots,
         lastSeen   = date("%Y-%m-%d"),
@@ -382,13 +413,15 @@ local function RenderDelves()
     local troveText=hasTroveAura and "|cFF00FF44Active|r" or (troveCount>0 and "|cFFFFFF00In Bags|r" or "|cFFFF4444None|r")
     local beaconCount=C_Item.GetItemCount(253342,true) or 0
     local beaconText=beaconCount>0 and "|cFF00FF44"..beaconCount.." in Bags|r" or "|cFFFF4444None|r"
+    local restoredKeyCount=C_Item.GetItemCount(3028,true) or 0
+    local restoredKeyText=restoredKeyCount>0 and "|cFF00FF44"..restoredKeyCount.." in Bags|r" or "|cFF888888None|r"
     local activeData,inactiveData={},{}
     for _,d in ipairs(DelveGuideData.delves) do
         if IsVariantActive(d.variant) then table.insert(activeData,d) else table.insert(inactiveData,d) end
     end
     local note=vc>0 and "  |cFF44FF44("..vc.." active today)|r" or "  |cFFAAAAAA(use /dg scan)|r"
     y=y+CreateHeader(cf,y,"Delve Rankings -- S=Fastest | F=Slowest"..note)+4
-    y=y+CreateRow(cf,y,string.format("|cFF3088FFWeekly Items:|r  Trovehunter's Bounty: %s   |   Beacon of Hope: %s",troveText,beaconText))
+    y=y+CreateRow(cf,y,string.format("|cFF3088FFWeekly Items:|r  Trovehunter's Bounty: %s   |   Beacon of Hope: %s   |   Restored Coffer Key: %s",troveText,beaconText,restoredKeyText))
     local delveCount,_,vaultActs=GetWeeklyVaultData()
     if #vaultActs>0 then
         local parts={}
@@ -526,6 +559,121 @@ local function RenderLoot()
     for _,d in ipairs(tiers) do
         y=y+CreateRow(cf,y,string.format(" %-5d %-12d |cFF00FF00%-14d|r |cFF00BFFF%d|r",d[1],d[2],d[3],d[4]))
     end; cf:SetHeight(y+20)
+end
+
+local function RenderNullaeus()
+    local cf = NewContentFrame(); local y = 10
+    EnsureFontFiles()
+
+    -- ── Header ────────────────────────────────────────────────
+    y = y + CreateHeader(cf, y, "Nullaeus  —  Season 1 Nemesis  |cFF888888(Tier ? / Tier ??)|r") + 4
+    y = y + CreateRow(cf, y,
+        "|cFF888888Domanaar, Hand of the Harbinger. The '?' and '??' tier names are intentional — " ..
+        "Blizzard masked the difficulty labels. Torment's Rise unlocked March 17 with Season 1.|r") + 8
+
+    -- ── Location ──────────────────────────────────────────────
+    y = y + CreateRow(cf, y, "|cFFFFD700Location|r") + 4
+    y = y + CreateRow(cf, y, "|cFFCCCCCC  Torment's Rise  —  Voidstorm|r") + 2
+    y = y + CreateRow(cf, y, "|cFF888888  /way #2405 61.17 71.37  (between Nexus-Point Xenas and Obscurion Citadel)|r") + 8
+
+    -- ── Unlock Requirements ───────────────────────────────────
+    y = y + CreateRow(cf, y, "|cFFFFD700Unlock Requirements|r") + 4
+    y = y + CreateRow(cf, y, "|cFFFF8800  Tier ?   |r|cFFCCCCCC Complete any Tier 7 delve with at least 1 life remaining|r") + 2
+    y = y + CreateRow(cf, y, "|cFFFF4444  Tier ??  |r|cFFCCCCCC Complete any Tier 10 delve with at least 1 life remaining|r") + 8
+
+    -- ── Beacon of Hope Shortcut ───────────────────────────────
+    y = y + CreateRow(cf, y, "|cFF00FF88Beacon of Hope  —  Skip Torment's Rise entirely|r") + 4
+    y = y + CreateRow(cf, y,
+        "|cFFCCCCCC  Purchase from |cFFFFD700Naleidea Rivergleam|r|cFFCCCCCC at Delver's HQ, Silvermoon — |cFFFFD7005,000 Undercoins|r") + 2
+    y = y + CreateRow(cf, y,
+        "|cFFCCCCCC  Use inside any standard delve |cFFFFD700after the checkpoint|r|cFFCCCCCC. " ..
+        "Nullaeus spawns — burn him to |cFF00FF8850% HP|r|cFFCCCCCC, loot the gold pile. Done.|r") + 2
+    y = y + CreateRow(cf, y,
+        "|cFFFF8800  Tip: |r|cFFCCCCCC Use on Tier 8+ for best loot scaling. Cooldown: 1 hour. Weekly Bounty: once per week.|r") + 8
+
+    -- ── Boss Mechanics ────────────────────────────────────────
+    y = y + CreateRow(cf, y, "|cFFFFD700Boss Mechanics|r") + 4
+
+    local mechanics = {
+        { name="Emptiness of the Void", color="|cFFFF4444", desc=
+            "AoE Shadow damage, ~20s cooldown. |cFFFF4444Interrupt every single cast.|r No exceptions." },
+        { name="Devouring Essence",     color="|cFFFF8800", desc=
+            "2.5s cast (Spell 1256358). Applies Shadow DoT every 2s for 18s. Interrupt or dispel via Valeera (Healer). " ..
+            "Each tick it lands builds |cFFFF4444Umbral Rage|r stacks." },
+        { name="Dread Portal",          color="|cFFBF5FFF", desc=
+            "Opens a portal: spawns add wave + applies |cFFFF4444Oblivion Shell|r (boss takes zero damage until all " ..
+            "adds are dead). Immediately AoE the adds — do not tunnel Nullaeus." },
+        { name="Umbral Rage",           color="|cFFFF4444", desc=
+            "+10% damage per stack. |cFFFF4444Never decays|r during the fight. Stacks from lingering adds and unimpeded " ..
+            "Devouring Essence ticks. This is the mechanic that kills groups — it compounds." },
+    }
+    for _, m in ipairs(mechanics) do
+        y = y + CreateRow(cf, y, m.color .. "  " .. m.name .. "|r") + 2
+        y = y + CreateRow(cf, y, "|cFF888888  " .. m.desc .. "|r") + 4
+    end
+
+    -- ── Phase Transitions ─────────────────────────────────────
+    y = y + 4
+    y = y + CreateRow(cf, y, "|cFFFFD700Phase Transitions  |cFF888888(Tier ? reference)|r") + 4
+    local phases = {
+        { hp="75%", event="2x Razorshell Ravagers spawn + first Void Orb activates (persistent arena goop)" },
+        { hp="50%", event="7x Spitting Ticks spawn + Gravity Well activates" },
+        { hp="25%", event="|cFFFF4444Enslaved Voidcaster|r appears — high HP, spams Shadow Bolt (~55k/hit)" },
+    }
+    for _, p in ipairs(phases) do
+        y = y + CreateRow(cf, y,
+            string.format("|cFF00BFFF  %-5s|r  |cFFCCCCCC%s|r", p.hp, p.event)) + 2
+    end
+    y = y + 8
+
+    -- ── Recommended Setup ─────────────────────────────────────
+    y = y + CreateRow(cf, y, "|cFFFFD700Recommended Setup|r") + 4
+    y = y + CreateRow(cf, y, "|cFF44AAFF  Companion:     |r|cFFCCCCCCValeera Sanguinar — |cFF00FF88Healer spec|r|cFFCCCCCC (dispels Devouring Essence, sustains melee)|r") + 2
+    y = y + CreateRow(cf, y, "|cFF44AAFF  Combat Curio:  |r|cFFCCCCCCPorcelain Blade Tip (burst DPS aligned with add-phase windows)|r") + 2
+    y = y + CreateRow(cf, y, "|cFF44AAFF  Utility Curio: |r|cFFCCCCCCOverflowing Voidspire (activates ~25s in, dual damage + healing value)|r") + 2
+    y = y + CreateRow(cf, y, "|cFF44AAFF  Valeera level: |r|cFFCCCCCC20+ for curio slots to be meaningful|r") + 8
+
+    -- ── Recommended ilvl ──────────────────────────────────────
+    y = y + CreateRow(cf, y, "|cFFFFD700Recommended Item Level|r") + 4
+    y = y + CreateRow(cf, y, "|cFF00FF88  Tier ?   |r|cFFCCCCCC~255 ilvl  (fresh Midnight launch gear is sufficient)|r") + 2
+    y = y + CreateRow(cf, y, "|cFFFF8800  Tier ??  |r|cFFCCCCCC272–278 ilvl  (Hero track target; 285+ Mythic gear = clean clear)|r") + 2
+    y = y + CreateRow(cf, y, "|cFF888888  Note: clean interrupt discipline compensates for roughly 10–15 ilvl of deficit.|r") + 8
+
+    -- ── Tips ──────────────────────────────────────────────────
+    y = y + CreateRow(cf, y, "|cFFFFD700Tips & Strategy|r") + 4
+    local tips = {
+        "|cFFFF4444Interrupt Emptiness of the Void every cast.|r  This is non-negotiable.",
+        "When Dread Portal fires, |cFFFFD700immediately AoE the adds.|r  Oblivion Shell makes the boss unkillable — " ..
+            "faster add clears = fewer Umbral Rage stacks.",
+        "Treat Umbral Rage as a |cFFFF4444compounding timer,|r not a soft enrage. Two missed interrupts early " ..
+            "will make the last phase unsurvivable.",
+        "The 25% Voidcaster hits hard — save a |cFF44AAFF defensive cooldown|r for that phase.",
+        "Tank specs have an inherent advantage due to white swing mitigation. Good first-clear option.",
+        "Install |cFFFFD700Deadly Boss Mods|r — Nullaeus's ability timing is consistent enough that audio " ..
+            "alerts let you pre-position interrupts rather than reacting to cast bars.",
+        "For the Beacon of Hope workflow: you only need 50% — once the gold pile spawns, |cFF00FF88you can stop fighting.|r",
+        "Save your Beacon of Hope for a |cFFFF8800Tier 8+|r delve run. The Hidden Trove loot scales with delve tier.",
+    }
+    for _, tip in ipairs(tips) do
+        y = y + CreateRow(cf, y, "|cFF888888  • |r" .. tip) + 3
+    end
+    y = y + 8
+
+    -- ── Rewards ───────────────────────────────────────────────
+    y = y + CreateRow(cf, y, "|cFFFFD700Rewards|r") + 4
+    local rewards = {
+        { label="Nullaeus Domaneye",           detail="Cosmetic helm + 30 Hero Dawncrests (outside seasonal cap)  — any difficulty kill" },
+        { label="\"the Ominous\" title",       detail="+ 30 more Hero Dawncrests — requires Tier ?? kill" },
+        { label="Arcanovoid Construct",        detail="Flying mount — solo Tier ?? clear" },
+        { label="Fabled Vanquisher of Nullaeus", detail="|cFFFF4444Region-limited to first 4,000 players|r — solo Tier ?? title, time-sensitive" },
+        { label="Dominating Victory (toy)",    detail="From the introductory questline: A Missing Member > Nulling Nullaeus" },
+    }
+    for _, r in ipairs(rewards) do
+        y = y + CreateRow(cf, y,
+            "|cFFFFD700  " .. r.label .. "  |r|cFF888888" .. r.detail .. "|r") + 2
+    end
+
+    cf:SetHeight(y + 20)
 end
 
 local function RenderFuture()
@@ -874,9 +1022,14 @@ local function RenderRoster()
                 and ("|cFF00CFFF" .. c.name .. "|r  |cFF888888" .. c.realm .. "|r")
                 or (c.name .. "  |cFF666666" .. c.realm .. "|r")
 
-            local shardsText = (c.shards or 0) >= 100
+            local rk = c.restoredKeys or 0
+            local shardsReady = (c.shards or 0) >= 100 or rk > 0
+            local shardsText = shardsReady
                 and ("|cFF00FF44" .. (c.shards or 0) .. "|r")
                 or  tostring(c.shards or 0)
+            if rk > 0 then
+                shardsText = shardsText .. " |cFFFFD700(+" .. rk .. "r)|r"
+            end
 
             local bountyText = (c.bounty or 0) > 0
                 and ("|cFF00FF44" .. (c.bounty or 0) .. "|r")
@@ -973,7 +1126,7 @@ local function RenderHistory()
     end; cf:SetHeight(y+20)
 end
 
-local tabRenderers={delves=RenderDelves,curios=RenderCurios,loot=RenderLoot,history=RenderHistory,future=RenderFuture,roster=RenderRoster,settings=RenderSettings,debug=RenderDebug}
+local tabRenderers={delves=RenderDelves,curios=RenderCurios,loot=RenderLoot,nullaeus=RenderNullaeus,history=RenderHistory,future=RenderFuture,roster=RenderRoster,settings=RenderSettings,debug=RenderDebug}
 local mainFrame,tabButtons,currentTabKey=nil,{},nil
 
 local function SwitchTab(key)
@@ -996,14 +1149,22 @@ local checklistFrame
 local function RunChecklistScan()
     local results = {}
 
-    -- 1. Coffer Key shards (100 shards = 1 key)
+    -- 1. Coffer Key shards (100 shards = 1 key) or Restored Coffer Key (item 3028)
     local keyInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
     local shards = keyInfo and keyInfo.quantity or 0
-    local hasKey = shards >= 100
+    local restoredKeys = C_Item.GetItemCount(3028, true) or 0
+    local hasKey = shards >= 100 or restoredKeys > 0
+    local keyLabel
+    if restoredKeys > 0 then
+        keyLabel = string.format("Coffer Key  |cFF00FF44(%d restored key%s + %d/600 shards)|r",
+            restoredKeys, restoredKeys > 1 and "s" or "", shards)
+    else
+        keyLabel = string.format("Coffer Key  |cFF888888(%d/600 shards)|r", shards)
+    end
     table.insert(results, {
-        label = string.format("Coffer Key  |cFF888888(%d/600 shards)|r", shards),
+        label = keyLabel,
         ok    = hasKey,
-        tip   = not hasKey and "You need at least 100 shards (1 key) to open a Bountiful Coffer." or nil,
+        tip   = not hasKey and "You need 100 shards (1 key) or a Restored Coffer Key to open a Bountiful Coffer." or nil,
     })
 
     -- 2. Trovehunter's Bounty active as an aura
@@ -1268,8 +1429,14 @@ UpdateCompactWidget = function()
     compactWidget.keysLine:ClearAllPoints()
     compactWidget.keysLine:SetPoint("TOPLEFT", compactWidget, "TOPLEFT", 8, keysY)
     compactWidget:SetHeight(W_HEADER_H + 4 + n*W_LINE_H + 6 + W_LINE_H + W_PAD)
-    local keysInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
-    compactWidget.keysLine:SetText(string.format("|cFFFFD700Keys:|r %d/600", keysInfo and keysInfo.quantity or 0))
+    local keysInfo   = C_CurrencyInfo.GetCurrencyInfo(3310)
+    local shards     = keysInfo and keysInfo.quantity or 0
+    local restored   = C_Item.GetItemCount(3028, true) or 0
+    local keysStr    = string.format("|cFFFFD700Keys:|r %d/600 shards", shards)
+    if restored > 0 then
+        keysStr = keysStr .. string.format("  |cFF00FF44+%d restored|r", restored)
+    end
+    compactWidget.keysLine:SetText(keysStr)
 end
 
 local function CreateCompactWidget()
