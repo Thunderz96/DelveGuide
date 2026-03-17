@@ -21,8 +21,11 @@ local function GetCurrentDelveName()
 end
 
 local function IsInsideDelve()
-    -- Midnight 12.0: delves use seamless zone transitions — IsInInstance() is unreliable.
-    -- Detect purely by zone name matching against known delves.
+    -- Zone name alone is unreliable for seamless delves (e.g. Atal'Aman bleeds into
+    -- the Zul'Aman overworld). Require an active scenario as a second condition.
+    local inScenario = false
+    pcall(function() inScenario = C_Scenario.IsInScenario() end)
+    if not inScenario then return false end
     return GetCurrentDelveName() ~= nil
 end
 
