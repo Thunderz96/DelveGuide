@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.3.0] - 2026-03-16
+
+### Added
+
+- In-Run HUD (`DelveGuide_HUD.lua`) — auto-shows when inside a known Delve, hides on exit
+- HUD displays: delve name, active variant + grade, tier, recommended curios, nemesis warning, bountiful status, remaining lives
+- HUD is draggable; position persists across sessions
+- HUD lock button (padlock icon) — prevents accidental repositioning; state saved across sessions
+- `/dg hud` to manually toggle the HUD (works as preview outside Delves too)
+- `/dg tier [1-11]` — manually set delve tier; persists across runs so you only need to set it once per farming session
+- Tier row shows a grayed-out `/dg tier [1-11]` hint until the player sets it
+- Tier set via `/dg tier` is saved to run history and used for Great Vault ilvl tracking
+
+### Fixed
+
+- Removed Unicode characters (⚠ ★ ✓) that rendered as squares in WoW's default font; replaced with ASCII equivalents
+
+## [1.2.2] - 2026-03-16
+
+### Added
+
+- History: each run now shows which character completed the delve
+- History: "Clear History" button with confirmation dialog
+
 ## [1.2.1] - 2026-03-16
 
 ### Fixed

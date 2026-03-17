@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.2.1"
+local ADDON_VERSION    = "1.3.0"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -24,6 +24,24 @@ local TABS = {
 }
 
 local CHANGELOG = {
+    {
+        version = "1.3.0",
+        date    = "2026-03-16",
+        entries = {
+            "In-Run HUD — auto-shows when inside a Delve, hides on exit",
+            "HUD shows: delve name, active variant + grade, tier, curio rec, nemesis warning, bountiful status",
+            "HUD is draggable and remembers its position",
+            "/dg hud — toggle the HUD manually (also works as a preview outside of Delves)",
+        },
+    },
+    {
+        version = "1.2.2",
+        date    = "2026-03-16",
+        entries = {
+            "History: each run now shows which character completed it",
+            "History: added Clear History button with confirmation",
+        },
+    },
     {
         version = "1.2.1",
         date    = "2026-03-16",
@@ -86,6 +104,7 @@ local function InitSavedVars()
     if DelveGuideDB.widgetClickOpens == nil then DelveGuideDB.widgetClickOpens = false end
     if not DelveGuideDB.widgetTiers then DelveGuideDB.widgetTiers = {S=true,A=true,B=true,C=true,D=true,F=true} end
     if DelveGuideDB.widgetLocked == nil then DelveGuideDB.widgetLocked = false end
+    if DelveGuideDB.hudLocked == nil then DelveGuideDB.hudLocked = false end
     if DelveGuideDB.checklistEnabled == nil then DelveGuideDB.checklistEnabled = true end
     -- checklistDismissed is session-only; reset on every load
     DelveGuideDB.checklistDismissed = false
@@ -115,6 +134,8 @@ end
 
 local function ScanActiveVariants()
     activeDelves, activeVariants, rawScanResults = {}, {}, {}
+    DelveGuide.activeDelves   = activeDelves
+    DelveGuide.activeVariants = activeVariants
     local knownVariants = {}
     if DelveGuideData and DelveGuideData.delves then
         for _, d in ipairs(DelveGuideData.delves) do knownVariants[d.variant] = true end
@@ -151,6 +172,9 @@ local function ScanActiveVariants()
 end
 
 local function IsVariantActive(v) return activeVariants[v]==true end
+
+-- Expose live scan data so DelveGuide_HUD.lua can read it
+DelveGuide = DelveGuide or {}
 
 local HEADER_FONT_FILE,ROW_FONT_FILE=nil,nil
 local function EnsureFontFiles()
@@ -888,6 +912,13 @@ end
 local function RenderHistory()
     local cf=NewContentFrame(); local y=10
     y=y+CreateHeader(cf,y,"Delve Run History  —  Weekly Great Vault Summary")+4
+
+    -- Clear History button
+    local clearBtn=CreateFrame("Button",nil,cf,"UIPanelButtonTemplate")
+    clearBtn:SetSize(110,22); clearBtn:SetPoint("TOPRIGHT",cf,"TOPRIGHT",-10,-8)
+    clearBtn:SetText("Clear History")
+    clearBtn:SetScript("OnClick",function() StaticPopup_Show("DELVEGUIDE_CONFIRM_CLEAR_HISTORY") end)
+
     if not DelveGuideDB.history or #DelveGuideDB.history==0 then
         y=y+CreateRow(cf,y,"|cFF888888No runs recorded yet. Go complete a Delve!|r")
     else
@@ -916,7 +947,8 @@ local function RenderHistory()
             for _,run in ipairs(runs) do
                 local tierStr=run.tier and ("  |cFF888888["..run.tier.."]|r") or ""
                 local vaultStr=run.vaultIlvl and ("  |cFFFFD700★ "..run.vaultIlvl.." ilvl|r") or ""
-                y=y+CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  |cFF00BFFF%s|r",run.date,run.name)..tierStr..vaultStr)
+                local charStr=run.char and ("|cFF00FF88"..run.char.."|r  ") or ""
+                y=y+CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  %s|cFF00BFFF%s|r",run.date,charStr,run.name)..tierStr..vaultStr)
             end
         end
     end; cf:SetHeight(y+20)
@@ -1487,7 +1519,8 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         local testName = DelveGuideData and DelveGuideData.delves and DelveGuideData.delves[1] and DelveGuideData.delves[1].name or "Test Delve"
         local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
         local resetKey = secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
-        table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610})
+        local testChar="Unknown"; pcall(function() testChar=UnitName("player") or "Unknown" end)
+        table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar})
         print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run — |cFF00FF44"..testName.."|r")
         if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
     elseif msg=="help" then
@@ -1495,6 +1528,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg|r             — Toggle window")
         print("  |cFFFFFF00/dg scan|r        — Rescan active delve variants")
         print("  |cFFFFFF00/dg minimap|r     — Toggle minimap button")
+        print("  |cFFFFFF00/dg hud|r         — Toggle in-run HUD overlay")
         print("  |cFFFFFF00/dg widget|r      — Toggle compact floating widget")
         print("  |cFFFFFF00/dg font [#]|r    — Set font scale, e.g. |cFFFFFF00/dg font 1.2|r  (0.6 – 2.0)")
         print("  |cFFFFFF00/dg map|r         — Open world map")
@@ -1502,8 +1536,22 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg roster|r      — Open Roster tab")
         print("  |cFFFFFF00/dg check|r       — Show pre-entry checklist")
         print("  |cFFFFFF00/dg checkdebug|r  — Scan auras to find Valeera role spell ID")
+        print("  |cFFFFFF00/dg tier [#]|r    — Manually set current delve tier, e.g. |cFFFFFF00/dg tier 8|r")
         print("  |cFFFFFF00/dg specinfo|r    — Show your detected spec ID (debug)")
         print("  |cFFFFFF00/dg help|r        — Show this help")
+    elseif msg:sub(1,5)=="tier " then
+        local num = tonumber(msg:sub(6))
+        if num and num >= 1 and num <= 11 then
+            DelveGuide.currentDelveTier    = tostring(num)
+            DelveGuide.currentDelveTierNum = num
+            if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
+            print("|cFF00BFFF[DelveGuide]|r Delve tier set to |cFFCCCCCC" .. num .. "|r")
+        else
+            print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg tier 3|r  (1–11)")
+        end
+    elseif msg=="hud" then
+        if DelveGuide.ToggleHUD then DelveGuide.ToggleHUD()
+        else print("|cFF00BFFF[DelveGuide]|r HUD not loaded.") end
     elseif msg=="widget" then
         DelveGuideDB.widgetHidden = not DelveGuideDB.widgetHidden
         if compactWidget then
@@ -1524,6 +1572,20 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     else DelveGuide.Toggle() end
 end
 
+StaticPopupDialogs["DELVEGUIDE_CONFIRM_CLEAR_HISTORY"] = {
+    text          = "Clear all delve run history? This cannot be undone.",
+    button1       = "Clear",
+    button2       = "Cancel",
+    OnAccept      = function()
+        DelveGuideDB.history = {}
+        RefreshCurrentTab()
+    end,
+    timeout       = 0,
+    whileDead     = true,
+    hideOnEscape  = true,
+    preferredIndex = 3,
+}
+
 StaticPopupDialogs["DELVEGUIDE_CONFIRM_REMOVE_CHAR"] = {
     text          = "Remove %s from your roster?",
     button1       = "Remove",
@@ -1542,14 +1604,23 @@ local loadFrame=CreateFrame("Frame")
 loadFrame:RegisterEvent("ADDON_LOADED"); loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 loadFrame:RegisterEvent("AREA_POIS_UPDATED"); loadFrame:RegisterEvent("SCENARIO_COMPLETED")
 loadFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED"); loadFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+loadFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 loadFrame:SetScript("OnEvent",function(self,event,arg1)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
         InitSavedVars(); CreateMinimapButton(); CreateCompactWidget()
         print("|cFF00BFFF[DelveGuide]|r Loaded! |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
         self:UnregisterEvent("ADDON_LOADED")
     elseif event=="PLAYER_ENTERING_WORLD" then
-        -- Defer C_AreaPoiInfo calls — running them inline taints the secure map frame
-        C_Timer.After(0, function() ScanActiveVariants(); UpdateCompactWidget() end)
+        -- Only rescan POIs when in the outdoor world — inside an instance the POI data is empty
+        -- and would wipe the activeVariants cache that the HUD relies on.
+        local inInst, instType = IsInInstance()
+        if not inInst then
+            DelveGuide.inDelveInstance = false
+            C_Timer.After(0, function() ScanActiveVariants(); UpdateCompactWidget() end)
+        elseif instType == "scenario" then
+            DelveGuide.inDelveInstance = true
+        end
         CacheCurrentChar()
         if mainFrame and mainFrame:IsShown() then RefreshCurrentTab() end
         if DelveGuideDB.lastSeenVersion ~= ADDON_VERSION then
@@ -1557,12 +1628,36 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             C_Timer.After(3, ShowChangelogPopup)
         end
     elseif event=="AREA_POIS_UPDATED" then
-        C_Timer.After(0, function() ScanActiveVariants(); UpdateCompactWidget() end)
+        if not IsInInstance() then
+            C_Timer.After(0, function() ScanActiveVariants(); UpdateCompactWidget() end)
+        end
         if mainFrame and mainFrame:IsShown() and currentTabKey=="delves" then SwitchTab("delves") end
     elseif event=="ACTIVE_TALENT_GROUP_CHANGED" then
         if mainFrame and mainFrame:IsShown() and currentTabKey=="curios" then SwitchTab("curios") end
     elseif event=="PLAYER_TARGET_CHANGED" then
         OnTargetChanged()
+    elseif event=="ZONE_CHANGED_NEW_AREA" then
+        -- PLAYER_ENTERING_WORLD does NOT fire on seamless delve zone transitions.
+        -- Defer IsInInstance() — at event fire time the instance state isn't settled yet.
+        C_Timer.After(1, function()
+            local inInst, instType = IsInInstance()
+            if inInst and instType == "scenario" then
+                DelveGuide.inDelveInstance = true
+                if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
+            else
+                DelveGuide.inDelveInstance = false
+                if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
+            end
+        end)
+    elseif event=="PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
+        -- arg1==3 is the delve entrance UI. No accessible tier API exists in Midnight 12.0;
+        -- tier is set manually via /dg tier N.
+        if arg1 == 3 then
+            -- Refresh HUD when player is at the entrance (outside the instance)
+            if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
+        end
+    elseif event=="UNIT_AURA" then
+        -- Reserved for future aura-based detection if Blizzard exposes tier via auras.
     elseif event=="SCENARIO_COMPLETED" then
         local scenarioName=C_Scenario.GetInfo()
         if not scenarioName then return end
@@ -1587,16 +1682,9 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             local secsUntilReset=C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
             local resetKey=secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
 
-            -- Capture delve tier from instance difficulty name
-            local tier="?"
-            local tierNum=nil
-            pcall(function()
-                local _,_,_,diffName=GetInstanceInfo()
-                if diffName and diffName~="" then
-                    tier=diffName
-                    tierNum=tonumber(diffName:match("%d+"))
-                end
-            end)
+            -- Tier set manually by player via /dg tier N (no addon API exposes it in Midnight 12.0)
+            local tier    = DelveGuide.currentDelveTier    or "?"
+            local tierNum = DelveGuide.currentDelveTierNum or nil
 
             -- Vault ilvl: look up from static table first, fall back to C_WeeklyRewards
             local vaultIlvl=nil
@@ -1617,9 +1705,12 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
                 end)
             end
 
-            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,vaultIlvl=vaultIlvl})
+            local charName="Unknown"
+            pcall(function() charName=UnitName("player") or "Unknown" end)
+
+            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,vaultIlvl=vaultIlvl,char=charName})
             if #DelveGuideDB.history>50 then table.remove(DelveGuideDB.history) end
-            local vaultStr=vaultIlvl and ("  |cFFFFD700★ "..vaultIlvl.." ilvl vault|r") or ""
+            local vaultStr=vaultIlvl and ("  |cFFFFD700[Vault: "..vaultIlvl.." ilvl]|r") or ""
             print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r  |cFF888888["..tier.."]|r"..vaultStr)
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
         end
