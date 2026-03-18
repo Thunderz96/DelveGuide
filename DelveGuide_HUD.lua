@@ -14,9 +14,13 @@ local function GetCurrentDelveName()
     local zoneName = ""
     pcall(function() zoneName = GetRealZoneText() or "" end)
     if not DelveGuideData or not DelveGuideData.delves then return nil end
+    -- Direct match (EN clients)
     for _, d in ipairs(DelveGuideData.delves) do
         if d.name == zoneName then return zoneName end
     end
+    -- Localized → English fallback (non-EN clients)
+    local l10n = DelveGuide and DelveGuide.localizedToEnglish
+    if l10n and l10n[zoneName] then return l10n[zoneName] end
     return nil
 end
 

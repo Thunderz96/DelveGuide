@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.3.7"
+local ADDON_VERSION    = "1.3.8"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -25,6 +25,16 @@ local TABS = {
 }
 
 local CHANGELOG = {
+    {
+        version = "1.3.8",
+        date    = "2026-03-18",
+        entries = {
+            "Fixed: variant detection and all badges now work on all non-English clients (KR, TW, CN, DE, FR, RU, etc.)",
+            "Variant matching uses locale-independent widget set IDs — no English text matching required",
+            "HUD now correctly detects you are inside a Delve on non-English clients",
+            "Zone names normalized to English internally so TODAY and Bountiful badges work globally",
+        },
+    },
     {
         version = "1.3.7",
         date    = "2026-03-18",
@@ -146,6 +156,20 @@ local CHANGELOG = {
 
 local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2444, 2413, 2405 }
 
+-- Widget set ID → English variant name.
+-- Set IDs are locale-independent, so this table fixes variant detection on all clients.
+-- Expand as new variants are discovered.
+local WIDGET_SET_VARIANTS = {
+    [1611] = "Invasive Glow",
+    [1738] = "Dastardly Rotstalk",
+    [1800] = "Core of the Problem",
+    [1801] = "Stolen Mana",
+    [1802] = "Totem Annihilation",
+    [1803] = "Descent of the Haranir",
+    [1804] = "Traitor's Due",
+    [1805] = "Party Crasher",
+}
+
 local ZONE_NAMES = {
     [2393] = "Silvermoon City",
     [2437] = "Zul'Aman",
@@ -178,6 +202,7 @@ local function InitSavedVars()
 end
 
 local activeDelves, activeVariants, rawScanResults = {}, {}, {}
+local localizedToEnglish = {}  -- maps localized zone name → English zone name (non-EN clients)
 local minimapBtn, currentAngle, compactWidget, UpdateCompactWidget, RefreshCurrentTab
 
 local function ReadVariantFromWidgetSet(setID)
@@ -197,9 +222,10 @@ local function ReadVariantFromWidgetSet(setID)
 end
 
 local function ScanActiveVariants()
-    activeDelves, activeVariants, rawScanResults = {}, {}, {}
-    DelveGuide.activeDelves   = activeDelves
-    DelveGuide.activeVariants = activeVariants
+    activeDelves, activeVariants, rawScanResults, localizedToEnglish = {}, {}, {}, {}
+    DelveGuide.activeDelves        = activeDelves
+    DelveGuide.activeVariants      = activeVariants
+    DelveGuide.localizedToEnglish  = localizedToEnglish
     local knownVariants = {}
     if DelveGuideData and DelveGuideData.delves then
         for _, d in ipairs(DelveGuideData.delves) do knownVariants[d.variant] = true end
@@ -221,14 +247,28 @@ local function ScanActiveVariants()
                     local atlasName = info.atlasName or ""
                     local variantName,isBountiful,hasNemesis=nil,false,false
                     if atlasName:find("bountiful",1,true) then isBountiful=true end
+                    -- Variant detection: set ID first (locale-independent), then text fallback
+                    variantName = WIDGET_SET_VARIANTS[widgetSetID]
                     for _, t in ipairs(widgetTexts) do
                         local clean=t:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
                         if string.find(clean,"Nemesis",1,true) then hasNemesis=true end
-                        for kVariant in pairs(knownVariants) do
-                            if string.find(clean,kVariant,1,true) then variantName=kVariant end
+                        if not variantName then
+                            for kVariant in pairs(knownVariants) do
+                                if string.find(clean,kVariant,1,true) then variantName=kVariant end
+                            end
                         end
                     end
-                    if delveName~="" then activeDelves[delveName]={bountiful=isBountiful,nemesis=hasNemesis} end
+                    -- Key activeDelves by English zone name so lookups work on all locales
+                    local engZoneName = delveName
+                    if variantName and DelveGuideData and DelveGuideData.delves then
+                        for _, d in ipairs(DelveGuideData.delves) do
+                            if d.variant == variantName then engZoneName = d.name; break end
+                        end
+                    end
+                    if engZoneName~="" then
+                        activeDelves[engZoneName]={bountiful=isBountiful,nemesis=hasNemesis}
+                        if delveName~=engZoneName then localizedToEnglish[delveName]=engZoneName end
+                    end
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name=delveName,widgetSetID=tostring(widgetSetID),
                         atlasName=atlasName,widgetTexts=widgetTexts,variantName=variantName or "(not found)"})

@@ -93,12 +93,6 @@ Session log of completed Delves — timestamps, character names, and variant det
 
 ---
 
-## ⚠️ Known Issues
-
-- **Non-English clients (KR, TW, CN, etc.):** Variant detection and the `* TODAY` / `[Bountiful]` indicators do not work on localized clients. The addon relies on English zone and variant name matching internally — on non-English clients, `/dg scan` will return empty results and the Debug tab will show no data. This is a localization architecture issue; a proper fix requires a refactor. Planned for a future update.
-
----
-
 ## 📋 Requirements
 
 - **No dependencies required** — works out of the box
