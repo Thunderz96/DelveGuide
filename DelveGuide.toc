@@ -2,7 +2,7 @@
 ## Title: DelveGuide
 ## Notes: A reference guide for Midnight Delves - rankings, curios, loot, and more.
 ## Author: Thunderz
-## Version: 1.3.4
+## Version: 1.3.5
 ## X-Curse-Project-ID: 1481287
 ## SavedVariables: DelveGuideDB
 

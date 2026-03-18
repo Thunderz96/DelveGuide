@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.3.4"
+local ADDON_VERSION    = "1.3.5"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -25,6 +25,14 @@ local TABS = {
 }
 
 local CHANGELOG = {
+    {
+        version = "1.3.5",
+        date    = "2026-03-17",
+        entries = {
+            "Settings: added toggle to disable the What's New changelog popup on login",
+            "Changelog popup can still be opened manually via the View Changelog button in Settings",
+        },
+    },
     {
         version = "1.3.4",
         date    = "2026-03-17",
@@ -142,6 +150,7 @@ local function InitSavedVars()
     if DelveGuideDB.hudLocked == nil then DelveGuideDB.hudLocked = false end
     if DelveGuideDB.hudEnabled == nil then DelveGuideDB.hudEnabled = true end
     if DelveGuideDB.checklistEnabled == nil then DelveGuideDB.checklistEnabled = true end
+    if DelveGuideDB.showChangelog == nil then DelveGuideDB.showChangelog = true end
     -- checklistDismissed is session-only; reset on every load
     DelveGuideDB.checklistDismissed = false
     if not DelveGuideDB.roster then DelveGuideDB.roster = {} end
@@ -905,7 +914,11 @@ local function RenderSettings()
     y = y + 30 + 16
 
     -- Changelog
-    y = y + CreateRow(cf, y, "|cFFFFD700About|r") + 6
+    y = y + CreateRow(cf, y, "|cFFFFD700Changelog|r") + 6
+    y = y + MakeSettingCheckbox(cf, y,
+        "Show What's New popup on version update",
+        function() return DelveGuideDB.showChangelog end,
+        function(checked) DelveGuideDB.showChangelog = checked end) + 4
     local clBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
     clBtn:SetSize(160, 26); clBtn:SetText("View Changelog")
     clBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
@@ -1811,7 +1824,9 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
         if mainFrame and mainFrame:IsShown() then RefreshCurrentTab() end
         if DelveGuideDB.lastSeenVersion ~= ADDON_VERSION then
             DelveGuideDB.lastSeenVersion = ADDON_VERSION
-            C_Timer.After(3, ShowChangelogPopup)
+            if DelveGuideDB.showChangelog then
+                C_Timer.After(3, ShowChangelogPopup)
+            end
         end
     elseif event=="AREA_POIS_UPDATED" then
         if not IsInInstance() then
