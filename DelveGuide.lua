@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.3.5"
+local ADDON_VERSION    = "1.3.6"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -25,6 +25,16 @@ local TABS = {
 }
 
 local CHANGELOG = {
+    {
+        version = "1.3.6",
+        date    = "2026-03-17",
+        entries = {
+            "Bountiful detection now uses atlas name (reliable, no map hover required)",
+            "Delves tab: active bountiful delves show a gold [Bountiful] badge",
+            "Compact widget: bountiful variants marked with gold [B]",
+            "Debug tab: atlasName now shown per POI to aid future detection work",
+        },
+    },
     {
         version = "1.3.5",
         date    = "2026-03-17",
@@ -193,10 +203,12 @@ local function ScanActiveVariants()
                 if info then
                     local delveName=info.name or ""; local widgetSetID=info.tooltipWidgetSet or 0
                     local widgetTexts=ReadVariantFromWidgetSet(widgetSetID)
+                    local atlasName = info.atlasName or ""
                     local variantName,isBountiful,hasNemesis=nil,false,false
+                    -- Bountiful detection: atlas-based (reliable, no hover needed)
+                    if atlasName:find("bountiful",1,true) then isBountiful=true end
                     for _, t in ipairs(widgetTexts) do
                         local clean=t:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
-                        if string.find(clean,"Bountiful",1,true) then isBountiful=true end
                         if string.find(clean,"Nemesis",1,true) then hasNemesis=true end
                         for kVariant in pairs(knownVariants) do
                             if string.find(clean,kVariant,1,true) then variantName=kVariant end
@@ -205,6 +217,7 @@ local function ScanActiveVariants()
                     if delveName~="" then activeDelves[delveName]={bountiful=isBountiful,nemesis=hasNemesis} end
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name=delveName,widgetSetID=tostring(widgetSetID),
+                        atlasName=info.atlasName or "(nil)",
                         widgetTexts=widgetTexts,variantName=variantName or "(not found)"})
                     if variantName and variantName~="" then activeVariants[variantName]=true end
                 end
@@ -308,15 +321,19 @@ local function CreateDelveRow(parent,y,d)
     if d.hasBug then flags=flags.."|cFFFF4444[Bug]|r " end
     if d.mountable then flags=flags.."|cFFFFD700[Mt]|r " end
     local delveStatus=activeDelves[d.name]
-    if type(delveStatus)=="table" then
-        if delveStatus.bountiful then flags=flags.."|cFFFFFF00[Bountiful]|r " end
-        if delveStatus.nemesis then flags=flags.."|cFFFF4444[Nemesis]|r " end
-    end
+    local isBountiful=type(delveStatus)=="table" and delveStatus.bountiful
+    if type(delveStatus)=="table" and delveStatus.nemesis then flags=flags.."|cFFFF4444[Nemesis]|r " end
     local infoFS=parent:CreateFontString(nil,"OVERLAY"); infoFS:SetFont(ROW_FONT_FILE,rSize)
-    infoFS:SetPoint("TOPLEFT",parent,"TOPLEFT",220,-y); infoFS:SetWidth(rowW-310); infoFS:SetJustifyH("LEFT")
+    infoFS:SetPoint("TOPLEFT",parent,"TOPLEFT",220,-y)
+    infoFS:SetWidth(isBountiful and (rowW-420) or (rowW-310)); infoFS:SetJustifyH("LEFT")
     infoFS:SetText(ZoneColor(d.zone).."  "..variantText.."  "..flags)
+    if isBountiful then
+        local bountyFS=parent:CreateFontString(nil,"OVERLAY"); bountyFS:SetFont(ROW_FONT_FILE,rSize)
+        bountyFS:SetPoint("TOPLEFT",parent,"TOPLEFT",rowW-190,-y); bountyFS:SetJustifyH("LEFT")
+        bountyFS:SetText("|cFFFFD700[Bountiful]|r")
+    end
     if active then
-        local todayFS=parent:CreateFontString(nil,"OVERLAY"); todayFS:SetFont(ROW_FONT_FILE,rSize,"OUTLINE")
+        local todayFS=parent:CreateFontString(nil,"OVERLAY"); todayFS:SetFont(ROW_FONT_FILE,rSize)
         todayFS:SetPoint("TOPLEFT",parent,"TOPLEFT",rowW-80,-y); todayFS:SetJustifyH("LEFT")
         todayFS:SetText("|cFF00FF44* TODAY|r")
     end
@@ -944,6 +961,7 @@ local function RenderDebug()
             y=y+4
             local vColor=(r.variantName=="(not found)" or r.variantName=="(nil)") and "|cFFFF4444" or "|cFF44FF44"
             y=y+CreateRow(cf,y,string.format("|cFFFFD700%-24s|r  set=%-6s  -> %s%s|r",r.name,r.widgetSetID,vColor,r.variantName))
+            y=y+CreateRow(cf,y,string.format("   |cFF666666atlas: |cFFAAAAAA%s|r",r.atlasName or "(nil)"))
             if r.widgetTexts and #r.widgetTexts>0 then
                 for _,t in ipairs(r.widgetTexts) do y=y+CreateRow(cf,y,"   |cFF888888> "..t.."|r") end
             else y=y+CreateRow(cf,y,"   |cFF555555(no texts in widget set)|r") end
@@ -1429,7 +1447,9 @@ UpdateCompactWidget = function()
                 local rc = RANK_COLORS[e.ranking] or "|cFFFFFFFF"
                 local pin = FindPinByName(e.delve)
                 local nameText = pin and ("|cFF00CFFF"..e.variant.."|r") or e.variant
-                line.label:SetText(rc.."["..e.ranking.."]|r  "..nameText)
+                local ds = activeDelves[e.delve]
+                local bountyTag = (type(ds)=="table" and ds.bountiful) and "  |cFFFFD700[B]|r" or ""
+                line.label:SetText(rc.."["..e.ranking.."]|r  "..nameText..bountyTag)
                 line.pin = pin
                 line:ClearAllPoints()
                 line:SetPoint("TOPLEFT", compactWidget, "TOPLEFT", 8, -(W_HEADER_H+4+(i-1)*W_LINE_H))
