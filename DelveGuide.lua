@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.3.6"
+local ADDON_VERSION    = "1.3.7"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -25,6 +25,15 @@ local TABS = {
 }
 
 local CHANGELOG = {
+    {
+        version = "1.3.7",
+        date    = "2026-03-18",
+        entries = {
+            "Debug tab: now shows per-map-ID scan status even when results are empty",
+            "Debug tab: clear messaging when map IDs return no POIs (helps diagnose non-English client issues)",
+            "New command: /dg chatdump — prints full scan results to chat for easy copy-paste sharing",
+        },
+    },
     {
         version = "1.3.6",
         date    = "2026-03-17",
@@ -197,7 +206,13 @@ local function ScanActiveVariants()
     end
     for _, mapID in ipairs(ALL_ZONE_MAP_IDS) do
         local poiIDs = C_AreaPoiInfo.GetDelvesForMap(mapID)
-        if poiIDs then
+        if poiIDs == nil then
+            table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
+                poiID="N/A",name="(GetDelvesForMap returned nil)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
+        elseif #poiIDs == 0 then
+            table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
+                poiID="N/A",name="(GetDelvesForMap returned empty — map IDs may not match this region)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
+        else
             for _, poiID in ipairs(poiIDs) do
                 local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
                 if info then
@@ -205,7 +220,6 @@ local function ScanActiveVariants()
                     local widgetTexts=ReadVariantFromWidgetSet(widgetSetID)
                     local atlasName = info.atlasName or ""
                     local variantName,isBountiful,hasNemesis=nil,false,false
-                    -- Bountiful detection: atlas-based (reliable, no hover needed)
                     if atlasName:find("bountiful",1,true) then isBountiful=true end
                     for _, t in ipairs(widgetTexts) do
                         local clean=t:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
@@ -217,14 +231,13 @@ local function ScanActiveVariants()
                     if delveName~="" then activeDelves[delveName]={bountiful=isBountiful,nemesis=hasNemesis} end
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name=delveName,widgetSetID=tostring(widgetSetID),
-                        atlasName=info.atlasName or "(nil)",
-                        widgetTexts=widgetTexts,variantName=variantName or "(not found)"})
+                        atlasName=atlasName,widgetTexts=widgetTexts,variantName=variantName or "(not found)"})
                     if variantName and variantName~="" then activeVariants[variantName]=true end
+                else
+                    table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
+                        poiID=poiID,name="(GetAreaPOIInfo returned nil)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
                 end
             end
-        else
-            table.insert(rawScanResults,{mapID="",zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
-                poiID="N/A",name="(GetDelvesForMap returned nil)",widgetSetID="0",widgetTexts={},variantName="(nil)"})
         end
     end
 end
@@ -948,25 +961,62 @@ end
 local function RenderDebug()
     local cf=NewContentFrame(); local y=10
     y=y+CreateHeader(cf,y,"DEBUG -- Variant Detection Results")+4
-    y=y+CreateRow(cf,y,"|cFFFFFF00/dg scan refreshes | /dg dump prints raw API fields to chat|r")+8
-    if #rawScanResults==0 then y=y+CreateRow(cf,y,"|cFFFF4444No data -- type /dg scan first.|r")
+    y=y+CreateRow(cf,y,"|cFFFFFF00/dg scan refreshes results  |  /dg chatdump prints all data to chat|r")+8
+
+    -- Map ID status summary (always shown, even if scan returned nothing useful)
+    y=y+CreateRow(cf,y,"|cFFFFD700-- Map ID Scan Status --|r")+4
+    local mapSeen={}
+    for _,r in ipairs(rawScanResults) do
+        if r.mapID and r.mapID~="" and not mapSeen[r.mapID] then
+            mapSeen[r.mapID]=true
+        end
+    end
+    if #rawScanResults==0 then
+        y=y+CreateRow(cf,y,"|cFFFF4444No results at all -- /dg scan has not been run, or all map IDs returned empty.|r")
+        y=y+CreateRow(cf,y,"|cFFAAAAAA  Checked map IDs: "..table.concat(ALL_ZONE_MAP_IDS,", ").."|r")
     else
+        for _,mapID in ipairs(ALL_ZONE_MAP_IDS) do
+            local found,total=0,0
+            for _,r in ipairs(rawScanResults) do
+                if r.mapID==mapID then
+                    total=total+1
+                    if r.name~="" and not r.name:find("returned") then found=found+1 end
+                end
+            end
+            local col=found>0 and "|cFF44FF44" or "|cFFFF4444"
+            local label=ZONE_NAMES[mapID] or ("mapID "..mapID)
+            y=y+CreateRow(cf,y,string.format("  %smapID %-6d  %-20s  %d POI(s)|r",col,mapID,label,found))
+        end
+    end
+
+    y=y+8
+    if #rawScanResults>0 then
         local vc=0; for _ in pairs(activeVariants) do vc=vc+1 end
         local vcColor=vc>0 and "|cFF44FF44" or "|cFFFF4444"
-        y=y+CreateRow(cf,y,string.format("%s%d variant(s) detected today:|r",vcColor,vc))
-        if vc==0 then y=y+CreateRow(cf,y,"|cFFFF4444  Widget texts empty -- hover a delve on the map then /dg scan.|r")
-        else for v in pairs(activeVariants) do y=y+CreateRow(cf,y,"|cFF44FF44  + "..v.."|r") end end
-        y=y+8; y=y+CreateRow(cf,y,"|cFFFFD700-- Per-Delve Widget Texts --|r")
+        y=y+CreateRow(cf,y,string.format("%s%d variant(s) matched today:|r",vcColor,vc))
+        if vc==0 then
+            y=y+CreateRow(cf,y,"|cFFFF4444  No variants matched. On non-English clients, widget text will be localized.|r")
+            y=y+CreateRow(cf,y,"|cFFAAAAAA  Use /dg chatdump and share output to help add localization support.|r")
+        else
+            for v in pairs(activeVariants) do y=y+CreateRow(cf,y,"|cFF44FF44  + "..v.."|r") end
+        end
+
+        y=y+8; y=y+CreateRow(cf,y,"|cFFFFD700-- Raw Per-Delve Data --|r")
         for _,r in ipairs(rawScanResults) do
             y=y+4
+            local isErr=r.name=="" or r.name:find("returned")
+            local nColor=isErr and "|cFFFF4444" or "|cFFFFD700"
             local vColor=(r.variantName=="(not found)" or r.variantName=="(nil)") and "|cFFFF4444" or "|cFF44FF44"
-            y=y+CreateRow(cf,y,string.format("|cFFFFD700%-24s|r  set=%-6s  -> %s%s|r",r.name,r.widgetSetID,vColor,r.variantName))
-            y=y+CreateRow(cf,y,string.format("   |cFF666666atlas: |cFFAAAAAA%s|r",r.atlasName or "(nil)"))
+            y=y+CreateRow(cf,y,string.format("%s%-26s|r  set=%-6s  -> %s%s|r",nColor,r.name,r.widgetSetID,vColor,r.variantName))
+            y=y+CreateRow(cf,y,string.format("   |cFF666666atlas:|r |cFFAAAAAA%s|r",r.atlasName~="" and r.atlasName or "(none)"))
             if r.widgetTexts and #r.widgetTexts>0 then
                 for _,t in ipairs(r.widgetTexts) do y=y+CreateRow(cf,y,"   |cFF888888> "..t.."|r") end
-            else y=y+CreateRow(cf,y,"   |cFF555555(no texts in widget set)|r") end
+            else
+                y=y+CreateRow(cf,y,"   |cFF555555(no widget texts)|r")
+            end
         end
-    end; cf:SetHeight(y+20)
+    end
+    cf:SetHeight(y+20)
 end
 
 local function RenderRoster()
@@ -1670,6 +1720,26 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             local list={}; for v in pairs(activeVariants) do table.insert(list,v) end
             print("|cFF00BFFF[DelveGuide]|r Active variants: "..table.concat(list,", "))
         end
+    elseif msg=="chatdump" then
+        print("|cFF00BFFF[DelveGuide]|r === LOCALIZATION DUMP (share this output) ===")
+        print("Version: "..ADDON_VERSION.."  |  Locale: "..(GetLocale and GetLocale() or "unknown"))
+        if #rawScanResults==0 then
+            print("|cFFFF4444No scan data. Run /dg scan first.|r")
+            print("Checked map IDs: "..table.concat(ALL_ZONE_MAP_IDS,", "))
+        else
+            for _,r in ipairs(rawScanResults) do
+                print(string.format("mapID=%s  poiID=%s  name=[%s]  atlas=[%s]  set=%s",
+                    tostring(r.mapID),tostring(r.poiID),tostring(r.name),tostring(r.atlasName),tostring(r.widgetSetID)))
+                if r.widgetTexts and #r.widgetTexts>0 then
+                    for i,t in ipairs(r.widgetTexts) do
+                        print(string.format("  text[%d]=[%s]",i,t))
+                    end
+                else
+                    print("  (no widget texts)")
+                end
+            end
+        end
+        print("|cFF00BFFF[DelveGuide]|r === END ===")
     elseif msg=="dump" then
         print("|cFF00BFFF[DelveGuide]|r === RAW POI FIELD DUMP ===")
         local found=0
@@ -1752,6 +1822,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg font [#]|r    — Set font scale, e.g. |cFFFFFF00/dg font 1.2|r  (0.6 – 2.0)")
         print("  |cFFFFFF00/dg map|r         — Open world map")
         print("  |cFFFFFF00/dg dump|r        — Print raw POI data (debug)")
+        print("  |cFFFFFF00/dg chatdump|r    — Print full scan results to chat (for localization reports)")
         print("  |cFFFFFF00/dg roster|r      — Open Roster tab")
         print("  |cFFFFFF00/dg check|r       — Show pre-entry checklist")
         print("  |cFFFFFF00/dg checkdebug|r  — Scan auras to find Valeera role spell ID")
