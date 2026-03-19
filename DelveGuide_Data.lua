@@ -337,3 +337,147 @@ DelveGuideData.gradeColors = {
     D = "|cFFFF6600",
     F = "|cFFFF0000",
 }
+-- ============================================================
+-- SECTION 8: CHANGELOG
+-- ============================================================
+DelveGuideData.changelog = {
+    {
+        version = "1.4.0",
+        date    = "2026-03-19",
+        entries = {
+            "Massive architecture refactor: extracted all 9 UI tabs into separate modules for better performance and maintainability.",
+            "Added native LibDataBroker (LDB) support for the minimap button (supports Titan Panel, ElvUI, Bazooka, etc.).",
+            "Added native TomTom support for all delve and nemesis waypoints.",
+            "Loot Tab: Added native WoW item icons to all trinket and weapon rows.",
+            "Roster Tab: Added class/spec icons to the character list.",
+            "Roster Tab: Added interactive hover tooltips showing exact delve runs and highest Great Vault item level unlocked.",
+        },
+    },
+    {
+        version = "1.3.8",
+        date    = "2026-03-18",
+        entries = {
+            "Fixed: variant detection and all badges now work on all non-English clients (KR, TW, CN, DE, FR, RU, etc.)",
+            "Variant matching uses locale-independent widget set IDs — no English text matching required",
+            "HUD now correctly detects you are inside a Delve on non-English clients",
+            "Zone names normalized to English internally so TODAY and Bountiful badges work globally",
+        },
+    },
+    {
+        version = "1.3.7",
+        date    = "2026-03-18",
+        entries = {
+            "Debug tab: now shows per-map-ID scan status even when results are empty",
+            "Debug tab: clear messaging when map IDs return no POIs (helps diagnose non-English client issues)",
+            "New command: /dg chatdump — prints full scan results to chat for easy copy-paste sharing",
+        },
+    },
+    {
+        version = "1.3.6",
+        date    = "2026-03-17",
+        entries = {
+            "Bountiful detection now uses atlas name (reliable, no map hover required)",
+            "Delves tab: active bountiful delves show a gold [Bountiful] badge",
+            "Compact widget: bountiful variants marked with gold [B]",
+            "Debug tab: atlasName now shown per POI to aid future detection work",
+        },
+    },
+    {
+        version = "1.3.5",
+        date    = "2026-03-17",
+        entries = {
+            "Settings: added toggle to disable the What's New changelog popup on login",
+            "Changelog popup can still be opened manually via the View Changelog button in Settings",
+        },
+    },
+    {
+        version = "1.3.4",
+        date    = "2026-03-17",
+        entries = {
+            "New tab: Nullaeus — dedicated Season 1 Nemesis guide",
+            "Covers location, unlock requirements, all mechanics (Umbral Rage, Oblivion Shell), phase transitions, recommended setup, tips, and rewards",
+            "Includes Beacon of Hope workflow for earning the weekly Bounty without entering Torment's Rise",
+        },
+    },
+    {
+        version = "1.3.3",
+        date    = "2026-03-17",
+        entries = {
+            "Tracking Restored Coffer Keys (item 3028) — shown in compact widget, checklist, roster, and Delves tab",
+            "Checklist: coffer key check now passes if you have a Restored Coffer Key, even without 100 shards",
+            "Roster: restored key count shown next to shard total as +(N)r",
+        },
+    },
+    {
+        version = "1.3.2",
+        date    = "2026-03-17",
+        entries = {
+            "Fixed: HUD showing in Zul'Aman overworld (seamless sub-zone name bleeding into detection)",
+            "Detection now requires C_Scenario.IsInScenario() — zone name alone is no longer sufficient",
+        },
+    },
+    {
+        version = "1.3.1",
+        date    = "2026-03-16",
+        entries = {
+            "Fixed: HUD now closes on delve completion (SCENARIO_COMPLETED + ZONE_CHANGED events)",
+            "Settings: added HUD enable/disable toggle",
+        },
+    },
+    {
+        version = "1.3.0",
+        date    = "2026-03-16",
+        entries = {
+            "In-Run HUD — auto-shows when inside a Delve, hides on exit",
+            "HUD shows: delve name, active variant + grade, tier, curio rec, nemesis warning, bountiful status",
+            "HUD is draggable and remembers its position",
+            "/dg hud — toggle the HUD manually (also works as a preview outside of Delves)",
+        },
+    },
+    {
+        version = "1.2.2",
+        date    = "2026-03-16",
+        entries = {
+            "History: each run now shows which character completed it",
+            "History: added Clear History button with confirmation",
+        },
+    },
+    {
+        version = "1.2.1",
+        date    = "2026-03-16",
+        entries = {
+            "Fixed: opening world map no longer triggers ADDON_ACTION_BLOCKED (SetPassThroughButtons taint)",
+            "Waypoint click now sets the pin silently — press M to open your map and navigate",
+        },
+    },
+    {
+        version = "1.2.0",
+        date    = "2026-03-15",
+        entries = {
+            "Roster tab — track all level-80+ alts' weekly delves, shards, ilvl, and vault slots",
+            "Roster: per-character remove button with confirmation dialog",
+            "Fixed: targeting a delve entrance no longer triggers a taint error",
+        },
+    },
+    {
+        version = "1.1.0",
+        date    = "2026-03-14",
+        entries = {
+            "Settings tab — minimap, compact widget, tier filter, font scale",
+            "Compact floating widget with tier filter and lock button",
+            "Clickable delve names open the map and set a waypoint",
+            "Loot tab item tooltips on hover",
+            "Weekly reset timer and Great Vault tracker in the header",
+            "Coffer Key shard tracker in the header bar",
+            "/dg help command listing all slash commands",
+        },
+    },
+    {
+        version = "1.0.0",
+        date    = "2026-03-01",
+        entries = {
+            "Initial release — delve rankings, curio DB, loot tables, run history",
+            "Active variant scanner, minimap button, font scale setting",
+        },
+    },
+}

@@ -1,11 +1,27 @@
 ## Interface: 120000, 120001
 ## Title: DelveGuide
 ## Notes: A reference guide for Midnight Delves - rankings, curios, loot, and more.
+## IconTexture: Interface\Icons\INV_Misc_Map09
 ## Author: Thunderz
-## Version: 1.3.8
+## Version: 1.4.0
 ## X-Curse-Project-ID: 1481287
 ## SavedVariables: DelveGuideDB
+## OptionalDeps: TomTom
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 
 DelveGuide_Data.lua
 DelveGuide.lua
+DelveGuide_UI_Loot.lua
+DelveGuide_UI_Debug.lua
 DelveGuide_HUD.lua
+DelveGuide_UI_Roster.lua
+DelveGuide_UI_Delves.lua
+DelveGuide_UI_Curios.lua
+DelveGuide_UI_Nullaeus.lua
+DelveGuide_UI_Future.lua
+DelveGuide_UI_History.lua
+DelveGuide_UI_Settings.lua
