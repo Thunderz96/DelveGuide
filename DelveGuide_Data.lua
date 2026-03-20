@@ -342,6 +342,14 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.4.1",
+        date    = "2026-03-20",
+        entries = {
+            "Fixed: variant detection was showing wrong active variants for each delve due to widget set IDs being per-delve, not per-variant.",
+            "Widget auto-hide: compact widget can now fade out when not hovered (toggle in Settings).",
+        },
+    },
+    {
         version = "1.4.0",
         date    = "2026-03-19",
         entries = {

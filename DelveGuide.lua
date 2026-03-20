@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.3.8"
+local ADDON_VERSION    = "1.4.1"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -26,18 +26,18 @@ local TABS = {
 
 local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2444, 2413, 2405 }
 
--- Widget set ID → English variant name.
--- Set IDs are locale-independent, so this table fixes variant detection on all clients.
--- Expand as new variants are discovered.
-local WIDGET_SET_VARIANTS = {
-    [1611] = "Invasive Glow",
-    [1738] = "Dastardly Rotstalk",
-    [1800] = "Core of the Problem",
-    [1801] = "Stolen Mana",
-    [1802] = "Totem Annihilation",
-    [1803] = "Descent of the Haranir",
-    [1804] = "Traitor's Due",
-    [1805] = "Party Crasher",
+-- Widget set ID → English DELVE name (not variant name).
+-- Set IDs are per-delve-entrance and their text content changes daily.
+-- Used only to resolve localized delve names → English names on non-EN clients.
+local WIDGET_SET_DELVES = {
+    [1611] = "Collegiate Calamity",
+    [1738] = "The Grudge Pit",
+    [1800] = "Sunkiller Sanctum",
+    [1801] = "Shadowguard Point",
+    [1802] = "Atal'Aman",
+    [1803] = "The Gulf of Memory",
+    [1804] = "The Shadow Enclave",
+    [1805] = "Twilight Crypts",
 }
 
 local ZONE_NAMES = {
@@ -75,7 +75,7 @@ end
 
 local activeDelves, activeVariants, rawScanResults = {}, {}, {}
 local localizedToEnglish = {}  -- maps localized zone name → English zone name (non-EN clients)
-local minimapBtn, currentAngle, compactWidget, UpdateCompactWidget, RefreshCurrentTab
+local minimapBtn, currentAngle, RefreshCurrentTab, icon
 
 local function ReadVariantFromWidgetSet(setID)
     if not setID or setID == 0 then return {} end
@@ -120,8 +120,7 @@ local function ScanActiveVariants()
                     local atlasName = info.atlasName or ""
                     local variantName,isBountiful,hasNemesis=nil,false,false
                     if atlasName:find("bountiful",1,true) then isBountiful=true end
-                    -- Variant detection: set ID first (locale-independent), then text fallback
-                    variantName = WIDGET_SET_VARIANTS[widgetSetID]
+                    -- Variant detection: text matching first (reads today's actual widget text)
                     for _, t in ipairs(widgetTexts) do
                         local clean=t:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
                         if string.find(clean,"Nemesis",1,true) then hasNemesis=true end
@@ -131,9 +130,14 @@ local function ScanActiveVariants()
                             end
                         end
                     end
-                    -- Key activeDelves by English zone name so lookups work on all locales
+                    -- Key activeDelves by English zone name so lookups work on all locales.
+                    -- For EN clients, info.name is already English.
+                    -- For non-EN clients, use widget set ID → delve name mapping as fallback.
                     local engZoneName = delveName
-                    if variantName and DelveGuideData and DelveGuideData.delves then
+                    local delveFromSetID = WIDGET_SET_DELVES[widgetSetID]
+                    if delveFromSetID then
+                        engZoneName = delveFromSetID
+                    elseif variantName and DelveGuideData and DelveGuideData.delves then
                         for _, d in ipairs(DelveGuideData.delves) do
                             if d.variant == variantName then engZoneName = d.name; break end
                         end
@@ -446,9 +450,9 @@ DelveGuide.UI = {
     ShowChangelogPopup = ShowChangelogPopup,
     RefreshCurrentTab  = function() if RefreshCurrentTab then RefreshCurrentTab() end end,
     UpdateMinimap      = function() if icon then if DelveGuideDB.minimap.hide then icon:Hide("DelveGuide") else icon:Show("DelveGuide") end end end,
-    UpdateWidgetVis    = function() if compactWidget then if DelveGuideDB.widgetHidden then compactWidget:Hide() else compactWidget:Show() end end end,
-    UpdateWidgetAlpha  = function() if compactWidget then compactWidget:SetAlpha(DelveGuideDB.widgetAutoHide and 0.15 or 1.0) end end,
-    UpdateCompactWidget= function() if UpdateCompactWidget then UpdateCompactWidget() end end,
+    UpdateWidgetVis    = function() if DelveGuide.compactWidget then if DelveGuideDB.widgetHidden then DelveGuide.compactWidget:Hide() else DelveGuide.compactWidget:Show() end end end,
+    UpdateWidgetAlpha  = function() if DelveGuide.compactWidget then DelveGuide.compactWidget:SetAlpha(DelveGuideDB.widgetAutoHide and 0.15 or 1.0) end end,
+    UpdateCompactWidget= function() if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end end,
 }
 
 local tabRenderers = {}
@@ -480,185 +484,6 @@ local function SwitchTab(key)
 end
 
 RefreshCurrentTab = function() if currentTabKey then SwitchTab(currentTabKey) end end
-
--- ============================================================
--- PRE-ENTRY CHECKLIST
--- ============================================================
-local checklistFrame
-
-local function RunChecklistScan()
-    local results = {}
-
-    -- 1. Coffer Key shards (100 shards = 1 key) or Restored Coffer Key (item 3028)
-    local keyInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
-    local shards = keyInfo and keyInfo.quantity or 0
-    local restoredKeys = C_Item.GetItemCount(3028, true) or 0
-    local hasKey = shards >= 100 or restoredKeys > 0
-    local keyLabel
-    if restoredKeys > 0 then
-        keyLabel = string.format("Coffer Key  |cFF00FF44(%d restored key%s + %d/600 shards)|r",
-            restoredKeys, restoredKeys > 1 and "s" or "", shards)
-    else
-        keyLabel = string.format("Coffer Key  |cFF888888(%d/600 shards)|r", shards)
-    end
-    table.insert(results, {
-        label = keyLabel,
-        ok    = hasKey,
-        tip   = not hasKey and "You need 100 shards (1 key) or a Restored Coffer Key to open a Bountiful Coffer." or nil,
-    })
-
-    -- 2. Trovehunter's Bounty active as an aura
-    local hasBountyAura = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
-        and C_UnitAuras.GetPlayerAuraBySpellID(1254631) ~= nil
-    -- 3. Trovehunter's Bounty in bags (fallback check)
-    local bountyCount = C_Item.GetItemCount(265714, true) or 0
-    if hasBountyAura then
-        table.insert(results, { label="Trovehunter's Bounty  |cFF00FF44(Active)|r", ok=true })
-    elseif bountyCount > 0 then
-        table.insert(results, {
-            label = string.format("Trovehunter's Bounty  |cFFFFD700(%d in bags — not active)|r", bountyCount),
-            ok    = false,
-            tip   = "Right-click the item to activate it before entering.",
-        })
-    else
-        table.insert(results, {
-            label = "Trovehunter's Bounty  |cFFFF4444(None)|r",
-            ok    = false,
-            tip   = "Pick one up from the Delver's Journey rewards or the vendor.",
-        })
-    end
-
-    -- 4. Valeera companion — C_DelvesUI.GetCompanionInfoForActivePlayer() returns
-    -- the companionID (11 = Valeera). Role detection requires the config frame to
-    -- have been opened this session; if not, we show "check manually".
-    local valerraOk, valerraLabel = false, "|cFFFF4444Not detected|r"
-    pcall(function()
-        if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then
-            local companionID = C_DelvesUI.GetCompanionInfoForActivePlayer()
-            if companionID and companionID > 0 then
-                local roleNames = { [0]="DPS", [1]="Healer", [2]="Tank" }
-                local role = DelvesCompanionConfigurationFrame
-                    and DelvesCompanionConfigurationFrame.selectedRole
-                local roleStr = role and roleNames[role] or "check role"
-                valerraOk    = true
-                valerraLabel = "|cFF00FF44Present|r  |cFF888888(" .. roleStr .. ")|r"
-            end
-        end
-    end)
-    table.insert(results, {
-        label = "Valeera  " .. valerraLabel,
-        ok    = valerraOk,
-        tip   = not valerraOk and "Open the companion panel to configure Valeera." or nil,
-    })
-
-    return results
-end
-
-local function ShowChecklist(force)
-    if not force then
-        if not DelveGuideDB.checklistEnabled then return end
-        if DelveGuideDB.checklistDismissed then return end
-    end
-
-    -- Build frame lazily
-    if not checklistFrame then
-        local f = CreateFrame("Frame", "DelveGuideChecklist", UIParent, "BackdropTemplate")
-        f:SetSize(340, 160)
-        f:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
-        f:SetFrameStrata("DIALOG")
-        f:SetBackdrop({
-            bgFile   = "Interface\\ChatFrame\\ChatFrameBackground",
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            tile=false, tileSize=16, edgeSize=14,
-            insets={left=4,right=4,top=4,bottom=4}
-        })
-        f:SetBackdropColor(0.06, 0.06, 0.06, 0.95)
-        f:SetBackdropBorderColor(1, 0.7, 0, 0.9)
-
-        local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        title:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -10)
-        title:SetText("|cFFFFD700[DelveGuide]|r  Pre-Entry Checklist")
-
-        -- Close button
-        local closeBtn = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-        closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
-        closeBtn:SetScript("OnClick", function()
-            DelveGuideDB.checklistDismissed = true
-            f:Hide()
-        end)
-
-        -- Row pool (4 rows max)
-        f.rows = {}
-        for i = 1, 4 do
-            local row = f:CreateFontString(nil, "OVERLAY")
-            row:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 11)
-            row:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -(24 + (i-1)*22))
-            row:SetWidth(316)
-            row:SetJustifyH("LEFT")
-            f.rows[i] = row
-        end
-
-        -- "Don't show again this session" checkbox
-        local cb = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
-        cb:SetSize(20, 20)
-        cb:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 8, 8)
-        cb:SetChecked(false)
-        cb:SetScript("OnClick", function(self)
-            DelveGuideDB.checklistDismissed = self:GetChecked()
-        end)
-        local cblbl = f:CreateFontString(nil, "OVERLAY")
-        cblbl:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 10)
-        cblbl:SetPoint("LEFT", cb, "RIGHT", 2, 0)
-        cblbl:SetText("|cFF888888Don't show again this session|r")
-
-        checklistFrame = f
-    end
-
-    -- Populate rows
-    local results = RunChecklistScan()
-    local frameH = 44 + #results * 22
-    checklistFrame:SetHeight(frameH)
-
-    for i, row in ipairs(checklistFrame.rows) do
-        local r = results[i]
-        if r then
-            local icon
-            if r.ok == true then
-                icon = "|cFF00FF44✔|r "
-            elseif r.ok == false then
-                icon = "|cFFFF4444✘|r "
-            else
-                icon = "|cFFFF8844?|r "  -- unknown
-            end
-            local text = icon .. r.label
-            if r.tip then text = text .. "  |cFF888888" .. r.tip .. "|r" end
-            row:SetText(text)
-            row:Show()
-        else
-            row:Hide()
-        end
-    end
-
-    checklistFrame:Show()
-end
-
-local function OnTargetChanged()
-    if not DelveGuideDB.checklistEnabled then return end
-    if DelveGuideDB.checklistDismissed then return end
-    -- UnitName("target") returns a secret string in Midnight 12.0 —
-    -- wrap the comparison in pcall to avoid ADDON_ACTION_BLOCKED taint.
-    local matched = false
-    if DelveGuideData and DelveGuideData.delves then
-        for _, d in ipairs(DelveGuideData.delves) do
-            local ok, result = pcall(function()
-                local targetName = UnitName("target")
-                return targetName and targetName == d.name
-            end)
-            if ok and result then matched = true; break end
-        end
-    end
-    if matched then ShowChecklist(false) end
-end
 
 local function CreateMainWindow()
     local f=CreateFrame("Frame","DelveGuideFrame",UIParent,"BackdropTemplate")
@@ -714,180 +539,6 @@ function DelveGuide.Toggle()
     if mainFrame:IsShown() then mainFrame:Hide() else mainFrame:Show() end
 end
 
--- Compact floating widget
-local RANK_ORDER  = {S=1,A=2,B=3,C=4,D=5,F=6}
-local W_HEADER_H  = 28   -- title row + divider
-local W_LINE_H    = 18   -- height per variant line
-local W_PAD       = 10   -- bottom padding
-local W_MAX_LINES = 8
-
-UpdateCompactWidget = function()
-    if not compactWidget or not compactWidget:IsShown() then return end
-    -- Build filtered+sorted list of active variants
-    local tiers = DelveGuideDB.widgetTiers or {}
-    local entries = {}
-    if DelveGuideData and DelveGuideData.delves then
-        local seen = {}
-        for _, d in ipairs(DelveGuideData.delves) do
-            if activeVariants[d.variant] and not seen[d.variant] and tiers[d.ranking] then
-                seen[d.variant] = true
-                table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
-            end
-        end
-    end
-    table.sort(entries, function(a,b)
-        return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99)
-    end)
-    -- Update variant line pool
-    local n = math.min(#entries, W_MAX_LINES)
-    if n == 0 then
-        compactWidget.varLines[1].label:SetText("|cFF888888No active variants|r")
-        compactWidget.varLines[1].pin = nil
-        compactWidget.varLines[1]:ClearAllPoints()
-        compactWidget.varLines[1]:SetPoint("TOPLEFT", compactWidget, "TOPLEFT", 8, -(W_HEADER_H+4))
-        compactWidget.varLines[1]:Show()
-        n = 1
-        for i = 2, W_MAX_LINES do compactWidget.varLines[i]:Hide() end
-    else
-        for i = 1, W_MAX_LINES do
-            local line = compactWidget.varLines[i]
-            local e = entries[i]
-            if e then
-                local rc = RANK_COLORS[e.ranking] or "|cFFFFFFFF"
-                local pin = FindPinByName(e.delve)
-                local nameText = pin and ("|cFF00CFFF"..e.variant.."|r") or e.variant
-                local ds = activeDelves[e.delve]
-                local bountyTag = (type(ds)=="table" and ds.bountiful) and "  |cFFFFD700[B]|r" or ""
-                line.label:SetText(rc.."["..e.ranking.."]|r  "..nameText..bountyTag)
-                line.pin = pin
-                line:ClearAllPoints()
-                line:SetPoint("TOPLEFT", compactWidget, "TOPLEFT", 8, -(W_HEADER_H+4+(i-1)*W_LINE_H))
-                line:Show()
-            else line:Hide() end
-        end
-    end
-    -- Reposition keys line and resize frame
-    local keysY = -(W_HEADER_H + 4 + n*W_LINE_H + 6)
-    compactWidget.keysLine:ClearAllPoints()
-    compactWidget.keysLine:SetPoint("TOPLEFT", compactWidget, "TOPLEFT", 8, keysY)
-    compactWidget:SetHeight(W_HEADER_H + 4 + n*W_LINE_H + 6 + W_LINE_H + W_PAD)
-    local keysInfo   = C_CurrencyInfo.GetCurrencyInfo(3310)
-    local shards     = keysInfo and keysInfo.quantity or 0
-    local restored   = C_Item.GetItemCount(3028, true) or 0
-    local keysStr    = string.format("|cFFFFD700Keys:|r %d/600 shards", shards)
-    if restored > 0 then
-        keysStr = keysStr .. string.format("  |cFF00FF44+%d restored|r", restored)
-    end
-    compactWidget.keysLine:SetText(keysStr)
-end
-
-local function CreateCompactWidget()
-    local f = CreateFrame("Frame", "DelveGuideCompactWidget", UIParent, "BackdropTemplate")
-    f:SetSize(220, 80)
-    f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", function(self)
-        if DelveGuideDB.widgetLocked then return end
-        self.dragging = true; self:StartMoving()
-    end)
-    f:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        DelveGuideDB.widgetX = self:GetLeft(); DelveGuideDB.widgetY = self:GetTop()
-        C_Timer.After(0.05, function() self.dragging = false end)
-    end)
-    f:SetScript("OnMouseUp", function(self, btn)
-        if btn == "LeftButton" and not self.dragging and DelveGuideDB.widgetClickOpens then
-            DelveGuide.Toggle()
-        end
-    end)
-    if DelveGuideDB.widgetX then
-        f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", DelveGuideDB.widgetX, DelveGuideDB.widgetY)
-    else f:SetPoint("CENTER", UIParent, "CENTER", 0, 250) end
-    f:SetFrameStrata("MEDIUM")
-    f:SetBackdrop({bgFile="Interface\\ChatFrame\\ChatFrameBackground",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",
-        tile=false,tileSize=16,edgeSize=12,insets={left=3,right=3,top=3,bottom=3}})
-    f:SetBackdropColor(0.08, 0.08, 0.08, 0.88)
-    f:SetBackdropBorderColor(0.15, 0.5, 1, 0.8)
-    f:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:AddLine("|cFF00BFFFDelveGuide|r"); GameTooltip:AddLine("Drag to reposition.", 0.7, 0.7, 0.7)
-        if DelveGuideDB.widgetClickOpens then GameTooltip:AddLine("Click to open/close.", 1, 1, 1) end
-        GameTooltip:Show()
-        if DelveGuideDB.widgetAutoHide then
-            UIFrameFadeIn(self, 0.2, self:GetAlpha(), 1.0)
-        end
-    end)
-    f:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
-        -- IsMouseOver() returns true if the cursor is still within this frame's bounds,
-        -- which covers child buttons (varLines, lockBtn) — avoids flicker when mousing over them.
-        if DelveGuideDB.widgetAutoHide and not self:IsMouseOver() then
-            UIFrameFadeOut(self, 0.5, self:GetAlpha(), 0.15)
-        end
-    end)
-    -- Title
-    local titleFS = f:CreateFontString(nil, "OVERLAY")
-    titleFS:SetFont(GameFontNormal:GetFont() or "Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
-    titleFS:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -9); titleFS:SetText("|cFF00BFFFDelveGuide|r")
-    -- Lock button
-    local lockBtn = CreateFrame("Button", nil, f)
-    lockBtn:SetSize(14, 14); lockBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -7, -7)
-    lockBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-    local function RefreshLock()
-        if DelveGuideDB.widgetLocked then
-            lockBtn:SetNormalTexture("Interface\\BUTTONS\\LockButton-Locked-Up")
-        else
-            lockBtn:SetNormalTexture("Interface\\BUTTONS\\LockButton-Unlocked-Up")
-        end
-    end
-    lockBtn:SetScript("OnClick", function()
-        DelveGuideDB.widgetLocked = not DelveGuideDB.widgetLocked
-        RefreshLock()
-    end)
-    lockBtn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine(DelveGuideDB.widgetLocked and "|cFFFF4444Locked|r — click to unlock" or "|cFF44FF44Unlocked|r — click to lock")
-        GameTooltip:Show()
-    end)
-    lockBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    RefreshLock()
-    -- Divider
-    local div = f:CreateTexture(nil, "ARTWORK")
-    div:SetColorTexture(0.15, 0.5, 1, 0.35); div:SetSize(204, 1)
-    div:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -26)
-    -- Variant line pool
-    local sf = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
-    f.varLines = {}
-    for i = 1, W_MAX_LINES do
-        local btn = CreateFrame("Button", nil, f)
-        btn:SetSize(204, W_LINE_H)
-        btn:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestLogTitleHighlight", "ADD")
-        local fs = btn:CreateFontString(nil, "OVERLAY")
-        fs:SetFont(sf, 11); fs:SetAllPoints(); fs:SetJustifyH("LEFT")
-        btn.label = fs
-        btn:SetScript("OnClick", function(self)
-            if self.pin then SetDelveWaypoint(self.pin) end
-        end)
-        btn:SetScript("OnEnter", function(self)
-            if self.pin then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:AddLine("|cFFFFD700"..self.pin.name.."|r")
-                GameTooltip:AddLine("Click to open map & set waypoint", 0, 1, 0.5)
-                GameTooltip:Show()
-            end
-        end)
-        btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        btn:Hide()
-        f.varLines[i] = btn
-    end
-    -- Keys line (always visible)
-    f.keysLine = f:CreateFontString(nil, "OVERLAY")
-    f.keysLine:SetFont(sf, 11); f.keysLine:SetWidth(204); f.keysLine:SetJustifyH("LEFT")
-    f.keysLine:SetText("|cFFFFD700Keys:|r --")
-    if DelveGuideDB.widgetHidden then f:Hide() end
-    if DelveGuideDB.widgetAutoHide then f:SetAlpha(0.15) end
-    compactWidget = f
-    UpdateCompactWidget()
-end
 
 -- ============================================================
 -- MINIMAP BUTTON (LibDataBroker & LibDBIcon)
@@ -972,8 +623,14 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("|cFF00BFFF[DelveGuide]|r === END ===")
     elseif msg=="roster" then
         DelveGuide.Toggle(); SwitchTab("roster")
+    elseif msg=="minimap" then
+        DelveGuideDB.minimap.hide = not DelveGuideDB.minimap.hide
+        if icon then
+            if DelveGuideDB.minimap.hide then icon:Hide("DelveGuide") else icon:Show("DelveGuide") end
+        end
+        print("|cFF00BFFF[DelveGuide]|r Minimap button: " .. (DelveGuideDB.minimap.hide and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
     elseif msg=="check" then
-        ShowChecklist(true)
+        if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(true) end
     elseif msg=="checkdebug" then
         print("|cFF00BFFF[DelveGuide]|r === Valeera Role Debug ===")
         local id = C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer and C_DelvesUI.GetCompanionInfoForActivePlayer()
@@ -1054,11 +711,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         if DelveGuide.ToggleHUD then DelveGuide.ToggleHUD()
         else print("|cFF00BFFF[DelveGuide]|r HUD not loaded.") end
     elseif msg=="widget" then
-        DelveGuideDB.widgetHidden = not DelveGuideDB.widgetHidden
-        if compactWidget then
-            if DelveGuideDB.widgetHidden then compactWidget:Hide() else compactWidget:Show() end
-        end
-        print("|cFF00BFFF[DelveGuide]|r Compact widget: "..(DelveGuideDB.widgetHidden and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
+        if DelveGuide.ToggleWidget then DelveGuide.ToggleWidget() end
     elseif msg:sub(1,4)=="font" then
         local val=tonumber(msg:sub(6))
         if val then DelveGuideDB.fontScale=math.max(0.6,math.min(2.0,val)); RefreshCurrentTab()
@@ -1103,7 +756,7 @@ loadFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 loadFrame:SetScript("OnEvent",function(self,event,arg1)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
-        InitSavedVars(); icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); CreateCompactWidget()
+        InitSavedVars(); icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
         print("|cFF00BFFF[DelveGuide]|r Loaded! |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
         self:UnregisterEvent("ADDON_LOADED")
     elseif event=="PLAYER_ENTERING_WORLD" then
@@ -1112,7 +765,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
         local inInst, instType = IsInInstance()
         if not inInst then
             DelveGuide.inDelveInstance = false
-            C_Timer.After(0, function() ScanActiveVariants(); UpdateCompactWidget() end)
+            C_Timer.After(0, function() ScanActiveVariants(); if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end end)
         elseif instType == "scenario" then
             DelveGuide.inDelveInstance = true
         end
@@ -1126,13 +779,13 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
         end
     elseif event=="AREA_POIS_UPDATED" then
         if not IsInInstance() then
-            C_Timer.After(0, function() ScanActiveVariants(); UpdateCompactWidget() end)
+            C_Timer.After(0, function() ScanActiveVariants(); if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end end)
         end
         if mainFrame and mainFrame:IsShown() and currentTabKey=="delves" then SwitchTab("delves") end
     elseif event=="ACTIVE_TALENT_GROUP_CHANGED" then
         if mainFrame and mainFrame:IsShown() and currentTabKey=="curios" then SwitchTab("curios") end
     elseif event=="PLAYER_TARGET_CHANGED" then
-        OnTargetChanged()
+        if DelveGuide.OnTargetChanged then DelveGuide.OnTargetChanged() end
     elseif event=="ZONE_CHANGED_NEW_AREA" then
         -- PLAYER_ENTERING_WORLD does NOT fire on seamless delve zone transitions.
         -- Defer IsInInstance() — at event fire time the instance state isn't settled yet.
