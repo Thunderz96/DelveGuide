@@ -342,6 +342,13 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {    
     {
+        version = "1.4.4",
+        date    = "2026-03-21",
+        entries = {
+            "Hotfix: Fixed a Lua bug preventing localization dictionaries from loading on non-English clients."
+        }
+    },
+    {
         version = "1.4.3",
         date    = "2026-03-21",
         entries = {
@@ -505,14 +512,14 @@ DelveGuideData.changelog = {
             "Active variant scanner, minimap button, font scale setting",
         },
     },
+}
 
 -- ============================================================================
 -- LOCALIZATION DICTIONARIES
 -- ============================================================================
 
 -- Widget set ID → English DELVE name (not variant name).
-
-DelveGuideData.widgetSetDelves == {
+DelveGuideData.widgetSetDelves = {
     [1611] = "Collegiate Calamity",
     [1738] = "The Grudge Pit",
     [1800] = "Sunkiller Sanctum",
@@ -521,11 +528,12 @@ DelveGuideData.widgetSetDelves == {
     [1803] = "The Gulf of Memory",
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
-},
+}
+
 -- Localized variant name → English variant name.
 -- Add non-English variant names here as users provide them via /dg chatdump.
-DelveGuideData.localeVariants == {
-    
+DelveGuideData.localeVariants = {
+    -- Korean (koKR)
     ["하라니르의 후예"] = "Descent of the Haranir",      -- The Gulf of Memory
     ["침입하는 불빛"]   = "Invading Light",                -- Collegiate Calamity 
     ["배신자의 대가"]   = "Price of Betrayal",             -- The Shadow Enclave 
@@ -534,6 +542,4 @@ DelveGuideData.localeVariants == {
     ["문제의 중심"]     = "Heart of the Matter",           -- Sunkiller Sanctum 
     ["악랄한 부식줄기"] = "Vicious Rotstalks",             -- The Grudge Pit 
     ["도둑맞은 마나"]   = "Stolen Mana",                   -- Shadowguard Point 
-}
-
 }

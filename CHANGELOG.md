@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.4] - 2026-03-21
+
+### Fixed
+- **Localization Hotfix:** Fixed a critical Lua syntax error that was preventing the localization dictionaries from loading properly. The addon will now correctly translate Delve variants on all non-English clients (krKR, deDE, frFR, etc.) and gracefully fall back to showing all variants if a translation is missing.
+
 ## [1.4.3] - 2026-03-21
 
 ### Added
