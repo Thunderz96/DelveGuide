@@ -95,16 +95,16 @@ DelveGuideData.mapPins = {
 -- SECTION 3: CURIOS
 -- ============================================================
 DelveGuideData.curios = {
-    { name="Porcelain Blade Tip",        description="Chance on hit to apply a crit % debuff (2ppm)",                         curiotype="Combat",  ranking="A" },
-    { name="Holy Bounding Hand Grenade", description="On hit damage proc that stuns; can chain proc, low damage (3ppm)",       curiotype="Combat",  ranking="B" },
-    { name="Nether Entropic Kris",       description="Chance on hit spreading DOT (1ppm), spread on death with 100ms cd",      curiotype="Combat",  ranking="B" },
-    { name="Mantle of Stars",            description="Pseudo cheat death (90 second cd)",                                      curiotype="Combat",  ranking="C" },
-    { name="Sanctum's Edict",            description="Tanking curio - underwhelming performance",                              curiotype="Combat",  ranking="F" },
-    { name="Mandate of Sacred Death",    description="Valeera gathering grants stacking on-hit %max hp proc; low % execute",   curiotype="Utility", ranking="S" },
-    { name="Overflowing Voidspire",      description="Throughput buff after being in combat for 35 seconds (35s cd)",          curiotype="Utility", ranking="A" },
-    { name="Ebon Crown of Subjugation",  description="Stacking primary stat buff for opening mislaid curiosities, 12 stacks",  curiotype="Utility", ranking="A" },
-    { name="Time Lost Edict",            description="Summons a zone that increases haste, CDR, and speed (30s cd)",           curiotype="Utility", ranking="B" },
-    { name="Motionless Nulltide",        description="Grants speed and haste after standing still",                            curiotype="Utility", ranking="C" },
+    { name="Porcelain Blade Tip",        id=251801, description="Chance on hit to apply a crit % debuff (2ppm)",                         curiotype="Combat",  ranking="A" },
+    { name="Holy Bounding Hand Grenade", id=251802, description="On hit damage proc that stuns; can chain proc, low damage (3ppm)",       curiotype="Combat",  ranking="B" },
+    { name="Nether Entropic Kris",       id=251803, description="Chance on hit spreading DOT (1ppm), spread on death with 100ms cd",      curiotype="Combat",  ranking="B" },
+    { name="Mantle of Stars",            id=251804, description="Pseudo cheat death (90 second cd)",                                      curiotype="Combat",  ranking="C" },
+    { name="Sanctum's Edict",            id=251805, description="Tanking curio - underwhelming performance",                              curiotype="Combat",  ranking="F" },
+    { name="Mandate of Sacred Death",    id=251806, description="Valeera gathering grants stacking on-hit %max hp proc; low % execute",   curiotype="Utility", ranking="S" },
+    { name="Overflowing Voidspire",      id=251807, description="Throughput buff after being in combat for 35 seconds (35s cd)",          curiotype="Utility", ranking="A" },
+    { name="Ebon Crown of Subjugation",  id=251808, description="Stacking primary stat buff for opening mislaid curiosities, 12 stacks",  curiotype="Utility", ranking="A" },
+    { name="Time Lost Edict",            id=251809, description="Summons a zone that increases haste, CDR, and speed (30s cd)",           curiotype="Utility", ranking="B" },
+    { name="Motionless Nulltide",        id=251810, description="Grants speed and haste after standing still",                            curiotype="Utility", ranking="C" },
 }
 
 -- ============================================================
@@ -340,9 +340,19 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 -- SECTION 8: CHANGELOG
 -- ============================================================
-DelveGuideData.changelog = {
+DelveGuideData.changelog = {    
     {
-        version = "1.4.1",
+        version = "1.4.3",
+        date    = "2026-03-21",
+        entries = {
+            "New Feature: Animated Victory Screen on Delve completion!",
+            "Custom Audio: Plays a satisfying victory fanfare when you finish a run.",
+            "UI Customization: You can now unlock, drag, and reposition the Victory popup via the Settings tab.",
+            "Vault Tracking Fix: Bypassed a Blizzard API bug where World Bosses were counting as Delve completions. Vault tracking is now 100% accurate."
+        }
+    },
+    {
+        version = "1.4.2",
         date    = "2026-03-21",
         entries = {
             "New Companion Tab: Track Valeera/Brann's level, role, and XP progress.",

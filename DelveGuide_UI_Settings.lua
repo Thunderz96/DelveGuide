@@ -72,6 +72,28 @@ DelveGuide.RenderSettings = function()
     fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 – 2.0)", DelveGuideDB.fontScale))
     y = y + rH + 4
 
+    
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Victory Screen|r") + 6
+    y = y + MakeSettingCheckbox(cf, y, "Enable Victory Screen popup on completion",
+        function() return DelveGuideDB.victoryEnabled ~= false end, -- Defaults to true
+        function(checked) DelveGuideDB.victoryEnabled = checked end)
+    y = y + MakeSettingCheckbox(cf, y, "Play victory sound effect",
+        function() return DelveGuideDB.victorySound ~= false end, -- Defaults to true
+        function(checked) DelveGuideDB.victorySound = checked end)
+    y = y + MakeSettingCheckbox(cf, y, "Unlock Victory Screen (allows dragging)",
+        function() return DelveGuideDB.victoryUnlocked end,
+        function(checked) DelveGuideDB.victoryUnlocked = checked end) + 4
+        
+    local testVicBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    testVicBtn:SetSize(160, 22); testVicBtn:SetText("Test / Move Popup")
+    testVicBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 14, -y)
+    testVicBtn:SetScript("OnClick", function()
+        if DelveGuide.ShowVictoryScreen then
+            DelveGuide.ShowVictoryScreen("Test Delve", "Tier 8", 610)
+        end
+    end)
+    y = y + 22 + 12 -- Add height for the button and padding
+    
     local function MakeFontScaleBtn(label, xOff, delta)
         local b = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
         b:SetSize(36, 22); b:SetText(label); b:SetPoint("TOPLEFT", cf, "TOPLEFT", xOff, -y)

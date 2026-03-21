@@ -1,6 +1,18 @@
 # Changelog
 
-## [1.4.1] - 2026-03-21
+## [1.4.3] - 2026-03-21
+
+### Added
+- **New Feature: Victory Screen!** A sleek, animated "Run Completed" toast will now drop down from the top of your screen whenever you finish a Delve.
+- The Victory Screen displays your exact weekly Delves completed and your newly unlocked Great Vault item level.
+- **Custom Audio:** Added a custom Final Fantasy-style Victory Fanfare that plays when you complete a run.
+- **New Settings:** You can now enable/disable the Victory Screen, toggle the sound effect, and unlock the frame to drag it anywhere on your screen.
+- Added a "Test / Move Popup" button in the Settings tab so you can configure your layout without having to actually run a Delve.
+
+### Fixed
+- **Great Vault Tracking Overhaul:** Bypassed a major flaw in Blizzard's `C_WeeklyRewards` API where open-world activities (like World Bosses) were falsely incrementing the Delve counter. DelveGuide now calculates your Great Vault progress purely from your internal run history for 100% accuracy.
+
+## [1.4.2] - 2026-03-21
 ### Added
 
 - Companion tab — track Valeera/Brann level, role, and XP progress via a visual progress bar

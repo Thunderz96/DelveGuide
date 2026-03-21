@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.4.1"
+local ADDON_VERSION    = "1.4.3"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -341,7 +341,7 @@ local function CacheCurrentChar()
     end)
 
     local bounty = C_Item.GetItemCount(265714, true) or 0
-    local restoredKeys = C_Item.GetItemCount(3028, true) or 0
+    local restoredKeys = C_Item.GetItemCount(225091, true) or 0
 
     local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
     local resetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
@@ -580,24 +580,39 @@ local function CreateMainWindow()
         RefreshCurrentTab() -- Redraw tab to fill new space
     end)
     
-    f.UpdateTracker=function()
-        local keysInfo=C_CurrencyInfo.GetCurrencyInfo(3310); local shards=keysInfo and keysInfo.quantity or 0
-        local delveCount,vaultSlots=GetWeeklyVaultData()
-        local wqCount=0
-        for _,z in ipairs({2393,2437,2395,2444,2413,2405,2424}) do
-            local quests=C_TaskQuest.GetQuestsOnMap(z)
-            if quests then for _,q in ipairs(quests) do
-                if C_QuestLog.IsWorldQuest(q.questID) and not C_QuestLog.IsQuestFlaggedCompleted(q.questID) then
-                    local curs=C_QuestLog.GetQuestRewardCurrencies(q.questID)
-                    if curs then for _,c in ipairs(curs) do if c.currencyID==3310 then wqCount=wqCount+1 end end end
-                end
-            end end
+    f.UpdateTracker = function()
+        local COFFER_KEY_SHARD_ID = 3310
+        local keysInfo = C_CurrencyInfo.GetCurrencyInfo(COFFER_KEY_SHARD_ID)
+        local shards = keysInfo and keysInfo.quantity or 0
+        local delveCount, vaultSlots = GetWeeklyVaultData()
+        local wqCount = 0
+        
+        local mapIDs = {2393, 2437, 2395, 2444, 2413, 2405, 2424}
+        for _, z in ipairs(mapIDs) do
+            local quests = C_TaskQuest.GetQuestsOnMap(z)
+            if quests then 
+                for _, q in ipairs(quests) do
+                    if C_QuestLog.IsWorldQuest(q.questID) and not C_QuestLog.IsQuestFlaggedCompleted(q.questID) then
+                        local curs = C_QuestLog.GetQuestRewardCurrencies(q.questID)
+                        if curs then 
+                            for _, c in ipairs(curs) do 
+                                if c.currencyID == COFFER_KEY_SHARD_ID then 
+                                    wqCount = wqCount + 1 
+                                end 
+                            end 
+                        end
+                    end
+                end 
+            end
         end
-        local resetSecs=C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
-        local resetText=resetSecs and FormatResetTime(resetSecs) or "|cFF888888?|r"
+        
+        local resetSecs = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
+        local resetText = resetSecs and FormatResetTime(resetSecs) or "|cFF888888?|r"
+        
         f.TrackerText:SetText(string.format(
             "|cFFFFD700Keys:|r %d/600  |  |cFF00BFFFDelves:|r %d  |cFF888888(Vault %d/8)|r  |  |cFF00FF88WQs:|r %d  |  |cFFAAAA00Reset:|r %s",
-            shards,delveCount,vaultSlots,wqCount,resetText))
+            shards, delveCount, vaultSlots, wqCount, resetText
+        ))
     end
     f:HookScript("OnShow",f.UpdateTracker)
     
@@ -798,6 +813,10 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         local testChar="Unknown"; pcall(function() testChar=UnitName("player") or "Unknown" end)
         table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar})
         print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run — |cFF00FF44"..testName.."|r")
+        -- TRIGGER THE VICTORY SCREEN FOR THE TEST RUN!
+        if DelveGuide.ShowVictoryScreen then
+            DelveGuide.ShowVictoryScreen(testName, "Tier 8", 610)
+        end
         if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
     elseif msg=="help" then
         print("|cFF00BFFF[DelveGuide]|r Commands:")
@@ -982,6 +1001,10 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             local vaultStr=vaultIlvl and ("  |cFFFFD700[Vault: "..vaultIlvl.." ilvl]|r") or ""
             print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r  |cFF888888["..tier.."]|r"..vaultStr)
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
+        -- TRIGGER THE VICTORY SCREEN!
+            if DelveGuide.ShowVictoryScreen then
+                DelveGuide.ShowVictoryScreen(runName, tier, vaultIlvl)
+            end
         end
     end
 end)

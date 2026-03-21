@@ -43,7 +43,7 @@ local function RunChecklistScan()
         })
     end
 
-    local valerraOk, valerraLabel = false, "|cFFFF4444Not detected|r"
+    local valeeraOk, valeeraLabel = false, "|cFFFF4444Not detected|r"
     pcall(function()
         if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then
             local companionID = C_DelvesUI.GetCompanionInfoForActivePlayer()
@@ -52,15 +52,15 @@ local function RunChecklistScan()
                 local role = DelvesCompanionConfigurationFrame
                     and DelvesCompanionConfigurationFrame.selectedRole
                 local roleStr = role and roleNames[role] or "check role"
-                valerraOk    = true
-                valerraLabel = "|cFF00FF44Present|r  |cFF888888(" .. roleStr .. ")|r"
+                valeeraOk    = true
+                valeeraLabel = "|cFF00FF44Present|r  |cFF888888(" .. roleStr .. ")|r"
             end
         end
     end)
     table.insert(results, {
-        label = "Valeera  " .. valerraLabel,
-        ok    = valerraOk,
-        tip   = not valerraOk and "Open the companion panel to configure Valeera." or nil,
+        label = "Valeera  " .. valeeraLabel,
+        ok    = valeeraOk,
+        tip   = not valeeraOk and "Open the companion panel to configure Valeera." or nil,
     })
 
     return results
