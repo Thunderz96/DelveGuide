@@ -23,6 +23,7 @@ DelveGuide_HUD.lua
 DelveGuide_UI_Roster.lua
 DelveGuide_UI_Delves.lua
 DelveGuide_UI_Curios.lua
+DelveGuide_UI_Companion.lua
 DelveGuide_UI_Nullaeus.lua
 DelveGuide_UI_Future.lua
 DelveGuide_UI_History.lua

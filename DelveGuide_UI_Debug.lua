@@ -14,9 +14,39 @@ DelveGuide.RenderDebug = function()
     local cf = UI.NewContentFrame()
     local y = 10
     
-    y = y + UI.CreateHeader(cf, y, "DEBUG -- Variant Detection Results") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFFFFF00/dg scan refreshes results  |  /dg chatdump prints all data to chat|r") + 8
+    y = y + UI.CreateHeader(cf, y, "DEBUG  —  System Health & Diagnostics") + 4
+    
+    -- 1. Commands Section
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Troubleshooting Commands|r") + 4
+    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg scan|r  —  Force refresh map POI detection")
+    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg chatdump|r  —  Print POI data to chat (for localization reports)")
+    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg specinfo|r  —  Print detected spec ID and curio recommendations")
+    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg checkdebug|r  —  Print raw Valeera role/aura data to chat")
+    y = y + 8
 
+    -- 2. Database & State Section
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Database & Environment|r") + 4
+    local rCount, hCount = 0, 0
+    if DelveGuideDB then
+        if DelveGuideDB.roster then for _ in pairs(DelveGuideDB.roster) do rCount = rCount + 1 end end
+        if DelveGuideDB.history then hCount = #DelveGuideDB.history end
+    end
+    y = y + UI.CreateRow(cf, y, string.format("  |cFFCCCCCCSavedVariables:|r  %d characters in Roster  |  %d runs in History", rCount, hCount))
+    
+    local inDelve = DelveGuide.inDelveInstance and "|cFF00FF44True|r" or "|cFFFF4444False|r"
+    y = y + UI.CreateRow(cf, y, "  |cFFCCCCCCIn Delve Instance (Internal Flag):|r  " .. inDelve)
+    
+    local compID = "nil"
+    pcall(function()
+        if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then
+            local id = C_DelvesUI.GetCompanionInfoForActivePlayer()
+            if id then compID = tostring(id) end
+        end
+    end)
+    y = y + UI.CreateRow(cf, y, "  |cFFCCCCCCCompanion API Active ID:|r  |cFF00CFFF" .. compID .. "|r  |cFF888888(If 0/nil outside a delve, UI Scraping is active)|r")
+    y = y + 12
+
+    -- 3. Variant Detection Summary
     y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Map ID Scan Status --|r") + 4
     
     local rawScanResults = DelveGuide.rawScanResults or {}
@@ -42,6 +72,7 @@ DelveGuide.RenderDebug = function()
 
     y = y + 8
     
+    -- 4. Raw Per-Delve Data Dump
     if #rawScanResults > 0 then
         local vc = 0
         for _ in pairs(activeVariants) do vc = vc + 1 end

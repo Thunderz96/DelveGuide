@@ -343,11 +343,18 @@ DelveGuideData.gradeColors = {
 DelveGuideData.changelog = {
     {
         version = "1.4.1",
-        date    = "2026-03-20",
+        date    = "2026-03-21",
         entries = {
-            "Fixed: variant detection was showing wrong active variants for each delve due to widget set IDs being per-delve, not per-variant.",
-            "Widget auto-hide: compact widget can now fade out when not hovered (toggle in Settings).",
-        },
+            "New Companion Tab: Track Valeera/Brann's level, role, and XP progress.",
+            "Live Curio Scanning: Compares your currently equipped curios against S-Tier spec recommendations and shows dynamic warnings.",
+            "Smart Tier Auto-Detection: The In-Run HUD now automatically detects your Delve tier—no more /dg tier commands!",
+            "Automated Vault Tracking: Auto-detected tiers are now seamlessly logged to your History tab.",
+            "Resizable Windows: Both the Main Window and the In-Run HUD can now be dragged and resized.",
+            "Korean (koKR) Support: Added full variant translation support for the Korean client.",
+            "Localization Upgrade: Added graceful fallbacks to show all possible variants if a translated name isn't found.",
+            "System Health Dashboard: Overhauled the Debug tab to show live API status, database size, and troubleshooting commands.",
+            "Under the hood: Modularized the Pre-Entry Checklist and Compact Widget for better performance."
+        }
     },
     {
         version = "1.4.0",
@@ -488,4 +495,35 @@ DelveGuideData.changelog = {
             "Active variant scanner, minimap button, font scale setting",
         },
     },
+
+-- ============================================================================
+-- LOCALIZATION DICTIONARIES
+-- ============================================================================
+
+-- Widget set ID → English DELVE name (not variant name).
+
+DelveGuideData.widgetSetDelves == {
+    [1611] = "Collegiate Calamity",
+    [1738] = "The Grudge Pit",
+    [1800] = "Sunkiller Sanctum",
+    [1801] = "Shadowguard Point",
+    [1802] = "Atal'Aman",
+    [1803] = "The Gulf of Memory",
+    [1804] = "The Shadow Enclave",
+    [1805] = "Twilight Crypts",
+},
+-- Localized variant name → English variant name.
+-- Add non-English variant names here as users provide them via /dg chatdump.
+DelveGuideData.localeVariants == {
+    
+    ["하라니르의 후예"] = "Descent of the Haranir",      -- The Gulf of Memory
+    ["침입하는 불빛"]   = "Invading Light",                -- Collegiate Calamity 
+    ["배신자의 대가"]   = "Price of Betrayal",             -- The Shadow Enclave 
+    ["연회 훼방꾼"]     = "Party Crashers",                -- Twilight Crypts 
+    ["토템 말살"]       = "Totemic Annihilation",          -- Atal'Aman 
+    ["문제의 중심"]     = "Heart of the Matter",           -- Sunkiller Sanctum 
+    ["악랄한 부식줄기"] = "Vicious Rotstalks",             -- The Grudge Pit 
+    ["도둑맞은 마나"]   = "Stolen Mana",                   -- Shadowguard Point 
+}
+
 }

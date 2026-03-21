@@ -39,12 +39,22 @@ local function BuildHUD()
     if hudFrame then return end
 
     hudFrame = CreateFrame("Frame", "DelveGuideHUDFrame", UIParent, "BackdropTemplate")
-    hudFrame:SetSize(HUD_W, HUD_H)
+    
+    -- Load saved size or default
+    local startW = (DelveGuideDB and DelveGuideDB.hudW) or HUD_W
+    local startH = (DelveGuideDB and DelveGuideDB.hudH) or HUD_H
+    hudFrame:SetSize(startW, startH)
+    
     hudFrame:SetFrameStrata("MEDIUM")
     hudFrame:SetFrameLevel(50)
     hudFrame:SetClampedToScreen(true)
     hudFrame:SetMovable(true)
     hudFrame:EnableMouse(true)
+    
+    -- Enable Resizing!
+    hudFrame:SetResizable(true)
+    hudFrame:SetResizeBounds(250, 160, 600, 300)
+    
     hudFrame:RegisterForDrag("LeftButton")
     hudFrame:SetScript("OnDragStart", function(self)
         if DelveGuideDB and DelveGuideDB.hudLocked then return end
@@ -57,7 +67,6 @@ local function BuildHUD()
         if DelveGuideDB then DelveGuideDB.hudX = x; DelveGuideDB.hudY = y end
     end)
 
-    -- Restore saved position or default to right-center
     local db = DelveGuideDB
     if db and db.hudX and db.hudY then
         hudFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", db.hudX, db.hudY)
@@ -65,7 +74,6 @@ local function BuildHUD()
         hudFrame:SetPoint("CENTER", UIParent, "CENTER", 450, 100)
     end
 
-    -- Backdrop (background + border)
     hudFrame:SetBackdrop({
         bgFile   = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -75,7 +83,6 @@ local function BuildHUD()
     hudFrame:SetBackdropColor(0, 0, 0, 0.80)
     hudFrame:SetBackdropBorderColor(0.15, 0.45, 0.85, 0.85)
 
-    -- Header bar (dark blue strip)
     local hdrBg = hudFrame:CreateTexture(nil, "ARTWORK")
     hdrBg:SetPoint("TOPLEFT",  hudFrame, "TOPLEFT",  3, -3)
     hdrBg:SetPoint("TOPRIGHT", hudFrame, "TOPRIGHT", -3, -3)
@@ -86,7 +93,6 @@ local function BuildHUD()
     hdrTitle:SetPoint("LEFT", hdrBg, "LEFT", 6, 0)
     hdrTitle:SetText("|cFF00BFFFDelveGuide|r  |cFF555555--|r  |cFF888888IN RUN|r")
 
-    -- Lock button (top-right of header)
     lockBtn = CreateFrame("Button", nil, hudFrame)
     lockBtn:SetSize(14, 14)
     lockBtn:SetPoint("RIGHT", hdrBg, "RIGHT", -4, 0)
@@ -113,8 +119,26 @@ local function BuildHUD()
     end)
     lockBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     RefreshLockBtn()
+    
+    -- Resize Grip Handle
+    local resizeGrip = CreateFrame("Button", nil, hudFrame)
+    resizeGrip:SetPoint("BOTTOMRIGHT", hudFrame, "BOTTOMRIGHT", -2, 2)
+    resizeGrip:SetSize(12, 12)
+    resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    resizeGrip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    resizeGrip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    resizeGrip:SetScript("OnMouseDown", function(self, btn)
+        if DelveGuideDB and DelveGuideDB.hudLocked then return end
+        if btn == "LeftButton" then hudFrame:StartSizing("BOTTOMRIGHT") end
+    end)
+    resizeGrip:SetScript("OnMouseUp", function(self, btn)
+        hudFrame:StopMovingOrSizing()
+        if DelveGuideDB then
+            DelveGuideDB.hudW = hudFrame:GetWidth()
+            DelveGuideDB.hudH = hudFrame:GetHeight()
+        end
+    end)
 
-    -- Rows: label on left, value on right
     local rows = {}
     local function MakeRow(key, label, yOff)
         local lbl = hudFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -125,7 +149,7 @@ local function BuildHUD()
 
         local val = hudFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         val:SetPoint("TOPLEFT", hudFrame, "TOPLEFT", 88, yOff)
-        val:SetWidth(HUD_W - 96)
+        val:SetWidth(startW - 96)
         val:SetJustifyH("LEFT")
         val:SetText("|cFF888888--|r")
         rows[key] = val
@@ -141,10 +165,90 @@ local function BuildHUD()
     MakeRow("lives",     "Lives",     -156)
 
     hudFrame.rows = rows
+    
+    -- Dynamically stretch row text widths when dragged!
+    hudFrame:HookScript("OnSizeChanged", function(self, width, height)
+        if self.rows then
+            for _, val in pairs(self.rows) do
+                val:SetWidth(width - 96)
+            end
+        end
+    end)
+    
     hudFrame:Hide()
 end
 
--- ── update ───────────────────────────────────────────────────
+local function AutoDetectDelveTier()
+    -- Method 1: Instance Difficulty Name
+    local _, _, _, difficultyName = GetInstanceInfo()
+    if difficultyName and difficultyName ~= "" then
+        local tier = difficultyName:match("Tier %s*(%d+)") or difficultyName:match("(%d+)$")
+        if tier then return tonumber(tier) end
+    end
+
+    -- Method 2: Scenario Name & Step Info
+    local scenarioName = ""
+    pcall(function()
+        if C_Scenario and C_Scenario.GetInfo then
+            scenarioName = C_Scenario.GetInfo() or ""
+            local tier = scenarioName:match("Tier %s*(%d+)")
+            if tier then return tonumber(tier) end
+            
+            local stepName = C_Scenario.GetStepInfo()
+            if stepName and stepName ~= "" then
+                local tier = stepName:match("Tier %s*(%d+)")
+                if tier then return tonumber(tier) end
+            end
+        end
+    end)
+
+    -- Method 3: State-Machine UI Scraping!
+    local tracker = _G["ObjectiveTrackerFrame"] or _G["ScenarioObjectiveTracker"]
+    if tracker then
+        local foundDelveHeader = false
+        local foundTier = nil
+        local zoneName = GetRealZoneText() or ""
+        
+        local function SearchForTier(frame)
+            if not frame or frame:IsForbidden() then return end
+            
+            for _, r in ipairs({frame:GetRegions()}) do
+                if r:GetObjectType() == "FontString" and r:IsShown() then
+                    local txt = r:GetText()
+                    if txt and txt ~= "" then
+                        -- Clean all color codes and whitespace
+                        local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("^%s+", ""):gsub("%s+$", "")
+                        
+                        -- Explicit match fallback (just in case)
+                        local tier = cleanTxt:match("Tier %s*(%d+)") or cleanTxt:match("Tier: %s*(%d+)") or cleanTxt:match("Difficulty: %s*(%d+)")
+                        if tier then foundTier = tonumber(tier); return end
+                        
+                        -- STATE MACHINE: Look for Delve identifier, then grab the next valid number!
+                        if cleanTxt == "Delves" or cleanTxt == scenarioName or cleanTxt == zoneName then
+                            foundDelveHeader = true
+                        elseif foundDelveHeader and cleanTxt:match("^%d+$") then
+                            local num = tonumber(cleanTxt)
+                            if num and num >= 1 and num <= 11 then
+                                foundTier = num
+                                return -- We found the floating number!
+                            end
+                        end
+                    end
+                end
+            end
+            
+            for _, child in ipairs({frame:GetChildren()}) do
+                SearchForTier(child)
+                if foundTier then return end
+            end
+        end
+        
+        SearchForTier(tracker)
+        if foundTier then return foundTier end
+    end
+
+    return nil
+end
 
 local function UpdateHUD()
     if not hudFrame then BuildHUD() end
@@ -183,11 +287,21 @@ local function UpdateHUD()
     rows.variant:SetText(varText)
     rows.grade:SetText(gradeText)
 
-    -- Tier — not exposed by Midnight 12.0 API; set manually with /dg tier N
+-- Auto-Detect Tier (with manual override fallback)
+    local detectedTier = AutoDetectDelveTier()
+    
     if DelveGuide.currentDelveTier then
-        rows.tier:SetText("|cFFCCCCCC" .. DelveGuide.currentDelveTier .. "|r")
+        -- Manual override via /dg tier
+        rows.tier:SetText("|cFFCCCCCC" .. DelveGuide.currentDelveTier .. " |cFF888888(Manual)|r")
+    elseif detectedTier then
+        -- Successfully auto-detected!
+        rows.tier:SetText("|cFF00FF44" .. detectedTier .. " |cFF888888(Auto)|r")
+        -- Save it so the History tab logs the correct tier on completion
+        DelveGuide.currentDelveTierNum = detectedTier
+        DelveGuide.currentDelveTier = "Tier " .. detectedTier
     else
-        rows.tier:SetText("|cFF444444/dg tier [1-11]|r")
+        -- Total fallback
+        rows.tier:SetText("|cFFFF4444Unknown |cFF555555(/dg tier N)|r")
     end
 
     -- Spec curio recommendation

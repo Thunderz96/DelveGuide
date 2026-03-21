@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.4.1] - 2026-03-21
+### Added
+
+- Companion tab — track Valeera/Brann level, role, and XP progress via a visual progress bar
+- Live Curio scanning — compares currently equipped curios against S-Tier spec recommendations and shows dynamic warnings
+- Smart Tier auto-detection for the In-Run HUD (API checking + Objective Tracker scraping)
+- Automated Great Vault tracking — auto-detected tiers are now directly logged to your History tab
+- Korean (koKR) variant translation support
+- Graceful fallbacks for missing translations — shows all possible variants if the localized name isn't recognized by the dictionary
+
+### Changed
+
+- Main window and In-Run HUD are now fully resizable with bottom-right grip handles
+- Debug tab overhauled into a System Health Dashboard (shows database size, live API status, and troubleshooting commands)
+- Refactored Pre-Entry Checklist and Compact Widget into separate modules (`DelveGuide_Checklist.lua` and `DelveGuide_Widget.lua`)
+- Moved all localization translation dictionaries to `DelveGuide_Data.lua`
+- Variant text scanning logic now uses robust substring matching instead of strict punctuation parsing
+
+### Fixed
+
+- Bypassed C_DelvesUI API restrictions to correctly read Companion data even when standing outside of a delve instance
+- Fixed a scope bug causing the LibDBIcon minimap toggle to fail
+- Cleaned up unused legacy variables and dead code to optimize memory usage
+
+
 ## [1.3.0] - 2026-03-16
 
 ### Added

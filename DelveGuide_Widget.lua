@@ -50,10 +50,12 @@ DelveGuide.UpdateCompactWidget = function()
             if e then
                 local rc = UI.RANK_COLORS[e.ranking] or "|cFFFFFFFF"
                 local pin = UI.FindPinByName(e.delve)
-                local nameText = pin and ("|cFF00CFFF"..e.variant.."|r") or e.variant
                 local ds = activeDelves[e.delve]
-                local bountyTag = (type(ds)=="table" and ds.bountiful) and "  |cFFFFD700[B]|r" or ""
-                line.label:SetText(rc.."["..e.ranking.."]|r  "..nameText..bountyTag)
+                local isBountiful = type(ds)=="table" and ds.bountiful
+                local bountyTag = isBountiful and "  |cFFFFD700[B]|r" or ""
+                local variantColor = isBountiful and "|cFFFFD700" or "|cFF00CFFF"
+                local displayName = pin and (variantColor..e.variant.."|r") or e.variant
+                line.label:SetText(rc.."["..e.ranking.."]|r  "..displayName..bountyTag)
                 line.pin = pin
                 line:ClearAllPoints()
                 line:SetPoint("TOPLEFT", cw, "TOPLEFT", 8, -(W_HEADER_H+4+(i-1)*W_LINE_H))

@@ -26,17 +26,22 @@ local function CreateDelveRow(parent, y, d)
     local nameFS=nameBtn:CreateFontString(nil,"OVERLAY"); nameFS:SetFont(ROW_FONT_FILE,rSize)
     nameFS:SetAllPoints(nameBtn); nameFS:SetJustifyH("LEFT")
 
+    local activeDelves = DelveGuide.activeDelves or {}
+    local delveStatus = activeDelves[d.name]
+    local isBountiful = type(delveStatus)=="table" and delveStatus.bountiful
+    local nameColor = isBountiful and "|cFFFFD700" or "|cFF00CFFF"
+
     if pin then
-        nameFS:SetText("|cFF00CFFF"..d.name.."|r")
+        nameFS:SetText(nameColor..d.name.."|r")
         nameBtn:SetScript("OnEnter",function(self)
             nameFS:SetText("|cFFFFFFFF"..d.name.."|r")
             GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:AddLine("|cFFFFD700"..d.name.."|r")
             GameTooltip:AddLine("|cFFCCCCCC"..d.zone.."|r"); GameTooltip:AddLine(" ")
             GameTooltip:AddLine("|cFF00FF88Click to open map & set waypoint|r"); GameTooltip:Show()
         end)
-        nameBtn:SetScript("OnLeave",function() nameFS:SetText("|cFF00CFFF"..d.name.."|r") GameTooltip:Hide() end)
+        nameBtn:SetScript("OnLeave",function() nameFS:SetText(nameColor..d.name.."|r") GameTooltip:Hide() end)
         nameBtn:SetScript("OnClick",function() UI.SetDelveWaypoint(pin) end)
-    else nameFS:SetText(d.name) end
+    else nameFS:SetText(isBountiful and ("|cFFFFD700"..d.name.."|r") or d.name) end
 
     local variantText=active and "|cFF44FF44"..d.variant.."|r" or d.variant
     local flags=""
@@ -44,9 +49,6 @@ local function CreateDelveRow(parent, y, d)
     if d.hasBug then flags=flags.."|cFFFF4444[Bug]|r " end
     if d.mountable then flags=flags.."|cFFFFD700[Mt]|r " end
 
-    local activeDelves = DelveGuide.activeDelves or {}
-    local delveStatus = activeDelves[d.name]
-    local isBountiful = type(delveStatus)=="table" and delveStatus.bountiful
     if type(delveStatus)=="table" and delveStatus.nemesis then flags=flags.."|cFFFF4444[Nemesis]|r " end
 
     local infoFS=parent:CreateFontString(nil,"OVERLAY"); infoFS:SetFont(ROW_FONT_FILE,rSize)

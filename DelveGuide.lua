@@ -15,6 +15,7 @@ local BASE_ROW_HEIGHT  = 18
 local TABS = {
     { label = "Delves",   key = "delves"   },
     { label = "Curios",   key = "curios"   },
+    { label = "Companion", key = "companion" },
     { label = "Loot",     key = "loot"     },
     { label = "Nullaeus", key = "nullaeus" },
     { label = "History",  key = "history"  },
@@ -38,6 +39,26 @@ local WIDGET_SET_DELVES = {
     [1803] = "The Gulf of Memory",
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
+}
+
+-- Localized variant name → English variant name.
+-- Widget text on non-EN clients shows the variant in the local language (e.g. Korean: "이야기 변형: <name>").
+-- We extract the text after the last ": " separator and look it up here.
+-- To add a new locale: paste the variant name exactly as it appears after the colon in /dg chatdump output.
+-- Korean (koKR) --
+local LOCALE_VARIANT_NAMES = {
+    -- Korean (koKR)
+    ["하라니르의 후예"] = "Descent of the Haranir",      -- The Gulf of Memory
+    ["침입하는 불빛"]   = "English Name Here",           -- Collegiate Calamity (e.g., "Invading Light")
+    ["배신자의 대가"]   = "English Name Here",           -- The Shadow Enclave
+    ["연회 훼방꾼"]     = "English Name Here",           -- Twilight Crypts
+    ["토템 말살"]       = "English Name Here",           -- Atal'Aman
+    ["문제의 중심"]     = "English Name Here",           -- Sunkiller Sanctum
+    ["악랄한 부식줄기"] = "English Name Here",           -- The Grudge Pit
+    ["도둑맞은 마나"]   = "English Name Here",           -- Shadowguard Point
+    
+    -- You can easily add French (frFR) or German (deDE) here later just by pasting 
+    -- their translated variant names mapped to the English database name!
 }
 
 local ZONE_NAMES = {
@@ -125,8 +146,18 @@ local function ScanActiveVariants()
                         local clean=t:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
                         if string.find(clean,"Nemesis",1,true) then hasNemesis=true end
                         if not variantName then
+                            -- Try English text match first (EN clients)
                             for kVariant in pairs(knownVariants) do
                                 if string.find(clean,kVariant,1,true) then variantName=kVariant end
+                            end
+                            -- Non-EN fallback: Substring match!
+                            if not variantName and DelveGuideData.localeVariants then
+                                for locName, engName in pairs(DelveGuideData.localeVariants) do
+                                    if string.find(clean, locName, 1, true) then
+                                        variantName = engName
+                                        break
+                                    end
+                                end
                             end
                         end
                     end
@@ -134,7 +165,7 @@ local function ScanActiveVariants()
                     -- For EN clients, info.name is already English.
                     -- For non-EN clients, use widget set ID → delve name mapping as fallback.
                     local engZoneName = delveName
-                    local delveFromSetID = WIDGET_SET_DELVES[widgetSetID]
+                    local delveFromSetID = DelveGuideData.widgetSetDelves and DelveGuideData.widgetSetDelves[widgetSetID]
                     if delveFromSetID then
                         engZoneName = delveFromSetID
                     elseif variantName and DelveGuideData and DelveGuideData.delves then
@@ -153,6 +184,24 @@ local function ScanActiveVariants()
                 else
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name="(GetAreaPOIInfo returned nil)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
+                end
+            end
+        end
+    end
+    -- Non-EN fallback: if a delve is marked active but its variant couldn't be identified
+    -- (text matching and locale table both missed), mark ALL variants for that delve as active.
+    -- Better to show all possibilities than nothing at all.
+    if DelveGuideData and DelveGuideData.delves then
+        for delveName in pairs(activeDelves) do
+            local hasKnownVariant = false
+            for _, d in ipairs(DelveGuideData.delves) do
+                if d.name == delveName and activeVariants[d.variant] then
+                    hasKnownVariant = true; break
+                end
+            end
+            if not hasKnownVariant then
+                for _, d in ipairs(DelveGuideData.delves) do
+                    if d.name == delveName then activeVariants[d.variant] = true end
                 end
             end
         end
@@ -487,19 +536,50 @@ RefreshCurrentTab = function() if currentTabKey then SwitchTab(currentTabKey) en
 
 local function CreateMainWindow()
     local f=CreateFrame("Frame","DelveGuideFrame",UIParent,"BackdropTemplate")
-    f:SetSize(WINDOW_W,WINDOW_H); f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
+    
+    -- Load saved size or default to WINDOW_W / WINDOW_H
+    local startW = DelveGuideDB.windowW or WINDOW_W
+    local startH = DelveGuideDB.windowH or WINDOW_H
+    f:SetSize(startW, startH); f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
+    
+    -- Enable Resizing!
+    f:SetResizable(true)
+    f:SetResizeBounds(600, 400, 1200, 900) -- Min Width, Min Height, Max Width, Max Height
+    
     f:SetScript("OnDragStart",f.StartMoving)
     f:SetScript("OnDragStop",function(self) self:StopMovingOrSizing(); DelveGuideDB.windowX=self:GetLeft(); DelveGuideDB.windowY=self:GetTop() end)
+    
     if DelveGuideDB.windowX then f:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",DelveGuideDB.windowX,DelveGuideDB.windowY)
     else f:SetPoint("CENTER") end
+    
     f:SetFrameStrata("HIGH"); f:Hide()
     f:SetBackdrop({bgFile="Interface\\ChatFrame\\ChatFrameBackground",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",
         tile=false,tileSize=16,edgeSize=16,insets={left=4,right=4,top=4,bottom=4}})
     f:SetBackdropColor(0.08,0.08,0.08,0.92); f:SetBackdropBorderColor(0.2,0.2,0.2,1)
+    
     local closeBtn=CreateFrame("Button",nil,f,"UIPanelCloseButton"); closeBtn:SetPoint("TOPRIGHT",f,"TOPRIGHT",-4,-4)
     f.TitleText=f:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
     f.TitleText:SetPoint("TOPLEFT",f,"TOPLEFT",16,-12); f.TitleText:SetText("|cFF00BFFFDelveGuide|r -- Midnight Reference")
     f.TrackerText=f:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall"); f.TrackerText:SetPoint("TOPRIGHT",f,"TOPRIGHT",-40,-14)
+    
+    -- Resize Grip Handle
+    local resizeGrip = CreateFrame("Button", nil, f)
+    resizeGrip:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 4)
+    resizeGrip:SetSize(16, 16)
+    resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    resizeGrip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    resizeGrip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    resizeGrip:SetScript("OnMouseDown", function(self, btn)
+        if btn == "LeftButton" then f:StartSizing("BOTTOMRIGHT") end
+    end)
+    resizeGrip:SetScript("OnMouseUp", function(self, btn)
+        f:StopMovingOrSizing()
+        -- Save new size to DB
+        DelveGuideDB.windowW = f:GetWidth()
+        DelveGuideDB.windowH = f:GetHeight()
+        RefreshCurrentTab() -- Redraw tab to fill new space
+    end)
+    
     f.UpdateTracker=function()
         local keysInfo=C_CurrencyInfo.GetCurrencyInfo(3310); local shards=keysInfo and keysInfo.quantity or 0
         local delveCount,vaultSlots=GetWeeklyVaultData()
@@ -520,7 +600,8 @@ local function CreateMainWindow()
             shards,delveCount,vaultSlots,wqCount,resetText))
     end
     f:HookScript("OnShow",f.UpdateTracker)
-    local tabW=(WINDOW_W-32)/#TABS
+    
+    local tabW=(startW-32)/#TABS
     for i,td in ipairs(TABS) do
         local btn=CreateFrame("Button","DelveGuideTab_"..td.key,f); btn:SetSize(tabW-4,TAB_HEIGHT)
         btn:SetPoint("TOPLEFT",f,"TOPLEFT",16+(i-1)*tabW,-36)
@@ -529,6 +610,20 @@ local function CreateMainWindow()
         btn.Underline:SetPoint("BOTTOM",btn,"BOTTOM",0,2); btn.Underline:SetSize(btn.Text:GetStringWidth()+16,2); btn.Underline:Hide()
         local k=td.key; btn:SetScript("OnClick",function() SwitchTab(k) end); tabButtons[k]=btn
     end
+    
+    -- Dynamically scale tabs and the UI layout variable when dragged!
+    f:HookScript("OnSizeChanged", function(self, width, height)
+        DelveGuide.UI.WINDOW_W = width
+        local newTabW = (width - 32) / #TABS
+        for i, td in ipairs(TABS) do
+            local btn = tabButtons[td.key]
+            if btn then
+                btn:SetWidth(newTabW - 4)
+                btn:SetPoint("TOPLEFT", f, "TOPLEFT", 16 + (i - 1) * newTabW, -36)
+            end
+        end
+    end)
+    
     local sf=CreateFrame("ScrollFrame","DelveGuideScrollFrame",f,"UIPanelScrollFrameTemplate")
     sf:SetPoint("TOPLEFT",f,"TOPLEFT",16,-(36+TAB_HEIGHT+10)); sf:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-32,8)
     scrollFrame=sf; mainFrame=f; SwitchTab(TABS[1].key)
@@ -631,6 +726,30 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("|cFF00BFFF[DelveGuide]|r Minimap button: " .. (DelveGuideDB.minimap.hide and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
     elseif msg=="check" then
         if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(true) end
+    elseif msg=="tierdebug" then
+        print("|cFF00BFFF[DelveGuide]|r === Objective Tracker Dump ===")
+        local tracker = _G["ObjectiveTrackerFrame"] or _G["ScenarioObjectiveTracker"]
+        if tracker then
+            local function PrintText(frame, depth)
+                if not frame or frame:IsForbidden() then return end
+                for _, r in ipairs({frame:GetRegions()}) do
+                    if r:GetObjectType() == "FontString" and r:IsShown() then
+                        local txt = r:GetText()
+                        if txt and txt ~= "" then
+                            local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+                            print("  ["..depth.."] " .. cleanTxt)
+                        end
+                    end
+                end
+                for _, child in ipairs({frame:GetChildren()}) do
+                    PrintText(child, depth + 1)
+                end
+            end
+            PrintText(tracker, 0)
+        else
+            print("  |cFFFF4444No tracker found on screen!|r")
+        end
+        print("|cFF00BFFF[DelveGuide]|r === END ===")
     elseif msg=="checkdebug" then
         print("|cFF00BFFF[DelveGuide]|r === Valeera Role Debug ===")
         local id = C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer and C_DelvesUI.GetCompanionInfoForActivePlayer()
