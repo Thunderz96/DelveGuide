@@ -342,6 +342,13 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {    
     {
+        version = "1.4.6",
+        date    = "2026-03-21",
+        entries = {
+            "Minor localization additions to koKR client"
+        }
+    },   
+    {
         version = "1.4.5",
         date    = "2026-03-21",
         entries = {
@@ -549,6 +556,16 @@ DelveGuideData.localeVariants = {
     ["문제의 중심"]     = "Core of the Problem",         -- Sunkiller Sanctum 
     ["악랄한 부식줄기"] = "Dastardly Rotstalk",          -- The Grudge Pit 
     ["도둑맞은 마나"]   = "Stolen Mana",                 -- Shadowguard Point 
+
+    -- Korean (koKR) - Batch 2
+    ["포위당한 학술원"]   = "Academy Under Siege",       -- Collegiate Calamity
+    ["어둠의 보급품"]     = "Shadowy Supplies",          -- The Shadow Enclave
+    ["함정이다!"]         = "Trapped!",                  -- Twilight Crypts
+    ["의식 방해"]         = "Ritual Interrupted",        -- Atal'Aman
+    ["중력 효과"]         = "The Gravitational Effect",  -- Sunkiller Sanctum
+    ["투기장의 용사"]     = "Arena Champion",            -- The Grudge Pit
+    ["알른나방 간식"]     = "Alnmoth Munchies",          -- The Gulf of Memory
+    ["재앙을 부르는 자"]   = "Calamitous",                -- Shadowguard Point
 
     -- German (deDE)
     ["Belagerte Akademie"]       = "Academy Under Siege",       

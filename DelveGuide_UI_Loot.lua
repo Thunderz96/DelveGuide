@@ -17,7 +17,7 @@ local function CreateLootRow(parent, y, item)
     iconTex:SetSize(rH + 2, rH + 2)
     iconTex:SetPoint("LEFT", btn, "LEFT", 0, 0)
     if item.id then
-        local _, _, _, _, icon = GetItemInfoInstant(item.id)
+        local icon = GetItemIcon(item.id)
         iconTex:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
     end
     
