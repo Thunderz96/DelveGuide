@@ -342,6 +342,14 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {    
     {
+        version = "1.4.7",
+        date    = "2026-03-21",
+        entries = {
+            "Hotfix to fix Blizzard Spelling Error l0l",
+            "Shadowguard Point Story Variant Captured Widlife"
+        }
+    },
+    {
         version = "1.4.6",
         date    = "2026-03-21",
         entries = {
