@@ -545,8 +545,12 @@ DelveGuideData.widgetSetDelves = {
     [1805] = "Twilight Crypts",
 }
 
+
 -- Localized variant name → English variant name.
 DelveGuideData.localeVariants = {
+    -- English Typos (Blizzard mistakes)
+    ["Captured Widlife"] = "Capture Wildlife",     -- Shadowguard Point typo
+    ["Captured Wildlife"] = "Capture Wildlife",    -- Just in case they fix the 'L' but keep 'Captured'
     -- Korean (koKR)
     ["하라니르의 후예"] = "Descent of the Haranir",      -- The Gulf of Memory
     ["침입하는 불빛"]   = "Invasive Glow",               -- Collegiate Calamity 
