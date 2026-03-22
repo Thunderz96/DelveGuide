@@ -342,6 +342,14 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {    
     {
+        version = "1.4.5",
+        date    = "2026-03-21",
+        entries = {
+            "Localization Upgrade: Unknown variants are now safely quarantined with a [Missing Translation] tag instead of breaking the UI.",
+            "Traditional Chinese (zhTW) Support: Added full variant translations for the zhTW client."
+        }
+    },    
+    {
         version = "1.4.4",
         date    = "2026-03-21",
         entries = {
@@ -531,15 +539,34 @@ DelveGuideData.widgetSetDelves = {
 }
 
 -- Localized variant name → English variant name.
--- Add non-English variant names here as users provide them via /dg chatdump.
 DelveGuideData.localeVariants = {
     -- Korean (koKR)
     ["하라니르의 후예"] = "Descent of the Haranir",      -- The Gulf of Memory
-    ["침입하는 불빛"]   = "Invading Light",                -- Collegiate Calamity 
-    ["배신자의 대가"]   = "Price of Betrayal",             -- The Shadow Enclave 
-    ["연회 훼방꾼"]     = "Party Crashers",                -- Twilight Crypts 
-    ["토템 말살"]       = "Totemic Annihilation",          -- Atal'Aman 
-    ["문제의 중심"]     = "Heart of the Matter",           -- Sunkiller Sanctum 
-    ["악랄한 부식줄기"] = "Vicious Rotstalks",             -- The Grudge Pit 
-    ["도둑맞은 마나"]   = "Stolen Mana",                   -- Shadowguard Point 
+    ["침입하는 불빛"]   = "Invasive Glow",               -- Collegiate Calamity 
+    ["배신자의 대가"]   = "Traitor's Due",               -- The Shadow Enclave 
+    ["연회 훼방꾼"]     = "Party Crasher",               -- Twilight Crypts 
+    ["토템 말살"]       = "Totem Annihilation",          -- Atal'Aman 
+    ["문제의 중심"]     = "Core of the Problem",         -- Sunkiller Sanctum 
+    ["악랄한 부식줄기"] = "Dastardly Rotstalk",          -- The Grudge Pit 
+    ["도둑맞은 마나"]   = "Stolen Mana",                 -- Shadowguard Point 
+
+    -- German (deDE)
+    ["Belagerte Akademie"]       = "Academy Under Siege",       
+    ["Schattenhafte Vorräte"]    = "Shadowy Supplies",          
+    ["Gefangen!"]                = "Trapped!",                  
+    ["Ritual unterbrochen"]      = "Ritual Interrupted",        
+    ["Der Gravitationseffekt"]   = "The Gravitational Effect",  
+    ["Arenachampion"]            = "Arena Champion",            
+    ["Heißhunger der Alnmotten"] = "Alnmoth Munchies",          
+    ["Verhängnisvoll"]           = "Calamitous",          
+    
+    -- Traditional Chinese (zhTW)
+    ["被圍攻的學院"] = "Academy Under Siege",       -- Collegiate Calamity
+    ["暗影補給品"]   = "Shadowy Supplies",          -- The Shadow Enclave
+    ["受困！"]       = "Trapped!",                  -- Twilight Crypts
+    ["儀式中斷"]     = "Ritual Interrupted",        -- Atal'Aman
+    ["重力效應"]     = "The Gravitational Effect",  -- Sunkiller Sanctum
+    ["競技場勇士"]   = "Arena Champion",            -- The Grudge Pit
+    ["艾恩蛾點心"]   = "Alnmoth Munchies",          -- The Gulf of Memory
+    ["災厄"]         = "Calamitous",                -- Shadowguard Point
 }

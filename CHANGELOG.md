@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.5] - 2026-03-21
+
+### Added
+- **Traditional Chinese (zhTW) Support:** Added full variant translation support for the Traditional Chinese client.
+
+### Fixed
+- **Localization Fallback Overhaul:** Fixed an issue where a single missing translation would cause the addon to display all 24 variants at once. The addon now safely quarantines unknown variants with a "[Missing Translation]" tag, keeping your UI clean while identifying exactly which string needs to be reported.
+
 ## [1.4.4] - 2026-03-21
 
 ### Fixed

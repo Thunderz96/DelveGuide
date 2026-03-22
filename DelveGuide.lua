@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.4.4"
+local ADDON_VERSION    = "1.4.5"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -177,6 +177,15 @@ local function ScanActiveVariants()
                         activeDelves[engZoneName]={bountiful=isBountiful,nemesis=hasNemesis}
                         if delveName~=engZoneName then localizedToEnglish[delveName]=engZoneName end
                     end
+
+                    -- NEW: If we don't know the translation, quarantine the text safely
+                    if not variantName or variantName == "" then
+                        local safeText = (widgetTexts and widgetTexts[1]) and widgetTexts[1] or "Unknown Variant Text"
+                        -- Strip WoW color codes from the raw text to make it readable
+                        safeText = safeText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
+                        variantName = "[Missing Translation] " .. safeText
+                    end
+
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name=delveName,widgetSetID=tostring(widgetSetID),
                         atlasName=atlasName,widgetTexts=widgetTexts,variantName=variantName or "(not found)"})
@@ -184,24 +193,6 @@ local function ScanActiveVariants()
                 else
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name="(GetAreaPOIInfo returned nil)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
-                end
-            end
-        end
-    end
-    -- Non-EN fallback: if a delve is marked active but its variant couldn't be identified
-    -- (text matching and locale table both missed), mark ALL variants for that delve as active.
-    -- Better to show all possibilities than nothing at all.
-    if DelveGuideData and DelveGuideData.delves then
-        for delveName in pairs(activeDelves) do
-            local hasKnownVariant = false
-            for _, d in ipairs(DelveGuideData.delves) do
-                if d.name == delveName and activeVariants[d.variant] then
-                    hasKnownVariant = true; break
-                end
-            end
-            if not hasKnownVariant then
-                for _, d in ipairs(DelveGuideData.delves) do
-                    if d.name == delveName then activeVariants[d.variant] = true end
                 end
             end
         end
