@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.5.1"
+local ADDON_VERSION    = "1.5.2"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -986,31 +986,39 @@ end)
 -- ============================================================
 local function InjectDelveData(self)
     if DelveGuideDB and DelveGuideDB.mapTooltips == false then return end
-    if self.dgInjected then return end
-    
+
     local titleFS = _G[self:GetName() .. "TextLeft1"]
     if not titleFS then return end
-    
+
     local poiName = titleFS:GetText()
     if not poiName then return end
-    
-    -- 1. Wrap the lookup in a pcall. If poiName is a Blizzard "Secure String", 
-    -- it will safely fail instead of throwing a "table index is secret" crash.
-    local ok, engName = pcall(function()
+
+    -- 1. Put ALL string comparisons inside the pcall bubble. 
+    -- If it is a secret string, the pcall catches the security block and silently fails.
+    local ok, result = pcall(function()
+        if poiName == "" then return "IGNORE" end
+        if self.dgLastCheckedName == poiName then return "IGNORE" end
+        
+        -- It's safe! Remember it for the next frame to prevent the memory leak.
+        self.dgLastCheckedName = poiName
+        
         return (DelveGuide.localizedToEnglish and DelveGuide.localizedToEnglish[poiName]) or poiName
     end)
-    if not ok or not engName then return end
+
+    -- 2. If it was a secret string (not ok) or we already checked it ("IGNORE"), stop here!
+    if not ok or not result or result == "IGNORE" then return end
     
-    -- 2. Safely check if this is an active delve
+    local engName = result
+
     local ok2, isActive = pcall(function()
         return DelveGuide.activeDelves and DelveGuide.activeDelves[engName]
     end)
     if not ok2 or not isActive then return end
-    
+
     local activeVariant = nil
     local ranking = "N/A"
     local flags = ""
-    
+
     for _, d in ipairs(DelveGuideData.delves) do
         if d.name == engName and DelveGuide.activeVariants[d.variant] then
             activeVariant = d.variant
@@ -1021,16 +1029,15 @@ local function InjectDelveData(self)
             break
         end
     end
-    
+
     -- 3. Inject the DelveGuide Data!
     if activeVariant then
         self:AddLine(" ") 
         self:AddLine("|cFF00BFFFDelveGuide:|r")
-        
+
         local gradeText = DelveGuide.UI and DelveGuide.UI.GradeColor(ranking) or ("|cFFFFFFFF" .. ranking .. "|r")
         self:AddLine("Speed Grade: " .. gradeText .. "  " .. flags)
-        
-        self.dgInjected = true
+
         self:Show() 
     end
 end
@@ -1038,7 +1045,7 @@ end
 -- Hook OnUpdate so we catch the tooltip constantly redrawing the Bountiful timer
 GameTooltip:HookScript("OnUpdate", InjectDelveData)
 
--- Reset our flag every single time Blizzard clears the tooltip to redraw the clock
+-- Reset our memory every single time Blizzard completely clears the tooltip
 GameTooltip:HookScript("OnTooltipCleared", function(self)
-    self.dgInjected = false
+    self.dgLastCheckedName = nil
 end)
