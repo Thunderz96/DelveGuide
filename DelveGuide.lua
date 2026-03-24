@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.4.7"
+local ADDON_VERSION    = "1.5.0"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -41,26 +41,6 @@ local WIDGET_SET_DELVES = {
     [1805] = "Twilight Crypts",
 }
 
--- Localized variant name → English variant name.
--- Widget text on non-EN clients shows the variant in the local language (e.g. Korean: "이야기 변형: <name>").
--- We extract the text after the last ": " separator and look it up here.
--- To add a new locale: paste the variant name exactly as it appears after the colon in /dg chatdump output.
--- Korean (koKR) --
-local LOCALE_VARIANT_NAMES = {
-    -- Korean (koKR)
-    ["하라니르의 후예"] = "Descent of the Haranir",      -- The Gulf of Memory
-    ["침입하는 불빛"]   = "English Name Here",           -- Collegiate Calamity (e.g., "Invading Light")
-    ["배신자의 대가"]   = "English Name Here",           -- The Shadow Enclave
-    ["연회 훼방꾼"]     = "English Name Here",           -- Twilight Crypts
-    ["토템 말살"]       = "English Name Here",           -- Atal'Aman
-    ["문제의 중심"]     = "English Name Here",           -- Sunkiller Sanctum
-    ["악랄한 부식줄기"] = "English Name Here",           -- The Grudge Pit
-    ["도둑맞은 마나"]   = "English Name Here",           -- Shadowguard Point
-    
-    -- You can easily add French (frFR) or German (deDE) here later just by pasting 
-    -- their translated variant names mapped to the English database name!
-}
-
 local ZONE_NAMES = {
     [2393] = "Silvermoon City",
     [2437] = "Zul'Aman",
@@ -87,6 +67,7 @@ local function InitSavedVars()
     if DelveGuideDB.widgetAutoHide == nil then DelveGuideDB.widgetAutoHide = false end
     if DelveGuideDB.checklistEnabled == nil then DelveGuideDB.checklistEnabled = true end
     if DelveGuideDB.showChangelog == nil then DelveGuideDB.showChangelog = true end
+    if DelveGuideDB.mapTooltips == nil then DelveGuideDB.mapTooltips = true end
     -- checklistDismissed is session-only; reset on every load
     DelveGuideDB.checklistDismissed = false
     if not DelveGuideDB.roster then DelveGuideDB.roster = {} end
@@ -645,7 +626,7 @@ end
 -- MINIMAP BUTTON (LibDataBroker & LibDBIcon)
 -- ============================================================
 local LDB = LibStub("LibDataBroker-1.1")
-local icon = LibStub("LibDBIcon-1.0")
+icon = LibStub("LibDBIcon-1.0")
 
 local DelveGuideLDB = LDB:NewDataObject("DelveGuide", {
     type = "data source",
@@ -992,10 +973,69 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             local vaultStr=vaultIlvl and ("  |cFFFFD700[Vault: "..vaultIlvl.." ilvl]|r") or ""
             print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r  |cFF888888["..tier.."]|r"..vaultStr)
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
-        -- TRIGGER THE VICTORY SCREEN!
+            -- TRIGGER THE VICTORY SCREEN!
             if DelveGuide.ShowVictoryScreen then
                 DelveGuide.ShowVictoryScreen(runName, tier, vaultIlvl)
             end
+
         end
     end
+end)
+-- ============================================================
+-- WORLD MAP TOOLTIP INJECTIONS
+-- ============================================================
+local function InjectDelveData(self)
+    --Stop immediately if the user disabled map tooltips in settings!
+    if DelveGuideDB and DelveGuideDB.mapTooltips == false then return end
+
+    -- 1. If we already injected our text on this frame, stop!
+    if self.dgInjected then return end
+    
+    local titleFS = _G[self:GetName() .. "TextLeft1"]
+    if not titleFS then return end
+    
+    local poiName = titleFS:GetText()
+    if not poiName then return end
+    
+    -- 2. Resolve the localized name back to English
+    local engName = DelveGuide.localizedToEnglish and DelveGuide.localizedToEnglish[poiName] or poiName
+    
+    -- 3. Check if this is an active Delve on the map today
+    if DelveGuide.activeDelves and DelveGuide.activeDelves[engName] then
+        local activeVariant = nil
+        local ranking = "N/A"
+        local flags = ""
+        
+        for _, d in ipairs(DelveGuideData.delves) do
+            if d.name == engName and DelveGuide.activeVariants[d.variant] then
+                activeVariant = d.variant
+                ranking = d.ranking
+                if d.isBestRoute then flags = flags .. "|cFF00FF00[Best Route]|r " end
+                if d.mountable then flags = flags .. "|cFFFFD700[Mountable]|r " end
+                if d.hasBug then flags = flags .. "|cFFFF4444[Bugged]|r " end
+                break
+            end
+        end
+        
+        -- 4. Inject the DelveGuide Data!
+        if activeVariant then
+            self:AddLine(" ") 
+            self:AddLine("|cFF00BFFFDelveGuide:|r")
+            
+            local gradeText = DelveGuide.UI and DelveGuide.UI.GradeColor(ranking) or ("|cFFFFFFFF" .. ranking .. "|r")
+            self:AddLine("Speed Grade: " .. gradeText .. "  " .. flags)
+            
+            -- Lock the flag so we don't spam the tooltip
+            self.dgInjected = true
+            self:Show() 
+        end
+    end
+end
+
+-- Hook OnUpdate so we catch the tooltip constantly redrawing the Bountiful timer
+GameTooltip:HookScript("OnUpdate", InjectDelveData)
+
+-- Reset our flag every single time Blizzard clears the tooltip to redraw the clock
+GameTooltip:HookScript("OnTooltipCleared", function(self)
+    self.dgInjected = false
 end)

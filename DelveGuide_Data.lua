@@ -342,6 +342,18 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {    
     {
+        version = "1.5.0",
+        date    = "2026-03-23",
+        entries = {
+            "Milestone: Thank you all so much for 25,000+ downloads! Your feedback and chat dumps make this addon possible.",
+            "New Feature: Hover over active delves on the World Map to instantly see their Speed Grade and Variant!",
+            "New Feature: Hover over active delves on the World Map to instantly see their Speed Grade and Variant!",
+            "Settings: Added a toggle to enable/disable the new World Map tooltips.",
+            "Bug Fix: The minimap toggle button in the settings menu now works flawlessly.",
+            "Localization: Massive updates to German and Korean tracking, and added a workaround for a Blizzard spelling typo."
+        }
+    },
+    {
         version = "1.4.7",
         date    = "2026-03-21",
         entries = {
@@ -580,6 +592,7 @@ DelveGuideData.localeVariants = {
     ["재앙을 부르는 자"]   = "Calamitous",                -- Shadowguard Point
 
     -- German (deDE)
+        -- Verified via /dg chatdump
     ["Belagerte Akademie"]       = "Academy Under Siege",       
     ["Schattenhafte Vorräte"]    = "Shadowy Supplies",          
     ["Gefangen!"]                = "Trapped!",                  
@@ -587,7 +600,34 @@ DelveGuideData.localeVariants = {
     ["Der Gravitationseffekt"]   = "The Gravitational Effect",  
     ["Arenachampion"]            = "Arena Champion",            
     ["Heißhunger der Alnmotten"] = "Alnmoth Munchies",          
-    ["Verhängnisvoll"]           = "Calamitous",          
+    ["Verhängnisvoll"]           = "Calamitous",                
+    ["Invasives Leuchten"]       = "Invasive Glow",           
+    ["Schuld eines Verräters"]   = "Traitor's Due",           
+    ["Ungeladene Gäste"]         = "Party Crasher",           
+    ["Totemvernichtung"]         = "Totem Annihilation",      
+    ["Der Kern des Problems"]    = "Core of the Problem",     
+    ["Durchtriebener Faulstrunk"]= "Dastardly Rotstalk",      
+    ["Abstieg der Haranir"]      = "Descent of the Haranir",  
+    ["Gestohlenes Mana"]         = "Stolen Mana",   
+
+        -- Unverified 
+    ["Krötal unwürdig"]              = "Toadly Unbecoming",
+    ["Fakultät der Furcht"]          = "Faculty of Fear",
+    ["Die Stellung halten"]          = "Holding the Line",
+    ["Bomberangriff"]                = "Bombing Run",
+    ["Marsch der arkanen Brigade"]   = "March of the Arcane Brigade",
+    ["Gefangene Tiere"]              = "Capture Wildlife",
+    ["Nicht, was ich erwartet hatte"]= "Not What I Expected",
+    ["Fokussierer unter Druck"]      = "Focusers Under Pressure",
+    ["Leylinientechniker"]           = "Leyline Technician",
+    ["Ogerbetrieben"]                = "Ogre Powered",
+    ["Lichtblüteninvasion"]          = "Lightbloom Invasion",
+    ["Sporasaurus Spezial"]          = "Sporasaur Special",
+    ["Spiegelglanz"]                 = "Mirror Shine",
+    ["Gelöste Loa"]                  = "Loosed Loa",
+
+
+
     
     -- Traditional Chinese (zhTW)
     ["被圍攻的學院"] = "Academy Under Siege",       -- Collegiate Calamity

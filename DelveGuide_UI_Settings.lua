@@ -93,7 +93,7 @@ DelveGuide.RenderSettings = function()
         end
     end)
     y = y + 22 + 12 -- Add height for the button and padding
-    
+
     local function MakeFontScaleBtn(label, xOff, delta)
         local b = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
         b:SetSize(36, 22); b:SetText(label); b:SetPoint("TOPLEFT", cf, "TOPLEFT", xOff, -y)
@@ -113,6 +113,15 @@ DelveGuide.RenderSettings = function()
         UI.RefreshCurrentTab()
     end)
     y = y + 30 + 16
+
+    -- Map Tooltips Section 
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Map Tooltips|r") + 6
+    y = y + MakeSettingCheckbox(cf, y, "Enable World Map tooltips for active delves",
+        function() return DelveGuideDB.mapTooltips ~= false end,
+        function(checked) 
+            DelveGuideDB.mapTooltips = checked 
+            print("|cFF00BFFF[DelveGuide]|r Map Tooltips: " .. (checked and "|cFF44FF44Enabled|r" or "|cFFFF4444Disabled|r"))
+        end) + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Changelog|r") + 6
     y = y + MakeSettingCheckbox(cf, y, "Show What's New popup on version update",

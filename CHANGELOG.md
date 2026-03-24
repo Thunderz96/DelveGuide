@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0] - 2026-03-23
+
+### Added
+- **World Map Tooltip Injections:** Hovering over an active Delve on the World Map will now seamlessly display the DelveGuide Speed Grade and active variant right inside the tooltip!
+- **Map Tooltip Toggle:** Added a kill-switch in the Settings tab so users can disable map tooltips if they prefer a minimalist map.
+
+### Fixed
+- **Minimap Toggle Bug:** Fixed an issue where the minimap button wouldn't immediately hide/show when clicked in the Settings tab.
+- **Blizzard Typo Handling:** Added a background fix for a typo Blizzard made in the English game client ("Captured Widlife") that was causing missing translation warnings.
+- **Localization Expansion:** Fully verified and integrated the latest German (deDE) and Korean (koKR) variant translations.
+
 ## [1.4.5] - 2026-03-21
 
 ### Added
