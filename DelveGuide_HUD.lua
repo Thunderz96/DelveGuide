@@ -3,7 +3,7 @@
 -- Auto-shows while inside a known Delve, hides on exit.
 -- ============================================================
 
-local HUD_W, HUD_H = 290, 178
+local HUD_W, HUD_H = 290, 196
 
 local hudFrame  = nil
 local lockBtn   = nil
@@ -53,7 +53,7 @@ local function BuildHUD()
     
     -- Enable Resizing!
     hudFrame:SetResizable(true)
-    hudFrame:SetResizeBounds(250, 160, 600, 300)
+    hudFrame:SetResizeBounds(250, 178, 600, 320)
     
     hudFrame:RegisterForDrag("LeftButton")
     hudFrame:SetScript("OnDragStart", function(self)
@@ -163,9 +163,10 @@ local function BuildHUD()
     MakeRow("nemesis",   "Nemesis",   -120)
     MakeRow("bountiful", "Bountiful", -138)
     MakeRow("lives",     "Lives",     -156)
+    MakeRow("timer",     "Time",      -174)
 
     hudFrame.rows = rows
-    
+
     -- Dynamically stretch row text widths when dragged!
     hudFrame:HookScript("OnSizeChanged", function(self, width, height)
         if self.rows then
@@ -174,7 +175,21 @@ local function BuildHUD()
             end
         end
     end)
-    
+
+    -- Tick the timer display once per second (OnUpdate only fires when frame is shown)
+    local timerElapsed = 0
+    hudFrame:SetScript("OnUpdate", function(self, dt)
+        timerElapsed = timerElapsed + dt
+        if timerElapsed < 1.0 then return end
+        timerElapsed = 0
+        if self.rows and self.rows.timer and DelveGuide.runStartTime then
+            local elapsed = GetTime() - DelveGuide.runStartTime
+            local mins = math.floor(elapsed / 60)
+            local secs = math.floor(elapsed % 60)
+            self.rows.timer:SetText(string.format("|cFF00BFFF%dm %02ds|r", mins, secs))
+        end
+    end)
+
     hudFrame:Hide()
 end
 
@@ -348,6 +363,16 @@ local function UpdateHUD()
         end
     end)
     rows.lives:SetText(livesText)
+
+    -- Timer: show elapsed time since entering delve
+    if DelveGuide.runStartTime then
+        local elapsed = GetTime() - DelveGuide.runStartTime
+        local mins = math.floor(elapsed / 60)
+        local secs = math.floor(elapsed % 60)
+        rows.timer:SetText(string.format("|cFF00BFFF%dm %02ds|r", mins, secs))
+    else
+        rows.timer:SetText("|cFF888888--|r")
+    end
 end
 
 -- ── event handler ────────────────────────────────────────────
@@ -367,6 +392,7 @@ hudEvents:SetScript("OnEvent", function(_, event)
     end
     -- Delve completed — hide immediately, no zone check needed
     if event == "SCENARIO_COMPLETED" then
+        DelveGuide.runStartTime = nil  -- Timer consumed by main addon's handler
         if hudFrame then hudFrame:Hide() end
         return
     end
@@ -392,6 +418,13 @@ hudEvents:SetScript("OnEvent", function(_, event)
     -- Zone changes: defer slightly to let zone APIs settle
     C_Timer.After(0.5, function()
         if not hudFrame then BuildHUD() end
+        -- Start the completion timer when first entering a delve
+        local nowInside = IsInsideDelve()
+        if nowInside and not DelveGuide.runStartTime then
+            DelveGuide.runStartTime = GetTime()
+        elseif not nowInside then
+            DelveGuide.runStartTime = nil
+        end
         UpdateHUD()
     end)
 end)

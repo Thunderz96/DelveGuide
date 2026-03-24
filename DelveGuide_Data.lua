@@ -340,7 +340,21 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 -- SECTION 8: CHANGELOG
 -- ============================================================
-DelveGuideData.changelog = {    
+DelveGuideData.changelog = {
+    {
+        version = "1.6.0",
+        date    = "2026-03-24",
+        entries = {
+            "New Feature: Share to Chat — share today's active variants to Party (left-click) or Guild (right-click) from the Delves tab and compact widget.",
+            "New Feature: Completion Timer — live timer on the HUD during delve runs, saved to run history on completion.",
+            "New Feature: Victory Screen now displays your completion time.",
+            "New Feature: DataBroker text feed — info bar addons (Titan Panel, ElvUI, Bazooka) now show your top active variant and rank.",
+            "Improvement: Delve flags ([Best], [Bug], [Mt], [Nemesis], [Bountiful], [TODAY]) are now interactive buttons with hover tooltips explaining each tag.",
+            "Improvement: Added a 'What are Delves?' tooltip for new players (hover the ? in the Delves tab).",
+            "Improvement: Missing translations are now automatically logged to SavedVariables with locale, delve name, and first-seen date. Check the Debug tab to review.",
+            "Bug Fix: Restored Coffer Key item ID corrected in roster character cache.",
+        }
+    },
     {
         version = "1.5.1",
         date    = "2026-03-24",
@@ -353,7 +367,6 @@ DelveGuideData.changelog = {
         date    = "2026-03-23",
         entries = {
             "Milestone: Thank you all so much for 25,000+ downloads! Your feedback and chat dumps make this addon possible.",
-            "New Feature: Hover over active delves on the World Map to instantly see their Speed Grade and Variant!",
             "New Feature: Hover over active delves on the World Map to instantly see their Speed Grade and Variant!",
             "Settings: Added a toggle to enable/disable the new World Map tooltips.",
             "Bug Fix: The minimap toggle button in the settings menu now works flawlessly.",
@@ -636,13 +649,30 @@ DelveGuideData.localeVariants = {
 
 
     
-    -- Traditional Chinese (zhTW)
-    ["被圍攻的學院"] = "Academy Under Siege",       -- Collegiate Calamity
-    ["暗影補給品"]   = "Shadowy Supplies",          -- The Shadow Enclave
-    ["受困！"]       = "Trapped!",                  -- Twilight Crypts
-    ["儀式中斷"]     = "Ritual Interrupted",        -- Atal'Aman
-    ["重力效應"]     = "The Gravitational Effect",  -- Sunkiller Sanctum
-    ["競技場勇士"]   = "Arena Champion",            -- The Grudge Pit
-    ["艾恩蛾點心"]   = "Alnmoth Munchies",          -- The Gulf of Memory
-    ["災厄"]         = "Calamitous",                -- Shadowguard Point
+      -- Traditional Chinese (zhTW)
+
+    ["圖騰滅絕"] = "Totem Annihilation", 	-- Atal'Aman
+    ["蟾蜍災難"] = "Toadly Unbecoming", 	-- Atal'Aman
+    ["儀式中斷"] = "Ritual Interrupted", 	-- Atal'Aman
+    ["恐懼教授"] = "Faculty of Fear", 		-- Collegiate Calamity
+    ["被圍攻的學院"] = "Academy Under Siege", -- Collegiate Calamity
+    ["入侵之光"] = "Invasive Glow", 		-- Collegiate Calamity
+    ["災厄"] = "Calamitous", 				-- Shadowguard Point
+    ["被捕獲的野生動物"] = "Capture Wildlife", -- Shadowguard Point
+    ["遭竊的法力"] = "Stolen Mana", 			-- Shadowguard Point
+    ["非我所望"] = "Not What I Expected",  		-- Sunkiller Sanctum
+    ["重力效應"] = "The Gravitational Effect",  -- Sunkiller Sanctum
+    ["麻煩的核心"] = "Core of the Problem",  	-- Sunkiller Sanctum
+    ["殘虐腐柄"] = "Dastardly Rotstalk", 		-- The Grudge Pit
+    ["光綻入侵"] = "Lightbloom Invasion", 		-- The Grudge Pit
+    ["競技場勇士"] = "Arena Champion", 		    -- The Grudge Pit
+    ["哈拉尼爾進入地底"] = "Descent of the Haranir", -- The Gulf of Memory
+    ["艾恩蛾點心"] = "Alnmoth Munchies", 		-- The Gulf of Memory
+    ["孢龍快遞"] = "Sporasaur Special", 		-- The Gulf of Memory
+    ["叛徒的死期"] = "Traitor's Due",          	-- The Shadow Enclave
+    ["暗影補給品"] = "Shadowy Supplies",        -- The Shadow Enclave
+    ["鏡子發光"] = "Mirror Shine",          	-- The Shadow Enclave
+    ["派對破壞者"] = "Party Crasher",           -- Twilight Crypts
+    ["受困！"] = "Trapped!", -- Twilight Crypts
+    ["失控羅亞"] = "Loosed Loa", -- Twilight Crypts
 }

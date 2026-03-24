@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.5.2"
+local ADDON_VERSION    = "1.6.0"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -71,6 +71,7 @@ local function InitSavedVars()
     -- checklistDismissed is session-only; reset on every load
     DelveGuideDB.checklistDismissed = false
     if not DelveGuideDB.roster then DelveGuideDB.roster = {} end
+    if not DelveGuideDB.missingTranslations then DelveGuideDB.missingTranslations = {} end
     -- lastSeenVersion drives the "what's new" popup (nil = never shown)
     if DelveGuideDB.lastSeenVersion == nil then DelveGuideDB.lastSeenVersion = nil end
 end
@@ -159,12 +160,30 @@ local function ScanActiveVariants()
                         if delveName~=engZoneName then localizedToEnglish[delveName]=engZoneName end
                     end
 
-                    -- NEW: If we don't know the translation, quarantine the text safely
+                    -- If we don't know the translation, quarantine the text safely
                     if not variantName or variantName == "" then
                         local safeText = (widgetTexts and widgetTexts[1]) and widgetTexts[1] or "Unknown Variant Text"
                         -- Strip WoW color codes from the raw text to make it readable
-                        safeText = safeText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
+                        safeText = safeText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
                         variantName = "[Missing Translation] " .. safeText
+
+                        -- Log to SavedVariables for the Debug tab
+                        if DelveGuideDB and DelveGuideDB.missingTranslations then
+                            local locale = GetLocale and GetLocale() or "unknown"
+                            local entryKey = locale .. ":" .. safeText
+                            if not DelveGuideDB.missingTranslations[entryKey] then
+                                DelveGuideDB.missingTranslations[entryKey] = {
+                                    text      = safeText,
+                                    locale    = locale,
+                                    delve     = delveName,
+                                    mapID     = mapID,
+                                    firstSeen = date("%Y-%m-%d"),
+                                }
+                                -- One-time notification per unknown variant
+                                print("|cFF00BFFF[DelveGuide]|r |cFFFFFF00New untranslated variant detected:|r |cFFCCCCCC" .. safeText .. "|r")
+                                print("|cFF00BFFF[DelveGuide]|r Help add your language! Run |cFFFFFF00/dg chatdump|r and share the output on CurseForge.")
+                            end
+                        end
                     end
 
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
@@ -202,6 +221,7 @@ local zoneColors={["Zul'Aman"]="|cFFFF8C00",["Quel'Thalas"]="|cFF00CED1",["Voids
 local function ZoneColor(z) return (zoneColors[z] or "|cFFCCCCCC")..z.."|r" end
 local typeColors={Combat="|cFFFF4444",Utility="|cFF44AAFF"}
 local RANK_COLORS={S="|cFF00FF44",A="|cFF66FF44",B="|cFFAAFF44",C="|cFFFFFF44",D="|cFFFF8844",F="|cFFFF4444"}
+local RANK_ORDER={S=1,A=2,B=3,C=4,D=5,F=6}
 local function TypeColor(t) return (typeColors[t] or "|cFFFFFFFF")..t.."|r" end
 
 local function SetDelveWaypoint(pin)
@@ -313,7 +333,7 @@ local function CacheCurrentChar()
     end)
 
     local bounty = C_Item.GetItemCount(265714, true) or 0
-    local restoredKeys = C_Item.GetItemCount(225091, true) or 0
+    local restoredKeys = C_Item.GetItemCount(3028, true) or 0
 
     local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
     local resetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
@@ -648,6 +668,45 @@ local DelveGuideLDB = LDB:NewDataObject("DelveGuide", {
     end,
 })
 
+local function UpdateLDBText()
+    -- Shards
+    local shards = 0
+    pcall(function()
+        local info = C_CurrencyInfo.GetCurrencyInfo(3310)
+        if info then shards = info.quantity or 0 end
+    end)
+
+    -- Best active variant
+    local bestVariant, bestRank = nil, 99
+    local rankOrder = {S=1, A=2, B=3, C=4, D=5, F=6}
+    if DelveGuideData and DelveGuideData.delves then
+        local seen = {}
+        for _, d in ipairs(DelveGuideData.delves) do
+            if activeVariants[d.variant] and not seen[d.variant] then
+                seen[d.variant] = true
+                local r = rankOrder[d.ranking] or 99
+                if r < bestRank then bestRank = r; bestVariant = d.variant; end
+            end
+        end
+    end
+
+    -- Vault
+    local _, vaultSlots = GetWeeklyVaultData()
+
+    -- Format
+    local parts = {}
+    table.insert(parts, string.format("Keys: %d/600", shards))
+    if bestVariant then
+        local gradeLetter = "?"
+        for letter, order in pairs(rankOrder) do if order == bestRank then gradeLetter = letter; break end end
+        table.insert(parts, string.format("[%s] %s", gradeLetter, bestVariant))
+    end
+    table.insert(parts, string.format("Vault: %d/3", vaultSlots))
+
+    DelveGuideLDB.text = table.concat(parts, " | ")
+end
+DelveGuide.UpdateLDBText = UpdateLDBText
+
 SLASH_DELVEGUIDE1="/delveguide"; SLASH_DELVEGUIDE2="/dg"
 SlashCmdList["DELVEGUIDE"]=function(msg)
     msg=strtrim(msg:lower())
@@ -783,11 +842,11 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
         local resetKey = secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
         local testChar="Unknown"; pcall(function() testChar=UnitName("player") or "Unknown" end)
-        table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar})
+        table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar,elapsed=312})
         print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run — |cFF00FF44"..testName.."|r")
         -- TRIGGER THE VICTORY SCREEN FOR THE TEST RUN!
         if DelveGuide.ShowVictoryScreen then
-            DelveGuide.ShowVictoryScreen(testName, "Tier 8", 610)
+            DelveGuide.ShowVictoryScreen(testName, "Tier 8", 610, 312)
         end
         if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
     elseif msg=="help" then
@@ -805,6 +864,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg check|r       — Show pre-entry checklist")
         print("  |cFFFFFF00/dg checkdebug|r  — Scan auras to find Valeera role spell ID")
         print("  |cFFFFFF00/dg tier [#]|r    — Manually set current delve tier, e.g. |cFFFFFF00/dg tier 8|r")
+        print("  |cFFFFFF00/dg share [ch]|r  — Share active variants to chat (party/guild/say/raid)")
         print("  |cFFFFFF00/dg specinfo|r    — Show your detected spec ID (debug)")
         print("  |cFFFFFF00/dg help|r        — Show this help")
     elseif msg:sub(1,5)=="tier " then
@@ -827,6 +887,36 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         if val then DelveGuideDB.fontScale=math.max(0.6,math.min(2.0,val)); RefreshCurrentTab()
             print(string.format("|cFF00BFFF[DelveGuide]|r Font: %.1fx",DelveGuideDB.fontScale))
         else print(string.format("|cFF00BFFF[DelveGuide]|r Font: %.1fx (0.6-2.0)",DelveGuideDB.fontScale)) end
+    elseif msg:sub(1,5)=="share" then
+        local channel = strtrim(msg:sub(7)):upper()
+        if channel == "" then channel = "PARTY" end
+        local validChannels = {PARTY=true, GUILD=true, SAY=true, RAID=true, INSTANCE_CHAT=true}
+        if not validChannels[channel] then
+            print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg share [party|guild|say|raid]|r")
+            return
+        end
+        -- Build sorted active variant list (same pattern as compact widget)
+        local entries, seen = {}, {}
+        if DelveGuideData and DelveGuideData.delves then
+            for _, d in ipairs(DelveGuideData.delves) do
+                if activeVariants[d.variant] and not seen[d.variant] then
+                    seen[d.variant] = true
+                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                end
+            end
+        end
+        if #entries == 0 then
+            print("|cFF00BFFF[DelveGuide]|r No active variants found. Try |cFFFFFF00/dg scan|r first.")
+            return
+        end
+        table.sort(entries, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
+        SendChatMessage("[DelveGuide] Today's Active Delves:", channel)
+        for _, e in ipairs(entries) do
+            local ds = activeDelves[e.delve]
+            local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
+            SendChatMessage(string.format("  [%s] %s (%s)%s", e.ranking, e.variant, e.delve, bountyTag), channel)
+        end
+        print("|cFF00BFFF[DelveGuide]|r Shared "..#entries.." variants to |cFFFFFF00"..channel.."|r")
     else DelveGuide.Toggle() end
 end
 
@@ -875,11 +965,12 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
         local inInst, instType = IsInInstance()
         if not inInst then
             DelveGuide.inDelveInstance = false
-            C_Timer.After(0, function() ScanActiveVariants(); if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end end)
+            C_Timer.After(0, function() ScanActiveVariants(); if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end; UpdateLDBText() end)
         elseif instType == "scenario" then
             DelveGuide.inDelveInstance = true
         end
         CacheCurrentChar()
+        UpdateLDBText()
         if mainFrame and mainFrame:IsShown() then RefreshCurrentTab() end
         if DelveGuideDB.lastSeenVersion ~= ADDON_VERSION then
             DelveGuideDB.lastSeenVersion = ADDON_VERSION
@@ -889,7 +980,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
         end
     elseif event=="AREA_POIS_UPDATED" then
         if not IsInInstance() then
-            C_Timer.After(0, function() ScanActiveVariants(); if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end end)
+            C_Timer.After(0, function() ScanActiveVariants(); if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end; UpdateLDBText() end)
         end
         if mainFrame and mainFrame:IsShown() and currentTabKey=="delves" then SwitchTab("delves") end
     elseif event=="ACTIVE_TALENT_GROUP_CHANGED" then
@@ -968,14 +1059,22 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             local charName="Unknown"
             pcall(function() charName=UnitName("player") or "Unknown" end)
 
-            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,vaultIlvl=vaultIlvl,char=charName})
+            -- Capture completion timer (runStartTime set by HUD on delve entry)
+            local elapsed = nil
+            if DelveGuide.runStartTime then
+                elapsed = GetTime() - DelveGuide.runStartTime
+                DelveGuide.runStartTime = nil
+            end
+
+            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,vaultIlvl=vaultIlvl,char=charName,elapsed=elapsed})
             if #DelveGuideDB.history>50 then table.remove(DelveGuideDB.history) end
             local vaultStr=vaultIlvl and ("  |cFFFFD700[Vault: "..vaultIlvl.." ilvl]|r") or ""
-            print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r  |cFF888888["..tier.."]|r"..vaultStr)
+            local timeStr=elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(elapsed/60),math.floor(elapsed%60)) or ""
+            print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r  |cFF888888["..tier.."]|r"..vaultStr..timeStr)
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
             -- TRIGGER THE VICTORY SCREEN!
             if DelveGuide.ShowVictoryScreen then
-                DelveGuide.ShowVictoryScreen(runName, tier, vaultIlvl)
+                DelveGuide.ShowVictoryScreen(runName, tier, vaultIlvl, elapsed)
             end
 
         end

@@ -38,7 +38,8 @@ DelveGuide.RenderHistory = function()
                 local tierStr=run.tier and ("  |cFF888888["..run.tier.."]|r") or ""
                 local vaultStr=run.vaultIlvl and ("  |cFFFFD700★ "..run.vaultIlvl.." ilvl|r") or ""
                 local charStr=run.char and ("|cFF00FF88"..run.char.."|r  ") or ""
-                y=y+UI.CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  %s|cFF00BFFF%s|r",run.date,charStr,run.name)..tierStr..vaultStr)
+                local timeStr=run.elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(run.elapsed/60),math.floor(run.elapsed%60)) or ""
+                y=y+UI.CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  %s|cFF00BFFF%s|r",run.date,charStr,run.name)..tierStr..vaultStr..timeStr)
             end
         end
     end; cf:SetHeight(y+20)

@@ -1,4 +1,5 @@
 local UI = DelveGuide.UI
+local RANK_ORDER = {S=1, A=2, B=3, C=4, D=5, F=6}
 
 local function CreateDelveRow(parent, y, d)
     UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
@@ -44,27 +45,43 @@ local function CreateDelveRow(parent, y, d)
     else nameFS:SetText(isBountiful and ("|cFFFFD700"..d.name.."|r") or d.name) end
 
     local variantText=active and "|cFF44FF44"..d.variant.."|r" or d.variant
-    local flags=""
-    if d.isBestRoute then flags=flags.."|cFF00FF00[Best]|r " end
-    if d.hasBug then flags=flags.."|cFFFF4444[Bug]|r " end
-    if d.mountable then flags=flags.."|cFFFFD700[Mt]|r " end
-
-    if type(delveStatus)=="table" and delveStatus.nemesis then flags=flags.."|cFFFF4444[Nemesis]|r " end
 
     local infoFS=parent:CreateFontString(nil,"OVERLAY"); infoFS:SetFont(ROW_FONT_FILE,rSize)
     infoFS:SetPoint("TOPLEFT",parent,"TOPLEFT",220,-y)
-    infoFS:SetWidth(isBountiful and (rowW-420) or (rowW-310)); infoFS:SetJustifyH("LEFT")
-    infoFS:SetText(UI.ZoneColor(d.zone).."  "..variantText.."  "..flags)
+    infoFS:SetJustifyH("LEFT")
+    infoFS:SetText(UI.ZoneColor(d.zone).."  "..variantText)
+    -- Let the FontString auto-size to its text content (no fixed width)
+    -- so flag buttons chain correctly after the actual text
+    local infoTextW = infoFS:GetStringWidth()
+    infoFS:SetWidth(math.max(infoTextW + 4, 100))
 
-    if isBountiful then
-        local bountyFS=parent:CreateFontString(nil,"OVERLAY"); bountyFS:SetFont(ROW_FONT_FILE,rSize)
-        bountyFS:SetPoint("TOPLEFT",parent,"TOPLEFT",rowW-190,-y); bountyFS:SetJustifyH("LEFT")
-        bountyFS:SetText("|cFFFFD700[Bountiful]|r")
-    end
-    if active then
-        local todayFS=parent:CreateFontString(nil,"OVERLAY"); todayFS:SetFont(ROW_FONT_FILE,rSize)
-        todayFS:SetPoint("TOPLEFT",parent,"TOPLEFT",rowW-80,-y); todayFS:SetJustifyH("LEFT")
-        todayFS:SetText("|cFF00FF44* TODAY|r")
+    -- Interactive flag badges with hover tooltips — all tags flow in one chain
+    local FLAG_DEFS = {}
+    if d.isBestRoute then table.insert(FLAG_DEFS, {text="|cFF00FF00[Best]|r", tip="Best Route", desc="This variant has the fastest known clear path for speed runs."}) end
+    if d.hasBug then table.insert(FLAG_DEFS, {text="|cFFFF4444[Bug]|r", tip="Known Bug", desc="This variant has a known bug that may cause issues during the run."}) end
+    if d.mountable then table.insert(FLAG_DEFS, {text="|cFFFFD700[Mt]|r", tip="Mountable", desc="You can use your mount inside this delve to move between packs faster."}) end
+    if type(delveStatus)=="table" and delveStatus.nemesis then table.insert(FLAG_DEFS, {text="|cFFFF4444[Nemesis]|r", tip="Nemesis Active", desc="A Nemesis boss is present in this delve today. Swap Mandate of Sacred Death — no profession nodes in the arena."}) end
+    if isBountiful then table.insert(FLAG_DEFS, {text="|cFFFFD700[Bountiful]|r", tip="Bountiful Delve", desc="This delve is Bountiful today. Use a Coffer Key to open the Bountiful Coffer for bonus loot."}) end
+    if active then table.insert(FLAG_DEFS, {text="|cFF00FF44* TODAY|r", tip="Active Today", desc="This variant is the one currently available for this delve."}) end
+
+    local lastAnchor = infoFS
+    for _, flag in ipairs(FLAG_DEFS) do
+        local btn = CreateFrame("Button", nil, parent)
+        btn:SetSize(40, rH)
+        btn:SetPoint("LEFT", lastAnchor, "RIGHT", lastAnchor == infoFS and 4 or 2, 0)
+        local fs = btn:CreateFontString(nil, "OVERLAY")
+        fs:SetFont(ROW_FONT_FILE, rSize)
+        fs:SetAllPoints(); fs:SetJustifyH("LEFT")
+        fs:SetText(flag.text)
+        btn:SetWidth(math.max(fs:GetStringWidth() + 4, 30))
+        btn:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:AddLine("|cFFFFD700" .. flag.tip .. "|r")
+            GameTooltip:AddLine(flag.desc, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        lastAnchor = btn
     end
     return rH
 end
@@ -106,6 +123,76 @@ DelveGuide.RenderDelves = function()
         y=y+UI.CreateRow(cf,y,string.format("|cFF3088FFGreat Vault:|r  %d delve(s) this week  —  %s",delveCount,table.concat(parts,"  |  ")))
     end
     y=y+8
+
+    -- "What are Delves?" hover tooltip — subtle "?" near header
+    local helpBtn = CreateFrame("Button", nil, cf)
+    helpBtn:SetSize(16, 16) -- size is immaterial since the FontString fills the button and handles mouse events
+    helpBtn:SetPoint("TOPRIGHT", cf, "TOPRIGHT", -8, -8)
+    local helpFS = helpBtn:CreateFontString(nil, "OVERLAY")
+    helpFS:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 21, "OUTLINE", "BOLD")
+    helpFS:SetAllPoints(); helpFS:SetJustifyH("CENTER")
+    helpFS:SetText("|cFF777777?|r")
+    helpBtn:SetScript("OnEnter", function(self)
+        helpFS:SetText("|cFFFFFFFF?|r")
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddLine("|cFFFFD700What are Delves?|r")
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Short 1-5 player mini-dungeons across Quel'Thalas.", 1, 1, 1, true)
+        GameTooltip:AddLine("No role requirements — bring any spec, any class.", 1, 1, 1, true)
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("|cFFFFD700Variants:|r Each delve has rotating story variants that change daily.", 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700Tiers:|r 1-11 control difficulty. Tier 8+ drops Hero-track (259 ilvl) gear.", 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700Bountiful:|r Marked delves that drop bonus loot when opened with a Restored Coffer Key.", 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700Coffer Keys:|r Earn Coffer Key Shards (600/week cap) — 100 shards = 1 key.", 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700Great Vault:|r 2/4/8 delves unlock vault slots. Tier 8+ gives 259 ilvl vault rewards.", 1, 1, 1, true)
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Your companion Valeera joins every run. Set her role (DPS/Healer/Tank)", 0.7, 0.7, 0.7, true)
+        GameTooltip:AddLine("at Restoration Stones inside the delve. She levels up as you play.", 0.7, 0.7, 0.7, true)
+        GameTooltip:Show()
+    end)
+    helpBtn:SetScript("OnLeave", function() helpFS:SetText("|cFF777777?|r"); GameTooltip:Hide() end)
+
+    -- Share to Chat button
+    local shareBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    shareBtn:SetSize(110, 20)
+    shareBtn:SetPoint("TOPRIGHT", cf, "TOPRIGHT", -10, -(y - 2))
+    shareBtn:SetText("Share to Party")
+    shareBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    shareBtn:SetScript("OnClick", function(_, button)
+        local channel = (button == "RightButton") and "GUILD" or "PARTY"
+        local av = DelveGuide.activeVariants or {}
+        local ad = DelveGuide.activeDelves or {}
+        local entries, seen = {}, {}
+        if DelveGuideData and DelveGuideData.delves then
+            for _, d in ipairs(DelveGuideData.delves) do
+                if av[d.variant] and not seen[d.variant] then
+                    seen[d.variant] = true
+                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                end
+            end
+        end
+        if #entries == 0 then
+            print("|cFF00BFFF[DelveGuide]|r No active variants to share. Try |cFFFFFF00/dg scan|r first.")
+            return
+        end
+        table.sort(entries, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
+        SendChatMessage("[DelveGuide] Today's Active Delves:", channel)
+        for _, e in ipairs(entries) do
+            local ds = ad[e.delve]
+            local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
+            SendChatMessage(string.format("  [%s] %s (%s)%s", e.ranking, e.variant, e.delve, bountyTag), channel)
+        end
+        print("|cFF00BFFF[DelveGuide]|r Shared "..#entries.." variants to |cFFFFFF00"..channel.."|r")
+    end)
+    shareBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddLine("|cFFFFD700Share Active Variants|r")
+        GameTooltip:AddLine("Left-click: Share to Party", 0.7, 1, 0.7)
+        GameTooltip:AddLine("Right-click: Share to Guild", 0.5, 0.7, 1)
+        GameTooltip:Show()
+    end)
+    shareBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     y=y+UI.CreateRow(cf,y,"|cFFAAAAAA"..string.format("%-6s  %-22s  %-14s  %s","Rank","Delve","Zone","Variant / Flags").."|r")
     y=y+UI.CreateRow(cf,y,"|cFF555555"..string.rep("-",90).."|r")+2
     if vc>0 then

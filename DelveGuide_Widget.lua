@@ -139,6 +139,49 @@ DelveGuide.CreateCompactWidget = function()
     titleFS:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -9)
     titleFS:SetText("|cFF00BFFFDelveGuide|r")
 
+    -- Share button — sends currently displayed variants to chat
+    local shareBtn = CreateFrame("Button", nil, f)
+    shareBtn:SetSize(14, 14); shareBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -25, -7)
+    shareBtn:SetNormalTexture("Interface\\Buttons\\UI-GuildButton-PublicNote-Up")
+    shareBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+    shareBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    shareBtn:SetScript("OnClick", function(_, button)
+        local channel = (button == "RightButton") and "GUILD" or "PARTY"
+        local activeVariants = DelveGuide.activeVariants or {}
+        local activeDelves   = DelveGuide.activeDelves or {}
+        local tiers = DelveGuideDB.widgetTiers or {}
+        local entries, seen = {}, {}
+        if DelveGuideData and DelveGuideData.delves then
+            for _, d in ipairs(DelveGuideData.delves) do
+                if activeVariants[d.variant] and not seen[d.variant] and tiers[d.ranking] then
+                    seen[d.variant] = true
+                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                end
+            end
+        end
+        if #entries == 0 then
+            print("|cFF00BFFF[DelveGuide]|r No matching variants to share.")
+            return
+        end
+        table.sort(entries, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
+        SendChatMessage("[DelveGuide] Today's Active Delves:", channel)
+        for _, e in ipairs(entries) do
+            local ds = activeDelves[e.delve]
+            local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
+            SendChatMessage(string.format("  [%s] %s (%s)%s", e.ranking, e.variant, e.delve, bountyTag), channel)
+        end
+        print("|cFF00BFFF[DelveGuide]|r Shared "..#entries.." variants to |cFFFFFF00"..channel.."|r")
+    end)
+    shareBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddLine("|cFFFFD700Share Active Variants|r")
+        GameTooltip:AddLine("Left-click: Share to Party", 0.7, 1, 0.7)
+        GameTooltip:AddLine("Right-click: Share to Guild", 0.5, 0.7, 1)
+        GameTooltip:AddLine("Only shares ranks shown by your tier filter.", 0.5, 0.5, 0.5)
+        GameTooltip:Show()
+    end)
+    shareBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     local lockBtn = CreateFrame("Button", nil, f)
     lockBtn:SetSize(14, 14); lockBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -7, -7)
     lockBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")

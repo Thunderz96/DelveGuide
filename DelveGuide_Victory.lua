@@ -3,12 +3,12 @@
 -- ============================================================
 local victoryFrame = nil
 
-DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl)
+DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed)
     -- Stop immediately if the user disabled the popup in settings
     if DelveGuideDB and DelveGuideDB.victoryEnabled == false then return end
     if not victoryFrame then        
         victoryFrame = CreateFrame("Frame", "DelveGuideVictoryToast", UIParent, "BackdropTemplate")
-        victoryFrame:SetSize(340, 110)
+        victoryFrame:SetSize(340, 128)
         victoryFrame:SetFrameStrata("DIALOG")
         
         -- 1. Enable Dragging
@@ -59,8 +59,11 @@ DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl)
         victoryFrame.Tier = victoryFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         victoryFrame.Tier:SetPoint("TOP", victoryFrame.Title, "BOTTOM", 0, -8)
 
+        victoryFrame.Time = victoryFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        victoryFrame.Time:SetPoint("TOP", victoryFrame.Tier, "BOTTOM", 0, -4)
+
         victoryFrame.Runs = victoryFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        victoryFrame.Runs:SetPoint("TOP", victoryFrame.Tier, "BOTTOM", 0, -12)
+        victoryFrame.Runs:SetPoint("TOP", victoryFrame.Time, "BOTTOM", 0, -4)
 
         victoryFrame.Vault = victoryFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         victoryFrame.Vault:SetPoint("TOP", victoryFrame.Runs, "BOTTOM", 0, -4)
@@ -102,6 +105,16 @@ DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl)
     
     local tStr = tierStr and tostring(tierStr):gsub("Tier ", "") or "?"
     victoryFrame.Tier:SetText("Tier |cFF00FF44" .. tStr .. "|r Completed")
+
+    if elapsed then
+        local mins = math.floor(elapsed / 60)
+        local secs = math.floor(elapsed % 60)
+        victoryFrame.Time:SetText("Completion Time: |cFF00BFFF" .. mins .. "m " .. string.format("%02d", secs) .. "s|r")
+        victoryFrame.Time:Show()
+    else
+        victoryFrame.Time:SetText("")
+        victoryFrame.Time:Hide()
+    end
 
     victoryFrame.Runs:SetText("Weekly Delves Completed: |cFF00BFFF" .. trueDelveCount .. "|r")
 

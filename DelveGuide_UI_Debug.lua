@@ -71,7 +71,33 @@ DelveGuide.RenderDebug = function()
     end
 
     y = y + 8
-    
+
+    -- 3b. Missing Translations Log
+    local missing = DelveGuideDB and DelveGuideDB.missingTranslations or {}
+    local missingCount = 0
+    for _ in pairs(missing) do missingCount = missingCount + 1 end
+    if missingCount > 0 then
+        y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Missing Translations (" .. missingCount .. ") --|r") + 4
+        y = y + UI.CreateRow(cf, y, "|cFFAAAAAA  These variants were detected but have no entry in localeVariants.|r")
+        y = y + UI.CreateRow(cf, y, "|cFFAAAAAA  Run /dg chatdump and share the output on CurseForge to help!|r") + 4
+        for _, entry in pairs(missing) do
+            y = y + UI.CreateRow(cf, y, string.format("  |cFFFF8844[%s]|r  |cFFCCCCCC%s|r  |cFF888888(delve: %s, first seen: %s)|r",
+                entry.locale or "?", entry.text or "?", entry.delve or "?", entry.firstSeen or "?"))
+        end
+        y = y + 4
+        local clearBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+        clearBtn:SetSize(160, 20)
+        clearBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
+        clearBtn:SetText("Clear Missing Log")
+        clearBtn:SetScript("OnClick", function()
+            DelveGuideDB.missingTranslations = {}
+            UI.RefreshCurrentTab()
+        end)
+        y = y + 28
+    else
+        y = y + UI.CreateRow(cf, y, "|cFF44FF44No missing translations detected.|r") + 4
+    end
+
     -- 4. Raw Per-Delve Data Dump
     if #rawScanResults > 0 then
         local vc = 0
