@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.5.1] - 2026-03-23
+
+### Hotfix
+- **Tooltip Hotfix:** Fixed a Lua error ("table index is secret") that could occur when hovering over protected game elements (like players or unit frames) with the new map tooltips enabled.
+
 ## [1.5.0] - 2026-03-23
 
 ### Added

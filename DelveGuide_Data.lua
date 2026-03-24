@@ -342,6 +342,13 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {    
     {
+        version = "1.5.1",
+        date    = "2026-03-24",
+        entries = {
+            "Hotfix: Resolved a Lua error that triggered when hovering over protected UI elements with map tooltips enabled."
+        }
+    },
+    {
         version = "1.5.0",
         date    = "2026-03-23",
         entries = {

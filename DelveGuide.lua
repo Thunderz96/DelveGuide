@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.5.0"
+local ADDON_VERSION    = "1.5.1"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -985,10 +985,7 @@ end)
 -- WORLD MAP TOOLTIP INJECTIONS
 -- ============================================================
 local function InjectDelveData(self)
-    --Stop immediately if the user disabled map tooltips in settings!
     if DelveGuideDB and DelveGuideDB.mapTooltips == false then return end
-
-    -- 1. If we already injected our text on this frame, stop!
     if self.dgInjected then return end
     
     local titleFS = _G[self:GetName() .. "TextLeft1"]
@@ -997,38 +994,44 @@ local function InjectDelveData(self)
     local poiName = titleFS:GetText()
     if not poiName then return end
     
-    -- 2. Resolve the localized name back to English
-    local engName = DelveGuide.localizedToEnglish and DelveGuide.localizedToEnglish[poiName] or poiName
+    -- 1. Wrap the lookup in a pcall. If poiName is a Blizzard "Secure String", 
+    -- it will safely fail instead of throwing a "table index is secret" crash.
+    local ok, engName = pcall(function()
+        return (DelveGuide.localizedToEnglish and DelveGuide.localizedToEnglish[poiName]) or poiName
+    end)
+    if not ok or not engName then return end
     
-    -- 3. Check if this is an active Delve on the map today
-    if DelveGuide.activeDelves and DelveGuide.activeDelves[engName] then
-        local activeVariant = nil
-        local ranking = "N/A"
-        local flags = ""
-        
-        for _, d in ipairs(DelveGuideData.delves) do
-            if d.name == engName and DelveGuide.activeVariants[d.variant] then
-                activeVariant = d.variant
-                ranking = d.ranking
-                if d.isBestRoute then flags = flags .. "|cFF00FF00[Best Route]|r " end
-                if d.mountable then flags = flags .. "|cFFFFD700[Mountable]|r " end
-                if d.hasBug then flags = flags .. "|cFFFF4444[Bugged]|r " end
-                break
-            end
+    -- 2. Safely check if this is an active delve
+    local ok2, isActive = pcall(function()
+        return DelveGuide.activeDelves and DelveGuide.activeDelves[engName]
+    end)
+    if not ok2 or not isActive then return end
+    
+    local activeVariant = nil
+    local ranking = "N/A"
+    local flags = ""
+    
+    for _, d in ipairs(DelveGuideData.delves) do
+        if d.name == engName and DelveGuide.activeVariants[d.variant] then
+            activeVariant = d.variant
+            ranking = d.ranking
+            if d.isBestRoute then flags = flags .. "|cFF00FF00[Best Route]|r " end
+            if d.mountable then flags = flags .. "|cFFFFD700[Mountable]|r " end
+            if d.hasBug then flags = flags .. "|cFFFF4444[Bugged]|r " end
+            break
         end
+    end
+    
+    -- 3. Inject the DelveGuide Data!
+    if activeVariant then
+        self:AddLine(" ") 
+        self:AddLine("|cFF00BFFFDelveGuide:|r")
         
-        -- 4. Inject the DelveGuide Data!
-        if activeVariant then
-            self:AddLine(" ") 
-            self:AddLine("|cFF00BFFFDelveGuide:|r")
-            
-            local gradeText = DelveGuide.UI and DelveGuide.UI.GradeColor(ranking) or ("|cFFFFFFFF" .. ranking .. "|r")
-            self:AddLine("Speed Grade: " .. gradeText .. "  " .. flags)
-            
-            -- Lock the flag so we don't spam the tooltip
-            self.dgInjected = true
-            self:Show() 
-        end
+        local gradeText = DelveGuide.UI and DelveGuide.UI.GradeColor(ranking) or ("|cFFFFFFFF" .. ranking .. "|r")
+        self:AddLine("Speed Grade: " .. gradeText .. "  " .. flags)
+        
+        self.dgInjected = true
+        self:Show() 
     end
 end
 
