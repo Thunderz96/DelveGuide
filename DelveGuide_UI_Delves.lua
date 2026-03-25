@@ -103,6 +103,7 @@ DelveGuide.RenderDelves = function()
     for _,d in ipairs(DelveGuideData.delves) do
         if activeVariants[d.variant] then table.insert(activeData,d) else table.insert(inactiveData,d) end
     end
+    table.sort(activeData, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
     
     local note=vc>0 and "  |cFF44FF44("..vc.." active today)|r" or "  |cFFAAAAAA(use /dg scan)|r"
     y=y+UI.CreateHeader(cf,y,"Delve Rankings -- S=Fastest | F=Slowest"..note)+4

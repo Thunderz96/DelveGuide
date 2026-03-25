@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.2] - 2026-03-25
+
+### Added
+- **Spanish (esES/esMX) Support:** Added 9 variant translations for Spanish clients — new language!
+- **Italian (itIT) Expansion:** Added 9 new Italian variant translations (17 of 30 now covered).
+
+### Changed
+- **Active Variants Sorted:** The "Active Today" section in the Delves tab now sorts by rank (S first, F last).
+
 ## [1.6.1] - 2026-03-25
 
 ### Changed

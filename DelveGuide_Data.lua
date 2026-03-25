@@ -342,6 +342,15 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.6.2",
+        date    = "2026-03-25",
+        entries = {
+            "Localization: Added Spanish (esES/esMX) variant translations — new language!",
+            "Localization: Expanded Italian (itIT) coverage from 8 to 17 variants.",
+            "Improvement: Active variants in the Delves tab are now sorted by rank (S first, F last).",
+        }
+    },
+    {
         version = "1.6.1",
         date    = "2026-03-25",
         entries = {
@@ -656,18 +665,35 @@ DelveGuideData.localeVariants = {
 
     -- Italiano (itIT)
     ["L'Assedio dell'Accademia"] = "Academy Under Siege",       -- Collegiate Calamity
+    ["Bagliore Invasivo"]        = "Invasive Glow",             -- Collegiate Calamity
     ["Scorte Tenebrose"]         = "Shadowy Supplies",          -- The Shadow Enclave
+    ["Il Prezzo del Traditore"]  = "Traitor's Due",             -- The Shadow Enclave
     ["In Trappola!"]             = "Trapped!",                  -- Twilight Crypts
+    ["Imbucati"]                 = "Party Crasher",             -- Twilight Crypts
     ["Rituale Interrotto"]       = "Ritual Interrupted",        -- Atal'Aman
+    ["Annientamento dei Totem"]  = "Totem Annihilation",        -- Atal'Aman
     ["Effetto Gravitazionale"]   = "The Gravitational Effect",  -- Sunkiller Sanctum
+    ["Il nucleo del problema"]   = "Core of the Problem",       -- Sunkiller Sanctum
     ["Campione dell'arena"]      = "Arena Champion",            -- The Grudge Pit
+    ["Micostelo Ignobile"]       = "Dastardly Rotstalk",        -- The Grudge Pit
     ["Delizie per Falenaln"]     = "Alnmoth Munchies",          -- The Gulf of Memory
+    ["Discesa degli Haranir"]    = "Descent of the Haranir",    -- The Gulf of Memory
     ["Calamità"]                 = "Calamitous",                -- Shadowguard Point
+    ["Mana rubato"]              = "Stolen Mana",              -- Shadowguard Point
+    ["Concentrazione Sotto Pressione"] = "Focusers Under Pressure", -- The Darkway
 
+    -- Español (esES / esMX)
+    ["Resplandor invasivo"]              = "Invasive Glow",             -- Collegiate Calamity
+    ["Concentradores bajo presión"]      = "Focusers Under Pressure",   -- The Darkway
+    ["Recompensa de una traición"]       = "Traitor's Due",             -- The Shadow Enclave
+    ["Aguafiestas"]                      = "Party Crasher",             -- Twilight Crypts
+    ["Aniquilación de tótems"]           = "Totem Annihilation",        -- Atal'Aman
+    ["El núcleo del problema"]           = "Core of the Problem",       -- Sunkiller Sanctum
+    ["Acecho putrefacto despiadado"]     = "Dastardly Rotstalk",        -- The Grudge Pit
+    ["Descenso de los haranir"]          = "Descent of the Haranir",    -- The Gulf of Memory
+    ["Maná robado"]                      = "Stolen Mana",              -- Shadowguard Point
 
-
-    
-      -- Traditional Chinese (zhTW)
+    -- Traditional Chinese (zhTW)
 
     ["圖騰滅絕"] = "Totem Annihilation", 	-- Atal'Aman
     ["蟾蜍災難"] = "Toadly Unbecoming", 	-- Atal'Aman
