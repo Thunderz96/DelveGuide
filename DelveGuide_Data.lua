@@ -646,6 +646,16 @@ DelveGuideData.localeVariants = {
     ["Spiegelglanz"]                 = "Mirror Shine",
     ["Gelöste Loa"]                  = "Loosed Loa",
 
+    -- Italiano (itIT)
+    ["L'Assedio dell'Accademia"] = "Academy Under Siege",       -- Collegiate Calamity
+    ["Scorte Tenebrose"]         = "Shadowy Supplies",          -- The Shadow Enclave
+    ["In Trappola!"]             = "Trapped!",                  -- Twilight Crypts
+    ["Rituale Interrotto"]       = "Ritual Interrupted",        -- Atal'Aman
+    ["Effetto Gravitazionale"]   = "The Gravitational Effect",  -- Sunkiller Sanctum
+    ["Campione dell'arena"]      = "Arena Champion",            -- The Grudge Pit
+    ["Delizie per Falenaln"]     = "Alnmoth Munchies",          -- The Gulf of Memory
+    ["Calamità"]                 = "Calamitous",                -- Shadowguard Point
+
 
 
     
