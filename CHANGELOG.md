@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.6.1] - 2026-03-25
+
+### Changed
+- **Silent Translation Logging:** Missing translation notifications no longer spam chat during POI scanning. A single one-time message prints on login if untranslated variants exist on your client.
+- Missing translations are still silently logged to SavedVariables and viewable in the Debug tab.
+
+## [1.6.0] - 2026-03-24
+
+### Added
+- **Share to Chat:** Share today's active variants to Party (left-click) or Guild (right-click) from the Delves tab and compact widget.
+- **Completion Timer:** Live timer on the HUD during delve runs, saved to run history on completion.
+- **Victory Screen Timer:** Your completion time now displays on the victory popup.
+- **DataBroker Text Feed:** Info bar addons (Titan Panel, ElvUI, Bazooka) now show your top active variant and rank.
+- **"What are Delves?" Tooltip:** Hover the ? icon in the Delves tab for a quick overview of Midnight Delve mechanics — aimed at new players.
+
+### Changed
+- **Interactive Flag Tooltips:** Delve flags ([Best], [Bug], [Mt], [Nemesis], [Bountiful], [TODAY]) are now individual buttons with hover tooltips explaining each tag.
+- **Translation Logging:** Missing translations are now automatically logged to SavedVariables with locale, delve name, and first-seen date. Check the Debug tab to review and clear.
+
+### Fixed
+- **Restored Coffer Key ID:** Corrected the item ID used in roster character cache from 225091 to 3028.
+
 ## [1.5.1] - 2026-03-23
 
 ### Hotfix

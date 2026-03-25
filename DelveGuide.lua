@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.6.0"
+local ADDON_VERSION    = "1.6.1"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -13,6 +13,7 @@ local BASE_ROW_SIZE    = 11
 local BASE_ROW_HEIGHT  = 18
 
 local TABS = {
+    --{ label = "Dashboard", key = "dashboard" },
     { label = "Delves",   key = "delves"   },
     { label = "Curios",   key = "curios"   },
     { label = "Companion", key = "companion" },
@@ -179,9 +180,6 @@ local function ScanActiveVariants()
                                     mapID     = mapID,
                                     firstSeen = date("%Y-%m-%d"),
                                 }
-                                -- One-time notification per unknown variant
-                                print("|cFF00BFFF[DelveGuide]|r |cFFFFFF00New untranslated variant detected:|r |cFFCCCCCC" .. safeText .. "|r")
-                                print("|cFF00BFFF[DelveGuide]|r Help add your language! Run |cFFFFFF00/dg chatdump|r and share the output on CurseForge.")
                             end
                         end
                     end
@@ -965,7 +963,20 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
         local inInst, instType = IsInInstance()
         if not inInst then
             DelveGuide.inDelveInstance = false
-            C_Timer.After(0, function() ScanActiveVariants(); if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end; UpdateLDBText() end)
+            C_Timer.After(0, function()
+                ScanActiveVariants()
+                if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end
+                UpdateLDBText()
+                -- One-time flag if missing translations exist on this client
+                if DelveGuideDB.missingTranslations then
+                    local count = 0
+                    for _ in pairs(DelveGuideDB.missingTranslations) do count = count + 1 end
+                    if count > 0 and not DelveGuideDB.missingNotified then
+                        DelveGuideDB.missingNotified = true
+                        print("|cFF00BFFF[DelveGuide]|r |cFFFFFF00" .. count .. " untranslated variant(s) on your client.|r Use |cFFFFFF00/dg chatdump|r to help add your language!")
+                    end
+                end
+            end)
         elseif instType == "scenario" then
             DelveGuide.inDelveInstance = true
         end

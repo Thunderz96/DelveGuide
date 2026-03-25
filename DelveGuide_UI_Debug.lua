@@ -91,6 +91,7 @@ DelveGuide.RenderDebug = function()
         clearBtn:SetText("Clear Missing Log")
         clearBtn:SetScript("OnClick", function()
             DelveGuideDB.missingTranslations = {}
+            DelveGuideDB.missingNotified = nil
             UI.RefreshCurrentTab()
         end)
         y = y + 28

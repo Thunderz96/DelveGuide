@@ -17,14 +17,26 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 
 - Full list of all Delves with **S–F variant rankings**
 - Live indicators for **active Nemesis** and **Bountiful** status
+- Interactive flag badges (**[Best]**, **[Bug]**, **[Mt]**, **[Nemesis]**, **[Bountiful]**, **[TODAY]**) with hover tooltips
 - Highlights your current best routes and known bugs/quirks
+- **Share to Chat** — send today's active variants to Party or Guild with one click
+- **"What are Delves?"** tooltip (hover the **?** icon) for new players
+- **World Map Tooltips** — hover active Delves on the map to see their Speed Grade and Variant
 
 ### 🎯 In-Run HUD
 
 - Auto-appears when you **enter a Delve**, hides when you leave
-- Shows: **Delve name · Active variant + grade · Tier · Curio recommendation · Nemesis warning · Bountiful status · Remaining lives**
-- **Draggable** and **lockable** — remembers its position between sessions
+- Shows: **Delve name · Active variant + grade · Tier · Curio recommendation · Nemesis warning · Bountiful status · Remaining lives · Completion timer**
+- **Live Timer** — tracks your run duration in real time
+- **Draggable**, **lockable**, and **resizable** — remembers its position between sessions
 - Toggle manually with `/dg hud` (works as a preview outside Delves)
+
+### 🏆 Victory Screen
+
+- Animated toast on **Delve completion** with fade in/hold/fade out
+- Displays **completion time**, weekly delve count, and Great Vault ilvl unlocked
+- Custom victory fanfare audio
+- Draggable and toggleable via Settings
 
 ### ✅ Pre-Entry Checklist
 
@@ -35,8 +47,14 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 ### 📦 Compact Widget
 
 - Persistent floating widget showing: **Shard count · Restored Coffer Keys · Active high-value variants**
+- **Share button** — send displayed variants to Party or Guild
 - Configurable tier filter (show/hide S/A/B/C/D/F ranks)
-- Draggable and lockable, with optional click-to-open for the main window
+- Draggable and lockable, with optional click-to-open and auto-hide
+
+### 📊 DataBroker Feed
+
+- Native **LibDataBroker** support for info bar addons (Titan Panel, ElvUI, Bazooka)
+- Displays your **top active variant**, rank, shard count, and vault progress
 
 ### 💀 Nullaeus Tab
 
@@ -67,12 +85,14 @@ Delve loot reference organized by tier — know what drops before you go in.
 
 ### 📜 History Tab
 
-Session log of completed Delves — timestamps, character names, and variant details.
+- Run log grouped by **weekly reset** — timestamps, character names, variant details
+- **Completion times** displayed per run
 
 ### ⚙️ Settings
 
-- Toggle: minimap button · compact widget · pre-entry checklist · in-run HUD · changelog popup
+- Toggle: minimap button · compact widget · pre-entry checklist · in-run HUD · victory screen · changelog popup · map tooltips
 - Adjust font scale (0.6–2.0) with live preview
+- Widget auto-hide and click-to-open options
 - All settings are **saved per-account** via `SavedVariables`
 
 ---
@@ -82,14 +102,17 @@ Session log of completed Delves — timestamps, character names, and variant det
 | Command | Description |
 | --- | --- |
 | `/dg` | Open / close DelveGuide |
+| `/dg scan` | Rescan active Delve variants |
 | `/dg hud` | Toggle the in-run HUD |
 | `/dg widget` | Toggle the compact widget |
 | `/dg check` | Toggle the pre-entry checklist |
 | `/dg minimap` | Toggle the minimap button |
+| `/dg share [channel]` | Share active variants to chat (party/guild/say/raid) |
 | `/dg tier [1-11]` | Set your current Delve tier in the HUD |
-| `/dg scan` | Rescan active Delve variants |
 | `/dg font [0.6-2.0]` | Adjust text scale |
-| `/dg reset` | Reset the main window position |
+| `/dg chatdump` | Print full scan results to chat (for localization reports) |
+| `/dg specinfo` | Show your detected spec ID (debug) |
+| `/dg help` | Show all available commands |
 
 ---
 

@@ -342,6 +342,14 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.6.1",
+        date    = "2026-03-25",
+        entries = {
+            "Improvement: Missing translation notifications are now silent. A single one-time flag prints on login if untranslated variants exist on your client.",
+            "Removed per-variant chat spam that fired during POI scanning on non-English clients.",
+        }
+    },
+    {
         version = "1.6.0",
         date    = "2026-03-24",
         entries = {
