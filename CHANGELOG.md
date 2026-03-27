@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.6.3] - 2026-03-27
+
+### Added
+- **Italian (itIT) Expansion:** Added 9 more Italian variant translations (26 of 30 now covered).
+
 ## [1.6.2] - 2026-03-25
 
 ### Added

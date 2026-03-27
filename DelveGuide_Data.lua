@@ -342,6 +342,13 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.6.3",
+        date    = "2026-03-27",
+        entries = {
+            "Localization: Expanded Italian (itIT) coverage from 17 to 26 variants.",
+        }
+    },
+    {
         version = "1.6.2",
         date    = "2026-03-25",
         entries = {
@@ -681,6 +688,15 @@ DelveGuideData.localeVariants = {
     ["Calamità"]                 = "Calamitous",                -- Shadowguard Point
     ["Mana rubato"]              = "Stolen Mana",              -- Shadowguard Point
     ["Concentrazione Sotto Pressione"] = "Focusers Under Pressure", -- The Darkway
+    ["Facoltà della Paura"]           = "Faculty of Fear",         -- Collegiate Calamity
+    ["Potenza da Ogre"]               = "Ogre Powered",            -- The Darkway
+    ["Splendore dello Specchio"]      = "Mirror Shine",            -- The Shadow Enclave
+    ["Loa Scatenato"]                 = "Loosed Loa",              -- Twilight Crypts
+    ["Rospamente Sconveniente"]       = "Toadly Unbecoming",       -- Atal'Aman
+    ["Non come mi aspettavo"]         = "Not What I Expected",     -- Sunkiller Sanctum
+    ["Invasione della Fioritura di Luce"] = "Lightbloom Invasion", -- The Grudge Pit
+    ["Specialità da Sporasauri"]      = "Sporasaur Special",       -- The Gulf of Memory
+    ["Fauna catturata"]               = "Capture Wildlife",        -- Shadowguard Point
 
     -- Español (esES / esMX)
     ["Resplandor invasivo"]              = "Invasive Glow",             -- Collegiate Calamity
