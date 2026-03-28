@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.7.0"
+local ADDON_VERSION    = "1.7.1"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -706,7 +706,8 @@ local function UpdateLDBText()
     end
 
     -- Vault
-    local _, vaultSlots = GetWeeklyVaultData()
+    local delveCount, _, maxThreshold = GetWeeklyVaultData()
+    local vaultProgress = math.min(delveCount, maxThreshold > 0 and maxThreshold or 8)
 
     -- Format
     local parts = {}
@@ -716,7 +717,7 @@ local function UpdateLDBText()
         for letter, order in pairs(rankOrder) do if order == bestRank then gradeLetter = letter; break end end
         table.insert(parts, string.format("[%s] %s", gradeLetter, bestVariant))
     end
-    table.insert(parts, string.format("Vault: %d/3", vaultSlots))
+    table.insert(parts, string.format("Vault: %d/%d", vaultProgress, maxThreshold > 0 and maxThreshold or 8))
 
     DelveGuideLDB.text = table.concat(parts, " | ")
 end

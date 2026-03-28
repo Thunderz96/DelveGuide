@@ -342,6 +342,14 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.7.1",
+        date    = "2026-03-28",
+        entries = {
+            "Hotfix: Compact widget position reset for users upgrading from pre-1.7.0. You may need to reposition your widget once.",
+            "Bug Fix: DataBroker (LDB) vault text now matches the main tracker format.",
+        }
+    },
+    {
         version = "1.7.0",
         date    = "2026-03-27",
         entries = {
@@ -354,14 +362,7 @@ DelveGuideData.changelog = {
             "Bug Fix: Compact widget position now saves correctly across reloads.",
             "Improvement: Keys tracker shows (Capped) when weekly shard cap is reached.",
             "Improvement: Vault progress shows completions toward max threshold (e.g. 8/8).",
-            "New Command: /dg huddump — dumps localized HUD data for debugging.",
-        }
-    },
-    {
-        version = "1.6.3",
-        date    = "2026-03-27",
-        entries = {
-            "Localization: Expanded Italian (itIT) coverage from 17 to 26 variants.",
+            "New Command: /dg huddump -- dumps localized HUD data for debugging.",
         }
     },
     {

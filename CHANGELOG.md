@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.7.1] - 2026-03-28
+
+### Fixed
+- **Widget Position Reset:** Users upgrading from pre-1.7.0 may have their compact widget position reset to center. Simply drag it to your preferred location -- it will save correctly going forward.
+- **DataBroker (LDB) Text:** Vault display now matches the main tracker format.
+
 ## [1.7.0] - 2026-03-27
 
 ### Added
@@ -8,7 +14,7 @@
 
 ### Fixed
 - **HUD Locale Support:** Variant, grade, tier, lives, nemesis, and bountiful now display correctly on non-English clients.
-- **Great Vault Tracker:** Updated for Midnight API changes — was showing `Delves: 0 (Vault 0/8)`.
+- **Great Vault Tracker:** Updated for Midnight API changes -- was showing `Delves: 0 (Vault 0/8)`.
 - **Restored Coffer Key:** Now reads from currency system (Blizzard moved it from items to currency in Midnight).
 - **World Quest Counter:** Deduplicated quests that appear on multiple overlapping zone maps.
 - **Vault Reward ilvl:** Was displaying tier number instead of actual vault reward item level.
@@ -17,11 +23,6 @@
 ### Changed
 - **Keys Tracker:** Shows green **(Capped)** when weekly shard cap is reached instead of reverting to 0/600.
 - **Vault Progress:** Now shows completions toward max threshold (e.g. `8/8`) instead of slots unlocked.
-
-## [1.6.3] - 2026-03-27
-
-### Added
-- **Italian (itIT) Expansion:** Added 9 more Italian variant translations (26 of 30 now covered).
 
 ## [1.6.2] - 2026-03-25
 

@@ -105,9 +105,18 @@ DelveGuide.CreateCompactWidget = function()
     end)
     
     if DelveGuideDB.widgetX then
-        f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", DelveGuideDB.widgetX, DelveGuideDB.widgetY)
-    else 
-        f:SetPoint("CENTER", UIParent, "CENTER", 0, 250) 
+        -- widgetY should be negative (offset from top). Positive values are stale
+        -- from pre-1.7.0 which used a different coordinate system.
+        local wy = DelveGuideDB.widgetY or 0
+        if wy > 0 then
+            DelveGuideDB.widgetX = nil
+            DelveGuideDB.widgetY = nil
+            f:SetPoint("CENTER", UIParent, "CENTER", 0, 250)
+        else
+            f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", DelveGuideDB.widgetX, wy)
+        end
+    else
+        f:SetPoint("CENTER", UIParent, "CENTER", 0, 250)
     end
     
     f:SetFrameStrata("MEDIUM")
