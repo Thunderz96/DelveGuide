@@ -194,25 +194,34 @@ local function BuildHUD()
 end
 
 local function AutoDetectDelveTier()
-    -- Method 1: Instance Difficulty Name
+    -- Method 1: Instance Difficulty Name (locale-independent — grab any number 1-11)
     local _, _, _, difficultyName = GetInstanceInfo()
     if difficultyName and difficultyName ~= "" then
-        local tier = difficultyName:match("Tier %s*(%d+)") or difficultyName:match("(%d+)$")
-        if tier then return tonumber(tier) end
+        local tier = difficultyName:match("(%d+)")
+        if tier then
+            local n = tonumber(tier)
+            if n and n >= 1 and n <= 11 then return n end
+        end
     end
 
-    -- Method 2: Scenario Name & Step Info
+    -- Method 2: Scenario Name & Step Info (locale-independent)
     local scenarioName = ""
     pcall(function()
         if C_Scenario and C_Scenario.GetInfo then
             scenarioName = C_Scenario.GetInfo() or ""
-            local tier = scenarioName:match("Tier %s*(%d+)")
-            if tier then return tonumber(tier) end
-            
+            local tier = scenarioName:match("(%d+)")
+            if tier then
+                local n = tonumber(tier)
+                if n and n >= 1 and n <= 11 then return n end
+            end
+
             local stepName = C_Scenario.GetStepInfo()
             if stepName and stepName ~= "" then
-                local tier = stepName:match("Tier %s*(%d+)")
-                if tier then return tonumber(tier) end
+                local tier = stepName:match("(%d+)")
+                if tier then
+                    local n = tonumber(tier)
+                    if n and n >= 1 and n <= 11 then return n end
+                end
             end
         end
     end)
@@ -287,9 +296,14 @@ local function UpdateHUD()
     local gradeText = "|cFF888888?|r"
     local activeVars = (DelveGuide and DelveGuide.activeVariants) or {}
 
+    -- Translate localized zone name → English for non-EN clients
+    local engZoneName = zoneName
+    local l10n = DelveGuide and DelveGuide.localizedToEnglish
+    if l10n and l10n[zoneName] then engZoneName = l10n[zoneName] end
+
     if DelveGuideData and DelveGuideData.delves then
         for _, d in ipairs(DelveGuideData.delves) do
-            if d.name == zoneName and activeVars[d.variant] then
+            if d.name == engZoneName and activeVars[d.variant] then
                 local gc = (DelveGuideData.gradeColors and DelveGuideData.gradeColors[d.ranking]) or "|cFFFFFFFF"
                 varText   = d.variant
                 gradeText = gc .. d.ranking .. "|r"
@@ -338,7 +352,7 @@ local function UpdateHUD()
 
     -- Nemesis & Bountiful from activeDelves exposed by main addon
     local activeDelves = (DelveGuide and DelveGuide.activeDelves) or {}
-    local info = activeDelves[zoneName]
+    local info = activeDelves[engZoneName]
 
     rows.nemesis:SetText(
         (info and info.nemesis) and "|cFFFF4444[!] ACTIVE|r" or "|cFF00FF44None|r"
@@ -348,15 +362,23 @@ local function UpdateHUD()
     )
 
     -- Lives: scan scenario criteria for a deaths/lives entry
+    -- Check both description and quantityString, with locale-independent fallbacks
     local livesText = "|cFF888888--|r"
     pcall(function()
         local numCrit = C_Scenario.GetNumCriteria()
         for i = 1, (numCrit or 0) do
             local crit = C_Scenario.GetCriteriaInfo(i)
-            if crit and crit.quantityString then
-                local clean = crit.quantityString:lower()
-                if clean:find("li[fv]") or clean:find("death") or clean:find("charge") then
-                    livesText = "|cFF00FF88" .. crit.quantityString .. "|r"
+            if crit then
+                local desc  = crit.description  and crit.description:lower()  or ""
+                local qStr  = crit.quantityString and crit.quantityString:lower() or ""
+                local searchText = desc .. " " .. qStr
+                -- EN: lives/life, death, charge  |  DE: leben  |  FR: vie  |  IT: vita/vite  |  ES: vida
+                -- PT: vida  |  KO: 생명/목숨  |  ZH: 生命/命
+                if searchText:find("li[fv]") or searchText:find("death") or searchText:find("charge")
+                    or searchText:find("leben") or searchText:find("vie") or searchText:find("vit[ae]")
+                    or searchText:find("vida") or searchText:find("생명") or searchText:find("목숨")
+                    or searchText:find("生命") or searchText:find("命") then
+                    livesText = "|cFF00FF88" .. (crit.quantityString or "?") .. "|r"
                     break
                 end
             end
@@ -403,10 +425,15 @@ hudEvents:SetScript("OnEvent", function(_, event)
                 local numCrit = C_Scenario.GetNumCriteria()
                 for i = 1, (numCrit or 0) do
                     local crit = C_Scenario.GetCriteriaInfo(i)
-                    if crit and crit.quantityString then
-                        local clean = crit.quantityString:lower()
-                        if clean:find("li[fv]") or clean:find("death") or clean:find("charge") then
-                            hudFrame.rows.lives:SetText("|cFF00FF88" .. crit.quantityString .. "|r")
+                    if crit then
+                        local desc  = crit.description  and crit.description:lower()  or ""
+                        local qStr  = crit.quantityString and crit.quantityString:lower() or ""
+                        local searchText = desc .. " " .. qStr
+                        if searchText:find("li[fv]") or searchText:find("death") or searchText:find("charge")
+                            or searchText:find("leben") or searchText:find("vie") or searchText:find("vit[ae]")
+                            or searchText:find("vida") or searchText:find("생명") or searchText:find("목숨")
+                            or searchText:find("生命") or searchText:find("命") then
+                            hudFrame.rows.lives:SetText("|cFF00FF88" .. (crit.quantityString or "?") .. "|r")
                             break
                         end
                     end

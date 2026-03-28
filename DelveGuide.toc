@@ -3,7 +3,7 @@
 ## Notes: A reference guide for Midnight Delves - rankings, curios, loot, and more.
 ## IconTexture: Interface\Icons\INV_Misc_Map09
 ## Author: Thunderz
-## Version: 1.6.3
+## Version: 1.7.0
 ## X-Curse-Project-ID: 1481287
 ## SavedVariables: DelveGuideDB
 ## OptionalDeps: TomTom

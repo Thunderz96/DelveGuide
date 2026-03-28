@@ -342,6 +342,22 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.7.0",
+        date    = "2026-03-27",
+        entries = {
+            "Localization: Expanded Italian (itIT) coverage from 17 to 26 variants.",
+            "Bug Fix: HUD now works on non-English clients (variant, grade, tier, lives, nemesis, bountiful).",
+            "Bug Fix: Great Vault tracker updated for Midnight API changes (was showing 0/8).",
+            "Bug Fix: Restored Coffer Key now reads from currency system instead of item system.",
+            "Bug Fix: World Quest counter now deduplicates quests across overlapping zones.",
+            "Bug Fix: Vault row now shows actual reward ilvl instead of tier number.",
+            "Bug Fix: Compact widget position now saves correctly across reloads.",
+            "Improvement: Keys tracker shows (Capped) when weekly shard cap is reached.",
+            "Improvement: Vault progress shows completions toward max threshold (e.g. 8/8).",
+            "New Command: /dg huddump — dumps localized HUD data for debugging.",
+        }
+    },
+    {
         version = "1.6.3",
         date    = "2026-03-27",
         entries = {

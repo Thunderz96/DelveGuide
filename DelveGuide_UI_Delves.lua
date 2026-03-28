@@ -96,7 +96,8 @@ DelveGuide.RenderDelves = function()
     local troveText=hasTroveAura and "|cFF00FF44Active|r" or (troveCount>0 and "|cFFFFFF00In Bags|r" or "|cFFFF4444None|r")
     local beaconCount=C_Item.GetItemCount(253342,true) or 0
     local beaconText=beaconCount>0 and "|cFF00FF44"..beaconCount.." in Bags|r" or "|cFFFF4444None|r"
-    local restoredKeyCount=C_Item.GetItemCount(3028,true) or 0
+    local restoredKeyInfo=C_CurrencyInfo.GetCurrencyInfo(3028)
+    local restoredKeyCount=restoredKeyInfo and restoredKeyInfo.quantity or 0
     local restoredKeyText=restoredKeyCount>0 and "|cFF00FF44"..restoredKeyCount.." in Bags|r" or "|cFF888888None|r"
     
     local activeData,inactiveData={},{}
@@ -109,19 +110,21 @@ DelveGuide.RenderDelves = function()
     y=y+UI.CreateHeader(cf,y,"Delve Rankings -- S=Fastest | F=Slowest"..note)+4
     y=y+UI.CreateRow(cf,y,string.format("|cFF3088FFWeekly Items:|r  Trovehunter's Bounty: %s   |   Beacon of Hope: %s   |   Restored Coffer Key: %s",troveText,beaconText,restoredKeyText))
     
-    local delveCount,_,vaultActs=UI.GetWeeklyVaultData()
+    local delveCount,_,_,vaultActs=UI.GetWeeklyVaultData()
     if #vaultActs>0 then
         local parts={}
         for _,a in ipairs(vaultActs) do
             local done=a.progress>=a.threshold
-            local ilvlText=a.level and a.level>0 and ("|cFFFFD700"..a.level.." ilvl|r") or "|cFF888888?|r"
+            local tierNum=a.level and a.level>0 and a.level or nil
+            local reward=tierNum and DelveGuideData.tierRewards and DelveGuideData.tierRewards[tierNum]
+            local ilvlText=reward and ("|cFFFFD700"..reward.vault.." ilvl|r") or (tierNum and ("|cFFFFD700T"..tierNum.."|r") or "|cFF888888?|r")
             if done then
-                table.insert(parts,string.format("|cFF00FF44✓ Slot %d|r (%s)",a.index or #parts+1,ilvlText))
+                table.insert(parts,string.format("|cFF00FF44Slot %d|r (%s)",a.index or #parts+1,ilvlText))
             else
                 table.insert(parts,string.format("|cFF888888Slot %d:|r %d/%d needed",a.index or #parts+1,a.progress,a.threshold))
             end
         end
-        y=y+UI.CreateRow(cf,y,string.format("|cFF3088FFGreat Vault:|r  %d delve(s) this week  —  %s",delveCount,table.concat(parts,"  |  ")))
+        y=y+UI.CreateRow(cf,y,string.format("|cFF3088FFGreat Vault:|r  %d delve(s) this week  --  %s",delveCount,table.concat(parts,"  |  ")))
     end
     y=y+8
 

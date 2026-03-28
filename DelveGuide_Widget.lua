@@ -71,7 +71,8 @@ DelveGuide.UpdateCompactWidget = function()
     
     local keysInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
     local shards   = keysInfo and keysInfo.quantity or 0
-    local restored = C_Item.GetItemCount(3028, true) or 0
+    local restoredInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
+    local restored = restoredInfo and restoredInfo.quantity or 0
     local keysStr  = string.format("|cFFFFD700Keys:|r %d/600 shards", shards)
     
     if restored > 0 then
@@ -92,7 +93,8 @@ DelveGuide.CreateCompactWidget = function()
     
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
-        DelveGuideDB.widgetX = self:GetLeft(); DelveGuideDB.widgetY = self:GetTop()
+        DelveGuideDB.widgetX = self:GetLeft()
+        DelveGuideDB.widgetY = self:GetTop() - UIParent:GetHeight()
         C_Timer.After(0.05, function() self.dragging = false end)
     end)
     
@@ -103,7 +105,7 @@ DelveGuide.CreateCompactWidget = function()
     end)
     
     if DelveGuideDB.widgetX then
-        f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", DelveGuideDB.widgetX, DelveGuideDB.widgetY)
+        f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", DelveGuideDB.widgetX, DelveGuideDB.widgetY)
     else 
         f:SetPoint("CENTER", UIParent, "CENTER", 0, 250) 
     end

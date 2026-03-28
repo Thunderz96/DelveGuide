@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.6.3"
+local ADDON_VERSION    = "1.7.0"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -281,18 +281,22 @@ local function FormatResetTime(secs)
 end
 
 local function GetWeeklyVaultData()
-    local delveCount, slots, acts = 0, 0, {}
-    if Enum and Enum.WeeklyRewardItemTierType and Enum.WeeklyRewardItemTierType.World then
-        local ok, data = pcall(C_WeeklyRewards.GetActivities, Enum.WeeklyRewardItemTierType.World)
-        if ok and type(data) == "table" then
-            for _, a in ipairs(data) do
+    local delveCount, slots, maxThreshold, acts = 0, 0, 0, {}
+    -- Midnight 12.0: Enum.WeeklyRewardItemTierType removed. Call GetActivities()
+    -- with no argument and filter by type. Delves = WeeklyRewardChestThresholdType.World (6).
+    local DELVE_TYPE = (Enum and Enum.WeeklyRewardChestThresholdType and Enum.WeeklyRewardChestThresholdType.World) or 6
+    local ok, data = pcall(C_WeeklyRewards.GetActivities)
+    if ok and type(data) == "table" then
+        for _, a in ipairs(data) do
+            if a.type == DELVE_TYPE then
                 if a.progress > delveCount then delveCount = a.progress end
+                if a.threshold > maxThreshold then maxThreshold = a.threshold end
                 if a.progress >= a.threshold then slots = slots + 1 end
                 table.insert(acts, a)
             end
         end
     end
-    return delveCount, slots, acts
+    return delveCount, slots, maxThreshold, acts
 end
 
 -- Snapshot the current character's state into SavedVariables.
@@ -331,7 +335,8 @@ local function CacheCurrentChar()
     end)
 
     local bounty = C_Item.GetItemCount(265714, true) or 0
-    local restoredKeys = C_Item.GetItemCount(3028, true) or 0
+    local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
+    local restoredKeys = restoredKeyInfo and restoredKeyInfo.quantity or 0
 
     local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
     local resetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
@@ -347,7 +352,7 @@ local function CacheCurrentChar()
         end
     end
 
-    local _, vaultSlots, acts = GetWeeklyVaultData()
+    local _, vaultSlots, _, acts = GetWeeklyVaultData()
     local maxVaultIlvl = 0 
     for _, a in ipairs(acts) do
         if a.progress >= a.threshold and a.level and a.level > maxVaultIlvl then
@@ -574,34 +579,46 @@ local function CreateMainWindow()
         local COFFER_KEY_SHARD_ID = 3310
         local keysInfo = C_CurrencyInfo.GetCurrencyInfo(COFFER_KEY_SHARD_ID)
         local shards = keysInfo and keysInfo.quantity or 0
-        local delveCount, vaultSlots = GetWeeklyVaultData()
+        local weeklyCap = keysInfo and keysInfo.maxWeeklyQuantity or 600
+        local weeklyEarned = keysInfo and keysInfo.quantityEarnedThisWeek or 0
+        local delveCount, vaultSlots, maxThreshold = GetWeeklyVaultData()
+        local vaultProgress = math.min(delveCount, maxThreshold)
         local wqCount = 0
-        
+        local seenQuests = {}
+
         local mapIDs = {2393, 2437, 2395, 2444, 2413, 2405, 2424}
         for _, z in ipairs(mapIDs) do
             local quests = C_TaskQuest.GetQuestsOnMap(z)
-            if quests then 
+            if quests then
                 for _, q in ipairs(quests) do
-                    if C_QuestLog.IsWorldQuest(q.questID) and not C_QuestLog.IsQuestFlaggedCompleted(q.questID) then
+                    if not seenQuests[q.questID] and C_QuestLog.IsWorldQuest(q.questID) and not C_QuestLog.IsQuestFlaggedCompleted(q.questID) then
+                        seenQuests[q.questID] = true
                         local curs = C_QuestLog.GetQuestRewardCurrencies(q.questID)
-                        if curs then 
-                            for _, c in ipairs(curs) do 
-                                if c.currencyID == COFFER_KEY_SHARD_ID then 
-                                    wqCount = wqCount + 1 
-                                end 
-                            end 
+                        if curs then
+                            for _, c in ipairs(curs) do
+                                if c.currencyID == COFFER_KEY_SHARD_ID then
+                                    wqCount = wqCount + 1
+                                end
+                            end
                         end
                     end
-                end 
+                end
             end
         end
-        
+
         local resetSecs = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
         local resetText = resetSecs and FormatResetTime(resetSecs) or "|cFF888888?|r"
-        
+
+        local keysText
+        if weeklyCap > 0 and weeklyEarned >= weeklyCap then
+            keysText = string.format("|cFF00FF44%d/%d (Capped)|r", shards, weeklyCap)
+        else
+            keysText = string.format("%d/%d", shards, weeklyCap > 0 and weeklyCap or 600)
+        end
+
         f.TrackerText:SetText(string.format(
-            "|cFFFFD700Keys:|r %d/600  |  |cFF00BFFFDelves:|r %d  |cFF888888(Vault %d/8)|r  |  |cFF00FF88WQs:|r %d  |  |cFFAAAA00Reset:|r %s",
-            shards, delveCount, vaultSlots, wqCount, resetText
+            "|cFFFFD700Keys:|r %s  |  |cFF00BFFFDelves:|r %d  |cFF888888(Vault %d/%d)|r  |  |cFF00FF88WQs:|r %d  |  |cFFAAAA00Reset:|r %s",
+            keysText, delveCount, vaultProgress, maxThreshold, wqCount, resetText
         ))
     end
     f:HookScript("OnShow",f.UpdateTracker)
@@ -823,6 +840,49 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             print(string.format("  aura[%d] spellID=%d  %s", i, aura.spellId or 0, aura.name or "?"))
             i = i + 1
         end
+    elseif msg=="huddump" then
+        print("|cFF00BFFF[DelveGuide]|r === HUD DEBUG DUMP (share this output) ===")
+        print("Version: "..ADDON_VERSION.."  |  Locale: "..(GetLocale and GetLocale() or "unknown"))
+        -- Zone info
+        local zone = ""; pcall(function() zone = GetRealZoneText() or "" end)
+        print("GetRealZoneText: ["..zone.."]")
+        -- Instance info
+        pcall(function()
+            local name, instType, diffID, diffName = GetInstanceInfo()
+            print(string.format("GetInstanceInfo: name=[%s]  type=[%s]  diffID=[%s]  diffName=[%s]",
+                tostring(name), tostring(instType), tostring(diffID), tostring(diffName)))
+        end)
+        -- Scenario info
+        pcall(function()
+            if C_Scenario and C_Scenario.GetInfo then
+                local scenName = C_Scenario.GetInfo()
+                print("C_Scenario.GetInfo: ["..tostring(scenName).."]")
+            end
+            if C_Scenario and C_Scenario.GetStepInfo then
+                local stepName = C_Scenario.GetStepInfo()
+                print("C_Scenario.GetStepInfo: ["..tostring(stepName).."]")
+            end
+            local inScenario = C_Scenario.IsInScenario and C_Scenario.IsInScenario()
+            print("IsInScenario: "..tostring(inScenario))
+        end)
+        -- Scenario criteria (lives detection)
+        pcall(function()
+            local numCrit = C_Scenario.GetNumCriteria and C_Scenario.GetNumCriteria() or 0
+            print("Scenario criteria count: "..tostring(numCrit))
+            for i = 1, (numCrit or 0) do
+                local crit = C_Scenario.GetCriteriaInfo(i)
+                if crit then
+                    print(string.format("  crit[%d] desc=[%s]  qtyStr=[%s]  qty=%s  total=%s",
+                        i, tostring(crit.description), tostring(crit.quantityString),
+                        tostring(crit.quantity), tostring(crit.totalQuantity)))
+                end
+            end
+        end)
+        -- Localized → English mapping
+        local l10n = DelveGuide.localizedToEnglish or {}
+        local mapped = l10n[zone]
+        print("localizedToEnglish["..zone.."] = "..tostring(mapped))
+        print("|cFF00BFFF[DelveGuide]|r === END ===")
     elseif msg=="specinfo" then
         local idx = GetSpecialization and GetSpecialization()
         if not idx then print("|cFF00BFFF[DelveGuide]|r GetSpecialization() returned nil"); return end
@@ -863,6 +923,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg checkdebug|r  — Scan auras to find Valeera role spell ID")
         print("  |cFFFFFF00/dg tier [#]|r    — Manually set current delve tier, e.g. |cFFFFFF00/dg tier 8|r")
         print("  |cFFFFFF00/dg share [ch]|r  — Share active variants to chat (party/guild/say/raid)")
+        print("  |cFFFFFF00/dg huddump|r     — Dump HUD data for locale debugging (run inside a delve)")
         print("  |cFFFFFF00/dg specinfo|r    — Show your detected spec ID (debug)")
         print("  |cFFFFFF00/dg help|r        — Show this help")
     elseif msg:sub(1,5)=="tier " then
@@ -1054,13 +1115,12 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
                 vaultIlvl=DelveGuideData.tierRewards[tierNum].vault
             else
                 pcall(function()
-                    if Enum and Enum.WeeklyRewardItemTierType then
-                        local data=C_WeeklyRewards.GetActivities(Enum.WeeklyRewardItemTierType.World)
-                        if data then
-                            for _,a in ipairs(data) do
-                                if a.level and a.level>0 and a.progress>=a.threshold then
-                                    if not vaultIlvl or a.level>vaultIlvl then vaultIlvl=a.level end
-                                end
+                    local DELVE_TYPE = (Enum and Enum.WeeklyRewardChestThresholdType and Enum.WeeklyRewardChestThresholdType.World) or 6
+                    local data=C_WeeklyRewards.GetActivities()
+                    if data then
+                        for _,a in ipairs(data) do
+                            if a.type == DELVE_TYPE and a.level and a.level>0 and a.progress>=a.threshold then
+                                if not vaultIlvl or a.level>vaultIlvl then vaultIlvl=a.level end
                             end
                         end
                     end

@@ -8,7 +8,8 @@ local function RunChecklistScan()
 
     local keyInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
     local shards = keyInfo and keyInfo.quantity or 0
-    local restoredKeys = C_Item.GetItemCount(3028, true) or 0
+    local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
+    local restoredKeys = restoredKeyInfo and restoredKeyInfo.quantity or 0
     local hasKey = shards >= 100 or restoredKeys > 0
     local keyLabel
     if restoredKeys > 0 then
