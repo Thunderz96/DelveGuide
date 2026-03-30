@@ -9,7 +9,7 @@ DelveGuide.RenderRoster = function()
     UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
 
-    y = y + UI.CreateHeader(cf, y, "Roster  —  All Characters  |cFF888888(updates on login)|r") + 4
+    y = y + UI.CreateHeader(cf, y, "Roster  --  All Characters  |cFF888888(updates on login)|r") + 4
 
     local currentName  = UnitName("player") or "?"
     local currentRealm = GetRealmName()     or "?"
@@ -47,7 +47,7 @@ DelveGuide.RenderRoster = function()
     end)
 
     if #keys == 0 then
-        y = y + UI.CreateRow(cf, y, "|cFF888888No characters cached yet — log in on each alt to populate their row.|r")
+        y = y + UI.CreateRow(cf, y, "|cFF888888No characters cached yet - log in on each alt to populate their row.|r")
     else
         for _, k in ipairs(keys) do
             local c = roster[k]
@@ -121,7 +121,7 @@ DelveGuide.RenderRoster = function()
             MakeCol(COL.delves, 38, tostring(c.delveCount or 0), "RIGHT", {title="|cFFFFD700Completed Delves (This Week)|r", lines=delveLines})
 
             -- Vault Tooltip Data!
-            local vaultText = (c.vaultSlots or 0) > 0 and ("|cFF00FF44" .. (c.vaultSlots or 0) .. "|r") or "|cFF888888—|r"
+            local vaultText = (c.vaultSlots or 0) > 0 and ("|cFF00FF44" .. (c.vaultSlots or 0) .. "|r") or "|cFF888888-|r"
             local vaultLines = {}
             if c.maxVaultIlvl and c.maxVaultIlvl > 0 then
                 table.insert(vaultLines, "Highest Unlock: |cFFFFD700" .. c.maxVaultIlvl .. " ilvl|r")

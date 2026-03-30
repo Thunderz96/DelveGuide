@@ -25,10 +25,10 @@ DelveGuide.RenderCurios = function()
         y=y+UI.CreateRow(cf,y,string.format("|cFF00FF88Recommended:|r  Combat: |cFFFFD700%s|r   Utility: |cFFFFD700%s|r   Valeera: |cFF00CFFF%s|r", rec.combat, rec.utility, rec.companion))
         if rec.notes then y=y+UI.CreateRow(cf,y,"|cFF888888"..rec.notes.."|r") end
         y=y+6
-        y=y+UI.CreateRow(cf,y,"|cFFFF8844[Nemesis Warning]|r Mandate of Sacred Death procs require profession nodes. Nullaeus arena has none — swap to Overflowing Voidspire or Ebon Crown.")
+        y=y+UI.CreateRow(cf,y,"|cFFFF8844[Nemesis Warning]|r Mandate of Sacred Death procs require profession nodes. Nullaeus arena has none - swap to Overflowing Voidspire or Ebon Crown.")
         y=y+8
     else
-        y=y+UI.CreateRow(cf,y,"|cFF888888No spec data available — enter the world to detect your specialization.|r")
+        y=y+UI.CreateRow(cf,y,"|cFF888888No spec data available - enter the world to detect your specialization.|r")
         y=y+8
     end
 

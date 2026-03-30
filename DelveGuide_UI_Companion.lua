@@ -17,7 +17,7 @@ DelveGuide.RenderCompanion = function()
     UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
 
-    y = y + UI.CreateHeader(cf, y, "Companion  —  XP, Role & Live Curio Loadout") + 8
+    y = y + UI.CreateHeader(cf, y, "Companion  --  XP, Role & Live Curio Loadout") + 8
 
     -- 1. Fetch initial API Data
     local compID = nil
@@ -105,7 +105,7 @@ DelveGuide.RenderCompanion = function()
         end
     end
     -- 3. Draw Header
-    y = y + UI.CreateRow(cf, y, "|cFF00BFFF" .. compName .. "|r  —  Level |cFFFFD700" .. compLevel .. "|r  —  Role: |cFF00FF44" .. roleStr .. "|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFF00BFFF" .. compName .. "|r  -  Level |cFFFFD700" .. compLevel .. "|r  -  Role: |cFF00FF44" .. roleStr .. "|r") + 6
 
     -- 4. Draw XP Progress Bar
     local barW = UI.WINDOW_W - 32; local barH = 20

@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.7.1"
+local ADDON_VERSION    = "1.7.2"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -114,7 +114,7 @@ local function ScanActiveVariants()
                 poiID="N/A",name="(GetDelvesForMap returned nil)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
         elseif #poiIDs == 0 then
             table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
-                poiID="N/A",name="(GetDelvesForMap returned empty — map IDs may not match this region)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
+                poiID="N/A",name="(GetDelvesForMap returned empty - map IDs may not match this region)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
         else
             for _, poiID in ipairs(poiIDs) do
                 local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
@@ -408,7 +408,7 @@ local function ShowChangelogPopup()
 
         local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         title:SetPoint("TOPLEFT", f, "TOPLEFT", 14, -10)
-        title:SetText("|cFF3399FFDelveGuide|r  —  What's New")
+        title:SetText("|cFF3399FFDelveGuide|r  --  What's New")
 
         local closeBtn = CreateFrame("Button", nil, f, "UIPanelCloseButton")
         closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -2, -2)
@@ -434,9 +434,9 @@ local function ShowChangelogPopup()
             verLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -cy)
             verLabel:SetWidth(content:GetWidth())
             if isFirst then
-                verLabel:SetText("|cFF3399FFv" .. block.version .. "|r  |cFF888888— " .. block.date .. "|r")
+                verLabel:SetText("|cFF3399FFv" .. block.version .. "|r  |cFF888888- " .. block.date .. "|r")
             else
-                verLabel:SetText("|cFF666666v" .. block.version .. "  — " .. block.date .. "|r")
+                verLabel:SetText("|cFF666666v" .. block.version .. "  - " .. block.date .. "|r")
             end
             cy = cy + (isFirst and 20 or 17)
 
@@ -902,7 +902,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         local resetKey = secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
         local testChar="Unknown"; pcall(function() testChar=UnitName("player") or "Unknown" end)
         table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar,elapsed=312})
-        print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run — |cFF00FF44"..testName.."|r")
+        print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run - |cFF00FF44"..testName.."|r")
         -- TRIGGER THE VICTORY SCREEN FOR THE TEST RUN!
         if DelveGuide.ShowVictoryScreen then
             DelveGuide.ShowVictoryScreen(testName, "Tier 8", 610, 312)
@@ -910,23 +910,23 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
     elseif msg=="help" then
         print("|cFF00BFFF[DelveGuide]|r Commands:")
-        print("  |cFFFFFF00/dg|r             — Toggle window")
-        print("  |cFFFFFF00/dg scan|r        — Rescan active delve variants")
-        print("  |cFFFFFF00/dg minimap|r     — Toggle minimap button")
-        print("  |cFFFFFF00/dg hud|r         — Toggle in-run HUD overlay")
-        print("  |cFFFFFF00/dg widget|r      — Toggle compact floating widget")
-        print("  |cFFFFFF00/dg font [#]|r    — Set font scale, e.g. |cFFFFFF00/dg font 1.2|r  (0.6 – 2.0)")
-        print("  |cFFFFFF00/dg map|r         — Open world map")
-        print("  |cFFFFFF00/dg dump|r        — Print raw POI data (debug)")
-        print("  |cFFFFFF00/dg chatdump|r    — Print full scan results to chat (for localization reports)")
-        print("  |cFFFFFF00/dg roster|r      — Open Roster tab")
-        print("  |cFFFFFF00/dg check|r       — Show pre-entry checklist")
-        print("  |cFFFFFF00/dg checkdebug|r  — Scan auras to find Valeera role spell ID")
-        print("  |cFFFFFF00/dg tier [#]|r    — Manually set current delve tier, e.g. |cFFFFFF00/dg tier 8|r")
-        print("  |cFFFFFF00/dg share [ch]|r  — Share active variants to chat (party/guild/say/raid)")
-        print("  |cFFFFFF00/dg huddump|r     — Dump HUD data for locale debugging (run inside a delve)")
-        print("  |cFFFFFF00/dg specinfo|r    — Show your detected spec ID (debug)")
-        print("  |cFFFFFF00/dg help|r        — Show this help")
+        print("  |cFFFFFF00/dg|r             - Toggle window")
+        print("  |cFFFFFF00/dg scan|r        - Rescan active delve variants")
+        print("  |cFFFFFF00/dg minimap|r     - Toggle minimap button")
+        print("  |cFFFFFF00/dg hud|r         - Toggle in-run HUD overlay")
+        print("  |cFFFFFF00/dg widget|r      - Toggle compact floating widget")
+        print("  |cFFFFFF00/dg font [#]|r    - Set font scale, e.g. |cFFFFFF00/dg font 1.2|r  (0.6 - 2.0)")
+        print("  |cFFFFFF00/dg map|r         - Open world map")
+        print("  |cFFFFFF00/dg dump|r        - Print raw POI data (debug)")
+        print("  |cFFFFFF00/dg chatdump|r    - Print full scan results to chat (for localization reports)")
+        print("  |cFFFFFF00/dg roster|r      - Open Roster tab")
+        print("  |cFFFFFF00/dg check|r       - Show pre-entry checklist")
+        print("  |cFFFFFF00/dg checkdebug|r  - Scan auras to find Valeera role spell ID")
+        print("  |cFFFFFF00/dg tier [#]|r    - Manually set current delve tier, e.g. |cFFFFFF00/dg tier 8|r")
+        print("  |cFFFFFF00/dg share [ch]|r  - Share active variants to chat (party/guild/say/raid)")
+        print("  |cFFFFFF00/dg huddump|r     - Dump HUD data for locale debugging (run inside a delve)")
+        print("  |cFFFFFF00/dg specinfo|r    - Show your detected spec ID (debug)")
+        print("  |cFFFFFF00/dg help|r        - Show this help")
     elseif msg:sub(1,5)=="tier " then
         local num = tonumber(msg:sub(6))
         if num and num >= 1 and num <= 11 then
@@ -935,7 +935,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
             print("|cFF00BFFF[DelveGuide]|r Delve tier set to |cFFCCCCCC" .. num .. "|r")
         else
-            print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg tier 3|r  (1–11)")
+            print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg tier 3|r  (1-11)")
         end
     elseif msg=="hud" then
         if DelveGuide.ToggleHUD then DelveGuide.ToggleHUD()

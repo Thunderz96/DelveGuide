@@ -38,7 +38,7 @@ DelveGuide.RenderSettings = function()
         function(checked) DelveGuideDB.widgetAutoHide = checked; UI.UpdateWidgetAlpha() end)
 
     y = y + 4
-    y = y + UI.CreateRow(cf, y, "|cFFAAAAAAAAWidget tier filter — show active variants at these rankings:|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFAAAAAAAAWidget tier filter - show active variants at these rankings:|r") + 6
     local allRanks = {"S","A","B","C","D","F"}
     for i, rank in ipairs(allRanks) do
         local cb = CreateFrame("CheckButton", nil, cf, "UICheckButtonTemplate")
@@ -69,7 +69,7 @@ DelveGuide.RenderSettings = function()
     local fsDesc = cf:CreateFontString(nil, "OVERLAY")
     fsDesc:SetFont(ROW_FONT_FILE, rSize)
     fsDesc:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
-    fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 – 2.0)", DelveGuideDB.fontScale))
+    fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.fontScale))
     y = y + rH + 4
 
     
@@ -99,7 +99,7 @@ DelveGuide.RenderSettings = function()
         b:SetSize(36, 22); b:SetText(label); b:SetPoint("TOPLEFT", cf, "TOPLEFT", xOff, -y)
         b:SetScript("OnClick", function()
             DelveGuideDB.fontScale = math.max(0.6, math.min(2.0, DelveGuideDB.fontScale + delta))
-            fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 – 2.0)", DelveGuideDB.fontScale))
+            fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.fontScale))
             UI.RefreshCurrentTab()
         end)
     end
@@ -109,7 +109,7 @@ DelveGuide.RenderSettings = function()
     resetBtn:SetSize(60, 22); resetBtn:SetText("Reset"); resetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
     resetBtn:SetScript("OnClick", function()
         DelveGuideDB.fontScale = 1.0
-        fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 – 2.0)", DelveGuideDB.fontScale))
+        fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.fontScale))
         UI.RefreshCurrentTab()
     end)
     y = y + 30 + 16

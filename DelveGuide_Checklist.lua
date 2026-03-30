@@ -32,7 +32,7 @@ local function RunChecklistScan()
         table.insert(results, { label="Trovehunter's Bounty  |cFF00FF44(Active)|r", ok=true })
     elseif bountyCount > 0 then
         table.insert(results, {
-            label = string.format("Trovehunter's Bounty  |cFFFFD700(%d in bags — not active)|r", bountyCount),
+            label = string.format("Trovehunter's Bounty  |cFFFFD700(%d in bags - not active)|r", bountyCount),
             ok    = false,
             tip   = "Right-click the item to activate it before entering.",
         })
@@ -133,9 +133,9 @@ DelveGuide.ShowChecklist = function(force)
         if r then
             local icon
             if r.ok == true then
-                icon = "|cFF00FF44✔|r "
+                icon = "|cFF00FF44(OK)|r "
             elseif r.ok == false then
-                icon = "|cFFFF4444✘|r "
+                icon = "|cFFFF4444X|r "
             else
                 icon = "|cFFFF8844?|r " 
             end

@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.2] - 2026-03-30
+
+### Added
+- **Traditional Chinese (zhTW):** 3 Darkway variant translations + alternate Mirror Shine translation for in-game vs achievement name mismatch.
+
+### Fixed
+- **Unicode Rendering:** Replaced em dashes, checkmarks, and other unicode characters that showed as squares in WoW's default font.
+- **The Darkway Coordinates:** Updated Silvermoon City map pin to verified in-game location (39.30, 31.78).
+
+### Changed
+- **Future Tab Cleanup:** Removed stale entries for already-live system changes and past releases.
+
 ## [1.7.1] - 2026-03-28
 
 ### Fixed

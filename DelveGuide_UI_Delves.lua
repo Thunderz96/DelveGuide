@@ -60,7 +60,7 @@ local function CreateDelveRow(parent, y, d)
     if d.isBestRoute then table.insert(FLAG_DEFS, {text="|cFF00FF00[Best]|r", tip="Best Route", desc="This variant has the fastest known clear path for speed runs."}) end
     if d.hasBug then table.insert(FLAG_DEFS, {text="|cFFFF4444[Bug]|r", tip="Known Bug", desc="This variant has a known bug that may cause issues during the run."}) end
     if d.mountable then table.insert(FLAG_DEFS, {text="|cFFFFD700[Mt]|r", tip="Mountable", desc="You can use your mount inside this delve to move between packs faster."}) end
-    if type(delveStatus)=="table" and delveStatus.nemesis then table.insert(FLAG_DEFS, {text="|cFFFF4444[Nemesis]|r", tip="Nemesis Active", desc="A Nemesis boss is present in this delve today. Swap Mandate of Sacred Death — no profession nodes in the arena."}) end
+    if type(delveStatus)=="table" and delveStatus.nemesis then table.insert(FLAG_DEFS, {text="|cFFFF4444[Nemesis]|r", tip="Nemesis Active", desc="A Nemesis boss is present in this delve today. Swap Mandate of Sacred Death - no profession nodes in the arena."}) end
     if isBountiful then table.insert(FLAG_DEFS, {text="|cFFFFD700[Bountiful]|r", tip="Bountiful Delve", desc="This delve is Bountiful today. Use a Coffer Key to open the Bountiful Coffer for bonus loot."}) end
     if active then table.insert(FLAG_DEFS, {text="|cFF00FF44* TODAY|r", tip="Active Today", desc="This variant is the one currently available for this delve."}) end
 
@@ -142,12 +142,12 @@ DelveGuide.RenderDelves = function()
         GameTooltip:AddLine("|cFFFFD700What are Delves?|r")
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("Short 1-5 player mini-dungeons across Quel'Thalas.", 1, 1, 1, true)
-        GameTooltip:AddLine("No role requirements — bring any spec, any class.", 1, 1, 1, true)
+        GameTooltip:AddLine("No role requirements - bring any spec, any class.", 1, 1, 1, true)
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("|cFFFFD700Variants:|r Each delve has rotating story variants that change daily.", 1, 1, 1, true)
         GameTooltip:AddLine("|cFFFFD700Tiers:|r 1-11 control difficulty. Tier 8+ drops Hero-track (259 ilvl) gear.", 1, 1, 1, true)
         GameTooltip:AddLine("|cFFFFD700Bountiful:|r Marked delves that drop bonus loot when opened with a Restored Coffer Key.", 1, 1, 1, true)
-        GameTooltip:AddLine("|cFFFFD700Coffer Keys:|r Earn Coffer Key Shards (600/week cap) — 100 shards = 1 key.", 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700Coffer Keys:|r Earn Coffer Key Shards (600/week cap) - 100 shards = 1 key.", 1, 1, 1, true)
         GameTooltip:AddLine("|cFFFFD700Great Vault:|r 2/4/8 delves unlock vault slots. Tier 8+ gives 259 ilvl vault rewards.", 1, 1, 1, true)
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("Your companion Valeera joins every run. Set her role (DPS/Healer/Tank)", 0.7, 0.7, 0.7, true)

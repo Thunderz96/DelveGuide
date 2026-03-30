@@ -69,7 +69,7 @@ DelveGuideData.delves = {
 DelveGuideData.mapPins = {
     -- ── Silvermoon City (2393) ────────────────────────────
     { name="Collegiate Calamity", mapID=2393, x=0.3989, y=0.5359 },  -- verified in-game
-    { name="The Darkway",         mapID=2393, x=0.5400, y=0.1800 },  -- north docks, boat (estimate)
+    { name="The Darkway",         mapID=2393, x=0.3930, y=0.3178 },  -- verified in-game
 
     -- ── Zul'Aman (2437) ───────────────────────────────────
     { name="Atal'Aman",           mapID=2437, x=0.2426, y=0.5288 },  -- verified in-game
@@ -134,31 +134,23 @@ DelveGuideData.loot = {
 -- SECTION 5: FUTURE / PATCH NOTES
 -- ============================================================
 DelveGuideData.future = {
+    -- ── Delver's Journey Milestones ─────────────────────────
     { category="Delver's Journey",  note="Myth Crests from delves become available at lv. 4 Delver's Journey" },
     { category="Delver's Journey",  note="Flickergate equivalent unlocks at lv. 3 Delver's Journey" },
     { category="Delver's Journey",  note="T11 Bountiful Delves can drop hero gear at lv. 9 Delver's Journey" },
     { category="Delver's Journey",  note="Mislaid Curiosities grant stacking buffs when opened (R1 Journey)" },
     { category="Delver's Journey",  note="Trinket vendor sells random gear, unlocked at lv. 5 Delver's Journey" },
     { category="Delver's Journey",  note="Trinket vendor sells hero gear at lv. 8 Delver's Journey" },
-    { category="System Change",     note="Nemesis packs are now marked on the map and minimap" },
-    { category="System Change",     note="Mislaid Curiosities now have a blue glow" },
-    { category="System Change",     note="4 Gilded Stashes per week (up from 3), each has 5 items (down from 7)" },
-    { category="System Change",     note="Coffer key shards are now a currency with a weekly cap of 600 (6 keys)" },
-    { category="System Change",     note="Puzzles replaced with delve-specific interactables that grant buffs" },
-    { category="System Change",     note="Delve Tiers 4+ unlock at level 90 / max level" },
-    { category="System Change",     note="Delve Tiers 4-7 can give Adventurer gear" },
-    { category="Returning Content", note="Weekly turn-in quest for Delver's Journey is returning in Midnight" },
-    { category="Returning Content", note="Cracked Keystone quest returning, awards 15 Hero and Myth crests" },
+    -- ── Upcoming Releases ───────────────────────────────────
+    { category="Release",           note="Parhelion Plaza releases week of March 31 (March on Quel'Danas raid)" },
+    -- ── Not Returning from TWW ──────────────────────────────
     { category="Not Returning",     note="Radiant Echoes are NOT returning in Midnight" },
     { category="Not Returning",     note="There is no Ethereal Challenge Room equivalent in Midnight" },
-    { category="Release",           note="The Darkway releases week of March 17 (Season 1 launch)" },
-    { category="Release",           note="Parhelion Plaza releases week of March 31 (March on Quel'Danas raid)" },
-    { category="Preseason Note",    note="During preseason, crests from delves are capped at Adventurer" },
-    -- ── Labyrinths (Patch 12.1.5 — Autumn 2026) ──────────────
+    -- ── Labyrinths (Patch 12.1.5 -- Autumn 2026) ────────────
     { category="Labyrinths (12.1.5)", note="Mega-delve content: longer, multi-wing layouts scaled to delve difficulty" },
     { category="Labyrinths (12.1.5)", note="Designed for solo or small group (2-3 player) play" },
     { category="Labyrinths (12.1.5)", note="Expected to use the Coffer Key / shard currency system" },
-    { category="Labyrinths (12.1.5)", note="No lockout confirmed — likely repeatable like standard delves" },
+    { category="Labyrinths (12.1.5)", note="No lockout confirmed -- likely repeatable like standard delves" },
     { category="Labyrinths (12.1.5)", note="Difficulty tier structure and Great Vault tracking TBD" },
     { category="Labyrinths (12.1.5)", note="Unique curio interactions distinct from standard delves (unconfirmed)" },
 }
@@ -207,7 +199,7 @@ DelveGuideData.specCurioRecs = {
               notes="High self-sustain but sluggish damage. Sanctum's Edict provides the raw damage boost needed for high-HP elite packs." },
     [73]  = { spec="Protection Warrior",    role="Tank",   companion="Healer",
               combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Lacks passive self-healing — Healer Valeera mandatory. Ebon Crown scales Shield Block and Ignore Pain values." },
+              notes="Lacks passive self-healing - Healer Valeera mandatory. Ebon Crown scales Shield Block and Ignore Pain values." },
     [66]  = { spec="Protection Paladin",    role="Tank",   companion="Damage Dealer",
               combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
               notes="Highly competitive damage output. Blade Tip synergizes with Grand Crusader crit resets. Swap Mandate for Nemesis (no nodes)." },
@@ -238,7 +230,7 @@ DelveGuideData.specCurioRecs = {
               notes="Acid Rain and Lava Burst procs consistently trigger Mandate's Holy damage. Swap Mandate for Nemesis." },
     [270] = { spec="Mistweaver Monk",       role="Healer", companion="Healer",
               combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Mandate needed for damage scaling so bosses die before mana exhausts — a common Tier 11 failure point. Swap for Nemesis." },
+              notes="Mandate needed for damage scaling so bosses die before mana exhausts - a common Tier 11 failure point. Swap for Nemesis." },
     [1468]= { spec="Preservation Evoker",   role="Healer", companion="Healer",
               combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
               notes="High-frequency Living Flame and Azure Strike ticks consistently trigger Mandate procs. Swap Mandate for Nemesis." },
@@ -342,6 +334,16 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.7.2",
+        date    = "2026-03-30",
+        entries = {
+            "Localization: Added 3 Traditional Chinese (zhTW) Darkway variants + alternate Mirror Shine translation.",
+            "Fix: Replaced unicode characters (em dashes, checkmarks) that rendered as squares in WoW's default font.",
+            "Data: Updated The Darkway coordinates in Silvermoon City to verified in-game location.",
+            "Data: Cleaned up stale Future tab entries (removed already-live system changes and past releases).",
+        }
+    },
+    {
         version = "1.7.1",
         date    = "2026-03-28",
         entries = {
@@ -369,7 +371,7 @@ DelveGuideData.changelog = {
         version = "1.6.2",
         date    = "2026-03-25",
         entries = {
-            "Localization: Added Spanish (esES/esMX) variant translations — new language!",
+            "Localization: Added Spanish (esES/esMX) variant translations - new language!",
             "Localization: Expanded Italian (itIT) coverage from 8 to 17 variants.",
             "Improvement: Active variants in the Delves tab are now sorted by rank (S first, F last).",
         }
@@ -386,10 +388,10 @@ DelveGuideData.changelog = {
         version = "1.6.0",
         date    = "2026-03-24",
         entries = {
-            "New Feature: Share to Chat — share today's active variants to Party (left-click) or Guild (right-click) from the Delves tab and compact widget.",
-            "New Feature: Completion Timer — live timer on the HUD during delve runs, saved to run history on completion.",
+            "New Feature: Share to Chat - share today's active variants to Party (left-click) or Guild (right-click) from the Delves tab and compact widget.",
+            "New Feature: Completion Timer - live timer on the HUD during delve runs, saved to run history on completion.",
             "New Feature: Victory Screen now displays your completion time.",
-            "New Feature: DataBroker text feed — info bar addons (Titan Panel, ElvUI, Bazooka) now show your top active variant and rank.",
+            "New Feature: DataBroker text feed - info bar addons (Titan Panel, ElvUI, Bazooka) now show your top active variant and rank.",
             "Improvement: Delve flags ([Best], [Bug], [Mt], [Nemesis], [Bountiful], [TODAY]) are now interactive buttons with hover tooltips explaining each tag.",
             "Improvement: Added a 'What are Delves?' tooltip for new players (hover the ? in the Delves tab).",
             "Improvement: Missing translations are now automatically logged to SavedVariables with locale, delve name, and first-seen date. Check the Debug tab to review.",
@@ -460,7 +462,7 @@ DelveGuideData.changelog = {
         entries = {
             "New Companion Tab: Track Valeera/Brann's level, role, and XP progress.",
             "Live Curio Scanning: Compares your currently equipped curios against S-Tier spec recommendations and shows dynamic warnings.",
-            "Smart Tier Auto-Detection: The In-Run HUD now automatically detects your Delve tier—no more /dg tier commands!",
+            "Smart Tier Auto-Detection: The In-Run HUD now automatically detects your Delve tier - no more /dg tier commands!",
             "Automated Vault Tracking: Auto-detected tiers are now seamlessly logged to your History tab.",
             "Resizable Windows: Both the Main Window and the In-Run HUD can now be dragged and resized.",
             "Korean (koKR) Support: Added full variant translation support for the Korean client.",
@@ -486,7 +488,7 @@ DelveGuideData.changelog = {
         date    = "2026-03-18",
         entries = {
             "Fixed: variant detection and all badges now work on all non-English clients (KR, TW, CN, DE, FR, RU, etc.)",
-            "Variant matching uses locale-independent widget set IDs — no English text matching required",
+            "Variant matching uses locale-independent widget set IDs - no English text matching required",
             "HUD now correctly detects you are inside a Delve on non-English clients",
             "Zone names normalized to English internally so TODAY and Bountiful badges work globally",
         },
@@ -497,7 +499,7 @@ DelveGuideData.changelog = {
         entries = {
             "Debug tab: now shows per-map-ID scan status even when results are empty",
             "Debug tab: clear messaging when map IDs return no POIs (helps diagnose non-English client issues)",
-            "New command: /dg chatdump — prints full scan results to chat for easy copy-paste sharing",
+            "New command: /dg chatdump - prints full scan results to chat for easy copy-paste sharing",
         },
     },
     {
@@ -522,7 +524,7 @@ DelveGuideData.changelog = {
         version = "1.3.4",
         date    = "2026-03-17",
         entries = {
-            "New tab: Nullaeus — dedicated Season 1 Nemesis guide",
+            "New tab: Nullaeus - dedicated Season 1 Nemesis guide",
             "Covers location, unlock requirements, all mechanics (Umbral Rage, Oblivion Shell), phase transitions, recommended setup, tips, and rewards",
             "Includes Beacon of Hope workflow for earning the weekly Bounty without entering Torment's Rise",
         },
@@ -531,7 +533,7 @@ DelveGuideData.changelog = {
         version = "1.3.3",
         date    = "2026-03-17",
         entries = {
-            "Tracking Restored Coffer Keys (item 3028) — shown in compact widget, checklist, roster, and Delves tab",
+            "Tracking Restored Coffer Keys (item 3028) - shown in compact widget, checklist, roster, and Delves tab",
             "Checklist: coffer key check now passes if you have a Restored Coffer Key, even without 100 shards",
             "Roster: restored key count shown next to shard total as +(N)r",
         },
@@ -541,7 +543,7 @@ DelveGuideData.changelog = {
         date    = "2026-03-17",
         entries = {
             "Fixed: HUD showing in Zul'Aman overworld (seamless sub-zone name bleeding into detection)",
-            "Detection now requires C_Scenario.IsInScenario() — zone name alone is no longer sufficient",
+            "Detection now requires C_Scenario.IsInScenario() - zone name alone is no longer sufficient",
         },
     },
     {
@@ -556,10 +558,10 @@ DelveGuideData.changelog = {
         version = "1.3.0",
         date    = "2026-03-16",
         entries = {
-            "In-Run HUD — auto-shows when inside a Delve, hides on exit",
+            "In-Run HUD - auto-shows when inside a Delve, hides on exit",
             "HUD shows: delve name, active variant + grade, tier, curio rec, nemesis warning, bountiful status",
             "HUD is draggable and remembers its position",
-            "/dg hud — toggle the HUD manually (also works as a preview outside of Delves)",
+            "/dg hud - toggle the HUD manually (also works as a preview outside of Delves)",
         },
     },
     {
@@ -575,14 +577,14 @@ DelveGuideData.changelog = {
         date    = "2026-03-16",
         entries = {
             "Fixed: opening world map no longer triggers ADDON_ACTION_BLOCKED (SetPassThroughButtons taint)",
-            "Waypoint click now sets the pin silently — press M to open your map and navigate",
+            "Waypoint click now sets the pin silently - press M to open your map and navigate",
         },
     },
     {
         version = "1.2.0",
         date    = "2026-03-15",
         entries = {
-            "Roster tab — track all level-80+ alts' weekly delves, shards, ilvl, and vault slots",
+            "Roster tab - track all level-80+ alts' weekly delves, shards, ilvl, and vault slots",
             "Roster: per-character remove button with confirmation dialog",
             "Fixed: targeting a delve entrance no longer triggers a taint error",
         },
@@ -591,7 +593,7 @@ DelveGuideData.changelog = {
         version = "1.1.0",
         date    = "2026-03-14",
         entries = {
-            "Settings tab — minimap, compact widget, tier filter, font scale",
+            "Settings tab - minimap, compact widget, tier filter, font scale",
             "Compact floating widget with tier filter and lock button",
             "Clickable delve names open the map and set a waypoint",
             "Loot tab item tooltips on hover",
@@ -604,7 +606,7 @@ DelveGuideData.changelog = {
         version = "1.0.0",
         date    = "2026-03-01",
         entries = {
-            "Initial release — delve rankings, curio DB, loot tables, run history",
+            "Initial release - delve rankings, curio DB, loot tables, run history",
             "Active variant scanner, minimap button, font scale setting",
         },
     },
@@ -748,8 +750,12 @@ DelveGuideData.localeVariants = {
     ["孢龍快遞"] = "Sporasaur Special", 		-- The Gulf of Memory
     ["叛徒的死期"] = "Traitor's Due",          	-- The Shadow Enclave
     ["暗影補給品"] = "Shadowy Supplies",        -- The Shadow Enclave
-    ["鏡子發光"] = "Mirror Shine",          	-- The Shadow Enclave
+    ["鏡子發光"] = "Mirror Shine",              -- The Shadow Enclave (achievement name)
+    ["鏡光閃閃"] = "Mirror Shine",              -- The Shadow Enclave (in-game variant name)
     ["派對破壞者"] = "Party Crasher",           -- Twilight Crypts
-    ["受困！"] = "Trapped!", -- Twilight Crypts
-    ["失控羅亞"] = "Loosed Loa", -- Twilight Crypts
+    ["受困！"] = "Trapped!",                    -- Twilight Crypts
+    ["失控羅亞"] = "Loosed Loa",                -- Twilight Crypts
+    ["地脈技師"] = "Leyline Technician",        -- The Darkway
+    ["高壓聚焦器"] = "Focusers Under Pressure", -- The Darkway
+    ["強化巨魔"] = "Ogre Powered",              -- The Darkway
 }

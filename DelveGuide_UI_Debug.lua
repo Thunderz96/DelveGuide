@@ -14,14 +14,14 @@ DelveGuide.RenderDebug = function()
     local cf = UI.NewContentFrame()
     local y = 10
     
-    y = y + UI.CreateHeader(cf, y, "DEBUG  —  System Health & Diagnostics") + 4
-    
+    y = y + UI.CreateHeader(cf, y, "DEBUG  --  System Health & Diagnostics") + 4
+
     -- 1. Commands Section
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Troubleshooting Commands|r") + 4
-    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg scan|r  —  Force refresh map POI detection")
-    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg chatdump|r  —  Print POI data to chat (for localization reports)")
-    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg specinfo|r  —  Print detected spec ID and curio recommendations")
-    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg checkdebug|r  —  Print raw Valeera role/aura data to chat")
+    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg scan|r  -  Force refresh map POI detection")
+    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg chatdump|r  -  Print POI data to chat (for localization reports)")
+    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg specinfo|r  -  Print detected spec ID and curio recommendations")
+    y = y + UI.CreateRow(cf, y, "  |cFFFFFF00/dg checkdebug|r  -  Print raw Valeera role/aura data to chat")
     y = y + 8
 
     -- 2. Database & State Section

@@ -212,7 +212,7 @@ DelveGuide.CreateCompactWidget = function()
     
     lockBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine(DelveGuideDB.widgetLocked and "|cFFFF4444Locked|r — click to unlock" or "|cFF44FF44Unlocked|r — click to lock")
+        GameTooltip:AddLine(DelveGuideDB.widgetLocked and "|cFFFF4444Locked|r - click to unlock" or "|cFF44FF44Unlocked|r - click to lock")
         GameTooltip:Show()
     end)
     lockBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
