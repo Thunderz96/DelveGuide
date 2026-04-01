@@ -105,15 +105,18 @@ DelveGuide.CreateCompactWidget = function()
     end)
     
     if DelveGuideDB.widgetX then
-        -- widgetY should be negative (offset from top). Positive values are stale
-        -- from pre-1.7.0 which used a different coordinate system.
+        local wx = DelveGuideDB.widgetX or 0
         local wy = DelveGuideDB.widgetY or 0
-        if wy > 0 then
+        -- Sanity check: positive Y is stale (pre-1.7.0), or coords may be off-screen
+        local screenW = UIParent:GetWidth()
+        local screenH = UIParent:GetHeight()
+        local offScreen = wy > 0 or wx < -50 or wx > screenW - 20 or wy < -(screenH - 20)
+        if offScreen then
             DelveGuideDB.widgetX = nil
             DelveGuideDB.widgetY = nil
             f:SetPoint("CENTER", UIParent, "CENTER", 0, 250)
         else
-            f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", DelveGuideDB.widgetX, wy)
+            f:SetPoint("TOPLEFT", UIParent, "TOPLEFT", wx, wy)
         end
     else
         f:SetPoint("CENTER", UIParent, "CENTER", 0, 250)

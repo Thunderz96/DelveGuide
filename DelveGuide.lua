@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.7.2"
+local ADDON_VERSION    = "1.7.3"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -925,6 +925,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg tier [#]|r    - Manually set current delve tier, e.g. |cFFFFFF00/dg tier 8|r")
         print("  |cFFFFFF00/dg share [ch]|r  - Share active variants to chat (party/guild/say/raid)")
         print("  |cFFFFFF00/dg huddump|r     - Dump HUD data for locale debugging (run inside a delve)")
+        print("  |cFFFFFF00/dg resetwidget|r - Reset widget position to center (if lost off-screen)")
         print("  |cFFFFFF00/dg specinfo|r    - Show your detected spec ID (debug)")
         print("  |cFFFFFF00/dg help|r        - Show this help")
     elseif msg:sub(1,5)=="tier " then
@@ -942,6 +943,17 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         else print("|cFF00BFFF[DelveGuide]|r HUD not loaded.") end
     elseif msg=="widget" then
         if DelveGuide.ToggleWidget then DelveGuide.ToggleWidget() end
+    elseif msg=="resetwidget" then
+        DelveGuideDB.widgetX = nil
+        DelveGuideDB.widgetY = nil
+        local cw = DelveGuide.compactWidget
+        if cw then
+            cw:ClearAllPoints()
+            cw:SetPoint("CENTER", UIParent, "CENTER", 0, 250)
+            cw:Show()
+        end
+        DelveGuideDB.widgetHidden = false
+        print("|cFF00BFFF[DelveGuide]|r Widget position reset to center.")
     elseif msg:sub(1,4)=="font" then
         local val=tonumber(msg:sub(6))
         if val then DelveGuideDB.fontScale=math.max(0.6,math.min(2.0,val)); RefreshCurrentTab()

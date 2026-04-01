@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.3] - 2026-04-01
+
+### Added
+- **Spanish (esES/esMX) Full Coverage:** Expanded from 9 to 30/30 variant translations -- complete!
+- **`/dg resetwidget` Command:** Resets the compact widget position to center if lost off-screen.
+
+### Fixed
+- **Widget Off-Screen Detection:** Widget now checks saved coordinates against screen bounds on load and auto-resets if off-screen.
+
 ## [1.7.2] - 2026-03-30
 
 ### Added

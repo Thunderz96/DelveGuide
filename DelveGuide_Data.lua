@@ -334,6 +334,15 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.7.3",
+        date    = "2026-04-01",
+        entries = {
+            "Localization: Spanish (esES/esMX) now at full 30/30 variant coverage!",
+            "New Command: /dg resetwidget -- resets widget position to center if lost off-screen.",
+            "Fix: Widget now auto-detects off-screen position on load and resets to center.",
+        }
+    },
+    {
         version = "1.7.2",
         date    = "2026-03-30",
         entries = {
@@ -719,14 +728,35 @@ DelveGuideData.localeVariants = {
 
     -- Español (esES / esMX)
     ["Resplandor invasivo"]              = "Invasive Glow",             -- Collegiate Calamity
+    ["Facultad del miedo"]               = "Faculty of Fear",           -- Collegiate Calamity
+    ["Academia asediada"]                = "Academy Under Siege",       -- Collegiate Calamity
     ["Concentradores bajo presión"]      = "Focusers Under Pressure",   -- The Darkway
+    ["Energía de ogro"]                  = "Ogre Powered",              -- The Darkway
+    ["Técnico de líneas Ley"]            = "Leyline Technician",        -- The Darkway
     ["Recompensa de una traición"]       = "Traitor's Due",             -- The Shadow Enclave
+    ["Brillo de espejo"]                 = "Mirror Shine",              -- The Shadow Enclave
+    ["Suministros sombríos"]             = "Shadowy Supplies",          -- The Shadow Enclave
     ["Aguafiestas"]                      = "Party Crasher",             -- Twilight Crypts
+    ["Loa a la fuga"]                    = "Loosed Loa",                -- Twilight Crypts
+    ["¡Atrapado!"]                       = "Trapped!",                  -- Twilight Crypts
     ["Aniquilación de tótems"]           = "Totem Annihilation",        -- Atal'Aman
+    ["Sapos impropios"]                  = "Toadly Unbecoming",         -- Atal'Aman
+    ["Ritual interrumpido"]              = "Ritual Interrupted",        -- Atal'Aman
     ["El núcleo del problema"]           = "Core of the Problem",       -- Sunkiller Sanctum
+    ["No es lo que esperaba"]            = "Not What I Expected",       -- Sunkiller Sanctum
+    ["El efecto gravitatorio"]           = "The Gravitational Effect",  -- Sunkiller Sanctum
     ["Acecho putrefacto despiadado"]     = "Dastardly Rotstalk",        -- The Grudge Pit
+    ["Invasión de flor de Luz"]          = "Lightbloom Invasion",       -- The Grudge Pit
+    ["Campeón de la arena"]              = "Arena Champion",            -- The Grudge Pit
     ["Descenso de los haranir"]          = "Descent of the Haranir",    -- The Gulf of Memory
-    ["Maná robado"]                      = "Stolen Mana",              -- Shadowguard Point
+    ["Especial de esporasaurio"]         = "Sporasaur Special",         -- The Gulf of Memory
+    ["Bocaditos para polillas de Aln"]   = "Alnmoth Munchies",          -- The Gulf of Memory
+    ["Maná robado"]                      = "Stolen Mana",               -- Shadowguard Point
+    ["Fauna cautiva"]                    = "Captured Wildlife",          -- Shadowguard Point
+    ["Calamitoso"]                       = "Calamitous",                 -- Shadowguard Point
+    ["Defender el frente"]               = "Holding the Line",           -- ???
+    ["Bombardeo"]                        = "Bombing Run",                -- ???
+    ["La marcha de la brigada Arcana"]   = "March of the Arcane Brigade", -- ???
 
     -- Traditional Chinese (zhTW)
 
