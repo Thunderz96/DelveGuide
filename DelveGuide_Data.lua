@@ -43,8 +43,7 @@ DelveGuideData.delves = {
     { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Traitor's Due",                ranking="C", mountable=false, hasBug=false, isBestRoute=false },
     { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Shadowy Supplies",             ranking="F", mountable=false, hasBug=true,  isBestRoute=false },
     { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Mirror Shine",                 ranking="D", mountable=false, hasBug=false, isBestRoute=false },
-    -- ── Torment's Rise ───────────────────────────────────
-    -- NEW: Discovered 2026-04-12. Variants/rankings TBD (widget set=0, no texts yet).
+    -- Note: Torment's Rise (Voidstorm, mapID 2405) is the Nemesis delve for Nullaeus, not a rotational delve.
     -- ── Twilight Crypts ───────────────────────────────────
     { name="Twilight Crypts",       zone="Zul'Aman",    variant="Party Crasher",               ranking="B", mountable=false, hasBug=true,  isBestRoute=false },
     { name="Twilight Crypts",       zone="Zul'Aman",    variant="Trapped!",                    ranking="D", mountable=false, hasBug=true,  isBestRoute=false },
@@ -639,7 +638,7 @@ DelveGuideData.widgetSetDelves = {
     [1805] = "Twilight Crypts",
     [1806] = "The Darkway",
     -- TODO: Discover widget set ID for Parhelion Plaza via /dg chatdump (not in today's rotation)
-    -- TODO: Discover widget set ID for Torment's Rise (set=0 in dump, may be too new)
+    -- Note: Torment's Rise (set=0) is the Nullaeus Nemesis delve, not a rotational delve.
 }
 
 

@@ -42,7 +42,7 @@ local WIDGET_SET_DELVES = {
     [1805] = "Twilight Crypts",
     [1806] = "The Darkway",
     -- TODO: Discover widget set ID for Parhelion Plaza via /dg chatdump (not in today's rotation)
-    -- TODO: Discover widget set ID for Torment's Rise (set=0 in dump, may be too new)
+    -- Note: Torment's Rise (set=0) is the Nullaeus Nemesis delve, not a rotational delve.
 }
 
 local ZONE_NAMES = {
