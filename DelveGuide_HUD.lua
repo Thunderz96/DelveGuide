@@ -141,13 +141,18 @@ local function BuildHUD()
 
     local rows = {}
     local function MakeRow(key, label, yOff)
-        local lbl = hudFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        local _, rSize = DelveGuide.UI.GetScaledSizes()
+        local fontFile = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
+
+        local lbl = hudFrame:CreateFontString(nil, "OVERLAY")
+        lbl:SetFont(fontFile, rSize)
         lbl:SetPoint("TOPLEFT", hudFrame, "TOPLEFT", 10, yOff)
         lbl:SetText("|cFF666666" .. label .. ":|r")
         lbl:SetWidth(76)
         lbl:SetJustifyH("LEFT")
 
-        local val = hudFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        local val = hudFrame:CreateFontString(nil, "OVERLAY")
+        val:SetFont(fontFile, rSize)
         val:SetPoint("TOPLEFT", hudFrame, "TOPLEFT", 88, yOff)
         val:SetWidth(startW - 96)
         val:SetJustifyH("LEFT")

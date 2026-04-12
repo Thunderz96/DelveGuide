@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.7.4] - 2026-04-12
+
+### Added
+- **Variant in Run History:** Completed delve runs now capture and display the story variant name (e.g., "Ogre Powered") in the History tab and chat log.
+- **Traditional Chinese (zhTW):** 4 new variant translations -- Loosed Loa (alt), Holding the Line, March of the Arcane Brigade, Bombing Run.
+
+### Fixed
+- **HUD Font Scaling:** HUD overlay font size now respects the `fontScale` setting instead of being hardcoded at 11pt.
+- **Spanish (esES) Trapped! Translation:** Corrected from "¡Atrapado!" to "¡Atrapados!" to match in-game text.
+- **Parhelion Plaza esES Labels:** Properly labeled the 3 Parhelion Plaza Spanish variant translations.
+
+### Changed
+- **Darkway & Parhelion Plaza Widget Support:** Added TODO placeholders for widget set IDs needed for non-EN daily window detection (EN clients already supported).
+
 ## [1.7.3] - 2026-04-01
 
 ### Added

@@ -635,6 +635,9 @@ DelveGuideData.widgetSetDelves = {
     [1803] = "The Gulf of Memory",
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
+    -- TODO: Discover widget set IDs for these via /dg chatdump in-game:
+    -- [????] = "The Darkway",        -- mapID 2393 (Silvermoon City)
+    -- [????] = "Parhelion Plaza",     -- mapID 2444 (Isle of Quel'Danas)
 }
 
 
@@ -738,7 +741,7 @@ DelveGuideData.localeVariants = {
     ["Suministros sombríos"]             = "Shadowy Supplies",          -- The Shadow Enclave
     ["Aguafiestas"]                      = "Party Crasher",             -- Twilight Crypts
     ["Loa a la fuga"]                    = "Loosed Loa",                -- Twilight Crypts
-    ["¡Atrapado!"]                       = "Trapped!",                  -- Twilight Crypts
+    ["¡Atrapados!"]                      = "Trapped!",                  -- Twilight Crypts
     ["Aniquilación de tótems"]           = "Totem Annihilation",        -- Atal'Aman
     ["Sapos impropios"]                  = "Toadly Unbecoming",         -- Atal'Aman
     ["Ritual interrumpido"]              = "Ritual Interrupted",        -- Atal'Aman
@@ -754,9 +757,9 @@ DelveGuideData.localeVariants = {
     ["Maná robado"]                      = "Stolen Mana",               -- Shadowguard Point
     ["Fauna cautiva"]                    = "Captured Wildlife",          -- Shadowguard Point
     ["Calamitoso"]                       = "Calamitous",                 -- Shadowguard Point
-    ["Defender el frente"]               = "Holding the Line",           -- ???
-    ["Bombardeo"]                        = "Bombing Run",                -- ???
-    ["La marcha de la brigada Arcana"]   = "March of the Arcane Brigade", -- ???
+    ["Defender el frente"]               = "Holding the Line",           -- Parhelion Plaza
+    ["Bombardeo"]                        = "Bombing Run",                -- Parhelion Plaza
+    ["La marcha de la brigada Arcana"]   = "March of the Arcane Brigade", -- Parhelion Plaza
 
     -- Traditional Chinese (zhTW)
 
@@ -788,4 +791,8 @@ DelveGuideData.localeVariants = {
     ["地脈技師"] = "Leyline Technician",        -- The Darkway
     ["高壓聚焦器"] = "Focusers Under Pressure", -- The Darkway
     ["強化巨魔"] = "Ogre Powered",              -- The Darkway
+    ["獲釋的羅亞"] = "Loosed Loa",              -- Twilight Crypts (alt translation)
+    ["堅守陣線"] = "Holding the Line",           -- Parhelion Plaza
+    ["秘法兵團行軍"] = "March of the Arcane Brigade", -- Parhelion Plaza
+    ["轟炸任務"] = "Bombing Run",                -- Parhelion Plaza
 }

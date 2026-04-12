@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.7.3"
+local ADDON_VERSION    = "1.7.4"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -40,6 +40,9 @@ local WIDGET_SET_DELVES = {
     [1803] = "The Gulf of Memory",
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
+    -- TODO: Discover widget set IDs for these via /dg chatdump in-game:
+    -- [????] = "The Darkway",        -- mapID 2393 (Silvermoon City)
+    -- [????] = "Parhelion Plaza",     -- mapID 2444 (Isle of Quel'Danas)
 }
 
 local ZONE_NAMES = {
@@ -1150,11 +1153,25 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
                 DelveGuide.runStartTime = nil
             end
 
-            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,vaultIlvl=vaultIlvl,char=charName,elapsed=elapsed})
+            -- Capture current variant from active scan data
+            local runVariant = nil
+            local engRunName = runName
+            if localizedToEnglish and localizedToEnglish[runName] then engRunName = localizedToEnglish[runName] end
+            if DelveGuideData and DelveGuideData.delves then
+                for _, d in ipairs(DelveGuideData.delves) do
+                    if d.name == engRunName and activeVariants[d.variant] then
+                        runVariant = d.variant
+                        break
+                    end
+                end
+            end
+
+            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,vaultIlvl=vaultIlvl,char=charName,elapsed=elapsed,variant=runVariant})
             if #DelveGuideDB.history>50 then table.remove(DelveGuideDB.history) end
             local vaultStr=vaultIlvl and ("  |cFFFFD700[Vault: "..vaultIlvl.." ilvl]|r") or ""
             local timeStr=elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(elapsed/60),math.floor(elapsed%60)) or ""
-            print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r  |cFF888888["..tier.."]|r"..vaultStr..timeStr)
+            local varLogStr=runVariant and ("  |cFFCCAAFF("..runVariant..")|r") or ""
+            print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r"..varLogStr.."  |cFF888888["..tier.."]|r"..vaultStr..timeStr)
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
             -- TRIGGER THE VICTORY SCREEN!
             if DelveGuide.ShowVictoryScreen then
