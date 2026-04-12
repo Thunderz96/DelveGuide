@@ -40,9 +40,9 @@ local WIDGET_SET_DELVES = {
     [1803] = "The Gulf of Memory",
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
-    -- TODO: Discover widget set IDs for these via /dg chatdump in-game:
-    -- [????] = "The Darkway",        -- mapID 2393 (Silvermoon City)
-    -- [????] = "Parhelion Plaza",     -- mapID 2444 (Isle of Quel'Danas)
+    [1806] = "The Darkway",
+    -- TODO: Discover widget set ID for Parhelion Plaza via /dg chatdump (not in today's rotation)
+    -- TODO: Discover widget set ID for Torment's Rise (set=0 in dump, may be too new)
 }
 
 local ZONE_NAMES = {

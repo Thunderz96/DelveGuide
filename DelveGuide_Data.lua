@@ -43,6 +43,8 @@ DelveGuideData.delves = {
     { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Traitor's Due",                ranking="C", mountable=false, hasBug=false, isBestRoute=false },
     { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Shadowy Supplies",             ranking="F", mountable=false, hasBug=true,  isBestRoute=false },
     { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Mirror Shine",                 ranking="D", mountable=false, hasBug=false, isBestRoute=false },
+    -- ── Torment's Rise ───────────────────────────────────
+    -- NEW: Discovered 2026-04-12. Variants/rankings TBD (widget set=0, no texts yet).
     -- ── Twilight Crypts ───────────────────────────────────
     { name="Twilight Crypts",       zone="Zul'Aman",    variant="Party Crasher",               ranking="B", mountable=false, hasBug=true,  isBestRoute=false },
     { name="Twilight Crypts",       zone="Zul'Aman",    variant="Trapped!",                    ranking="D", mountable=false, hasBug=true,  isBestRoute=false },
@@ -635,9 +637,9 @@ DelveGuideData.widgetSetDelves = {
     [1803] = "The Gulf of Memory",
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
-    -- TODO: Discover widget set IDs for these via /dg chatdump in-game:
-    -- [????] = "The Darkway",        -- mapID 2393 (Silvermoon City)
-    -- [????] = "Parhelion Plaza",     -- mapID 2444 (Isle of Quel'Danas)
+    [1806] = "The Darkway",
+    -- TODO: Discover widget set ID for Parhelion Plaza via /dg chatdump (not in today's rotation)
+    -- TODO: Discover widget set ID for Torment's Rise (set=0 in dump, may be too new)
 }
 
 
