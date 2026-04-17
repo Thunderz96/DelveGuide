@@ -3,10 +3,11 @@
 -- ============================================================
 local UI = DelveGuide.UI
 
-local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2444, 2413, 2405 }
+local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2424, 2444, 2413, 2405 }
 local ZONE_NAMES = {
     [2393] = "Silvermoon City",   [2437] = "Zul'Aman",
-    [2395] = "Eversong Woods",    [2444] = "Isle of Quel'Danas",
+    [2395] = "Eversong Woods",    [2424] = "Isle of Quel'Danas",
+    [2444] = "Isle of Quel'Danas (overlap)",
     [2413] = "Harandar",          [2405] = "Voidstorm",
 }
 

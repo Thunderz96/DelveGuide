@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.5] - 2026-04-17
+
+### Fixed
+- **Parhelion Plaza Detection:** Scanner now queries mapID 2424 (the actual Isle of Quel'Danas uiMapID in Midnight). Previously it only scanned 2444, which does not expose the Parhelion Plaza POI -- so the delve never appeared in the "Active Today" section even when its variant was in rotation.
+- **Parhelion Plaza Widget Set:** Registered widget set ID 1799 -> "Parhelion Plaza" so non-EN clients can resolve the localized delve name.
+- **Torment's Rise Spurious "Missing Translation":** The Nullaeus Nemesis delve has no rotational variant, but was being logged as `[Missing Translation] Unknown Variant Text` in the Debug tab and inflating the active-variant count. Now correctly recognized as a Nemesis delve. Stale entries from previous versions are auto-purged from SavedVariables on load.
+
+### Changed
+- **Scan Dedup:** POIs exposed on multiple map IDs (e.g. Collegiate Calamity on 2393 and 2395) are now processed once instead of twice, halving scan work and removing duplicate rows from the Debug tab.
+
+### Added
+- **`/dg findplaza` Command:** Brute-force scans map IDs 2200-2700 to locate the Parhelion Plaza POI, for future rediscovery if Blizzard changes its map.
+
 ## [1.7.4] - 2026-04-12
 
 ### Added

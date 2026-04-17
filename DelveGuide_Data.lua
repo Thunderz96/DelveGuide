@@ -61,7 +61,7 @@ DelveGuideData.delves = {
 --   2393 = Silvermoon City     (Collegiate Calamity, The Darkway)
 --   2437 = Zul'Aman            (Atal'Aman, Twilight Crypts)
 --   2395 = Eversong Woods      (The Shadow Enclave)
---   2444 = Isle of Quel'Danas  (Parhelion Plaza)
+--   2424 = Isle of Quel'Danas  (Parhelion Plaza)
 --   2413 = Harandar            (The Grudge Pit, The Gulf of Memory)
 --   2405 = Voidstorm           (Shadowguard Point, Sunkiller Sanctum)
 --
@@ -79,8 +79,8 @@ DelveGuideData.mapPins = {
     -- ── Eversong Woods (2395) ─────────────────────────────
     { name="The Shadow Enclave",  mapID=2395, x=0.4549, y=0.8638 },  -- verified in-game
 
-    -- ── Isle of Quel'Danas (2444) ─────────────────────────
-    { name="Parhelion Plaza",     mapID=2444, x=0.4850, y=0.5200 },  -- west of Sunwell (estimate)
+    -- ── Isle of Quel'Danas (2424) ─────────────────────────
+    { name="Parhelion Plaza",     mapID=2424, x=0.4850, y=0.5200 },  -- coords still estimate; verify in-game
 
     -- ── Harandar (2413) ───────────────────────────────────
     { name="The Grudge Pit",      mapID=2413, x=0.7051, y=0.6535 },  -- verified in-game
@@ -630,6 +630,7 @@ DelveGuideData.changelog = {
 DelveGuideData.widgetSetDelves = {
     [1611] = "Collegiate Calamity",
     [1738] = "The Grudge Pit",
+    [1799] = "Parhelion Plaza",
     [1800] = "Sunkiller Sanctum",
     [1801] = "Shadowguard Point",
     [1802] = "Atal'Aman",
@@ -637,12 +638,15 @@ DelveGuideData.widgetSetDelves = {
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
     [1806] = "The Darkway",
-    -- TODO: Discover widget set ID for Parhelion Plaza via /dg chatdump (not in today's rotation)
     -- Note: Torment's Rise (set=0) is the Nullaeus Nemesis delve, not a rotational delve.
 }
 
 
 -- Localized variant name → English variant name.
+-- TRANSLATION GAPS (as of 1.7.5):
+--   koKR, itIT — Parhelion Plaza: Holding the Line, Bombing Run, March of the Arcane Brigade
+--   Need verified text from a koKR/itIT client while those variants are active.
+--   Submit via /dg chatdump when they hit rotation.
 DelveGuideData.localeVariants = {
     -- English Typos (Blizzard mistakes)
     ["Captured Widlife"] = "Capture Wildlife",     -- Shadowguard Point typo

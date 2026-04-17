@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.7.4"
+local ADDON_VERSION    = "1.7.5"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -26,7 +26,7 @@ local TABS = {
     { label = "Debug",    key = "debug"    },
 }
 
-local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2444, 2413, 2405 }
+local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2424, 2444, 2413, 2405 }
 
 -- Widget set ID → English DELVE name (not variant name).
 -- Set IDs are per-delve-entrance and their text content changes daily.
@@ -34,6 +34,7 @@ local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2444, 2413, 2405 }
 local WIDGET_SET_DELVES = {
     [1611] = "Collegiate Calamity",
     [1738] = "The Grudge Pit",
+    [1799] = "Parhelion Plaza",
     [1800] = "Sunkiller Sanctum",
     [1801] = "Shadowguard Point",
     [1802] = "Atal'Aman",
@@ -41,7 +42,6 @@ local WIDGET_SET_DELVES = {
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
     [1806] = "The Darkway",
-    -- TODO: Discover widget set ID for Parhelion Plaza via /dg chatdump (not in today's rotation)
     -- Note: Torment's Rise (set=0) is the Nullaeus Nemesis delve, not a rotational delve.
 }
 
@@ -49,9 +49,16 @@ local ZONE_NAMES = {
     [2393] = "Silvermoon City",
     [2437] = "Zul'Aman",
     [2395] = "Eversong Woods",
-    [2444] = "Isle of Quel'Danas",
+    [2424] = "Isle of Quel'Danas",
+    [2444] = "Isle of Quel'Danas (overlap)",
     [2413] = "Harandar",
     [2405] = "Voidstorm",
+}
+
+-- Nemesis delves have no rotational story variant, so their widget set is 0 and
+-- their text is empty. Skip them in variant detection and don't log as missing.
+local NEMESIS_DELVES = {
+    ["Torment's Rise"] = true,
 }
 
 local function InitSavedVars()
@@ -76,6 +83,13 @@ local function InitSavedVars()
     DelveGuideDB.checklistDismissed = false
     if not DelveGuideDB.roster then DelveGuideDB.roster = {} end
     if not DelveGuideDB.missingTranslations then DelveGuideDB.missingTranslations = {} end
+    -- Purge stale entries from pre-1.7.5 when Torment's Rise was incorrectly
+    -- logged as a missing translation (it's a Nemesis delve with no variant).
+    for key, entry in pairs(DelveGuideDB.missingTranslations) do
+        if entry and entry.delve == "Torment's Rise" then
+            DelveGuideDB.missingTranslations[key] = nil
+        end
+    end
     -- lastSeenVersion drives the "what's new" popup (nil = never shown)
     if DelveGuideDB.lastSeenVersion == nil then DelveGuideDB.lastSeenVersion = nil end
 end
@@ -110,6 +124,10 @@ local function ScanActiveVariants()
     if DelveGuideData and DelveGuideData.delves then
         for _, d in ipairs(DelveGuideData.delves) do knownVariants[d.variant] = true end
     end
+    -- Dedupe: Blizzard exposes the same POI on multiple map IDs (e.g. Collegiate
+    -- Calamity on 2393 AND 2395). Process each POI once to avoid wasted work
+    -- and duplicate rows in the Debug tab.
+    local seenPOI = {}
     for _, mapID in ipairs(ALL_ZONE_MAP_IDS) do
         local poiIDs = C_AreaPoiInfo.GetDelvesForMap(mapID)
         if poiIDs == nil then
@@ -120,6 +138,10 @@ local function ScanActiveVariants()
                 poiID="N/A",name="(GetDelvesForMap returned empty - map IDs may not match this region)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
         else
             for _, poiID in ipairs(poiIDs) do
+                if seenPOI[poiID] then
+                    -- Already processed on a prior map; skip duplicate.
+                else
+                    seenPOI[poiID] = true
                 local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
                 if info then
                     local delveName=info.name or ""; local widgetSetID=info.tooltipWidgetSet or 0
@@ -164,8 +186,13 @@ local function ScanActiveVariants()
                         if delveName~=engZoneName then localizedToEnglish[delveName]=engZoneName end
                     end
 
+                    -- Nemesis delves (e.g. Torment's Rise) have no rotational
+                    -- variant, so their widget set is 0 and text is empty.
+                    -- Don't treat them as "missing translation".
+                    local isNemesisDelve = NEMESIS_DELVES[delveName] or NEMESIS_DELVES[engZoneName]
+
                     -- If we don't know the translation, quarantine the text safely
-                    if not variantName or variantName == "" then
+                    if (not variantName or variantName == "") and not isNemesisDelve then
                         local safeText = (widgetTexts and widgetTexts[1]) and widgetTexts[1] or "Unknown Variant Text"
                         -- Strip WoW color codes from the raw text to make it readable
                         safeText = safeText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
@@ -189,12 +216,13 @@ local function ScanActiveVariants()
 
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name=delveName,widgetSetID=tostring(widgetSetID),
-                        atlasName=atlasName,widgetTexts=widgetTexts,variantName=variantName or "(not found)"})
+                        atlasName=atlasName,widgetTexts=widgetTexts,variantName=variantName or (isNemesisDelve and "(nemesis)" or "(not found)")})
                     if variantName and variantName~="" then activeVariants[variantName]=true end
                 else
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name="(GetAreaPOIInfo returned nil)",widgetSetID="0",atlasName="",widgetTexts={},variantName="(nil)"})
                 end
+                end  -- end dedupe guard
             end
         end
     end
@@ -762,6 +790,29 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             end
         end
         print("|cFF00BFFF[DelveGuide]|r === END ===")
+    elseif msg=="findplaza" then
+        -- Brute-force scan a range of map IDs looking for Parhelion Plaza's POI.
+        -- Run this if Parhelion Plaza isn't showing in Active Today — report the
+        -- map ID that appears, so it can be added to ALL_ZONE_MAP_IDS.
+        print("|cFF00BFFF[DelveGuide]|r Scanning map IDs 2200-2700 for Parhelion Plaza...")
+        local found = 0
+        for mapID = 2200, 2700 do
+            local ok, poiIDs = pcall(C_AreaPoiInfo.GetDelvesForMap, mapID)
+            if ok and poiIDs and #poiIDs > 0 then
+                for _, poiID in ipairs(poiIDs) do
+                    local okInfo, info = pcall(C_AreaPoiInfo.GetAreaPOIInfo, mapID, poiID)
+                    if okInfo and info and info.name and string.find(info.name, "Parhelion", 1, true) then
+                        print(string.format("|cFF44FF44FOUND: mapID=%d poiID=%d name=[%s] set=%s|r",
+                            mapID, poiID, info.name, tostring(info.tooltipWidgetSet or 0)))
+                        found = found + 1
+                    end
+                end
+            end
+        end
+        print(string.format("|cFF00BFFF[DelveGuide]|r Scan complete. Found %d Parhelion POI(s).", found))
+        if found == 0 then
+            print("|cFFFF4444Not found in 2200-2700. POI may be exposed only when delve is in rotation, or lives on an unusual map ID.|r")
+        end
     elseif msg=="dump" then
         print("|cFF00BFFF[DelveGuide]|r === RAW POI FIELD DUMP ===")
         local found=0
