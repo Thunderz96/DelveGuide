@@ -9,10 +9,9 @@ ignore:
   - LICENSE
   - README.md
 
-externals:
-  Libs/LibStub: https://github.com/Stanzilla/LibStub
-  Libs/CallbackHandler-1.0: https://repos.curseforge.com/wow/callbackhandler
-  Libs/LibDataBroker-1.1: https://github.com/tekkub/libdatabroker-1-1
-  Libs/LibDBIcon-1.0: https://repos.curseforge.com/wow/libdbicon-1-0
+# Libraries are committed under Libs/ and packaged as-is. No externals
+# fetched at build time -- the previous URLs (CurseForge git mirrors and
+# Stanzilla/LibStub) all 404, and the repo already contains working copies
+# of LibStub, CallbackHandler-1.0, LibDataBroker-1.1, and LibDBIcon-1.0.
 
 enable-nolib-creation: no

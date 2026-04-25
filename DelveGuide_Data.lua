@@ -335,6 +335,13 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.7.16",
+        date    = "2026-04-24",
+        entries = {
+            "CI Hotfix: Removed dead lib externals from .pkgmeta -- libraries now ship from the committed Libs/ folder. v1.7.15 failed to publish on CurseForge; this republishes the same code under a new tag. No functional changes.",
+        }
+    },
+    {
         version = "1.7.15",
         date    = "2026-04-24",
         entries = {

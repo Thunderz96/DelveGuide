@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.16] - 2026-04-24
+
+### Fixed
+- **CurseForge Build Pipeline:** v1.7.15 failed to publish because the BigWigsMods packager tried to fetch lib externals from URLs that no longer resolve (Stanzilla/LibStub returns 404; CurseForge retired their public git mirrors at `repos.curseforge.com/wow/...`). Removed the `externals:` block from `.pkgmeta` entirely -- the four libraries (LibStub, CallbackHandler-1.0, LibDataBroker-1.1, LibDBIcon-1.0) are already committed under `Libs/` and ship as-is. No functional changes versus 1.7.15.
+
 ## [1.7.15] - 2026-04-24
 
 ### Added
