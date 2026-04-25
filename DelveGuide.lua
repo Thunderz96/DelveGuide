@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.7.5"
+local ADDON_VERSION    = "1.7.15"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -67,11 +67,13 @@ local function InitSavedVars()
     end
     if not DelveGuideDB.minimap then DelveGuideDB.minimap = { hide = false } end
     if not DelveGuideDB.fontScale then DelveGuideDB.fontScale = 1.0 end
+    if not DelveGuideDB.widgetFontScale then DelveGuideDB.widgetFontScale = 1.0 end
     if not DelveGuideDB.history then DelveGuideDB.history = {} end
     if DelveGuideDB.minimapHidden == nil then DelveGuideDB.minimapHidden = false end
     if DelveGuideDB.widgetHidden == nil then DelveGuideDB.widgetHidden = false end
     if DelveGuideDB.widgetClickOpens == nil then DelveGuideDB.widgetClickOpens = false end
     if not DelveGuideDB.widgetTiers then DelveGuideDB.widgetTiers = {S=true,A=true,B=true,C=true,D=true,F=true} end
+    if DelveGuideDB.widgetBountifulOnly == nil then DelveGuideDB.widgetBountifulOnly = false end
     if DelveGuideDB.widgetLocked == nil then DelveGuideDB.widgetLocked = false end
     if DelveGuideDB.hudLocked      == nil then DelveGuideDB.hudLocked      = false end
     if DelveGuideDB.hudEnabled     == nil then DelveGuideDB.hudEnabled     = true  end
@@ -964,24 +966,24 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
     elseif msg=="help" then
         print("|cFF00BFFF[DelveGuide]|r Commands:")
-        print("  |cFFFFFF00/dg|r             - Toggle window")
-        print("  |cFFFFFF00/dg scan|r        - Rescan active delve variants")
-        print("  |cFFFFFF00/dg minimap|r     - Toggle minimap button")
-        print("  |cFFFFFF00/dg hud|r         - Toggle in-run HUD overlay")
-        print("  |cFFFFFF00/dg widget|r      - Toggle compact floating widget")
-        print("  |cFFFFFF00/dg font [#]|r    - Set font scale, e.g. |cFFFFFF00/dg font 1.2|r  (0.6 - 2.0)")
-        print("  |cFFFFFF00/dg map|r         - Open world map")
-        print("  |cFFFFFF00/dg dump|r        - Print raw POI data (debug)")
-        print("  |cFFFFFF00/dg chatdump|r    - Print full scan results to chat (for localization reports)")
-        print("  |cFFFFFF00/dg roster|r      - Open Roster tab")
-        print("  |cFFFFFF00/dg check|r       - Show pre-entry checklist")
-        print("  |cFFFFFF00/dg checkdebug|r  - Scan auras to find Valeera role spell ID")
-        print("  |cFFFFFF00/dg tier [#]|r    - Manually set current delve tier, e.g. |cFFFFFF00/dg tier 8|r")
-        print("  |cFFFFFF00/dg share [ch]|r  - Share active variants to chat (party/guild/say/raid)")
-        print("  |cFFFFFF00/dg huddump|r     - Dump HUD data for locale debugging (run inside a delve)")
-        print("  |cFFFFFF00/dg resetwidget|r - Reset widget position to center (if lost off-screen)")
-        print("  |cFFFFFF00/dg specinfo|r    - Show your detected spec ID (debug)")
-        print("  |cFFFFFF00/dg help|r        - Show this help")
+        print("  |cFFFFFF00/dg|r                    - Toggle window")
+        print("  |cFFFFFF00/dg scan|r               - Rescan active delve variants")
+        print("  |cFFFFFF00/dg map|r                - Open world map")
+        print("  |cFFFFFF00/dg minimap|r            - Toggle minimap button")
+        print("  |cFFFFFF00/dg hud|r                - Toggle in-run HUD overlay")
+        print("  |cFFFFFF00/dg widget|r             - Toggle compact floating widget")
+        print("  |cFFFFFF00/dg resetwidget|r        - Reset widget position to center")
+        print("  |cFFFFFF00/dg bountiful|r          - Toggle widget filter to show only bountiful delves")
+        print("  |cFFFFFF00/dg check|r              - Show pre-entry checklist")
+        print("  |cFFFFFF00/dg roster|r             - Open Roster tab")
+        print("  |cFFFFFF00/dg companionscan|r      - Re-scan for the companion reputation faction")
+        print("  |cFFFFFF00/dg companionfaction <id>|r - Manually pin the companion faction ID")
+        print("  |cFFFFFF00/dg tier <1-11>|r        - Manually set current delve tier")
+        print("  |cFFFFFF00/dg share [channel]|r    - Share active variants (party/guild/say/raid)")
+        print("  |cFFFFFF00/dg font <0.6-2.0>|r     - Main UI font scale")
+        print("  |cFFFFFF00/dg widgetfont <0.6-2.0>|r - Widget-only font scale (independent)")
+        print("|cFF888888  Debug:|r |cFFCCCCCCdump, chatdump, huddump, tierdebug, checkdebug, specinfo, findplaza|r")
+        print("  |cFFFFFF00/dg help|r               - Show this help")
     elseif msg:sub(1,5)=="tier " then
         local num = tonumber(msg:sub(6))
         if num and num >= 1 and num <= 11 then
@@ -1008,6 +1010,36 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         end
         DelveGuideDB.widgetHidden = false
         print("|cFF00BFFF[DelveGuide]|r Widget position reset to center.")
+    elseif msg:sub(1,16)=="companionfaction" then
+        local val = tonumber(msg:sub(18))
+        if val and DelveGuideDB then
+            DelveGuideDB.companionFactionID   = val
+            DelveGuideDB.companionFactionType = nil  -- let the renown query auto-detect Major vs Reputation
+            print("|cFF00BFFF[DelveGuide]|r Companion faction ID set to "..val..". Open Companion tab to verify.")
+            if currentTabKey=="companion" then RefreshCurrentTab() end
+        else
+            print("|cFF00BFFF[DelveGuide]|r Usage: /dg companionfaction <factionID>")
+        end
+    elseif msg=="companionscan" then
+        if DelveGuideDB then
+            DelveGuideDB.companionFactionID   = nil
+            DelveGuideDB.companionFactionType = nil
+        end
+        print("|cFF00BFFF[DelveGuide]|r Companion faction cache cleared. Open Companion tab to rescan.")
+        if currentTabKey=="companion" then RefreshCurrentTab() end
+    elseif msg=="bountiful" then
+        DelveGuideDB.widgetBountifulOnly = not DelveGuideDB.widgetBountifulOnly
+        local cw = DelveGuide.compactWidget
+        if cw and cw.RefreshBountyBtn then cw.RefreshBountyBtn() end
+        if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end
+        print("|cFF00BFFF[DelveGuide]|r Widget bountiful filter: "
+            ..(DelveGuideDB.widgetBountifulOnly and "|cFFFFD700ON|r (only bountiful delves)" or "|cFF888888OFF|r (all variants)"))
+    elseif msg:sub(1,10)=="widgetfont" then
+        local val=tonumber(msg:sub(12))
+        if val then DelveGuideDB.widgetFontScale=math.max(0.6,math.min(2.0,val))
+            if DelveGuide.RefreshCompactWidgetFonts then DelveGuide.RefreshCompactWidgetFonts() end
+            print(string.format("|cFF00BFFF[DelveGuide]|r Widget font: %.1fx",DelveGuideDB.widgetFontScale))
+        else print(string.format("|cFF00BFFF[DelveGuide]|r Widget font: %.1fx (0.6-2.0)",DelveGuideDB.widgetFontScale)) end
     elseif msg:sub(1,4)=="font" then
         local val=tonumber(msg:sub(6))
         if val then DelveGuideDB.fontScale=math.max(0.6,math.min(2.0,val)); RefreshCurrentTab()
@@ -1217,7 +1249,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
                 end
             end
 
-            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,vaultIlvl=vaultIlvl,char=charName,elapsed=elapsed,variant=runVariant})
+            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,tierNum=tierNum,vaultIlvl=vaultIlvl,char=charName,elapsed=elapsed,variant=runVariant})
             if #DelveGuideDB.history>50 then table.remove(DelveGuideDB.history) end
             local vaultStr=vaultIlvl and ("  |cFFFFD700[Vault: "..vaultIlvl.." ilvl]|r") or ""
             local timeStr=elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(elapsed/60),math.floor(elapsed%60)) or ""
@@ -1283,13 +1315,16 @@ local function InjectDelveData(self)
 
     -- 3. Inject the DelveGuide Data!
     if activeVariant then
-        self:AddLine(" ") 
+        self:AddLine(" ")
         self:AddLine("|cFF00BFFFDelveGuide:|r")
 
         local gradeText = DelveGuide.UI and DelveGuide.UI.GradeColor(ranking) or ("|cFFFFFFFF" .. ranking .. "|r")
         self:AddLine("Speed Grade: " .. gradeText .. "  " .. flags)
 
-        self:Show() 
+        local minT = (DelveGuide.Voidforge and DelveGuide.Voidforge.MIN_VOIDCORE_TIER) or 8
+        self:AddLine(string.format("|cFFAA66CCT%d+: drops Nebulous Voidcore|r", minT))
+
+        self:Show()
     end
 end
 

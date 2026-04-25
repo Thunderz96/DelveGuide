@@ -1,5 +1,70 @@
 # Changelog
 
+## [1.7.15] - 2026-04-24
+
+### Added
+- **Settings Toggle for Bountiful-Only Filter:** The bountiful filter introduced in 1.7.14 now has a matching checkbox in the Settings tab's Compact Widget section. Toggling it there stays in sync with the widget's `[B]` button and the `/dg bountiful` slash command -- all three control the same `widgetBountifulOnly` flag.
+
+## [1.7.14] - 2026-04-24
+
+### Added
+- **Bountiful-Only Filter on Widget:** New `[B]` toggle button in the widget header (left of the share/lock icons) -- click to hide every non-bountiful variant, click again to restore the full list. Gold `[B]` = filter ON, dim grey = OFF. The Share button respects the filter too, so right-click-to-guild only sends today's bountiful delves when the toggle is active. State persists per-character.
+- **`/dg bountiful`** -- slash-command toggle for the same filter, in case the widget is hidden or you've muscle-memory'd the keyboard.
+
+## [1.7.13] - 2026-04-24
+
+### Fixed
+- **Companion Level Parses From `d.reaction` String:** For Valeera's friendship faction (2744), `C_GossipInfo.GetFriendshipReputation` does not populate the structured `rankInfo.currentLevel` field -- the actual rank number is embedded in `d.reaction` as a localised string like `"Level 38"` (with `d.text` mirroring it: `"Valeera Sanguinar reached Level 38."`). The Companion tab now pattern-matches digits out of `d.reaction` first, then `d.text` as a fallback, so the header correctly shows `Level 38` instead of `Level 0`. The structured `rankInfo.currentLevel` path is kept first for forward compatibility in case Blizzard populates it in a later patch.
+
+## [1.7.12] - 2026-04-24
+
+### Fixed
+- **Companion XP Now Reads Correct Friendship Rank:** Valeera's track is a friendship-style reputation (80-level XP rank, same shape as Brann's TWW system), not a plain reputation. The plain `C_Reputation.GetFactionDataByID` API *also* returns data for these factions but only exposes the 1-8 reaction (Honored / Exalted), which is why the Companion tab was showing "Level 8" instead of the real rank. The renown query now probes `C_GossipInfo.GetFriendshipReputation` first, which returns `rankInfo.currentLevel` (the real 80-level rank) plus the in-level XP progress.
+- **Auto-Discovery Covers Friendships:** The one-time ID scan now checks `C_GossipInfo.GetFriendshipReputation` in the 2600-3100 range before falling through to Major Factions and regular reputations.
+
+## [1.7.11] - 2026-04-24
+
+### Fixed
+- **Companion XP Lookup:** The renown lookup now probes both the Major Faction and regular Reputation APIs regardless of how the faction ID was cached, so a manually-pinned ID works whichever table it actually lives in. Previously, `/dg companionfaction <id>` hardcoded the type to "major" and silently returned nil if the faction was actually a regular reputation (which is where Valeera Sanguinar -- faction 2744 -- actually lives).
+- **Cache Self-Correction:** When the type probe has to fall through to the other API, the corrected type is written back to the cache so subsequent renders skip the wrong query.
+
+## [1.7.10] - 2026-04-23
+
+### Added
+- **Companion XP via Reputation:** The Companion tab now reads Valeera's XP/level from her reputation/renown faction, so the progress bar works anywhere -- not just inside an active delve. Previously, `C_DelvesUI.GetCompanionInfo` only populated XP data while inside an instance; outside delves the bar was empty. Auto-discovery scans for the companion faction on first render and caches the ID per-character.
+- **`/dg companionscan`** -- clears the cached companion faction so the next Companion tab open re-scans (useful if Blizzard renames the faction or you roll a new character).
+- **`/dg companionfaction <id>`** -- manually pin a faction ID when auto-discovery can't find it.
+
+## [1.7.9] - 2026-04-23
+
+### Added
+- **Voidforge Integration (Patch 12.0.5):** First pass on the new Lingering Shadows Void systems. Surfaces across the existing UI:
+  - **Widget:** New "Cores / Forge" line below Keys showing current Nebulous Voidcore count (vs weekly cap) and Elementary Voidcore Shard progress toward the weekly "Building The Voidforge" quest (X/3).
+  - **Pre-entry Checklist:** New "Voidforge weekly" row flags whether you still owe shards before your next Bountiful Delve.
+  - **History tab:** Per-week summary now reports how many of that week's runs were Tier 8+ and therefore Voidcore-eligible.
+  - **World Map Tooltip:** Active-delve tooltips now include a "T8+: drops Nebulous Voidcore" reminder.
+  - **Loot tab:** New Voidforge Currencies section explains Nebulous / Elementary Shard / Ascendant Voidcores and where they drop.
+- **New module:** `DelveGuide_Voidforge.lua` centralizes currency/quest polling so every surface shares the same status.
+
+### Notes
+- Currency-backed features (widget line, checklist shard count) stay hidden until Voidforge currency IDs are populated in `DelveGuide_Voidforge.lua` -- the rest of the integration (tooltip reminder, loot section, history eligibility count) works immediately.
+
+## [1.7.8] - 2026-04-23
+
+### Added
+- **Separate Widget Font Scale:** The compact widget now has its own independent font scale, decoupled from the main UI font. Set via new `/dg widgetfont <0.6-2.0>` command or the Settings tab's new "Widget Font Scale" section (A-/A+/Reset buttons). The main `/dg font` command no longer affects the widget, so you can keep a large main UI without bloating the floating widget.
+
+## [1.7.7] - 2026-04-23
+
+### Fixed
+- **Compact Widget 8-Line Cap:** Widget now displays up to 10 active delve variants (previously capped at 8, hiding entries when 9-10 were active).
+- **Font Scale Ignored by Widget:** `/dg font <0.6-2.0>` command and Settings tab A-/A+/Reset buttons now resize the compact widget's font and width. Previously only the main UI and HUD respected `fontScale`; the widget was hardcoded at 11pt/12pt regardless of the setting.
+
+## [1.7.6] - 2026-04-21
+
+### Changed
+- **Patch 12.0.5 Compatibility:** Added interface version `120005` to the TOC so the addon is no longer flagged as "Out of Date" on the latest client. No logic changes.
+
 ## [1.7.5] - 2026-04-17
 
 ### Fixed

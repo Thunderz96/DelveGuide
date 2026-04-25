@@ -64,6 +64,30 @@ local function RunChecklistScan()
         tip   = not valeeraOk and "Open the companion panel to configure Valeera." or nil,
     })
 
+    -- Voidforge weekly quest (Patch 12.0.5) -- only surfaced if
+    -- currency/quest IDs are configured in DelveGuide_Voidforge.lua.
+    if DelveGuide.GetVoidforgeStatus then
+        local vs = DelveGuide.GetVoidforgeStatus()
+        if vs.configured or vs.questDone ~= nil then
+            local label, ok, tip
+            if vs.questDone == true then
+                label = "Voidforge weekly  |cFF00FF44(Done)|r"
+                ok    = true
+            elseif vs.shards ~= nil then
+                local done = vs.shards >= vs.shardTarget
+                label = string.format("Voidforge weekly  |cFFFFD700(%d/%d shards)|r",
+                    math.min(vs.shards, vs.shardTarget), vs.shardTarget)
+                ok    = done
+                tip   = not done and "Complete a raid boss, M+ key, or Bountiful Delve to earn shards." or nil
+            else
+                label = "Voidforge weekly  |cFFFFD700(Pending)|r"
+                ok    = false
+                tip   = "Turn in 'Building The Voidforge' after earning 3 Elementary Voidcore Shards."
+            end
+            table.insert(results, { label=label, ok=ok, tip=tip })
+        end
+    end
+
     return results
 end
 
@@ -99,7 +123,7 @@ DelveGuide.ShowChecklist = function(force)
         end)
 
         f.rows = {}
-        for i = 1, 4 do
+        for i = 1, 6 do
             local row = f:CreateFontString(nil, "OVERLAY")
             row:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 11)
             row:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -(24 + (i-1)*22))

@@ -3,11 +3,32 @@
 -- ============================================================
 local UI = DelveGuide.UI
 
-local RANK_ORDER  = {S=1, A=2, B=3, C=4, D=5, F=6}
-local W_HEADER_H  = 28
-local W_LINE_H    = 18
-local W_PAD       = 10
-local W_MAX_LINES = 8
+local RANK_ORDER       = {S=1, A=2, B=3, C=4, D=5, F=6}
+local W_HEADER_H       = 28
+local W_PAD            = 10
+local W_MAX_LINES      = 10
+local W_BASE_W         = 220
+local W_BASE_ROW_SIZE  = 11
+local W_BASE_ROW_HEIGHT = 18
+
+-- Widget uses its OWN scale (DelveGuideDB.widgetFontScale), independent of
+-- the main fontScale. This lets users keep a large main UI while keeping
+-- the floating widget compact (or vice versa).
+local function GetWidgetScale()
+    return (DelveGuideDB and DelveGuideDB.widgetFontScale) or 1.0
+end
+
+local function GetLineH()
+    return math.floor(W_BASE_ROW_HEIGHT * GetWidgetScale() + 0.5)
+end
+
+local function GetWidgetRSize()
+    return math.floor(W_BASE_ROW_SIZE * GetWidgetScale() + 0.5)
+end
+
+local function GetWidgetW()
+    return math.floor(W_BASE_W * GetWidgetScale() + 0.5)
+end
 
 DelveGuide.compactWidget = nil
 
@@ -18,14 +39,19 @@ DelveGuide.UpdateCompactWidget = function()
     local activeVariants = DelveGuide.activeVariants or {}
     local activeDelves   = DelveGuide.activeDelves or {}
     local tiers = DelveGuideDB.widgetTiers or {}
+    local bountifulOnly = DelveGuideDB.widgetBountifulOnly
     local entries = {}
-    
+
     if DelveGuideData and DelveGuideData.delves then
         local seen = {}
         for _, d in ipairs(DelveGuideData.delves) do
             if activeVariants[d.variant] and not seen[d.variant] and tiers[d.ranking] then
-                seen[d.variant] = true
-                table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                local ds = activeDelves[d.name]
+                local isB = type(ds) == "table" and ds.bountiful
+                if (not bountifulOnly) or isB then
+                    seen[d.variant] = true
+                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                end
             end
         end
     end
@@ -34,9 +60,13 @@ DelveGuide.UpdateCompactWidget = function()
         return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99)
     end)
     
+    local lineH = GetLineH()
     local n = math.min(#entries, W_MAX_LINES)
     if n == 0 then
-        cw.varLines[1].label:SetText("|cFF888888No active variants|r")
+        local emptyMsg = bountifulOnly
+            and "|cFF888888No bountiful delves today|r"
+            or  "|cFF888888No active variants|r"
+        cw.varLines[1].label:SetText(emptyMsg)
         cw.varLines[1].pin = nil
         cw.varLines[1]:ClearAllPoints()
         cw.varLines[1]:SetPoint("TOPLEFT", cw, "TOPLEFT", 8, -(W_HEADER_H+4))
@@ -58,32 +88,47 @@ DelveGuide.UpdateCompactWidget = function()
                 line.label:SetText(rc.."["..e.ranking.."]|r  "..displayName..bountyTag)
                 line.pin = pin
                 line:ClearAllPoints()
-                line:SetPoint("TOPLEFT", cw, "TOPLEFT", 8, -(W_HEADER_H+4+(i-1)*W_LINE_H))
+                line:SetPoint("TOPLEFT", cw, "TOPLEFT", 8, -(W_HEADER_H+4+(i-1)*lineH))
                 line:Show()
             else line:Hide() end
         end
     end
-    
-    local keysY = -(W_HEADER_H + 4 + n*W_LINE_H + 6)
+
+    local keysY = -(W_HEADER_H + 4 + n*lineH + 6)
     cw.keysLine:ClearAllPoints()
     cw.keysLine:SetPoint("TOPLEFT", cw, "TOPLEFT", 8, keysY)
-    cw:SetHeight(W_HEADER_H + 4 + n*W_LINE_H + 6 + W_LINE_H + W_PAD)
-    
+
     local keysInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
     local shards   = keysInfo and keysInfo.quantity or 0
     local restoredInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
     local restored = restoredInfo and restoredInfo.quantity or 0
     local keysStr  = string.format("|cFFFFD700Keys:|r %d/600 shards", shards)
-    
     if restored > 0 then
         keysStr = keysStr .. string.format("  |cFF00FF44+%d restored|r", restored)
     end
     cw.keysLine:SetText(keysStr)
+
+    -- Voidforge line (only shown if currency IDs are configured).
+    local vfStr = DelveGuide.FormatVoidforgeWidgetLine and DelveGuide.FormatVoidforgeWidgetLine() or nil
+    local extraH = 0
+    if cw.voidforgeLine then
+        if vfStr then
+            cw.voidforgeLine:SetText(vfStr)
+            cw.voidforgeLine:ClearAllPoints()
+            cw.voidforgeLine:SetPoint("TOPLEFT", cw, "TOPLEFT", 8, keysY - lineH)
+            cw.voidforgeLine:Show()
+            extraH = lineH
+        else
+            cw.voidforgeLine:Hide()
+        end
+    end
+    cw:SetHeight(W_HEADER_H + 4 + n*lineH + 6 + lineH + extraH + W_PAD)
 end
 
 DelveGuide.CreateCompactWidget = function()
     local f = CreateFrame("Frame", "DelveGuideCompactWidget", UIParent, "BackdropTemplate")
-    f:SetSize(220, 80)
+    local widgetW = GetWidgetW()
+    f:SetSize(widgetW, 80)
     f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
     
     f:SetScript("OnDragStart", function(self)
@@ -148,10 +193,46 @@ DelveGuide.CreateCompactWidget = function()
         end
     end)
 
+    local rSizeInit = GetWidgetRSize()
     local titleFS = f:CreateFontString(nil, "OVERLAY")
-    titleFS:SetFont(GameFontNormal:GetFont() or "Fonts\\FRIZQT__.TTF", 12, "OUTLINE")
+    titleFS:SetFont(GameFontNormal:GetFont() or "Fonts\\FRIZQT__.TTF", rSizeInit + 1, "OUTLINE")
     titleFS:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -9)
     titleFS:SetText("|cFF00BFFFDelveGuide|r")
+    f.titleFS = titleFS
+
+    -- Bountiful filter toggle — gold "[B]" pill, dim when off.
+    local bountyBtn = CreateFrame("Button", nil, f)
+    bountyBtn:SetSize(18, 14); bountyBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -47, -7)
+    bountyBtn:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+    local bountyLabel = bountyBtn:CreateFontString(nil, "OVERLAY")
+    bountyLabel:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+    bountyLabel:SetPoint("CENTER", bountyBtn, "CENTER", 0, 0)
+    local function RefreshBountyBtn()
+        if DelveGuideDB.widgetBountifulOnly then
+            bountyLabel:SetText("|cFFFFD700[B]|r")
+        else
+            bountyLabel:SetText("|cFF555555[B]|r")
+        end
+    end
+    bountyBtn:SetScript("OnClick", function()
+        DelveGuideDB.widgetBountifulOnly = not DelveGuideDB.widgetBountifulOnly
+        RefreshBountyBtn()
+        DelveGuide.UpdateCompactWidget()
+    end)
+    -- Exposed so /dg bountiful (and Settings, later) can sync the icon state.
+    f.RefreshBountyBtn = RefreshBountyBtn
+    bountyBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddLine("|cFFFFD700Bountiful Filter|r")
+        if DelveGuideDB.widgetBountifulOnly then
+            GameTooltip:AddLine("|cFF44FF44ON|r -- click to show all variants.", 0.7, 1, 0.7)
+        else
+            GameTooltip:AddLine("|cFF888888OFF|r -- click to show only bountiful delves.", 0.7, 0.7, 0.7)
+        end
+        GameTooltip:Show()
+    end)
+    bountyBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    RefreshBountyBtn()
 
     -- Share button — sends currently displayed variants to chat
     local shareBtn = CreateFrame("Button", nil, f)
@@ -164,12 +245,17 @@ DelveGuide.CreateCompactWidget = function()
         local activeVariants = DelveGuide.activeVariants or {}
         local activeDelves   = DelveGuide.activeDelves or {}
         local tiers = DelveGuideDB.widgetTiers or {}
+        local bountifulOnly = DelveGuideDB.widgetBountifulOnly
         local entries, seen = {}, {}
         if DelveGuideData and DelveGuideData.delves then
             for _, d in ipairs(DelveGuideData.delves) do
                 if activeVariants[d.variant] and not seen[d.variant] and tiers[d.ranking] then
-                    seen[d.variant] = true
-                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                    local ds = activeDelves[d.name]
+                    local isB = type(ds) == "table" and ds.bountiful
+                    if (not bountifulOnly) or isB then
+                        seen[d.variant] = true
+                        table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                    end
                 end
             end
         end
@@ -221,19 +307,22 @@ DelveGuide.CreateCompactWidget = function()
     lockBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     RefreshLock()
 
+    local innerW = widgetW - 16
     local div = f:CreateTexture(nil, "ARTWORK")
-    div:SetColorTexture(0.15, 0.5, 1, 0.35); div:SetSize(204, 1)
+    div:SetColorTexture(0.15, 0.5, 1, 0.35); div:SetSize(innerW, 1)
     div:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -26)
+    f.divider = div
 
     local sf = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
+    local lineHInit = GetLineH()
     f.varLines = {}
     for i = 1, W_MAX_LINES do
         local btn = CreateFrame("Button", nil, f)
-        btn:SetSize(204, W_LINE_H)
+        btn:SetSize(innerW, lineHInit)
         btn:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestLogTitleHighlight", "ADD")
-        
+
         local fs = btn:CreateFontString(nil, "OVERLAY")
-        fs:SetFont(sf, 11); fs:SetAllPoints(); fs:SetJustifyH("LEFT")
+        fs:SetFont(sf, rSizeInit); fs:SetAllPoints(); fs:SetJustifyH("LEFT")
         btn.label = fs
         
         btn:SetScript("OnClick", function(self)
@@ -255,13 +344,44 @@ DelveGuide.CreateCompactWidget = function()
     end
 
     f.keysLine = f:CreateFontString(nil, "OVERLAY")
-    f.keysLine:SetFont(sf, 11); f.keysLine:SetWidth(204); f.keysLine:SetJustifyH("LEFT")
+    f.keysLine:SetFont(sf, rSizeInit); f.keysLine:SetWidth(innerW); f.keysLine:SetJustifyH("LEFT")
     f.keysLine:SetText("|cFFFFD700Keys:|r --")
+
+    f.voidforgeLine = f:CreateFontString(nil, "OVERLAY")
+    f.voidforgeLine:SetFont(sf, rSizeInit); f.voidforgeLine:SetWidth(innerW); f.voidforgeLine:SetJustifyH("LEFT")
+    f.voidforgeLine:Hide()
     
     if DelveGuideDB.widgetHidden then f:Hide() end
     if DelveGuideDB.widgetAutoHide then f:SetAlpha(0.15) end
     
     DelveGuide.compactWidget = f
+    DelveGuide.UpdateCompactWidget()
+end
+
+DelveGuide.RefreshCompactWidgetFonts = function()
+    local cw = DelveGuide.compactWidget
+    if not cw then return end
+    local rSize = GetWidgetRSize()
+    local lineH = GetLineH()
+    local widgetW = GetWidgetW()
+    local innerW = widgetW - 16
+    local sf = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
+    local titleFont = GameFontNormal:GetFont() or "Fonts\\FRIZQT__.TTF"
+
+    cw:SetWidth(widgetW)
+    if cw.titleFS then cw.titleFS:SetFont(titleFont, rSize + 1, "OUTLINE") end
+    if cw.divider then cw.divider:SetSize(innerW, 1) end
+    if cw.keysLine then cw.keysLine:SetFont(sf, rSize); cw.keysLine:SetWidth(innerW) end
+    if cw.voidforgeLine then cw.voidforgeLine:SetFont(sf, rSize); cw.voidforgeLine:SetWidth(innerW) end
+    if cw.varLines then
+        for i = 1, W_MAX_LINES do
+            local btn = cw.varLines[i]
+            if btn then
+                btn:SetSize(innerW, lineH)
+                if btn.label then btn.label:SetFont(sf, rSize) end
+            end
+        end
+    end
     DelveGuide.UpdateCompactWidget()
 end
 

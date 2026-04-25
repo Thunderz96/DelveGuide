@@ -11,6 +11,165 @@ local function GetSpecRec()
     return DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID], specID
 end
 
+-- Auto-discovery for Valeera's reputation/renown track. Caches the hit in
+-- SavedVariables so we only scan once per character. "major" = C_MajorFactions
+-- (renown track); "rep" = regular reputation bar.
+local function FindCompanionFactionID()
+    if DelveGuideDB and DelveGuideDB.companionFactionID then
+        return DelveGuideDB.companionFactionID, DelveGuideDB.companionFactionType
+    end
+
+    local function nameMatches(n)
+        if not n then return false end
+        return n:find("Valeera") or n:find("Sanguinar")
+    end
+
+    -- Friendship factions (Valeera / Brann-style companion tracks) match first,
+    -- since the underlying reputation API would also match but returns the
+    -- wrong (1-8 reaction) level.
+    if C_GossipInfo and C_GossipInfo.GetFriendshipReputation then
+        for id = 2600, 3100 do
+            local ok, d = pcall(C_GossipInfo.GetFriendshipReputation, id)
+            if ok and d and d.friendshipFactionID and d.friendshipFactionID > 0 and nameMatches(d.name) then
+                if DelveGuideDB then
+                    DelveGuideDB.companionFactionID = id
+                    DelveGuideDB.companionFactionType = "friendship"
+                end
+                return id, "friendship"
+            end
+        end
+    end
+
+    if C_MajorFactions and C_MajorFactions.GetMajorFactionData then
+        for id = 2600, 3100 do
+            local ok, d = pcall(C_MajorFactions.GetMajorFactionData, id)
+            if ok and d and nameMatches(d.name) then
+                if DelveGuideDB then
+                    DelveGuideDB.companionFactionID = id
+                    DelveGuideDB.companionFactionType = "major"
+                end
+                return id, "major"
+            end
+        end
+    end
+
+    if C_Reputation and C_Reputation.GetFactionDataByID then
+        for id = 2600, 3100 do
+            local ok, d = pcall(C_Reputation.GetFactionDataByID, id)
+            if ok and d and nameMatches(d.name) then
+                if DelveGuideDB then
+                    DelveGuideDB.companionFactionID = id
+                    DelveGuideDB.companionFactionType = "rep"
+                end
+                return id, "rep"
+            end
+        end
+    end
+    return nil, nil
+end
+
+-- Renown can live in three different APIs depending on the faction type:
+--   major      -- C_MajorFactions (e.g. Dornogal renown)
+--   friendship -- C_GossipInfo.GetFriendshipReputation (Brann, Valeera style,
+--                 80-level XP track with a rankInfo.currentLevel)
+--   rep        -- plain reputation (Hated..Exalted, 1-8 reaction)
+-- Companion tracks (Valeera Sanguinar = faction 2744) are friendship-style,
+-- so QueryFriendship must be tried FIRST -- the plain reputation API also
+-- returns data for these factions, but reports reaction=8 (Exalted) instead
+-- of the real 80-level rank.
+
+local function QueryFriendship(id)
+    if not (C_GossipInfo and C_GossipInfo.GetFriendshipReputation) then return nil end
+    local ok, d = pcall(C_GossipInfo.GetFriendshipReputation, id)
+    if not (ok and d and d.friendshipFactionID and d.friendshipFactionID > 0) then return nil end
+
+    local floor   = d.reactionThreshold or 0
+    local ceil    = d.nextThreshold or (floor + 1)
+    local cur     = (d.standing or floor) - floor
+    local max     = math.max(1, ceil - floor)
+
+    -- Level extraction: companion-style friendships (e.g. Valeera 2744) don't
+    -- populate d.rankInfo.currentLevel. The rank number lives in d.reaction
+    -- as a localised string like "Level 38", with d.text mirroring it
+    -- ("Valeera Sanguinar reached Level 38."). Try the structured field first
+    -- for forward compatibility, then pattern-match the strings.
+    local level = 0
+    if d.rankInfo and d.rankInfo.currentLevel then
+        level = d.rankInfo.currentLevel
+    elseif type(d.reaction) == "string" then
+        level = tonumber(d.reaction:match("(%d+)")) or 0
+    end
+    if level == 0 and type(d.text) == "string" then
+        level = tonumber(d.text:match("(%d+)")) or 0
+    end
+
+    return {
+        level     = level,
+        current   = cur,
+        max       = max,
+        name      = (d.name and d.name ~= "") and d.name or nil,
+        factionID = id,
+        ftype     = "friendship",
+    }
+end
+
+local function QueryMajor(id)
+    if not (C_MajorFactions and C_MajorFactions.GetMajorFactionData) then return nil end
+    local ok, d = pcall(C_MajorFactions.GetMajorFactionData, id)
+    if ok and d and d.name and d.name ~= "" then
+        return {
+            level     = d.renownLevel or 0,
+            current   = d.renownReputationEarned or 0,
+            max       = (d.renownLevelThreshold and d.renownLevelThreshold > 0)
+                         and d.renownLevelThreshold or 1,
+            name      = d.name,
+            factionID = id,
+            ftype     = "major",
+        }
+    end
+end
+
+local function QueryRep(id)
+    if not (C_Reputation and C_Reputation.GetFactionDataByID) then return nil end
+    local ok, d = pcall(C_Reputation.GetFactionDataByID, id)
+    if ok and d and d.name and d.name ~= "" then
+        local floor = d.currentReactionThreshold or 0
+        local ceil  = d.nextReactionThreshold or (floor + 1)
+        local cur   = (d.currentStanding or floor) - floor
+        local max   = math.max(1, ceil - floor)
+        return {
+            level     = d.reaction or 0,
+            current   = cur,
+            max       = max,
+            name      = d.name,
+            factionID = id,
+            ftype     = "rep",
+        }
+    end
+end
+
+local function GetCompanionRenown()
+    local id, ftype = FindCompanionFactionID()
+    if not id then return nil end
+
+    -- Try friendship FIRST -- it returns nil for non-friendship factions, so
+    -- it's a harmless probe, but it's the only API that exposes the 80-level
+    -- companion XP track for Valeera.
+    local result = QueryFriendship(id)
+    if not result then
+        if ftype == "rep" then
+            result = QueryRep(id) or QueryMajor(id)
+        else
+            result = QueryMajor(id) or QueryRep(id)
+        end
+    end
+
+    if result and DelveGuideDB and result.ftype ~= ftype then
+        DelveGuideDB.companionFactionType = result.ftype
+    end
+    return result
+end
+
 DelveGuide.RenderCompanion = function()
     local cf = UI.NewContentFrame()
     local y = 10
@@ -41,6 +200,17 @@ DelveGuide.RenderCompanion = function()
             end
         end
     end)
+
+    -- Prefer faction/renown data when available -- works outside of delves,
+    -- unlike C_DelvesUI.GetCompanionInfo which is only populated in-instance.
+    local renown = GetCompanionRenown()
+    if renown then
+        compLevel  = renown.level
+        compXP     = renown.current
+        compMaxXP  = renown.max
+        if renown.name and renown.name ~= "" then compName = renown.name end
+        if not compID or compID == 0 then compID = 11 end
+    end
 
 -- 2. UI SCRAPING! (Bypasses API restrictions outside of Delves)
     local liveCombat, liveUtility
@@ -132,7 +302,7 @@ DelveGuide.RenderCompanion = function()
     if compMaxXP > 1 then
         xpText:SetText(string.format("%d / %d XP  (%.1f%%)", compXP, compMaxXP, fillPct * 100))
     else
-        xpText:SetText("|cFF888888XP Data requires entering a delve|r")
+        xpText:SetText("|cFF888888XP Data unavailable  -  try /dg companionscan|r")
     end
     y = y + barH + 20
 

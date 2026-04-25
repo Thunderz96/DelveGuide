@@ -61,6 +61,13 @@ DelveGuide.RenderLoot = function()
     
     y = y + UI.CreateHeader(cf, y, "Notable Loot  --  Trinkets & Weapons from Midnight Delves") + 4
     y = y + UI.CreateRow(cf, y, "|cFF888888Hover an item name to preview its tooltip.|r") + 4
+
+    -- Voidforge Currencies (Patch 12.0.5)
+    y = y + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Voidforge Currencies|r  |cFF888888(Patch 12.0.5)|r")
+    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888Bonus-roll token. Earn from T8+ Bountiful Delves, M+6+, Nightmare Prey Hunts. Weekly cap +2/week.|r")
+    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCElementary Voidcore Shard|r   |cFF888888Weekly quest 'Building The Voidforge' -- 3/week from raid bosses, M+, Bountiful Delves.|r")
+    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCAscendant Voidcore|r   |cFF888888Upgrades Hero/Myth/Radiance-crafted item levels.|r") + 6
     
     for _, slot in ipairs({"Trinket", "Weapon"}) do
         y = y + 4

@@ -21,6 +21,7 @@ DelveGuide.RenderHistory = function()
         table.sort(weekOrder,function(a,b)
             if a==0 then return false end; if b==0 then return true end; return a>b
         end)
+        local minCoreTier = (DelveGuide.Voidforge and DelveGuide.Voidforge.MIN_VOIDCORE_TIER) or 8
         for _,key in ipairs(weekOrder) do
             local runs=weeks[key]; local count=#runs
             local weekLabel=key==0 and "|cFF888888Earlier / Legacy Runs|r" or ("|cFFFFD700Week of "..date("%b %d, %Y",key).."|r")
@@ -29,9 +30,21 @@ DelveGuide.RenderHistory = function()
             elseif count>=4 then vaultText=string.format("|cFFFFFF002/3 vault slots|r  |cFF888888(%d more for 3rd)|r",8-count)
             elseif count>=1 then vaultText=string.format("|cFFFF88441/3 vault slots|r  |cFF888888(%d more for 2nd)|r",4-count)
             else vaultText="|cFFFF4444No vault slots|r" end
-            
+
+            local voidcoreRuns = 0
+            for _,run in ipairs(runs) do
+                if type(run.tierNum)=="number" and run.tierNum>=minCoreTier then
+                    voidcoreRuns = voidcoreRuns + 1
+                end
+            end
+            local voidcoreText = ""
+            if voidcoreRuns > 0 then
+                voidcoreText = string.format("  --  |cFFAA66CC%d Voidcore%s eligible|r (T%d+)",
+                    voidcoreRuns, voidcoreRuns==1 and "" or "s", minCoreTier)
+            end
+
             y=y+8
-            y=y+UI.CreateRow(cf,y,weekLabel.."  |cFF888888"..count.." run(s)|r  --  "..vaultText)
+            y=y+UI.CreateRow(cf,y,weekLabel.."  |cFF888888"..count.." run(s)|r  --  "..vaultText..voidcoreText)
             y=y+UI.CreateRow(cf,y,"|cFF555555"..string.rep("-",80).."|r")+2
             
             for _,run in ipairs(runs) do

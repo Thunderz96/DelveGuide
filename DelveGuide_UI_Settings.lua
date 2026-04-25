@@ -36,6 +36,14 @@ DelveGuide.RenderSettings = function()
     y = y + MakeSettingCheckbox(cf, y, "Auto-hide widget  |cFF888888(fades out when not hovered)|r",
         function() return DelveGuideDB.widgetAutoHide end,
         function(checked) DelveGuideDB.widgetAutoHide = checked; UI.UpdateWidgetAlpha() end)
+    y = y + MakeSettingCheckbox(cf, y, "Show only |cFFFFD700bountiful|r delves  |cFF888888(or: /dg bountiful, or [B] button on widget)|r",
+        function() return DelveGuideDB.widgetBountifulOnly end,
+        function(checked)
+            DelveGuideDB.widgetBountifulOnly = checked
+            local cw = DelveGuide.compactWidget
+            if cw and cw.RefreshBountyBtn then cw.RefreshBountyBtn() end
+            UI.UpdateCompactWidget()
+        end)
 
     y = y + 4
     y = y + UI.CreateRow(cf, y, "|cFFAAAAAAAAWidget tier filter - show active variants at these rankings:|r") + 6
@@ -104,13 +112,41 @@ DelveGuide.RenderSettings = function()
         end)
     end
     MakeFontScaleBtn("A-", 10, -0.1); MakeFontScaleBtn("A+", 52, 0.1)
-    
+
     local resetBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
     resetBtn:SetSize(60, 22); resetBtn:SetText("Reset"); resetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
     resetBtn:SetScript("OnClick", function()
         DelveGuideDB.fontScale = 1.0
         fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.fontScale))
         UI.RefreshCurrentTab()
+    end)
+    y = y + 30 + 16
+
+    -- Widget Font Scale (independent of main font scale)
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Widget Font Scale|r  |cFF888888(independent from main font)|r") + 6
+    local wfsDesc = cf:CreateFontString(nil, "OVERLAY")
+    wfsDesc:SetFont(ROW_FONT_FILE, rSize)
+    wfsDesc:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
+    wfsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.widgetFontScale or 1.0))
+    y = y + rH + 4
+
+    local function MakeWidgetFontBtn(label, xOff, delta)
+        local b = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+        b:SetSize(36, 22); b:SetText(label); b:SetPoint("TOPLEFT", cf, "TOPLEFT", xOff, -y)
+        b:SetScript("OnClick", function()
+            DelveGuideDB.widgetFontScale = math.max(0.6, math.min(2.0, (DelveGuideDB.widgetFontScale or 1.0) + delta))
+            wfsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.widgetFontScale))
+            if DelveGuide.RefreshCompactWidgetFonts then DelveGuide.RefreshCompactWidgetFonts() end
+        end)
+    end
+    MakeWidgetFontBtn("A-", 10, -0.1); MakeWidgetFontBtn("A+", 52, 0.1)
+
+    local wResetBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    wResetBtn:SetSize(60, 22); wResetBtn:SetText("Reset"); wResetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
+    wResetBtn:SetScript("OnClick", function()
+        DelveGuideDB.widgetFontScale = 1.0
+        wfsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.widgetFontScale))
+        if DelveGuide.RefreshCompactWidgetFonts then DelveGuide.RefreshCompactWidgetFonts() end
     end)
     y = y + 30 + 16
 

@@ -335,6 +335,112 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.7.15",
+        date    = "2026-04-24",
+        entries = {
+            "Settings: Added 'Show only bountiful delves' checkbox to the Compact Widget section -- syncs with the [B] button and /dg bountiful.",
+        }
+    },
+    {
+        version = "1.7.14",
+        date    = "2026-04-24",
+        entries = {
+            "New Feature: Bountiful-Only filter on the widget. Click the new [B] button in the widget header to hide all non-bountiful variants (gold = ON, grey = OFF).",
+            "New Command: /dg bountiful -- toggles the same filter from chat.",
+            "Improvement: Share button now respects the bountiful filter -- only broadcasts bountiful delves when the toggle is ON.",
+        }
+    },
+    {
+        version = "1.7.13",
+        date    = "2026-04-24",
+        entries = {
+            "Fix: Companion tab now correctly displays Valeera's level (e.g. 38) by parsing the rank number out of the friendship 'Level X' string.",
+        }
+    },
+    {
+        version = "1.7.12",
+        date    = "2026-04-24",
+        entries = {
+            "Fix: Companion XP now reads the correct friendship rank (80-level XP track) instead of the 1-8 reaction. The tab was showing 'Level 8' for Exalted reputations -- now shows the real rank.",
+            "Improvement: Faction auto-discovery scans friendship factions before falling through to Major Factions and regular reputations.",
+        }
+    },
+    {
+        version = "1.7.11",
+        date    = "2026-04-24",
+        entries = {
+            "Fix: /dg companionfaction <id> no longer hardcodes Major Faction type -- the renown lookup auto-detects whether the ID is a Major Faction or regular reputation.",
+            "Improvement: Cached faction type self-corrects when the wrong API was guessed.",
+        }
+    },
+    {
+        version = "1.7.10",
+        date    = "2026-04-23",
+        entries = {
+            "New Feature: Companion XP via Reputation -- the Companion tab now reads Valeera's XP/level from her reputation faction, so the progress bar works outside of delves too.",
+            "New Command: /dg companionscan -- clears the cached companion faction so it re-scans on next open.",
+            "New Command: /dg companionfaction <id> -- manually pin a faction ID if auto-discovery can't find it.",
+        }
+    },
+    {
+        version = "1.7.9",
+        date    = "2026-04-23",
+        entries = {
+            "New Feature: Voidforge integration (Patch 12.0.5)! Surfaces across the widget, pre-entry checklist, history tab, world map tooltip, and loot tab.",
+            "Widget: New 'Cores / Forge' line shows Nebulous Voidcore count and weekly shard progress.",
+            "Checklist: New 'Voidforge weekly' row flags if you still owe shards before your next Bountiful Delve.",
+            "History: Per-week summary now reports how many T8+ runs were Voidcore-eligible.",
+            "Map: Active-delve tooltips now flag T8+ as Voidcore-eligible.",
+            "Loot: New Voidforge Currencies section explains Nebulous / Elementary Shard / Ascendant Voidcores.",
+        }
+    },
+    {
+        version = "1.7.8",
+        date    = "2026-04-23",
+        entries = {
+            "New Feature: Separate Widget Font Scale -- the compact widget now has its own independent font scale, decoupled from the main UI font.",
+            "New Command: /dg widgetfont <0.6-2.0> -- adjusts only the widget font size.",
+            "Settings: Added Widget Font Scale section with A-/A+/Reset buttons.",
+        }
+    },
+    {
+        version = "1.7.7",
+        date    = "2026-04-23",
+        entries = {
+            "Fix: Compact widget now displays up to 10 active variants (previously capped at 8).",
+            "Fix: /dg font command and Settings A-/A+/Reset buttons now resize the compact widget too.",
+        }
+    },
+    {
+        version = "1.7.6",
+        date    = "2026-04-21",
+        entries = {
+            "Patch 12.0.5 Compatibility: Added interface version 120005 so the addon is no longer flagged as 'Out of Date' on the latest client.",
+        }
+    },
+    {
+        version = "1.7.5",
+        date    = "2026-04-17",
+        entries = {
+            "Fix: Parhelion Plaza now detects correctly -- scanner queries mapID 2424 (the actual Isle of Quel'Danas uiMapID).",
+            "Fix: Registered widget set ID 1799 for Parhelion Plaza so non-EN clients can resolve the localized delve name.",
+            "Fix: Torment's Rise no longer logged as a missing translation -- correctly recognized as a Nemesis delve. Stale entries auto-purged on load.",
+            "Improvement: POI scan dedup -- delves exposed on multiple map IDs are processed once instead of twice.",
+            "New Command: /dg findplaza -- brute-force scans map IDs 2200-2700 to locate Parhelion Plaza POI for future map changes.",
+        }
+    },
+    {
+        version = "1.7.4",
+        date    = "2026-04-12",
+        entries = {
+            "New Feature: Story variant captured in run history (e.g. 'Ogre Powered' displayed in the History tab and chat log).",
+            "Localization: Traditional Chinese (zhTW) -- 4 new variant translations.",
+            "Fix: HUD overlay font size now respects the fontScale setting.",
+            "Fix: Spanish 'Trapped!' corrected to '¡Atrapados!'.",
+            "Fix: Parhelion Plaza esES variants properly labeled.",
+        }
+    },
+    {
         version = "1.7.3",
         date    = "2026-04-01",
         entries = {
