@@ -106,6 +106,72 @@ DelveGuide.IsDelveVoidcoreEligible = function(tierNum)
         and tierNum >= DelveGuide.Voidforge.MIN_VOIDCORE_TIER
 end
 
+-- Equipment slot scan -- powers the Voidforge tab's "upgrade priority" table.
+-- We map slot IDs -> human labels here so the UI doesn't have to. Slot 4 (shirt),
+-- 18 (legacy ranged), and 19 (tabard) are skipped because they don't take ilvl
+-- upgrades from Voidcores.
+--
+-- `tier` controls upgrade priority (lower = recommend first):
+--   1 = weapons & trinkets (highest stat-per-ilvl, biggest DPS/HPS gain)
+--   2 = everything else
+-- Within a tier, items sort ASC by ilvl, and empty slots beat both tiers.
+local SLOT_INFO = {
+    { id = 16, label = "Main Hand", tier = 1 },
+    { id = 17, label = "Off Hand",  tier = 1 },
+    { id = 13, label = "Trinket 1", tier = 1 },
+    { id = 14, label = "Trinket 2", tier = 1 },
+    { id = 1,  label = "Head",      tier = 2 },
+    { id = 2,  label = "Neck",      tier = 2 },
+    { id = 3,  label = "Shoulder",  tier = 2 },
+    { id = 15, label = "Back",      tier = 2 },
+    { id = 5,  label = "Chest",     tier = 2 },
+    { id = 9,  label = "Wrist",     tier = 2 },
+    { id = 10, label = "Hands",     tier = 2 },
+    { id = 6,  label = "Waist",     tier = 2 },
+    { id = 7,  label = "Legs",      tier = 2 },
+    { id = 8,  label = "Feet",      tier = 2 },
+    { id = 11, label = "Finger 1",  tier = 2 },
+    { id = 12, label = "Finger 2",  tier = 2 },
+}
+
+DelveGuide.VoidforgeSlots = SLOT_INFO
+
+-- Returns a list of {slot, label, tier, ilvl, link, empty} for every gear slot
+-- worth upgrading. Sort order: empty slots first, then weapons/trinkets ASC by
+-- ilvl, then everything else ASC by ilvl. Weapons & trinkets get bumped to the
+-- top because each ilvl on them carries a much larger stat budget than armor.
+DelveGuide.GetVoidforgeSlotPriority = function()
+    local out = {}
+    for _, s in ipairs(SLOT_INFO) do
+        local link = GetInventoryItemLink("player", s.id)
+        local ilvl = 0
+        if link then
+            if C_Item and C_Item.GetDetailedItemLevelInfo then
+                local ok, effective = pcall(C_Item.GetDetailedItemLevelInfo, link)
+                if ok and type(effective) == "number" then ilvl = effective end
+            end
+            if ilvl == 0 and GetDetailedItemLevelInfo then
+                local ok, effective = pcall(GetDetailedItemLevelInfo, link)
+                if ok and type(effective) == "number" then ilvl = effective end
+            end
+        end
+        table.insert(out, {
+            slot  = s.id,
+            label = s.label,
+            tier  = s.tier,
+            ilvl  = ilvl,
+            link  = link,
+            empty = link == nil,
+        })
+    end
+    table.sort(out, function(a, b)
+        if a.empty ~= b.empty then return a.empty end
+        if a.tier ~= b.tier then return a.tier < b.tier end
+        return (a.ilvl or 0) < (b.ilvl or 0)
+    end)
+    return out
+end
+
 -- Formats a short status string for the widget line (one line).
 -- Returns nil if nothing is configured yet so the caller can hide the row.
 DelveGuide.FormatVoidforgeWidgetLine = function()

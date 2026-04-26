@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.7.16"
+local ADDON_VERSION    = "1.7.17"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -18,6 +18,8 @@ local TABS = {
     { label = "Curios",   key = "curios"   },
     { label = "Companion", key = "companion" },
     { label = "Loot",     key = "loot"     },
+    { label = "Voidforge", key = "voidforge" },
+    { label = "Quests",   key = "quests"   },
     { label = "Nullaeus", key = "nullaeus" },
     { label = "History",  key = "history"  },
     { label = "Future",   key = "future"   },
@@ -386,10 +388,24 @@ local function CacheCurrentChar()
     end
 
     local _, vaultSlots, _, acts = GetWeeklyVaultData()
-    local maxVaultIlvl = 0 
+    local maxVaultIlvl = 0
     for _, a in ipairs(acts) do
         if a.progress >= a.threshold and a.level and a.level > maxVaultIlvl then
             maxVaultIlvl = a.level
+        end
+    end
+
+    -- Voidforge snapshot for the cross-character stockpile in the Voidforge tab.
+    local voidforge = nil
+    if DelveGuide.GetVoidforgeStatus then
+        local ok, vf = pcall(DelveGuide.GetVoidforgeStatus)
+        if ok and vf and vf.configured then
+            voidforge = {
+                cores     = vf.cores,
+                shards    = vf.shards,
+                ascendant = vf.ascendant,
+                questDone = vf.questDone,
+            }
         end
     end
 
@@ -397,15 +413,16 @@ local function CacheCurrentChar()
         name         = name,
         realm        = realm,
         specName     = specName,
-        specIcon     = specIcon,     
+        specIcon     = specIcon,
         ilvl         = ilvl,
         shards       = shards,
         restoredKeys = restoredKeys,
         bounty       = bounty,
         delveCount   = delveCount,
-        weeklyRuns   = weeklyRuns,   
+        weeklyRuns   = weeklyRuns,
         vaultSlots   = vaultSlots,
-        maxVaultIlvl = maxVaultIlvl, 
+        maxVaultIlvl = maxVaultIlvl,
+        voidforge    = voidforge,
         lastSeen     = date("%Y-%m-%d"),
         resetKey     = resetKey,
     }
@@ -836,6 +853,12 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("|cFF00BFFF[DelveGuide]|r === END ===")
     elseif msg=="roster" then
         DelveGuide.Toggle(); SwitchTab("roster")
+    elseif msg=="voidforge" or msg=="forge" then
+        DelveGuide.Toggle(); SwitchTab("voidforge")
+    elseif msg=="quests" then
+        DelveGuide.Toggle(); SwitchTab("quests")
+    elseif msg=="questscan" then
+        if DelveGuide.ScanDelversCallQuests then DelveGuide.ScanDelversCallQuests() end
     elseif msg=="minimap" then
         DelveGuideDB.minimap.hide = not DelveGuideDB.minimap.hide
         if icon then
@@ -976,6 +999,9 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg bountiful|r          - Toggle widget filter to show only bountiful delves")
         print("  |cFFFFFF00/dg check|r              - Show pre-entry checklist")
         print("  |cFFFFFF00/dg roster|r             - Open Roster tab")
+        print("  |cFFFFFF00/dg voidforge|r          - Open Voidforge tab (cores, shards, slot priority)")
+        print("  |cFFFFFF00/dg quests|r             - Open Delver's Call quest tracker tab")
+        print("  |cFFFFFF00/dg questscan|r          - Scan quest log for Delver's Call quest IDs")
         print("  |cFFFFFF00/dg companionscan|r      - Re-scan for the companion reputation faction")
         print("  |cFFFFFF00/dg companionfaction <id>|r - Manually pin the companion faction ID")
         print("  |cFFFFFF00/dg tier <1-11>|r        - Manually set current delve tier")

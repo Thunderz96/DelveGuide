@@ -52,6 +52,37 @@ DelveGuideData.delves = {
 
 
 -- ============================================================
+-- SECTION 1b: DELVER'S CALL QUESTS  --  "World Tour" alt-leveling chain
+-- ------------------------------------------------------------
+-- One Delver's Call quest per rotational delve. The intended workflow:
+--   1. While leveling an alt, run each delve once to pick up the quest
+--      (do NOT turn it in -- the XP scales with your level at turn-in).
+--   2. Bank all 10 quests in your log.
+--   3. Once you're a few levels short of cap, turn them in to power
+--      through those last levels. Hitting cap before turn-in wastes the
+--      XP, so don't hold them too long.
+--
+-- questID = nil means we haven't catalogued that quest yet. Run
+-- /dg questscan with the quest in your log to print its ID, then
+-- paste it here. The Quests tab works fine without IDs (manual
+-- checkbox fallback), but auto-detection is much nicer once filled.
+-- ============================================================
+DelveGuideData.delversCall = {
+    -- All 10 quest IDs catalogued from wowhead.com (April 2026).
+    { delve = "Atal'Aman",           questID = 93409 },
+    { delve = "Collegiate Calamity", questID = 93384 },
+    { delve = "Parhelion Plaza",     questID = 93386 },
+    { delve = "Shadowguard Point",   questID = 93428 },
+    { delve = "Sunkiller Sanctum",   questID = 93427 },
+    { delve = "The Darkway",         questID = 93385 },
+    { delve = "The Grudge Pit",      questID = 93421 },
+    { delve = "The Gulf of Memory",  questID = 93416 },
+    { delve = "The Shadow Enclave",  questID = 93372 },
+    { delve = "Twilight Crypts",     questID = 93410 },
+}
+
+
+-- ============================================================
 -- SECTION 2: DELVE MAP PINS
 -- ------------------------------------------------------------
 -- mapID = WoW uiMapID for the zone
@@ -334,6 +365,17 @@ DelveGuideData.gradeColors = {
 -- SECTION 8: CHANGELOG
 -- ============================================================
 DelveGuideData.changelog = {
+    {
+        version = "1.7.17",
+        date    = "2026-04-25",
+        entries = {
+            "New Voidforge tab: weekly Cores/Shards/Ascendant state, where-to-earn reference, slot upgrade priority (weapons & trinkets first, then armor by lowest ilvl), and alt stockpile rollup.",
+            "New Quests tab (Delver's Call): tracks all 10 per-delve quests with 4 auto-detected states -- Available / In Progress / Banked (gold-highlighted sweet spot) / Turned In. Hold quests until close to max level for a big XP push.",
+            "All 10 Delver's Call quest IDs catalogued from wowhead.com -- the tab is fully auto-detect on day one.",
+            "Slash commands: /dg voidforge (alias /dg forge), /dg quests, /dg questscan (lists Delver's Call quests in your log + IDs).",
+            "Roster snapshot now captures Voidforge state per character so the Alt Stockpile works without each alt being logged in right now.",
+        }
+    },
     {
         version = "1.7.16",
         date    = "2026-04-24",

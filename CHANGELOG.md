@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.7.17] - 2026-04-25
+
+### Added
+- **Voidforge Tab:** New top-level tab (between Loot and Nullaeus) that consolidates the Patch 12.0.5 upgrade loop. Four sections:
+  - **This Week** -- live Nebulous Voidcore count, "Building the Voidforge" progress bar, Ascendant Voidcore count.
+  - **Where to Earn** -- one-line reference for each currency source.
+  - **Upgrade Priority** -- scans all 16 gear slots and recommends weapons & trinkets first (largest stat-per-ilvl gain), then armor by lowest ilvl. Empty slots float to the top. Each row is hoverable for the item tooltip and shift-click chat-links the item.
+  - **Alt Stockpile** -- rolls up cores/shards/ascendant counts plus weekly-quest status across every cached character on the account, with totals.
+- **Quests Tab (Delver's Call):** New top-level tab that tracks the 10 per-delve "Delver's Call" quests across characters. Designed for the alt-leveling "world tour" workflow -- run every delve once, bank the quests, then turn them all in close to max level for a big XP push (turning in at the cap itself wastes the XP). Auto-detects state via `C_QuestLog`:
+  - `Available` (not picked up) / `In Progress` (in log, objectives pending) / `Banked` (objectives done, ready to turn in -- the gold-highlighted sweet spot) / `Turned In` (completed).
+  - All 10 quest IDs catalogued from wowhead.com (Atal'Aman 93409, Collegiate Calamity 93384, Parhelion Plaza 93386, Shadowguard Point 93428, Sunkiller Sanctum 93427, The Darkway 93385, The Grudge Pit 93421, The Gulf of Memory 93416, The Shadow Enclave 93372, Twilight Crypts 93410).
+  - Per-character + alt-rollup view at the bottom of the tab.
+  - Manual checkbox fallback (with cycle button) in case Blizzard adds future quests we haven't catalogued yet.
+- **`/dg voidforge`** (alias `/dg forge`) -- jumps to the Voidforge tab.
+- **`/dg quests`** -- jumps to the Quests tab.
+- **`/dg questscan`** -- scans the player's quest log and prints any Delver's Call-style quests with their IDs, so future quests can be added to the data table.
+- **Voidforge Data on Roster Snapshot:** `PLAYER_ENTERING_WORLD` now captures `voidforge = {cores, shards, ascendant, questDone}` per character so the Voidforge tab's Alt Stockpile rollup works without each alt being currently logged in.
+
 ## [1.7.16] - 2026-04-24
 
 ### Fixed
