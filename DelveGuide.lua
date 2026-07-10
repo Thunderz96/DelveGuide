@@ -20,7 +20,7 @@ local TABS = {
     { label = "Loot",     key = "loot"     },
     { label = "Voidforge", key = "voidforge" },
     { label = "Quests",   key = "quests"   },
-    { label = "Nullaeus", key = "nullaeus" },
+    { label = "Nemesis",  key = "nemesis"  },
     { label = "History",  key = "history"  },
     { label = "Future",   key = "future"   },
     { label = "Roster",   key = "roster"   },
