@@ -48,6 +48,20 @@ DelveGuideData.delves = {
     { name="Twilight Crypts",       zone="Zul'Aman",    variant="Party Crasher",               ranking="B", mountable=false, hasBug=true,  isBestRoute=false },
     { name="Twilight Crypts",       zone="Zul'Aman",    variant="Trapped!",                    ranking="D", mountable=false, hasBug=true,  isBestRoute=false },
     { name="Twilight Crypts",       zone="Zul'Aman",    variant="Loosed Loa",                  ranking="F", mountable=false, hasBug=true,  isBestRoute=false },
+
+    -- ============================================================
+    -- SEASON 2 (12.1 "Curse of Ula'tek") -- PENDING PTR VERIFICATION
+    -- Uncomment and fill in once confirmed on the PTR (/dg huddump
+    -- inside each delve for zone/scenario data; variants rotate daily).
+    -- Two new rotational delves, 3 story variants each (names TBD):
+    -- { name="The Ring of Glory",  zone="TBD", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
+    -- { name="Gnarldor Isle",      zone="TBD", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
+    -- Venomfall Deeps is the Season 2 Nemesis delve (successor to
+    -- Torment's Rise / Nullaeus) -- not a rotational delve; it needs
+    -- Nemesis-tab treatment, not a row here.
+    -- Existing delves also gain new snake/venom variants in Season 2;
+    -- add those rows under each delve above as they appear.
+    -- ============================================================
 }
 
 
@@ -79,6 +93,10 @@ DelveGuideData.delversCall = {
     { delve = "The Gulf of Memory",  questID = 93416 },
     { delve = "The Shadow Enclave",  questID = 93372 },
     { delve = "Twilight Crypts",     questID = 93410 },
+    -- Season 2 (12.1): new delves likely add Delver's Call quests.
+    -- Catalogue on PTR with /dg questscan, then uncomment:
+    -- { delve = "The Ring of Glory",  questID = nil },
+    -- { delve = "Gnarldor Isle",      questID = nil },
 }
 
 

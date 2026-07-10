@@ -917,7 +917,8 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         while true do
             local aura = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex and C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
             if not aura then break end
-            print(string.format("  aura[%d] spellID=%d  %s", i, aura.spellId or 0, aura.name or "?"))
+            -- tostring() keeps this safe if aura fields come back as secret values (12.1+)
+            print(string.format("  aura[%d] spellID=%s  %s", i, tostring(aura.spellId), tostring(aura.name)))
             i = i + 1
         end
     elseif msg=="huddump" then
