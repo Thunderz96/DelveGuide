@@ -58,6 +58,8 @@ DelveGuideData.delves = {
     -- Gnarldor Isle: POI 8761, widgetSet 2044, instanceID 3038, interior map 2635, scenarioID 3415
     -- Ring of Glory: POI 8763, widgetSet 2047, instanceID 3077, interior map 2633, scenarioID 3417 (was bountiful on PTR)
     -- Torment's Rise (S1 Nemesis, legacy): still enterable on 12.1 -- instanceID 2966, interior map 2507, scenarioID 3289
+    -- Venomfall Deeps (S2 Nemesis, ACTIVE on PTR 2026-07-11): boss Azta'rec, instanceID 3079, interior map 2634,
+    --   scenarioID 3395, entrance "The Serpent's Tail" /way #2512 51.2 30.3 -- no world-map delve POI (like Torment's Rise)
     -- Variants still TBD -- rescan now that 2512 is in ALL_ZONE_MAP_IDS:
     -- { name="The Ring of Glory",  zone="The Coiled Isle", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
     -- { name="Gnarldor Isle",      zone="The Coiled Isle", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
@@ -163,7 +165,9 @@ DelveGuideData.mapPins = {
 
     -- ── The Coiled Isle (2512) -- 12.1 Season 2 ───────────
     { name="Gnarldor Isle",       mapID=2512, x=0.5787, y=0.7859 },  -- from /dg export at entrance (PTR build 68629); verify precise spot
-    -- { name="The Ring of Glory", mapID=2512, x=nil, y=nil },       -- TBD: /dg export while standing at its entrance
+    { name="The Ring of Glory",   mapID=2512, x=0.7126, y=0.5654 },  -- from /dg export at entrance (PTR build 68629); verify precise spot
+    -- Venomfall Deeps (S2 Nemesis) entrance: The Serpent's Tail, /way #2512 51.2 30.3 --
+    -- intentionally not pinned here (Nemesis delves aren't rotational; location lives in the Nemesis tab)
 }
 
 

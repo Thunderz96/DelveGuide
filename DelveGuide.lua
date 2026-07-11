@@ -66,6 +66,7 @@ local ZONE_NAMES = {
 -- their text is empty. Skip them in variant detection and don't log as missing.
 local NEMESIS_DELVES = {
     ["Torment's Rise"] = true,
+    ["Venomfall Deeps"] = true,  -- S2 Nemesis (12.1); no delve POI on world map, detect by instanceID 3079
 }
 
 local function InitSavedVars()

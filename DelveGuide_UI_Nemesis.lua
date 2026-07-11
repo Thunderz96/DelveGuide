@@ -20,15 +20,16 @@ DelveGuide.RenderNemesis = function()
     -- the 12.1 release. Search "TBD" to find every blank.
     -- ========================================================
     y = y + UI.CreateHeader(cf, y, "Venomfall Deeps  --  Season 2 Nemesis  |cFF888888(PTR preview - details TBD)|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888Season 2's Nemesis delve, tied to the Zul'jan / Ula'tek storyline. Everything below is a placeholder until confirmed on the 12.1 PTR.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFF888888Azta'rec. Season 2's Nemesis delve, tied to the Zul'jan / Ula'tek storyline. Mechanics and rewards below are placeholders until confirmed on the 12.1 PTR.|r") + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Location|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  TBD  |cFF888888(zone + /way -- grab from /dg huddump inside the delve on PTR)|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  The Serpent's Tail  -  The Coiled Isle|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  /way #2512 51.2 30.3|r") + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Unlock Requirements|r") + 4
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  TBD  |cFF888888(Season 1 pattern: Tier 7 clear for Tier ?, Tier 10 clear for Tier ??, with 1+ life remaining)|r") + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Boss Mechanics|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Boss Mechanics  --  Azta'rec|r") + 4
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  TBD  |cFF888888(catalogue on PTR -- expect a venom/serpent kit)|r") + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Recommended Setup|r") + 4
