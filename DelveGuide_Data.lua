@@ -78,11 +78,12 @@ DelveGuideData.delves = {
     -- { name="The Grudge Pit",      zone="Harandar",    variant="Fungal Pharmacon",              ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
     -- { name="The Shadow Enclave",  zone="Quel'Thalas", variant="Infiltrate and Ameliorate",     ranking="C", mountable=false, hasBug=false, isBestRoute=false },
     -- { name="Twilight Crypts",     zone="Zul'Aman",    variant="Why Did it Have to Be Snakes?", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
-    -- Not yet seen in a PTR rotation: new variants for Sunkiller
-    -- Sanctum and The Gulf of Memory -- export again after daily reset.
-    -- NOTE: the 2026-07-11 rotation was 100% new names (no S1 variants
-    -- active) -- S2 may replace the variant pools entirely; watch
-    -- whether any S1 variant ever appears in later rotations.
+    -- CONFIRMED (in-game scan, 2026-07-11 later rotation): S1 variants
+    -- still appear in S2 rotations ("Not What I Expected", "Sporasaur
+    -- Special" seen active) -- Season 2 ADDS variants to the existing
+    -- pools rather than replacing them. All S1 rows above stay valid.
+    -- Ninth new variant spotted: "Speaking Their Language" -- delve
+    -- attribution pending (likely Ring of Glory or Gnarldor Isle).
     -- ============================================================
 }
 
