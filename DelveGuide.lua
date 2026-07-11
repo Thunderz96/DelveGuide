@@ -851,6 +851,75 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         end
         if found==0 then print("|cFFFF4444No delves found.|r") end
         print("|cFF00BFFF[DelveGuide]|r === END ===")
+    elseif msg=="export" then
+        -- Capture a structured snapshot into SavedVariables so PTR data
+        -- can be pulled from disk instead of copied out of chat. Run it
+        -- inside each delve (and once outside), then /reload to flush.
+        DelveGuideDB.ptrExports = DelveGuideDB.ptrExports or {}
+        local snap = { at = date("%Y-%m-%d %H:%M:%S"), build = {GetBuildInfo()} }
+        pcall(function() snap.zone = GetRealZoneText(); snap.subzone = GetSubZoneText() end)
+        pcall(function()
+            local name, instType, diffID, diffName, _, _, _, instanceID = GetInstanceInfo()
+            snap.instance = {name=name, type=instType, diffID=diffID, diffName=diffName, instanceID=instanceID}
+        end)
+        pcall(function()
+            if C_Scenario and C_Scenario.GetInfo then snap.scenario = {C_Scenario.GetInfo()} end
+            if C_Scenario and C_Scenario.GetStepInfo then snap.scenarioStep = {C_Scenario.GetStepInfo()} end
+        end)
+        pcall(function()
+            local mapID = C_Map.GetBestMapForUnit("player")
+            snap.mapID = mapID
+            if mapID then
+                local info = C_Map.GetMapInfo(mapID)
+                snap.mapName = info and info.name
+                snap.parentMapID = info and info.parentMapID
+                local pos = C_Map.GetPlayerMapPosition(mapID, "player")
+                if pos then snap.pos = {x=pos.x, y=pos.y} end
+            end
+        end)
+        pcall(function()
+            if C_DelvesUI and C_DelvesUI.HasActiveLair then snap.hasActiveLair = C_DelvesUI.HasActiveLair() end
+            if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then snap.companionID = C_DelvesUI.GetCompanionInfoForActivePlayer() end
+        end)
+        pcall(function()
+            snap.bountyAura = (C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID and C_UnitAuras.GetPlayerAuraBySpellID(1254631)) ~= nil
+        end)
+        pcall(function()
+            snap.delversCallQuests = {}
+            for i = 1, C_QuestLog.GetNumQuestLogEntries() do
+                local q = C_QuestLog.GetInfo(i)
+                if q and not q.isHeader and q.title and q.title:find("Delver") then
+                    table.insert(snap.delversCallQuests, {id=q.questID, title=q.title})
+                end
+            end
+        end)
+        pcall(function()
+            snap.delvePOIs = {}
+            local maps, seen = {}, {}
+            for _, m in ipairs(ALL_ZONE_MAP_IDS) do table.insert(maps, m) end
+            if snap.mapID then table.insert(maps, snap.mapID) end
+            if snap.parentMapID then table.insert(maps, snap.parentMapID) end
+            for _, mapID in ipairs(maps) do
+                if not seen[mapID] then
+                    seen[mapID] = true
+                    local poiIDs = C_AreaPoiInfo.GetDelvesForMap(mapID)
+                    if poiIDs then
+                        for _, poiID in ipairs(poiIDs) do
+                            local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
+                            if info then
+                                table.insert(snap.delvePOIs, {mapID=mapID, poiID=poiID, name=info.name, atlas=info.atlasName, set=info.tooltipWidgetSet})
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+        table.insert(DelveGuideDB.ptrExports, snap)
+        print(string.format("|cFF00BFFF[DelveGuide]|r Export snapshot |cFF44FF44#%d|r captured (%s). |cFFFFD700/reload|r or logout to write to disk.",
+            #DelveGuideDB.ptrExports, snap.zone or "?"))
+    elseif msg=="exportclear" then
+        DelveGuideDB.ptrExports = nil
+        print("|cFF00BFFF[DelveGuide]|r Export snapshots cleared.")
     elseif msg=="roster" then
         DelveGuide.Toggle(); SwitchTab("roster")
     elseif msg=="voidforge" or msg=="forge" then
@@ -1003,6 +1072,8 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg voidforge|r          - Open Voidforge tab (cores, shards, slot priority)")
         print("  |cFFFFFF00/dg quests|r             - Open Delver's Call quest tracker tab")
         print("  |cFFFFFF00/dg questscan|r          - Scan quest log for Delver's Call quest IDs")
+        print("  |cFFFFFF00/dg export|r             - Snapshot zone/delve/quest data to SavedVariables (PTR data collection)")
+        print("  |cFFFFFF00/dg exportclear|r        - Clear export snapshots")
         print("  |cFFFFFF00/dg companionscan|r      - Re-scan for the companion reputation faction")
         print("  |cFFFFFF00/dg companionfaction <id>|r - Manually pin the companion faction ID")
         print("  |cFFFFFF00/dg tier <1-11>|r        - Manually set current delve tier")
