@@ -28,7 +28,7 @@ local TABS = {
     { label = "Debug",    key = "debug"    },
 }
 
-local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2424, 2444, 2413, 2405 }
+local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2424, 2444, 2413, 2405, 2512, 2537 }  -- 2512/2537 = The Coiled Isle + overview (12.1)
 
 -- Widget set ID → English DELVE name (not variant name).
 -- Set IDs are per-delve-entrance and their text content changes daily.
@@ -44,7 +44,10 @@ local WIDGET_SET_DELVES = {
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
     [1806] = "The Darkway",
+    [2044] = "Gnarldor Isle",       -- 12.1, The Coiled Isle
+    [2047] = "The Ring of Glory",   -- 12.1, The Coiled Isle
     -- Note: Torment's Rise (set=0) is the Nullaeus Nemesis delve, not a rotational delve.
+    -- Venomfall Deeps (S2 Nemesis) had no POI on PTR build 68629 -- season-gated; recheck when S2 testing opens.
 }
 
 local ZONE_NAMES = {
@@ -55,6 +58,8 @@ local ZONE_NAMES = {
     [2444] = "Isle of Quel'Danas (overlap)",
     [2413] = "Harandar",
     [2405] = "Voidstorm",
+    [2512] = "The Coiled Isle",
+    [2537] = "The Coiled Isle (overview)",
 }
 
 -- Nemesis delves have no rotational story variant, so their widget set is 0 and

@@ -53,9 +53,13 @@ DelveGuideData.delves = {
     -- SEASON 2 (12.1 "Curse of Ula'tek") -- PENDING PTR VERIFICATION
     -- Uncomment and fill in once confirmed on the PTR (/dg export
     -- inside each delve; variants rotate daily).
-    -- Two new rotational delves (zone + variants TBD):
-    -- { name="The Ring of Glory",  zone="TBD", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
-    -- { name="Gnarldor Isle",      zone="TBD", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
+    -- Two new rotational delves, zone CONFIRMED via /dg export
+    -- (The Coiled Isle, mapID 2512; PTR build 68629 2026-07-11).
+    -- Gnarldor Isle: POI 8761, widgetSet 2044, instanceID 3038, interior map 2635, scenarioID 3415
+    -- Ring of Glory: POI 8763, widgetSet 2047, instanceID 3077, interior map 2633, scenarioID 3417 (was bountiful on PTR)
+    -- Variants still TBD -- rescan now that 2512 is in ALL_ZONE_MAP_IDS:
+    -- { name="The Ring of Glory",  zone="The Coiled Isle", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
+    -- { name="Gnarldor Isle",      zone="The Coiled Isle", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
     -- Venomfall Deeps is the Season 2 Nemesis delve (successor to
     -- Torment's Rise / Nullaeus) -- not a rotational delve; it needs
     -- Nemesis-tab treatment, not a row here.
@@ -153,6 +157,10 @@ DelveGuideData.mapPins = {
     -- ── Voidstorm (2405) ──────────────────────────────────
     { name="Shadowguard Point",   mapID=2405, x=0.3705, y=0.4880 },  -- verified in-game
     { name="Sunkiller Sanctum",   mapID=2405, x=0.5524, y=0.4741 },  -- verified in-game
+
+    -- ── The Coiled Isle (2512) -- 12.1 Season 2 ───────────
+    { name="Gnarldor Isle",       mapID=2512, x=0.5787, y=0.7859 },  -- from /dg export at entrance (PTR build 68629); verify precise spot
+    -- { name="The Ring of Glory", mapID=2512, x=nil, y=nil },       -- TBD: /dg export while standing at its entrance
 }
 
 
