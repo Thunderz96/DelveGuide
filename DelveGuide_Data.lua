@@ -51,16 +51,31 @@ DelveGuideData.delves = {
 
     -- ============================================================
     -- SEASON 2 (12.1 "Curse of Ula'tek") -- PENDING PTR VERIFICATION
-    -- Uncomment and fill in once confirmed on the PTR (/dg huddump
-    -- inside each delve for zone/scenario data; variants rotate daily).
-    -- Two new rotational delves, 3 story variants each (names TBD):
+    -- Uncomment and fill in once confirmed on the PTR (/dg export
+    -- inside each delve; variants rotate daily).
+    -- Two new rotational delves (zone + variants TBD):
     -- { name="The Ring of Glory",  zone="TBD", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
     -- { name="Gnarldor Isle",      zone="TBD", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
     -- Venomfall Deeps is the Season 2 Nemesis delve (successor to
     -- Torment's Rise / Nullaeus) -- not a rotational delve; it needs
     -- Nemesis-tab treatment, not a row here.
-    -- Existing delves also gain new snake/venom variants in Season 2;
-    -- add those rows under each delve above as they appear.
+    --
+    -- New S2 variants on existing delves, CONFIRMED via /dg export
+    -- (PTR build 68629, rotation of 2026-07-11). Rankings are
+    -- placeholders -- rank during PTR play, then uncomment:
+    -- { name="Atal'Aman",           zone="Zul'Aman",    variant="Venomous Vapors",               ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
+    -- { name="Collegiate Calamity", zone="Quel'Thalas", variant="An Elementary Antidote",        ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
+    -- { name="Parhelion Plaza",     zone="Quel'Danas",  variant="Caustic Crush",                 ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
+    -- { name="Shadowguard Point",   zone="Voidstorm",   variant="Basalisk Blitz",                ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
+    -- { name="The Darkway",         zone="Quel'Thalas", variant="Eggsplosive Growth",            ranking="C", mountable=false, hasBug=false, isBestRoute=false },
+    -- { name="The Grudge Pit",      zone="Harandar",    variant="Fungal Pharmacon",              ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
+    -- { name="The Shadow Enclave",  zone="Quel'Thalas", variant="Infiltrate and Ameliorate",     ranking="C", mountable=false, hasBug=false, isBestRoute=false },
+    -- { name="Twilight Crypts",     zone="Zul'Aman",    variant="Why Did it Have to Be Snakes?", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
+    -- Not yet seen in a PTR rotation: new variants for Sunkiller
+    -- Sanctum and The Gulf of Memory -- export again after daily reset.
+    -- NOTE: the 2026-07-11 rotation was 100% new names (no S1 variants
+    -- active) -- S2 may replace the variant pools entirely; watch
+    -- whether any S1 variant ever appears in later rotations.
     -- ============================================================
 }
 
