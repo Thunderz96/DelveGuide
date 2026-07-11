@@ -113,7 +113,9 @@ DelveGuideData.delversCall = {
     { delve = "The Shadow Enclave",  questID = 93372 },
     { delve = "Twilight Crypts",     questID = 93410 },
     -- Season 2 (12.1): new delves likely add Delver's Call quests.
-    -- Catalogue on PTR with /dg questscan, then uncomment:
+    -- NOT available on PTR build 68629 (2026-07-11) -- likely gated
+    -- until Season 2 opens. RECHECK AT S2 LAUNCH (~Aug 2026) with
+    -- /dg questscan, then uncomment:
     -- { delve = "The Ring of Glory",  questID = nil },
     -- { delve = "Gnarldor Isle",      questID = nil },
 }
