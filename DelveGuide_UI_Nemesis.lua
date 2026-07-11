@@ -39,9 +39,13 @@ DelveGuide.RenderNemesis = function()
 
     -- ========================================================
     -- LEGACY: NULLAEUS (Season 1)
-    -- Torment's Rise remains enterable as legacy content.
-    -- CONFIRM ON 12.1 PTR which rewards survive the rollover,
-    -- then correct the two reward lines below.
+    -- CONFIRMED still enterable on 12.1 PTR build 68629
+    -- (instanceID 2966, interior map 2507, scenarioID 3289).
+    -- Which rewards survive is a Season-2-flip question -- check
+    -- at S2 launch, then correct the two reward lines below.
+    -- NOTE: C_DelvesUI.HasActiveLair() returns false even while
+    -- standing inside the lair (it's seasonal state, NOT an
+    -- in-lair check) -- detect Nemesis delves by instanceID.
     -- ========================================================
     y = y + 8
     y = y + UI.CreateHeader(cf, y, "Legacy: Nullaeus  --  Season 1 Nemesis") + 4

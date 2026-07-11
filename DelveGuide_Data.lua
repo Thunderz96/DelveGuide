@@ -57,6 +57,7 @@ DelveGuideData.delves = {
     -- (The Coiled Isle, mapID 2512; PTR build 68629 2026-07-11).
     -- Gnarldor Isle: POI 8761, widgetSet 2044, instanceID 3038, interior map 2635, scenarioID 3415
     -- Ring of Glory: POI 8763, widgetSet 2047, instanceID 3077, interior map 2633, scenarioID 3417 (was bountiful on PTR)
+    -- Torment's Rise (S1 Nemesis, legacy): still enterable on 12.1 -- instanceID 2966, interior map 2507, scenarioID 3289
     -- Variants still TBD -- rescan now that 2512 is in ALL_ZONE_MAP_IDS:
     -- { name="The Ring of Glory",  zone="The Coiled Isle", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
     -- { name="Gnarldor Isle",      zone="The Coiled Isle", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
