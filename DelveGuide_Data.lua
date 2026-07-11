@@ -416,6 +416,24 @@ DelveGuideData.gradeColors = {
 -- SECTION 8: CHANGELOG
 -- ============================================================
 DelveGuideData.changelog = {
+    -- DRAFT: 12.1 patch-day release notes. Before shipping:
+    --   1. Set the real release date.
+    --   2. Confirm the Nemesis tab's Azta'rec mechanics/rewards are filled in (not TBD).
+    --   3. If Ring of Glory / new-variant rankings aren't done yet, keep the "rankings
+    --      will be updated" line -- it sets expectations honestly.
+    {
+        version = "1.8.0",
+        date    = "2026-08-XX",
+        entries = {
+            "Patch 12.1 / Season 2 ready! The Coiled Isle and its two new delves -- The Ring of Glory and Gnarldor Isle -- are fully integrated: map pins, Active Today detection, compact widget, and variant tracking.",
+            "New Nemesis tab (replaces the Nullaeus tab): dedicated guide for Season 2's Nemesis delve, Venomfall Deeps, and its boss Azta'rec -- location (The Serpent's Tail, /way #2512 51.2 30.3), unlock requirements, mechanics, and rewards.",
+            "Nullaeus isn't gone! Torment's Rise remains enterable as legacy content. The Nemesis tab keeps a compact Season 1 section: location, unlock, the Beacon of Hope skip, and exactly which rewards are still collectible vs. retired.",
+            "Season 2 story variants added -- and good news: Season 1 variants (and all existing rankings) remain in rotation. Season 2 adds new venom/serpent variants on top of the existing pools rather than replacing them.",
+            "Rankings for the new delves and new variants will be refined over the first weeks of Season 2 as routes get tested -- keep an eye on 1.8.x updates.",
+            "Delver's Call: quests for The Ring of Glory and Gnarldor Isle will be auto-detected as soon as they're catalogued at Season 2 launch.",
+            "New command: /dg export -- snapshots your current zone/delve/quest state to SavedVariables. Handy for bug reports: run it where something looks wrong and attach the file.",
+        }
+    },
     {
         version = "1.7.17",
         date    = "2026-04-25",
