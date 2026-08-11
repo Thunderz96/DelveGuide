@@ -7,7 +7,9 @@
 
 ## 📖 Overview
 
-DelveGuide is a World of Warcraft addon built for players who want to get the most out of Midnight's Delve system. Whether you're farming vault slots across multiple alts, hunting Bountiful Delves, optimizing your curio loadout, or preparing to face Nullaeus — DelveGuide has you covered.
+DelveGuide is a World of Warcraft addon built for players who want to get the most out of Midnight's Delve system. Whether you're farming vault slots across multiple alts, hunting Bountiful Delves, optimizing your curio loadout, or preparing to face the Season 2 Nemesis Azta'rec — DelveGuide has you covered.
+
+> 🆕 **Patch 12.1 "Curse of Ula'tek" / Season 2 ready** — The Coiled Isle, the new **Ring of Glory** and **Gnarldor Isle** delves, venom variants on existing delves, and a full **Venomfall Deeps** (Azta'rec) Nemesis guide. *(Bountiful Delves, Coffer Keys, and the seasonal Great Vault unlock with Season 2 on Aug 18.)*
 
 ---
 
@@ -68,16 +70,17 @@ Patch 12.0.5 *"Lingering Shadows"* added the Voidforge upgrade system. DelveGuid
 - Native **LibDataBroker** support for info bar addons (Titan Panel, ElvUI, Bazooka)
 - Displays your **top active variant**, rank, shard count, and vault progress
 
-### 💀 Nullaeus Tab
+### 💀 Nemesis Tab
 
-Dedicated guide for the **Season 1 Nemesis**:
+A **seasonal** guide slot — the current season's Nemesis delve gets the full write-up, and the previous one drops to a compact legacy section for collectors.
 
-- Location & coordinates · Unlock requirements (Tier 7 → `?`, Tier 10 → `??`)
-- **Beacon of Hope** workflow — earn the weekly bounty without entering Torment's Rise
-- All 4 core mechanics: *Emptiness of the Void, Devouring Essence, Dread Portal, Umbral Rage*
-- Phase transitions at **75% · 50% · 25%**
-- Recommended setup, ilvl guidance, 8 strategic tips
-- Full reward list — including the region-limited **Fabled Vanquisher** title
+**Season 2 — Venomfall Deeps (Azta'rec):**
+- Location & coordinates · Unlock tiers (Tier 7 → `?`, Tier 10 → `??`; higher difficulty opens Aug 18)
+- All 6 core abilities, led by the *Sermon of Ula'tek* Simon-Says memory mechanic
+- Companion (Healer Valeera) plus curio and interrupt advice
+- Full reward list — **Apophic Soul Crusher** mount, **Apophic Patagia** back, *Corrosive Victory* toy, "*the Poisonous*" title, and the **time-limited** *Fabled Vanquisher of Azta'rec*
+
+**Legacy — Nullaeus (Season 1):** Torment's Rise stays enterable; a compact reference for what's still collectible vs. retired.
 
 ### 👥 Roster Tab
 
@@ -153,7 +156,7 @@ Roadmap for upcoming features and planned data additions, kept in-game so you ca
 ## 📋 Requirements
 
 - **No dependencies required** — works out of the box
-- Compatible with **World of Warcraft: Midnight** (Interface 120000, 120001, 120005 — through Patch 12.0.5)
+- Compatible with **World of Warcraft: Midnight** — current through **Patch 12.1 "Curse of Ula'tek" / Season 2** (Interface 120100; also loads on 120000 / 120001 / 120005)
 - TomTom is **optionally supported** for waypoint pins
 
 ---

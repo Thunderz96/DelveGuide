@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.8.0] - 2026-08-XX (DRAFT -- 12.1 / Season 2 patch day; set date + verify Azta'rec section is filled before tagging)
+## [1.8.0] - 2026-08-11
 
 ### Added
 - **Patch 12.1 / Season 2 support:** Interface 120100, plus full integration of **The Coiled Isle** (uiMapID 2512, overview 2537) and its two new rotational delves:
@@ -8,17 +8,21 @@
   - **Gnarldor Isle** (POI 8761, widgetSet 2044) -- map pin at 57.9, 78.6. First confirmed story variant: *Speaking Their Language*.
   - Both feed Active Today, the compact widget, variant detection, and map pins like any other delve.
 - **Nemesis Tab** (replaces the Nullaeus tab): the tab slot is now seasonal -- the current season's Nemesis delve gets the full guide, the previous one drops to a compact legacy section.
-  - **Venomfall Deeps** (Season 2 Nemesis, boss **Azta'rec**): location (The Serpent's Tail, `/way #2512 51.2 30.3`), unlock requirements, mechanics, and rewards. Detected by instanceID 3079 (Nemesis delves have no world-map delve POI, and `C_DelvesUI.HasActiveLair()` reflects seasonal state -- it returns false even while standing inside a lair).
+  - **Venomfall Deeps** (Season 2 Nemesis, boss **Azta'rec**): location (The Serpent's Tail, `/way #2512 51.2 30.3`), unlock tiers, the six core abilities (including the *Sermon of Ula'tek* Simon-Says memory mechanic), companion advice, and the full reward list -- Apophic Soul Crusher (mount), Apophic Patagia (back), *Corrosive Victory* (toy), the *the Poisonous* title, and the time-limited *Fabled Vanquisher of Azta'rec*. Detected by instanceID 3079 (Nemesis delves have no world-map delve POI, and `C_DelvesUI.HasActiveLair()` reflects seasonal state -- it returns false even while standing inside a lair).
   - **Nullaeus legacy section:** Torment's Rise remains enterable in 12.1 (confirmed on PTR, instanceID 2966). Compact reference: location, unlock, Beacon of Hope skip, and which rewards are still obtainable vs. retired. The full Season 1 guide lives in git history (`DelveGuide_UI_Nullaeus.lua`, v1.7.x).
-- **Season 2 story variants** on existing delves (all venom/serpent themed), confirmed via PTR: Venomous Vapors (Atal'Aman), An Elementary Antidote (Collegiate Calamity), Caustic Crush (Parhelion Plaza), Basalisk Blitz (Shadowguard Point), Eggsplosive Growth (The Darkway), Fungal Pharmacon (The Grudge Pit), Infiltrate and Ameliorate (The Shadow Enclave), Why Did it Have to Be Snakes? (Twilight Crypts). Season 2 **adds** to the existing variant pools -- Season 1 variants and rankings remain valid and in rotation.
-- **`/dg export`** -- snapshots zone/instance/scenario/map/delve-POI/quest state into SavedVariables (`DelveGuideDB.ptrExports`). Built for PTR data collection; also useful attached to bug reports. **`/dg exportclear`** wipes the snapshots.
+- **Season 2 story variants** on existing delves (all venom/serpent themed): Venomous Vapors (Atal'Aman), An Elementary Antidote (Collegiate Calamity), Caustic Crush (Parhelion Plaza), Basalisk Blitz (Shadowguard Point), Eggsplosive Growth (The Darkway), Fungal Pharmacon (The Grudge Pit), Infiltrate and Ameliorate (The Shadow Enclave), Why Did it Have to Be Snakes? (Twilight Crypts). Season 2 **adds** to the existing variant pools -- Season 1 variants and rankings remain valid and in rotation.
+- **`/dg export`** -- snapshots zone/instance/scenario/map/delve-POI/quest state into SavedVariables (`DelveGuideDB.ptrExports`); attach it to bug reports. **`/dg exportclear`** wipes the snapshots.
 
 ### Changed
 - Curios tab Nemesis warning updated for the Venomfall Deeps arena (profession-node availability).
 - Debug aura dump (`/dg` valeera debug) is now safe against 12.1 secret aura values (`tostring` instead of `%d` formatting).
 
 ### Notes
-- Delver's Call quest IDs for the two new delves are gated behind the Season 2 flip and will land in a 1.8.x update, along with refined rankings for the new delves/variants.
+- **Launch schedule:** patch 12.1 goes live **Aug 11**, but Season 2 proper starts **Aug 18**. The new delves, the Nemesis, and the venom variants are playable now; **Bountiful Delves, Coffer Keys, and the seasonal Great Vault unlock Aug 18** (higher Nemesis `??` difficulty too). During that first week the bountiful filter and pre-entry key checklist are intentionally quiet -- that's expected, not a bug.
+- Nemesis mechanics/rewards are compiled from Season 2 launch guides and will be fine-tuned as routes are tested.
+- Delver's Call quest IDs for the two new delves are gated behind the Season 2 flip and will land in a 1.8.x update, along with refined S-F rankings for the new delves/variants.
+
+## [1.7.17] - 2026-04-25
 
 ### Added
 - **Voidforge Tab:** New top-level tab (between Loot and Nullaeus) that consolidates the Patch 12.0.5 upgrade loop. Four sections:

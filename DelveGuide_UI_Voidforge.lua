@@ -62,7 +62,7 @@ DelveGuide.RenderVoidforge = function()
     local sources = {
         { tag = "|cFFAA66CCNebulous|r",  text = "T8+ Bountiful Delves, M+6 or higher, Nightmare Prey hunts. Soft cap +2 per week." },
         { tag = "|cFFAA66CCShards|r",    text = "Weekly quest 'Building the Voidforge' -- need 1 raid boss kill, 1 M+ run, 1 delve. Reward feeds the Voidforge." },
-        { tag = "|cFFAA66CCAscendant|r", text = "Higher-tier content (Mythic raid, M+8+, Tier 11 delves with 1+ life remaining) per current PTR/live notes." },
+        { tag = "|cFFAA66CCAscendant|r", text = "Higher-tier content (Mythic raid, M+8+, Tier 11 delves with 1+ life remaining)." },
     }
     for _, src in ipairs(sources) do
         y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. src.tag .. " |r|cFF888888" .. src.text .. "|r") + 2
