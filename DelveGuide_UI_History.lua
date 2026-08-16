@@ -4,6 +4,21 @@ DelveGuide.RenderHistory = function()
     local cf=UI.NewContentFrame(); local y=10
     y=y+UI.CreateHeader(cf,y,"Delve Run History  --  Weekly Great Vault Summary")+4
 
+    -- Your Fastest Variants -- averaged from your own timed runs. This is also
+    -- exactly the data /dg submit shares to help build community rankings.
+    local vstats = DelveGuide.GetVariantRunStats and DelveGuide.GetVariantRunStats() or {}
+    if #vstats > 0 then
+        y=y+UI.CreateRow(cf,y,"|cFFFFD700Your Fastest Variants|r  |cFF888888(avg clear time from your timed runs -- help rank these via /dg submit)|r")+4
+        for i,s in ipairs(vstats) do
+            if i<=12 then
+                y=y+UI.CreateRow(cf,y,string.format("  |cFF00BFFF[%dm %02ds]|r  |cFFCCAAFF%s|r |cFF888888(%s)|r  |cFF888888x%d run%s, ~T%d|r",
+                    math.floor(s.avgSec/60), s.avgSec%60, s.variant, s.delve, s.count, s.count==1 and "" or "s", s.avgTier))
+            end
+        end
+        if #vstats>12 then y=y+UI.CreateRow(cf,y,"|cFF888888  ...and "..(#vstats-12).." more|r") end
+        y=y+10
+    end
+
     local clearBtn=CreateFrame("Button",nil,cf,"UIPanelButtonTemplate")
     clearBtn:SetSize(110,22); clearBtn:SetPoint("TOPRIGHT",cf,"TOPRIGHT",-10,-8)
     clearBtn:SetText("Clear History")

@@ -4,13 +4,16 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.8.1"
+local ADDON_VERSION    = "1.8.2"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
 local BASE_HEADER_SIZE = 14
 local BASE_ROW_SIZE    = 11
 local BASE_ROW_HEIGHT  = 18
+-- Community ranking submission form. Replace with your Google Form SHORT link
+-- (forms.gle/...) once it's set up -- /dg submit shows it and the copy code.
+local SUBMIT_URL       = "https://forms.gle/BwrGBZkRmbQdwufN8"
 
 local TABS = {
     --{ label = "Dashboard", key = "dashboard" },
@@ -932,6 +935,14 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         DelveGuide.Toggle(); SwitchTab("quests")
     elseif msg=="questscan" then
         if DelveGuide.ScanDelversCallQuests then DelveGuide.ScanDelversCallQuests() end
+    elseif msg=="submit" or msg=="rank" then
+        local code = DelveGuide.BuildSubmissionCode and DelveGuide.BuildSubmissionCode()
+        if not code then
+            print("|cFF00BFFF[DelveGuide]|r No timed runs yet -- complete a few delves, then |cFFFFFF00/dg submit|r to help rank them.")
+        else
+            print("|cFF00BFFF[DelveGuide]|r Thanks for helping rank the delves! Paste the copied code into the form: |cFFFFFF00"..SUBMIT_URL.."|r")
+            StaticPopup_Show("DELVEGUIDE_SUBMIT_EXPORT", nil, nil, code)
+        end
     elseif msg=="minimap" then
         DelveGuideDB.minimap.hide = not DelveGuideDB.minimap.hide
         if icon then
@@ -1075,6 +1086,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg roster|r             - Open Roster tab")
         print("  |cFFFFFF00/dg voidforge|r          - Open Voidforge tab (bonus rolls, upgrades, slot priority)")
         print("  |cFFFFFF00/dg journey|r            - Open the Journey tab: Delver's Journey ranks + Delver's Call quests (alias /dg quests)")
+        print("  |cFFFFFF00/dg submit|r             - Copy your run times to submit for community variant rankings")
         print("  |cFFFFFF00/dg questscan|r          - Scan quest log for Delver's Call quest IDs")
         print("  |cFFFFFF00/dg export|r             - Snapshot zone/delve/quest data to SavedVariables (attach to bug reports)")
         print("  |cFFFFFF00/dg exportclear|r        - Clear export snapshots")
@@ -1180,6 +1192,83 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     else DelveGuide.Toggle() end
 end
 
+-- ============================================================
+-- COMMUNITY RANKING: aggregate the player's own timed runs into
+-- per-variant stats. Powers the "Your Fastest Variants" panel and
+-- the /dg submit copy code (the data we pool to rank variants).
+-- ============================================================
+DelveGuide.GetVariantRunStats = function()
+    local agg = {}
+    for _, run in ipairs(DelveGuideDB and DelveGuideDB.history or {}) do
+        if run.variant and type(run.elapsed) == "number" and run.elapsed > 0 then
+            local key = (run.name or "?") .. "||" .. run.variant
+            local a = agg[key]
+            if not a then a = { delve = run.name or "?", variant = run.variant, totSec = 0, totTier = 0, count = 0 }; agg[key] = a end
+            a.totSec  = a.totSec + run.elapsed
+            a.totTier = a.totTier + (tonumber(run.tierNum) or 0)
+            a.count   = a.count + 1
+        end
+    end
+    local out = {}
+    for _, a in pairs(agg) do
+        table.insert(out, {
+            delve = a.delve, variant = a.variant, count = a.count,
+            avgSec = math.floor(a.totSec / a.count + 0.5),
+            avgTier = math.floor(a.totTier / a.count + 0.5),
+        })
+    end
+    table.sort(out, function(x, y) return x.avgSec < y.avgSec end)
+    return out
+end
+
+-- Compact, form-friendly submission string. Format (version DG1):
+--   DG1;delve~variant~avgTier~avgSec~count;delve~variant~...
+-- ~ and ; are stripped from names so the aggregator can split cleanly.
+DelveGuide.BuildSubmissionCode = function()
+    local stats = DelveGuide.GetVariantRunStats()
+    if #stats == 0 then return nil end
+    local parts = {}
+    for _, s in ipairs(stats) do
+        local d = (s.delve or ""):gsub("[~;]", " ")
+        local v = (s.variant or ""):gsub("[~;]", " ")
+        table.insert(parts, string.format("%s~%s~%d~%d~%d", d, v, s.avgTier or 0, s.avgSec or 0, s.count or 0))
+    end
+    return "DG1;" .. table.concat(parts, ";")
+end
+
+StaticPopupDialogs["DELVEGUIDE_SUBMIT_EXPORT"] = {
+    text = "Copy the code below (it's pre-selected -- Ctrl+C), then paste it into the ranking form:\n\n" .. SUBMIT_URL,
+    button1 = CLOSE or "Close",
+    hasEditBox = true,
+    editBoxWidth = 350,
+    OnShow = function(self, data)
+        local eb = self.editBox or self.EditBox
+        if eb then eb:SetText(data or ""); eb:HighlightText(); eb:SetFocus() end
+    end,
+    EditBoxOnEscapePressed = function(editBox) editBox:GetParent():Hide() end,
+    EditBoxOnEnterPressed  = function(editBox) editBox:GetParent():Hide() end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["DELVEGUIDE_RANKING_CALL"] = {
+    text = "|cFFFFD700DELVEGUIDE NEEDS YOU, DELVER!|r\n\n"
+        .. "Season 2's new delves are crawling with |cFF888888[?]|r unranked variants -- and your addon has been timing your runs this whole time.\n\n"
+        .. "Enlist! Send your clear times to help build the community rankings. No character or account data -- just cold, hard times, |cFFFFFF00FOR THE VAULT!|r\n\n"
+        .. "Your times become everyone's rankings.\n|cFF888888(You can always enlist later with /dg submit.)|r",
+    button1 = "Enlist Now!",
+    button2 = "Maybe Later",
+    OnAccept = function()
+        local code = DelveGuide.BuildSubmissionCode and DelveGuide.BuildSubmissionCode()
+        if not code then
+            print("|cFF00BFFF[DelveGuide]|r No timed runs yet -- complete a few delves, then |cFFFFFF00/dg submit|r to enlist!")
+        else
+            print("|cFF00BFFF[DelveGuide]|r Thanks for enlisting! Paste the copied code into the form: |cFFFFFF00" .. SUBMIT_URL .. "|r")
+            StaticPopup_Show("DELVEGUIDE_SUBMIT_EXPORT", nil, nil, code)
+        end
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
 StaticPopupDialogs["DELVEGUIDE_CONFIRM_CLEAR_HISTORY"] = {
     text          = "Clear all delve run history? This cannot be undone.",
     button1       = "Clear",
@@ -1250,6 +1339,12 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             if DelveGuideDB.showChangelog then
                 C_Timer.After(3, ShowChangelogPopup)
             end
+        end
+        -- One-time "help rank the delves" call to arms. Fires once ever
+        -- (rankingCallSeen flag), and respects the changelog-popup setting.
+        if DelveGuideDB.showChangelog and not DelveGuideDB.rankingCallSeen then
+            DelveGuideDB.rankingCallSeen = true
+            C_Timer.After(6, function() StaticPopup_Show("DELVEGUIDE_RANKING_CALL") end)
         end
     elseif event=="AREA_POIS_UPDATED" then
         if not IsInInstance() then

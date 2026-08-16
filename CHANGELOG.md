@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.2] - 2026-08-16
+
+### Added
+- **Community variant rankings -- help rank the delves!** DelveGuide already times your runs; now you can pool that data into crowd-sourced variant rankings:
+  - **`/dg submit`** (alias `/dg rank`) -- copies a compact code of your per-variant clear times, pre-selected and ready to paste into the submission form.
+  - **"Your Fastest Variants"** panel on the History tab -- your average clear time per variant, fastest first (this is exactly the data `/dg submit` shares).
+  - A one-time **"Call to Arms"** popup on login invites players to contribute. Shows once, and respects the "show changelog popup" setting.
+
 ## [1.8.1] - 2026-08-16
 
 ### Added

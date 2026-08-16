@@ -8,6 +8,7 @@ ignore:
   - CHANGELOG.md
   - LICENSE
   - README.md
+  - tools
 
 # Libraries are committed under Libs/ and packaged as-is. No externals
 # fetched at build time -- the previous URLs (CurseForge git mirrors and

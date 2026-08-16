@@ -442,6 +442,14 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.8.2",
+        date    = "2026-08-16",
+        entries = {
+            "Help rank the delves! DelveGuide already times your runs -- now /dg submit copies your clear times to paste into the community ranking form. The more players pitch in, the faster the new [?] variants get real rankings.",
+            "New 'Your Fastest Variants' panel on the History tab: your average clear time per variant, fastest first.",
+        }
+    },
+    {
         version = "1.8.1",
         date    = "2026-08-16",
         entries = {
