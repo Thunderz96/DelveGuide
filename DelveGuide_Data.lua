@@ -50,42 +50,33 @@ DelveGuideData.delves = {
     { name="Twilight Crypts",       zone="Zul'Aman",    variant="Loosed Loa",                  ranking="F", mountable=false, hasBug=true,  isBestRoute=false },
 
     -- ============================================================
-    -- SEASON 2 (12.1 "Curse of Ula'tek") -- PENDING PTR VERIFICATION
-    -- Uncomment and fill in once confirmed on the PTR (/dg export
-    -- inside each delve; variants rotate daily).
-    -- Two new rotational delves, zone CONFIRMED via /dg export
-    -- (The Coiled Isle, mapID 2512; PTR build 68629 2026-07-11).
-    -- Gnarldor Isle: POI 8761, widgetSet 2044, instanceID 3038, interior map 2635, scenarioID 3415
-    -- Ring of Glory: POI 8763, widgetSet 2047, instanceID 3077, interior map 2633, scenarioID 3417 (was bountiful on PTR)
-    -- Torment's Rise (S1 Nemesis, legacy): still enterable on 12.1 -- instanceID 2966, interior map 2507, scenarioID 3289
-    -- Venomfall Deeps (S2 Nemesis, ACTIVE on PTR 2026-07-11): boss Azta'rec, instanceID 3079, interior map 2634,
-    --   scenarioID 3395, entrance "The Serpent's Tail" /way #2512 51.2 30.3 -- no world-map delve POI (like Torment's Rise)
-    -- Ring of Glory variants still TBD (tooltip not captured yet -- rescan on a later rotation):
-    -- { name="The Ring of Glory",  zone="The Coiled Isle", variant="TBD", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
-    -- { name="Gnarldor Isle",      zone="The Coiled Isle", variant="Speaking Their Language", ranking="C", mountable=false, hasBug=false, isBestRoute=false },  -- confirmed 2026-07-11
-    -- Venomfall Deeps is the Season 2 Nemesis delve (successor to
-    -- Torment's Rise / Nullaeus) -- not a rotational delve; it needs
-    -- Nemesis-tab treatment, not a row here.
-    --
-    -- New S2 variants on existing delves, CONFIRMED via /dg export
-    -- (PTR build 68629, rotation of 2026-07-11). Rankings are
-    -- placeholders -- rank during PTR play, then uncomment:
-    -- { name="Atal'Aman",           zone="Zul'Aman",    variant="Venomous Vapors",               ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
-    -- { name="Collegiate Calamity", zone="Quel'Thalas", variant="An Elementary Antidote",        ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
-    -- { name="Parhelion Plaza",     zone="Quel'Danas",  variant="Caustic Crush",                 ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
-    -- { name="Shadowguard Point",   zone="Voidstorm",   variant="Basalisk Blitz",                ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
-    -- { name="The Darkway",         zone="Quel'Thalas", variant="Eggsplosive Growth",            ranking="C", mountable=false, hasBug=false, isBestRoute=false },
-    -- { name="The Grudge Pit",      zone="Harandar",    variant="Fungal Pharmacon",              ranking="C", mountable=true,  hasBug=false, isBestRoute=false },
-    -- { name="The Shadow Enclave",  zone="Quel'Thalas", variant="Infiltrate and Ameliorate",     ranking="C", mountable=false, hasBug=false, isBestRoute=false },
-    -- { name="Twilight Crypts",     zone="Zul'Aman",    variant="Why Did it Have to Be Snakes?", ranking="C", mountable=false, hasBug=false, isBestRoute=false },
-    -- CONFIRMED (in-game scan, 2026-07-11 later rotation): S1 variants
-    -- still appear in S2 rotations ("Not What I Expected", "Sporasaur
-    -- Special" seen active) -- Season 2 ADDS variants to the existing
-    -- pools rather than replacing them. All S1 rows above stay valid.
-    -- Ninth new variant confirmed: "Speaking Their Language" =
-    -- Gnarldor Isle (first variant for a new delve). Still unseen:
-    -- Ring of Glory variants, and new S2 variants (if any) for
-    -- Sunkiller Sanctum + The Gulf of Memory.
+    -- SEASON 2 (12.1 "Curse of Ula'tek")
+    -- Two new delves on The Coiled Isle plus venom/serpent variants
+    -- added to the existing pools (S1 variants still rotate too).
+    -- Variant names confirmed live via /dg export (Aug 2026). ranking="?"
+    -- until routes are speed-tested -- "?" rows sort last, and the
+    -- Delves-tab fallback still surfaces any active variant not listed
+    -- here yet (e.g. Sunkiller Sanctum / The Gulf of Memory S2 variants,
+    -- not seen active as of this build).
+    -- (Venomfall Deeps is the S2 Nemesis delve -> Nemesis tab, not a row.)
+    -- ── The Coiled Isle -- new delves ─────────────────────
+    { name="The Ring of Glory",   zone="The Coiled Isle", variant="Game Day",                      ranking="?", mountable=false, hasBug=false, isBestRoute=false },
+    { name="The Ring of Glory",   zone="The Coiled Isle", variant="Open Night",                    ranking="?", mountable=false, hasBug=false, isBestRoute=false },
+    { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Speaking Their Language",       ranking="?", mountable=false, hasBug=false, isBestRoute=false },
+    { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Olds and Ends",                 ranking="?", mountable=false, hasBug=false, isBestRoute=false },
+    -- ── S2 variants on existing delves ────────────────────
+    { name="Atal'Aman",           zone="Zul'Aman",    variant="Venomous Vapors",               ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
+    { name="Collegiate Calamity", zone="Quel'Thalas", variant="An Elementary Antidote",        ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
+    { name="Parhelion Plaza",     zone="Quel'Danas",  variant="Caustic Crush",                 ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
+    { name="Shadowguard Point",   zone="Voidstorm",   variant="Basalisk Blitz",                ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
+    { name="The Darkway",         zone="Quel'Thalas", variant="Eggsplosive Growth",            ranking="?", mountable=false, hasBug=false, isBestRoute=false },
+    { name="The Grudge Pit",      zone="Harandar",    variant="Fungal Pharmacon",              ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
+    { name="The Shadow Enclave",  zone="Quel'Thalas", variant="Infiltrate and Ameliorate",     ranking="?", mountable=false, hasBug=false, isBestRoute=false },
+    { name="Twilight Crypts",     zone="Zul'Aman",    variant="Why Did it Have to Be Snakes?", ranking="?", mountable=false, hasBug=false, isBestRoute=false },
+    -- Reference IDs -- Coiled Isle uiMapID 2512 / overview 2537 (live, build 69299).
+    -- Ring of Glory: POI 8764, widgetSet 2047.  Gnarldor Isle: POI 8761, widgetSet 2044.
+    -- Venomfall Deeps (S2 Nemesis): instanceID 3079 (PTR; verify inside) -- /way #2512 51.2 30.3.
+    -- Torment's Rise (S1 Nemesis, legacy, still enterable): instanceID 2966 (PTR; verify inside).
     -- ============================================================
 }
 
@@ -124,6 +115,27 @@ DelveGuideData.delversCall = {
     -- /dg questscan, then uncomment:
     -- { delve = "The Ring of Glory",  questID = nil },
     -- { delve = "Gnarldor Isle",      questID = nil },
+}
+
+
+-- ============================================================
+-- SECTION 1c: DELVER'S JOURNEY  --  Season 2 rank progression
+-- ------------------------------------------------------------
+-- The seasonal renown-style track that levels as you run delves; each
+-- rank unlocks rewards / vendors / QoL. Static reference for now (the
+-- player's current rank isn't detected). Ranks 1-10 confirmed for S2.
+-- ============================================================
+DelveGuideData.delversJourney = {
+    { rank=1,  unlock="Curiosity boons & first decor", note="Temporary character buffs from Mislaid Curiosities and Heavy Trunks, plus the first housing decor purchase." },
+    { rank=2,  unlock="Corrosive Reticule",            note="Unlocks the Corrosive Reticule purchase." },
+    { rank=3,  unlock="Shrine of Abundance",           note="Bountiful Delves gain a chance to contain a Shrine of Abundance. The Effigy of Dundun toy becomes purchasable." },
+    { rank=4,  unlock="Gilded Stashes appear",         note="Tier 11 Gilded Stashes begin carrying Hero and Myth Mistcrests -- the first rank that changes your upgrade-currency income rather than cosmetics." },
+    { rank=5,  unlock="Zah'ran & first mount",         note="Extra Curiosity boons, the Zah'ran gear vendor at the end of Tier 6+ Delves, and the Corroded Soul Crusher purchase." },
+    { rank=6,  unlock="Two Restored Coffer Keys",      note="Naleidea Rivergleam hands over two Restored Coffer Keys, plus decor and gravestone options." },
+    { rank=7,  unlock="Delve teleports",               note="The Delve-O-Bot 7001 Midnight Software Update Chip adds Midnight Delves to the bot's teleport destinations." },
+    { rank=8,  unlock="Champion Warbound gear",        note="Champion Warbound gear can appear in Tier 9+ Delves. The Ula'tek Ritual Stone decor unlocks." },
+    { rank=9,  unlock="Hero gear currency",            note="Tier 11 Bountiful Coffers can provide Hero gear or Untainted Mana-Crystals, which Zah'ran accepts for Hero-track items." },
+    { rank=10, unlock="Snake Eater",                   note="The Snake Eater title, and increased Coffer Key Shards from every source." },
 }
 
 
@@ -177,17 +189,33 @@ DelveGuideData.mapPins = {
 -- ============================================================
 -- SECTION 3: CURIOS
 -- ============================================================
+-- Season 2 (12.1) curio set. Season 1's curios were retired at the season
+-- flip. Confirmed via wowhead / in-game (Aug 2026). ranking "?" until the
+-- meta settles; id = wowhead spell ID (reference only -- curios match by name).
 DelveGuideData.curios = {
-    { name="Porcelain Blade Tip",        id=251801, description="Chance on hit to apply a crit % debuff (2ppm)",                         curiotype="Combat",  ranking="A" },
-    { name="Holy Bounding Hand Grenade", id=251802, description="On hit damage proc that stuns; can chain proc, low damage (3ppm)",       curiotype="Combat",  ranking="B" },
-    { name="Nether Entropic Kris",       id=251803, description="Chance on hit spreading DOT (1ppm), spread on death with 100ms cd",      curiotype="Combat",  ranking="B" },
-    { name="Mantle of Stars",            id=251804, description="Pseudo cheat death (90 second cd)",                                      curiotype="Combat",  ranking="C" },
-    { name="Sanctum's Edict",            id=251805, description="Tanking curio - underwhelming performance",                              curiotype="Combat",  ranking="F" },
-    { name="Mandate of Sacred Death",    id=251806, description="Valeera gathering grants stacking on-hit %max hp proc; low % execute",   curiotype="Utility", ranking="S" },
-    { name="Overflowing Voidspire",      id=251807, description="Throughput buff after being in combat for 35 seconds (35s cd)",          curiotype="Utility", ranking="A" },
-    { name="Ebon Crown of Subjugation",  id=251808, description="Stacking primary stat buff for opening mislaid curiosities, 12 stacks",  curiotype="Utility", ranking="A" },
-    { name="Time Lost Edict",            id=251809, description="Summons a zone that increases haste, CDR, and speed (30s cd)",           curiotype="Utility", ranking="B" },
-    { name="Motionless Nulltide",        id=251810, description="Grants speed and haste after standing still",                            curiotype="Utility", ranking="C" },
+    -- ── Combat ──
+    { name="Corrosive Bilespear",        id=1295761, description="At <50% HP: Horrify nearby enemies 6s; you gain +5% primary & +50% leech/avoid/speed for 20s (2 min cd). A strong, safe all-purpose pick.", curiotype="Combat",  ranking="?" },
+    { name="Ouroboric Curse",            id=1248856, description="At <50% HP: Horrify nearby enemies 6s; you gain +20% primary & +50% leech/avoid/speed for 20s (2 min cd).",                                          curiotype="Combat",  ranking="?" },
+    { name="Essence Trap",               id=1295975, description="In combat Valeera may drop a trap; enemies within 3 yds are slowed 20% (5s), then it detonates for moderate Nature damage and a 1s stun.",           curiotype="Combat",  ranking="?" },
+    -- ── Utility ──
+    { name="Soul-Cracking Dreamcatcher", id=1296121, description="When a party member interrupts or CCs an Elite, that enemy takes +10% damage for 30s, stacking up to 2.",                                            curiotype="Utility", ranking="?" },
+    { name="Dundun's Favor",             id=1296018, description="In combat a Mislaid Spirit may appear; walking over a Mislaid Curiosity/Spirit fires 3 Volatile Sprites at random enemies. Curiosity contents auto-loot.", curiotype="Utility", ranking="?" },
+    { name="Venom Infusion",             id=1305686, description="On entering combat the party is Poisoned: 1% current HP/min as Nature, but +1% move & +1% haste per 5% HP missing (reversed for the first 6s).",       curiotype="Utility", ranking="?" },
+}
+
+-- ============================================================
+-- SECTION 3b: POISONS  (new 12.1 choice node -- independent of Valeera's role)
+-- ------------------------------------------------------------
+-- base=true are available from the start; base=false unlock via quests.
+-- No source crowns a "best" one, so `use` is an effect-based hint, not a meta.
+-- ============================================================
+DelveGuideData.poisons = {
+    { name="Bloodcrypt Toxin",               base=true,  effect="Enemies hit deal -10% damage & -10% Haste (20s).",                                  use="Survivability -- solo, progression, high tiers." },
+    { name="Poison of the Forgotten Master", base=true,  effect="+5% damage, stacking every 3s up to 5.",                                            use="Speed-farming tiers you already clear." },
+    { name="Soulthirst Venom",               base=true,  effect="+10% Leech / Avoidance / Speed.",                                                   use="Niche stat-stick." },
+    { name="Frostheart Venom",               base=false, effect="Enemies hit: -30% movement and -20% melee/ranged/cast speed (10s).",               use="Strong control/defense vs melee & caster packs." },
+    { name="Phantasmal Spore Toxin",         base=false, effect="Enemies hit are interrupted and feared for 1s.",                                    use="Interrupt-heavy or caster-dense pulls." },
+    { name="Bursting Toad Toxin",            base=false, effect="Enemies hit occasionally burst: Nature damage every 1s for 8s to enemies within 8 yds.", use="Extra AoE for trash-heavy runs." },
 }
 
 -- ============================================================
@@ -217,25 +245,15 @@ DelveGuideData.loot = {
 -- SECTION 5: FUTURE / PATCH NOTES
 -- ============================================================
 DelveGuideData.future = {
-    -- ── Delver's Journey Milestones ─────────────────────────
-    { category="Delver's Journey",  note="Myth Crests from delves become available at lv. 4 Delver's Journey" },
-    { category="Delver's Journey",  note="Flickergate equivalent unlocks at lv. 3 Delver's Journey" },
-    { category="Delver's Journey",  note="T11 Bountiful Delves can drop hero gear at lv. 9 Delver's Journey" },
-    { category="Delver's Journey",  note="Mislaid Curiosities grant stacking buffs when opened (R1 Journey)" },
-    { category="Delver's Journey",  note="Trinket vendor sells random gear, unlocked at lv. 5 Delver's Journey" },
-    { category="Delver's Journey",  note="Trinket vendor sells hero gear at lv. 8 Delver's Journey" },
-    -- ── Upcoming Releases ───────────────────────────────────
-    { category="Release",           note="Parhelion Plaza releases week of March 31 (March on Quel'Danas raid)" },
-    -- ── Not Returning from TWW ──────────────────────────────
-    { category="Not Returning",     note="Radiant Echoes are NOT returning in Midnight" },
-    { category="Not Returning",     note="There is no Ethereal Challenge Room equivalent in Midnight" },
-    -- ── Labyrinths (Patch 12.1.5 -- Autumn 2026) ────────────
-    { category="Labyrinths (12.1.5)", note="Mega-delve content: longer, multi-wing layouts scaled to delve difficulty" },
-    { category="Labyrinths (12.1.5)", note="Designed for solo or small group (2-3 player) play" },
-    { category="Labyrinths (12.1.5)", note="Expected to use the Coffer Key / shard currency system" },
-    { category="Labyrinths (12.1.5)", note="No lockout confirmed -- likely repeatable like standard delves" },
-    { category="Labyrinths (12.1.5)", note="Difficulty tier structure and Great Vault tracking TBD" },
-    { category="Labyrinths (12.1.5)", note="Unique curio interactions distinct from standard delves (unconfirmed)" },
+    -- ── Later in Season 2 (12.1) ────────────────────────────
+    { category="Later in Season 2", note="Ascendant Venomstones arrive later this season -- the gear-upgrade material. 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful Delve is a guaranteed source." },
+    -- ── Labyrinths (Patch 12.1.5 -- ~Autumn 2026) ───────────
+    { category="Labyrinths (Patch 12.1.5)", note="Confirmed for 12.1.5 (~autumn 2026): a larger, mega-dungeon-inspired Delve variant -- pitched as the difficulty ceiling for players who skip raiding." },
+    { category="Labyrinths (Patch 12.1.5)", note="Multi-boss, playable solo or in a small group, with progress saved between sessions (not a simple repeatable delve)." },
+    { category="Labyrinths (Patch 12.1.5)", note="Different reward structure than Delves: Hero-track gear at mid-to-high difficulty, plus a separate currency track for housing & seasonal vendors." },
+    { category="Labyrinths (Patch 12.1.5)", note="Exact difficulty tiers, lockouts, and Great Vault interaction are still on the PTR -- details may change." },
+    -- ── Also in Patch 12.1.5 ────────────────────────────────
+    { category="Also in 12.1.5", note="A new raid arrives alongside Labyrinths." },
 }
 
 -- ============================================================
@@ -244,18 +262,22 @@ DelveGuideData.future = {
 -- coffer  = Bountiful Coffer base drop ilvl
 -- vault   = Great Vault reward ilvl for completing this tier
 -- ============================================================
+-- Season 2 (12.1) item levels. coffer = end-of-run / Bountiful Coffer reward;
+-- vault = Great Vault delve slot. Without a Restored Coffer Key, end-of-run
+-- caps at Tier 3 (272). Tiers 9-11 don't raise the standard reward past T8+.
+-- Source: community delve rewards guides (Aug 2026) -- verify against your drops.
 DelveGuideData.tierRewards = {
-    [1]  = { coffer=220, vault=233 },
-    [2]  = { coffer=224, vault=237 },
-    [3]  = { coffer=227, vault=240 },
-    [4]  = { coffer=230, vault=243 },
-    [5]  = { coffer=233, vault=246 },
-    [6]  = { coffer=237, vault=253 },
-    [7]  = { coffer=246, vault=256 },
-    [8]  = { coffer=250, vault=259 },
-    [9]  = { coffer=250, vault=259 },
-    [10] = { coffer=250, vault=259 },
-    [11] = { coffer=250, vault=259 },
+    [1]  = { coffer=266, vault=279 },
+    [2]  = { coffer=269, vault=282 },
+    [3]  = { coffer=272, vault=285 },
+    [4]  = { coffer=276, vault=289 },
+    [5]  = { coffer=279, vault=292 },
+    [6]  = { coffer=282, vault=298 },
+    [7]  = { coffer=292, vault=302 },
+    [8]  = { coffer=295, vault=305 },
+    [9]  = { coffer=295, vault=305 },
+    [10] = { coffer=295, vault=305 },
+    [11] = { coffer=295, vault=305 },
 }
 
 -- SECTION 7: SPEC CURIO RECOMMENDATIONS
@@ -263,16 +285,19 @@ DelveGuideData.tierRewards = {
 -- Keys are WoW specIDs returned by GetSpecializationInfo().
 -- combat / utility = name string matching DelveGuideData.curios entries.
 -- companion = recommended Valeera role for that spec.
--- Source: NotebookLM community research (Midnight 12.0.1, March 2026).
--- Update this table after major balance patches.
+-- Only `role`/`companion` (recommended Valeera role) are still used by the UI.
+-- The `combat`/`utility`/`notes` fields point at RETIRED Season 1 curios and
+-- are no longer displayed -- kept only until per-spec S2 recommendations exist.
+-- The live Season 2 curio set is in DelveGuideData.curios; the meta isn't
+-- settled, so the Curios tab lists effects and defers on per-spec picks.
 --
 -- NOTE: Sanctum's Edict is rated F in the curio table as a tanking curio,
 -- but community data recommends it for some physical DPS specs as a stat
 -- stick. The F rating reflects its tanking value; consider revising.
 --
 -- NEMESIS WARNING: Mandate of Sacred Death procs require profession nodes.
--- Nullaeus (Season 1 Nemesis) arena has NO nodes — swap Mandate specs to
--- Overflowing Voidspire or Ebon Crown of Subjugation for that fight.
+-- The seasonal Nemesis arena may lack them (Nullaeus's did; verify Venomfall
+-- Deeps) — swap Mandate specs to Overflowing Voidspire or Ebon Crown there.
 --
 -- ============================================================
 DelveGuideData.specCurioRecs = {
@@ -288,13 +313,13 @@ DelveGuideData.specCurioRecs = {
               notes="Highly competitive damage output. Blade Tip synergizes with Grand Crusader crit resets. Swap Mandate for Nemesis (no nodes)." },
     [104] = { spec="Guardian Druid",        role="Tank",   companion="Damage Dealer",
               combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="12.0.1 buffed Maul and Raze, rewarding aggressive stat-scaling. May need Healer Valeera in magic-heavy delves." },
+              notes="Recent Maul and Raze buffs reward aggressive stat-scaling. May need Healer Valeera in magic-heavy delves." },
     [268] = { spec="Brewmaster Monk",       role="Tank",   companion="Healer",
               combat="Porcelain Blade Tip",       utility="Ebon Crown of Subjugation",
               notes="Stagger can overwhelm without external healing. Blade Tip crit buffs boost Celestial Fortune procs for self-heals." },
     [581] = { spec="Vengeance Demon Hunter",role="Tank",   companion="Damage Dealer",
               combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="High mobility + 12.0.1 Soul Cleave/Spirit Bomb buffs. Can chain-pull between nodes to abuse Mandate procs. Swap for Nemesis." },
+              notes="High mobility plus strong Soul Cleave/Spirit Bomb output. Can chain-pull between nodes to abuse Mandate procs. Swap for Nemesis." },
     -- ── Healers ───────────────────────────────────────────────
     [65]  = { spec="Holy Paladin",          role="Healer", companion="Healer",
               combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
@@ -347,10 +372,10 @@ DelveGuideData.specCurioRecs = {
               notes="Physical/magic hybrid benefits from primary stat padding via Ebon Crown." },
     [258] = { spec="Shadow Priest",         role="DPS",    companion="Healer",
               combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="12.0.1 Psychic Link buffs make them elite AoE clearers. High DoT frequency triggers both curios flawlessly. Swap Mandate for Nemesis." },
+              notes="Psychic Link makes them elite AoE clearers. High DoT frequency triggers both curios flawlessly. Swap Mandate for Nemesis." },
     [259] = { spec="Assassination Rogue",   role="DPS",    companion="Healer",
               combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="12.0.1 physical buffs reinforce Ebon Crown as best raw stat amplifier for Bleed damage." },
+              notes="Physical scaling reinforces Ebon Crown as the best raw stat amplifier for Bleed damage." },
     [260] = { spec="Outlaw Rogue",          role="DPS",    companion="Healer",
               combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
               notes="High APM physical spec relies on flat stat padding for consistency." },
@@ -416,6 +441,23 @@ DelveGuideData.gradeColors = {
 -- SECTION 8: CHANGELOG
 -- ============================================================
 DelveGuideData.changelog = {
+    {
+        version = "1.8.1",
+        date    = "2026-08-16",
+        entries = {
+            "Fixed: the new Coiled Isle delves (The Ring of Glory, Gnarldor Isle) and the new venom variants now show up in Active Today and the widget -- they were being detected but not displayed. Rankings show as [?] until routes are tested.",
+            "The Delves tab now surfaces any active delve even when its exact variant isn't catalogued yet, so daily rotations of new variants won't vanish from Active Today.",
+            "Loot: delve reward item levels updated to Season 2 -- end-of-run up to 295 at Tier 8+, and the Great Vault delve slot up to 305 (Hero).",
+            "Curios tab refreshed for Season 2: Season 1's curios are gone and were replaced by the confirmed S2 set (Corrosive Bilespear, Ouroboric Curse, Essence Trap, Soul-Cracking Dreamcatcher, Dundun's Favor, Venom Infusion). Per-spec picks that pointed at retired curios were removed; a strong general pick (Corrosive Bilespear) is surfaced instead.",
+            "Poisons: all six 12.1 poisons (3 base + 3 quest-unlocked) are now listed on the Curios and Companion tabs, with what each does and a rule-of-thumb pick.",
+            "Future tab: cleared out stale entries and refreshed it with confirmed upcoming content -- Ascendant Venomstones later this season, and Labyrinths (the mega-delve) confirmed for patch 12.1.5.",
+            "The Quests tab is now the Journey tab: it lists the Season 2 Delver's Journey rank unlocks (ranks 1-10) on top of the Delver's Call quest tracker. Open with /dg journey.",
+            "Fixed the Trovehunter's Bounty status on the Delves tab -- it was checking old item/buff IDs and never lit up. It now shows Active (buff up), In Bags (item held), Done this week (weekly done), or None.",
+            "Nemesis tab: the Azta'rec guide is expanded and corrected from the live guide -- clearer main-phase abilities, the intermission memory game (Sermon -> Echo), the intro questline for the Corrosive Victory toy, and exact rewards per difficulty.",
+            "Season 2 currencies: Nebulous Voidcore is now tracked as the bonus-roll token. The new gear-upgrade material -- Ascendant Venomstone (10 per upgrade, guaranteed from Tier 11 Bountiful Delves) -- is flagged in the Voidforge and Loot tabs and lights up once it goes live later this season.",
+            "Retired the old Patch 12.0.5 Voidforge upgrade loop (Elementary Shards / the 'Building the Voidforge' weekly quest).",
+        }
+    },
     {
         version = "1.8.0",
         date    = "2026-08-11",

@@ -13,47 +13,35 @@ DelveGuide.RenderCurios = function()
     UI.EnsureFontFiles(); local _,_,rH=UI.GetScaledSizes()
 
     local rec, specID = GetSpecRec()
-    y=y+UI.CreateHeader(cf,y,"Curios Rankings  --  S=Best  |  F=Worst")+4
+    y=y+UI.CreateHeader(cf,y,"Curios & Poisons  --  Season 2")+4
+    y=y+UI.CreateRow(cf,y,"|cFF888888Season 2 rotated the curio set -- last season's curios are gone. Rankings show [?] until the meta settles; the description tells you what each does.|r")+6
 
     if rec then
-        local hi=cf:CreateTexture(nil,"BACKGROUND"); hi:SetPoint("TOPLEFT",cf,"TOPLEFT",2,-(y-1))
-        hi:SetSize(UI.WINDOW_W-52,rH*3+14); hi:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
-        hi:SetGradient("HORIZONTAL",CreateColor(0,0.4,1,0.18),CreateColor(0,0.4,1,0))
-        local bar=cf:CreateTexture(nil,"ARTWORK"); bar:SetPoint("TOPLEFT",cf,"TOPLEFT",2,-(y-1))
-        bar:SetSize(3,rH*3+14); bar:SetColorTexture(0,0.6,1,1)
         y=y+UI.CreateRow(cf,y,string.format("|cFF00BFFFYour Spec:|r |cFFFFFFFF%s|r  |cFF888888(specID %d)|r", rec.spec, specID))
-        y=y+UI.CreateRow(cf,y,string.format("|cFF00FF88Recommended:|r  Combat: |cFFFFD700%s|r   Utility: |cFFFFD700%s|r   Valeera: |cFF00CFFF%s|r", rec.combat, rec.utility, rec.companion))
-        if rec.notes then y=y+UI.CreateRow(cf,y,"|cFF888888"..rec.notes.."|r") end
-        y=y+6
-        y=y+UI.CreateRow(cf,y,"|cFFFF8844[Nemesis Warning]|r Mandate of Sacred Death procs need profession nodes. If the Venomfall Deeps arena has none (as Nullaeus's did), swap to Overflowing Voidspire or Ebon Crown of Subjugation.")
-        y=y+8
+        y=y+UI.CreateRow(cf,y,string.format("|cFF00FF88Recommended Valeera role:|r |cFF00CFFF%s|r", rec.companion or "--"))
     else
-        y=y+UI.CreateRow(cf,y,"|cFF888888No spec data available - enter the world to detect your specialization.|r")
-        y=y+8
+        y=y+UI.CreateRow(cf,y,"|cFF888888No spec data - enter the world to detect your specialization.|r")
     end
+    y=y+UI.CreateRow(cf,y,"|cFF888888Per-spec curio picks are being rebuilt for Season 2. For now, the safest all-purpose Combat pick is |r|cFFFFD700Corrosive Bilespear|r|cFF888888.|r")+8
 
-    y=y+UI.CreateRow(cf,y,"|cFFFFD700-- General Loadout Reference --|r")
-    y=y+UI.CreateRow(cf,y,"|cFF00FF00Safe / Progression:|r  Sanctum's Edict (Combat)  +  Ebon Crown of Subjugation (Utility)")
-    y=y+UI.CreateRow(cf,y,"|cFFFF4444Speed / Farming:|r    Porcelain Blade Tip (Combat)  +  Mandate of Sacred Death (Utility)")
-    y=y+UI.CreateRow(cf,y,"|cFF555555"..string.rep("-",90).."|r")+4
-
-    local specCombat  = rec and rec.combat  or nil
-    local specUtility = rec and rec.utility or nil
+    -- Season 2 curios, grouped by type
     for _,ctype in ipairs({"Combat","Utility"}) do
-        local specPick = ctype=="Combat" and specCombat or specUtility
         y=y+4; y=y+UI.CreateRow(cf,y,UI.TypeColor(ctype).." Curios")
-        y=y+UI.CreateRow(cf,y,"|cFF888888"..string.format("%-4s  %-32s  %s","Rank","Name","Effect").."|r")
+        y=y+UI.CreateRow(cf,y,"|cFF888888"..string.format("%-4s  %-26s  %s","Rank","Name","Effect").."|r")
         for _,c in ipairs(DelveGuideData.curios) do
             if c.curiotype==ctype then
-                local badge = (c.name==specPick) and "|cFF00FF88[Your Spec] |r" or ""
-                if c.name==specPick then
-                    local fw=cf:CreateTexture(nil,"BACKGROUND"); fw:SetPoint("TOPLEFT",cf,"TOPLEFT",2,-(y-1))
-                    fw:SetSize(UI.WINDOW_W-52,rH+2); fw:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
-                    fw:SetGradient("HORIZONTAL",CreateColor(0,1,0.3,0.15),CreateColor(0,1,0.3,0))
-                end
-                y=y+UI.CreateRow(cf,y,string.format("%s[%s]  %-32s  %s",badge,UI.GradeColor(c.ranking),c.name,c.description))
+                y=y+UI.CreateRow(cf,y,string.format("[%s]  |cFFFFFFFF%-26s|r  |cFF888888%s|r",UI.GradeColor(c.ranking),c.name,c.description))
             end
         end; y=y+8
     end
+
+    -- Poisons (new 12.1 choice node -- independent of Valeera's role)
+    y=y+4; y=y+UI.CreateRow(cf,y,"|cFFFFD700Poisons|r  |cFF888888(new in 12.1 -- pick one in Valeera's supplies menu, independent of her role)|r")
+    for _,p in ipairs(DelveGuideData.poisons or {}) do
+        local tag = p.base and "|cFF00FF88[Base] |r" or "|cFFFFD700[Quest]|r"
+        y=y+UI.CreateRow(cf,y,string.format("%s |cFFAA66CC%s|r  |cFFCCCCCC%s|r  |cFF888888%s|r", tag, p.name, p.effect, p.use))
+    end
+    y=y+UI.CreateRow(cf,y,"|cFF00FF88Rule of thumb:|r |cFFCCCCCCBloodcrypt Toxin to start; once unlocked, Frostheart Venom is a strong all-round defensive pick, and Forgotten Master or Bursting Toad Toxin when you'd rather push damage.|r")+8
+
     cf:SetHeight(y+20)
 end

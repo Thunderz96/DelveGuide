@@ -45,7 +45,7 @@ DelveGuide.UpdateCompactWidget = function()
     if DelveGuideData and DelveGuideData.delves then
         local seen = {}
         for _, d in ipairs(DelveGuideData.delves) do
-            if activeVariants[d.variant] and not seen[d.variant] and tiers[d.ranking] then
+            if activeVariants[d.variant] and not seen[d.variant] and (tiers[d.ranking] or not RANK_ORDER[d.ranking]) then
                 local ds = activeDelves[d.name]
                 local isB = type(ds) == "table" and ds.bountiful
                 if (not bountifulOnly) or isB then
@@ -249,7 +249,7 @@ DelveGuide.CreateCompactWidget = function()
         local entries, seen = {}, {}
         if DelveGuideData and DelveGuideData.delves then
             for _, d in ipairs(DelveGuideData.delves) do
-                if activeVariants[d.variant] and not seen[d.variant] and tiers[d.ranking] then
+                if activeVariants[d.variant] and not seen[d.variant] and (tiers[d.ranking] or not RANK_ORDER[d.ranking]) then
                     local ds = activeDelves[d.name]
                     local isB = type(ds) == "table" and ds.bountiful
                     if (not bountifulOnly) or isB then

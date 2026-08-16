@@ -15,6 +15,19 @@ DelveGuide.RenderQuests = function()
     UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
 
+    -- ---- Season 2 Delver's Journey (rank progression) ----
+    y = y + UI.CreateHeader(cf, y, "Season 2 Delver's Journey  --  Rank Unlocks") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888The seasonal Delver's Journey levels up as you run delves; each rank unlocks rewards, vendors, and quality-of-life:|r") + 6
+    if DelveGuideData.delversJourney then
+        for _, j in ipairs(DelveGuideData.delversJourney) do
+            y = y + UI.CreateRow(cf, y, string.format("|cFFFFD700Rank %d|r  |cFF00CFFF%s|r", j.rank, j.unlock))
+            y = y + UI.CreateRow(cf, y, "|cFF888888  " .. j.note .. "|r") + 4
+        end
+    end
+    y = y + 8
+
+    -- ---- Delver's Call (world-tour quest tracker) ----
+    local callHeaderY = y
     y = y + UI.CreateHeader(cf, y, "Delver's Call  --  World Tour Quest Tracker") + 4
     y = y + UI.CreateRow(cf, y, "|cFF888888Each rotational delve has a Delver's Call quest. Run every delve once to pick the quest up but |cFFFFD700don't turn it in yet|r|cFF888888 -- the XP scales to your level at turn-in. Bank all 10, then cash them in once you're close to max level for a big push through the final levels. (Turning them in at the cap itself wastes the XP -- you want to be a few levels short.)|r") + 8
 
@@ -34,7 +47,7 @@ DelveGuide.RenderQuests = function()
     -- Reset button (manual mode only -- auto mode resets itself per character).
     local resetBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
     resetBtn:SetSize(170, 22)
-    resetBtn:SetPoint("TOPRIGHT", cf, "TOPRIGHT", -10, -8)
+    resetBtn:SetPoint("TOPRIGHT", cf, "TOPRIGHT", -10, -(callHeaderY - 2))
     resetBtn:SetText("Reset Manual State")
     resetBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")

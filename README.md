@@ -55,15 +55,14 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - **Independent font scale** — `/dg widgetfont` keeps the widget compact even when the main UI font is bumped up
 - Draggable and lockable, with optional click-to-open and auto-hide
 
-### 🧙 Voidforge Integration *(Patch 12.0.5)*
+### 🧙 Voidforge — Bonus Rolls & Gear Upgrades
 
-Patch 12.0.5 *"Lingering Shadows"* added the Voidforge upgrade system. DelveGuide surfaces it across the existing UI:
+The Voidforge tab tracks Season 2's two delve reward currencies:
 
-- **Widget:** "Cores / Forge" line shows current Nebulous Voidcore count and Elementary Voidcore Shard progress toward the weekly *Building The Voidforge* quest
-- **Pre-entry Checklist:** "Voidforge weekly" row flags whether you still owe shards before your next Bountiful Delve
-- **History Tab:** Per-week summary now reports how many of that week's runs were Tier 8+ and therefore Voidcore-eligible
-- **World Map Tooltip:** Active-delve tooltips include a "T8+: drops Nebulous Voidcore" reminder
-- **Loot Tab:** Voidforge Currencies section explains Nebulous / Elementary Shard / Ascendant Voidcores
+- **Nebulous Voidcore** — the bonus-roll token. Spend one to roll for extra loot after a raid boss, M+, Nightmare Prey, or Bountiful Delve. Drops from Tier 8+ Bountiful Delves.
+- **Ascendant Venomstone** — the gear-upgrade material *(arriving later this season)*. 10 upgrade one weapon/trinket/neck, and a Tier 11 Bountiful Delve is a guaranteed source.
+
+Plus a **slot upgrade priority** scan (weapons & trinkets first, then armor by lowest ilvl) and an **alt stockpile** rollup across your cached characters.
 
 ### 📊 DataBroker Feed
 

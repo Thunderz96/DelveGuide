@@ -91,9 +91,28 @@ DelveGuide.RenderDelves = function()
     local activeVariants = DelveGuide.activeVariants or {}
     local vc=0; for _ in pairs(activeVariants) do vc=vc+1 end
     
-    local troveCount=C_Item.GetItemCount(265714,true) or 0
-    local hasTroveAura=C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID and C_UnitAuras.GetPlayerAuraBySpellID(1254631)
-    local troveText=hasTroveAura and "|cFF00FF44Active|r" or (troveCount>0 and "|cFFFFFF00In Bags|r" or "|cFFFF4444None|r")
+    -- Trovehunter's Bounty (weekly). Check three states so the row is accurate
+    -- whether you've used it, are holding it, or still owe the weekly:
+    --   buff active (spell 1293799) -> item in bags (274374, Season 2) ->
+    --   "Purging the Vaults" weekly done (quest 95520 -> used it this week).
+    local troveCount = C_Item.GetItemCount(274374, true) or 0
+    local hasTroveAura = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
+        and C_UnitAuras.GetPlayerAuraBySpellID(1293799)
+    local troveWeeklyDone = false
+    if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+        local ok, done = pcall(C_QuestLog.IsQuestFlaggedCompleted, 95520)
+        troveWeeklyDone = (ok and done) or false
+    end
+    local troveText
+    if hasTroveAura then
+        troveText = "|cFF00FF44Active|r"
+    elseif troveCount > 0 then
+        troveText = "|cFFFFFF00In Bags|r"
+    elseif troveWeeklyDone then
+        troveText = "|cFF44FF44Done this week|r"
+    else
+        troveText = "|cFFFF4444None|r"
+    end
     local beaconCount=C_Item.GetItemCount(253342,true) or 0
     local beaconText=beaconCount>0 and "|cFF00FF44"..beaconCount.." in Bags|r" or "|cFFFF4444None|r"
     local restoredKeyInfo=C_CurrencyInfo.GetCurrencyInfo(3028)
@@ -104,6 +123,37 @@ DelveGuide.RenderDelves = function()
     for _,d in ipairs(DelveGuideData.delves) do
         if activeVariants[d.variant] then table.insert(activeData,d) else table.insert(inactiveData,d) end
     end
+
+    -- Fallback: surface any delve the scan flagged active whose current variant
+    -- isn't catalogued above -- a new delve, or an S2 variant that rotates in
+    -- before it's been added/ranked. Without this, a detected delve silently
+    -- drops off "Active Today" just because its variant row doesn't exist yet.
+    do
+        local shown = {}
+        for _,d in ipairs(activeData) do shown[d.name] = true end
+        local variantByDelve = {}
+        for _,r in ipairs(DelveGuide.rawScanResults or {}) do
+            if r.name and type(r.variantName)=="string" then
+                local v = r.variantName:gsub("^%[Missing Translation%] ","")
+                if v~="" and v~="(not found)" and v~="(nil)" and v~="(nemesis)" then
+                    variantByDelve[r.name] = v
+                end
+            end
+        end
+        local zoneByName = {}
+        for _,d in ipairs(DelveGuideData.delves) do zoneByName[d.name] = zoneByName[d.name] or d.zone end
+        for name, st in pairs(DelveGuide.activeDelves or {}) do
+            if not shown[name] then
+                shown[name] = true
+                table.insert(activeData, {
+                    name=name, zone=zoneByName[name] or "",
+                    variant=variantByDelve[name] or "New variant",
+                    ranking="?", mountable=false, hasBug=false, isBestRoute=false,
+                })
+            end
+        end
+    end
+
     table.sort(activeData, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
     
     local note=vc>0 and "  |cFF44FF44("..vc.." active today)|r" or "  |cFFAAAAAA(use /dg scan)|r"
@@ -145,10 +195,10 @@ DelveGuide.RenderDelves = function()
         GameTooltip:AddLine("No role requirements - bring any spec, any class.", 1, 1, 1, true)
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("|cFFFFD700Variants:|r Each delve has rotating story variants that change daily.", 1, 1, 1, true)
-        GameTooltip:AddLine("|cFFFFD700Tiers:|r 1-11 control difficulty. Tier 8+ drops Hero-track (259 ilvl) gear.", 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700Tiers:|r 1-11 control difficulty. Tier 8+ end-of-run gear is Champion-track (295 ilvl).", 1, 1, 1, true)
         GameTooltip:AddLine("|cFFFFD700Bountiful:|r Marked delves that drop bonus loot when opened with a Restored Coffer Key.", 1, 1, 1, true)
         GameTooltip:AddLine("|cFFFFD700Coffer Keys:|r Earn Coffer Key Shards (600/week cap) - 100 shards = 1 key.", 1, 1, 1, true)
-        GameTooltip:AddLine("|cFFFFD700Great Vault:|r 2/4/8 delves unlock vault slots. Tier 8+ gives 259 ilvl vault rewards.", 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700Great Vault:|r 2/4/8 delves unlock vault slots. Tier 8+ gives Hero-track (305 ilvl) vault rewards.", 1, 1, 1, true)
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("Your companion Valeera joins every run. Set her role (DPS/Healer/Tank)", 0.7, 0.7, 0.7, true)
         GameTooltip:AddLine("at Restoration Stones inside the delve. She levels up as you play.", 0.7, 0.7, 0.7, true)

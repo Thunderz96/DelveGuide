@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.8.1] - 2026-08-16
+
+### Added
+- **Season 2 curio set:** replaced the retired Season 1 curios with the confirmed S2 set -- Corrosive Bilespear, Ouroboric Curse, Essence Trap (Combat) and Soul-Cracking Dreamcatcher, Dundun's Favor, Venom Infusion (Utility), each with its effect. Ranked `[?]` until the meta settles; the Companion tab's live scan recognises them when equipped.
+- **Poisons reference** (Curios + Companion tabs) -- patch 12.1 made poison its own choice node, independent of role. Lists all six poisons (3 base + 3 quest-unlocked) with effects and a rule-of-thumb pick, since no source crowns a "best" one yet.
+- **Delver's Journey reference:** the Quests tab is now the **Journey** tab -- it leads with the full Season 2 Delver's Journey rank unlocks (ranks 1-10, what each grants) above the existing Delver's Call quest tracker. Open with `/dg journey` (or `/dg quests`).
+
+### Fixed
+- **New delves now show in "Active Today":** The Coiled Isle delves (The Ring of Glory, Gnarldor Isle) and the new venom variants on existing delves are now registered, so they appear in the Delves tab and compact widget instead of being silently dropped. Rankings show as `[?]` until routes are speed-tested.
+- **Delves tab no longer drops uncatalogued variants:** any delve the scanner flags active now surfaces even if its exact variant isn't in the data yet -- so daily rotations of not-yet-ranked Season 2 variants stay visible.
+- **Delve reward item levels updated to Season 2:** end-of-run 266->295 (Tier 1->8+) and Great Vault 279->305 (Hero at Tier 8+); fixed two "?" tooltips still quoting the old 259.
+- Corrected the Ring of Glory delve POI reference (8763 -> 8764) from live data.
+- **Trovehunter's Bounty status fixed & expanded:** it was checking stale item/buff IDs and always read "None." Now uses the Season 2 item (274374) and buff (1293799), and adds a **"Done this week"** state via the *Purging the Vaults* weekly (quest 95520) -- so the row reads Active / In Bags / Done this week / None correctly.
+
+### Changed
+- **Season 2 currency rework:** Nebulous Voidcore is now tracked as the **bonus-roll** currency (ID 3418, replacing the Season 1 3513). The gear-upgrade material is now **Ascendant Venomstone** -- arriving later this season; 10 per upgrade, with a Tier 11 Bountiful Delve as a guaranteed source. The Voidforge tab, compact widget, Loot tab, and alt stockpile were reworked to match.
+- **Curios tab reworked for Season 2:** dropped the per-spec Combat/Utility picks, the "General Loadout" presets, and the Nemesis warning -- all of which pointed at retired S1 curios. The tab now lists the live S2 curios + poisons and surfaces a strong general pick (Corrosive Bilespear). The Companion tab's loadout section was updated to match (shows equipped curios as info instead of comparing against gone S1 recs).
+- **Future tab cleaned up:** removed stale entries (old Delver's Journey milestones, the past Parhelion Plaza release, pre-launch "not returning" notes) and refreshed the Labyrinths (12.1.5) section with confirmed details; added an Ascendant Venomstone heads-up.
+- **Nemesis tab (Azta'rec) expanded** from the live guide: split into Main Phase / Intermissions, corrected mechanics (Void Toxin -40% damage; the Sermon -> Echo memory recall; ?? 5/6/7 safe-spot sequences; tank-only Serpent's Strike), and added the intro questline (Corrosive Victory toy) plus precise per-kill Mistcrest drops and per-achievement reward conditions.
+
+### Removed
+- Retired the Patch 12.0.5 upgrade loop (Elementary Voidcore Shards, the "Building the Voidforge" weekly quest, and Ascendant Voidcore), including its pre-entry checklist row.
+
 ## [1.8.0] - 2026-08-11
 
 ### Added

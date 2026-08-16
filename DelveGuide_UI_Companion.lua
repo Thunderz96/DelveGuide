@@ -306,42 +306,34 @@ DelveGuide.RenderCompanion = function()
     end
     y = y + barH + 20
 
-    -- 5. Live Curio Warnings
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Live Curio Loadout --|r") + 4
+    -- 5. Curio loadout: recommended Valeera role (still valid) plus whatever the
+    -- live scan detects equipped. Per-spec S2 curio picks are pending (S1's are
+    -- gone), so equipped curios show as info; the Curios tab is the full S2
+    -- curio + poison reference.
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Curio Loadout --|r") + 4
 
     local rec, specID = GetSpecRec()
-    if not rec then
-        y = y + UI.CreateRow(cf, y, "|cFF888888Could not detect player spec for curio recommendations.|r")
-    else
-        y = y + UI.CreateRow(cf, y, "Your Spec: |cFFFFFFFF" .. rec.spec .. "|r  |cFF888888(specID " .. specID .. ")|r") + 6
-
-        y = y + UI.CreateRow(cf, y, "|cFF00FF88Recommended Loadout:|r")
-        y = y + UI.CreateRow(cf, y, "  Combat:  |cFFFFD700" .. rec.combat .. "|r")
-        y = y + UI.CreateRow(cf, y, "  Utility: |cFFFFD700" .. rec.utility .. "|r")
-        y = y + 8
-
-        y = y + UI.CreateRow(cf, y, "|cFFFF4444Live Equipment Check:|r")
-        
-        if liveCombat or liveUtility then
-            -- We found data! Run the comparisons.
-            local cMatch = (liveCombat == rec.combat)
-            local uMatch = (liveUtility == rec.utility)
-            
-            if cMatch and uMatch then
-                y = y + UI.CreateRow(cf, y, "|cFF00FF44 Perfect! You have the recommended curios equipped.|r")
-            else
-                if not cMatch and liveCombat then
-                    y = y + UI.CreateRow(cf, y, "|cFFFF4444[!] Warning:|r You have |cFFFF8800[" .. liveCombat .. "]|r equipped. Recommended: [" .. rec.combat .. "].")
-                end
-                if not uMatch and liveUtility then
-                    y = y + UI.CreateRow(cf, y, "|cFFFF4444[!] Warning:|r You have |cFFFF8800[" .. liveUtility .. "]|r equipped. Recommended: [" .. rec.utility .. "].")
-                end
-            end
-        else
-            -- We didn't find data because the window is closed
-            y = y + UI.CreateRow(cf, y, "|cFF888888Open the Companion panel and click this tab again to scan active curios.|r")
-        end
+    if rec then
+        y = y + UI.CreateRow(cf, y, "Your Spec: |cFFFFFFFF" .. rec.spec .. "|r  --  Recommended Valeera role: |cFF00CFFF" .. (rec.companion or "--") .. "|r") + 6
     end
+
+    if liveCombat or liveUtility then
+        y = y + UI.CreateRow(cf, y, "|cFF00FF88Equipped now:|r  Combat: |cFFFFD700" .. (liveCombat or "--") .. "|r   Utility: |cFFFFD700" .. (liveUtility or "--") .. "|r")
+    else
+        y = y + UI.CreateRow(cf, y, "|cFF888888Open Blizzard's Companion panel, then reopen this tab to scan your equipped curios.|r")
+    end
+    y = y + UI.CreateRow(cf, y, "|cFF888888Full Season 2 curio & poison list: the Curios tab.|r") + 4
+
+    -- 6. Poisons (new 12.1 choice node in Valeera's supplies menu -- independent
+    -- of her role). Rendered from DelveGuideData.poisons (same as the Curios tab).
+    y = y + 8
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Poisons  (new in 12.1) --|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888Pick one in Valeera's supplies menu -- independent of her role now.|r") + 6
+    for _, p in ipairs(DelveGuideData.poisons or {}) do
+        local tag = p.base and "|cFF00FF88[Base] |r" or "|cFFFFD700[Quest]|r"
+        y = y + UI.CreateRow(cf, y, string.format("%s |cFFAA66CC%s|r  |cFFCCCCCC%s|r  |cFF888888%s|r", tag, p.name, p.effect, p.use)) + 2
+    end
+    y = y + UI.CreateRow(cf, y, "|cFF00FF88Rule of thumb:|r |cFFCCCCCCBloodcrypt Toxin to start; once unlocked, Frostheart Venom for defense, Forgotten Master or Bursting Toad Toxin for damage.|r") + 4
 
     cf:SetHeight(y + 20)
 end

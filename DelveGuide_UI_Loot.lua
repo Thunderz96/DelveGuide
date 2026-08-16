@@ -62,12 +62,11 @@ DelveGuide.RenderLoot = function()
     y = y + UI.CreateHeader(cf, y, "Notable Loot  --  Trinkets & Weapons from Midnight Delves") + 4
     y = y + UI.CreateRow(cf, y, "|cFF888888Hover an item name to preview its tooltip.|r") + 4
 
-    -- Voidforge Currencies (Patch 12.0.5)
+    -- Season 2 delve reward currencies
     y = y + 4
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Voidforge Currencies|r  |cFF888888(Patch 12.0.5)|r")
-    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888Bonus-roll token. Earn from T8+ Bountiful Delves, M+6+, Nightmare Prey Hunts. Weekly cap +2/week.|r")
-    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCElementary Voidcore Shard|r   |cFF888888Weekly quest 'Building The Voidforge' -- 3/week from raid bosses, M+, Bountiful Delves.|r")
-    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCAscendant Voidcore|r   |cFF888888Upgrades Hero/Myth/Radiance-crafted item levels.|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Delve Reward Currencies|r  |cFF888888(Season 2)|r")
+    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888Bonus-roll token -- spend one to roll for extra loot after a raid boss, M+, Nightmare Prey, or Bountiful Delve. Drops from T8+ Bountiful Delves.|r")
+    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCAscendant Venomstone|r   |cFF888888Gear-upgrade material (arriving later this season). 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful Delve guarantees one (~1-2).|r") + 6
     
     for _, slot in ipairs({"Trinket", "Weapon"}) do
         y = y + 4
@@ -97,7 +96,8 @@ DelveGuide.RenderLoot = function()
     end
     
     y = y + 8
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Midnight Delve iLvl Scaling --|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Midnight Delve iLvl Scaling  (Season 2) --|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888End-of-run gear caps at Tier 3 without a Restored Coffer Key; Tiers 9-11 match Tier 8+.|r") + 4
     
     -- Helper function to draw text at exact X positions for perfect columns
     local function MakeScalingCol(x, text)
@@ -108,28 +108,22 @@ DelveGuide.RenderLoot = function()
         fs:SetText(text)
     end
 
-    -- Draw the aligned headers
-    MakeScalingCol(16, "|cFF888888Tier|r")
-    MakeScalingCol(60, "|cFF888888Recommended|r")
-    MakeScalingCol(160, "|cFF888888Bountiful Drop|r")
-    MakeScalingCol(264, "|cFF888888Great Vault|r")
+    -- Aligned headers -- values come from DelveGuideData.tierRewards (single source).
+    MakeScalingCol(16,  "|cFF888888Tier|r")
+    MakeScalingCol(70,  "|cFF888888End-of-run|r")
+    MakeScalingCol(190, "|cFF888888Great Vault|r")
     y = y + rH + 4
-    
-    local tiers = {
-        {1,170,220,233}, {2,187,224,237}, {3,200,227,240}, {4,213,230,243}, {5,222,233,246},
-        {6,229,237,253}, {7,235,246,256}, {8,244,250,259}, {9,250,250,259}, {10,257,250,259}, {11,265,250,259}
-    }
-    
-    -- Draw the aligned rows
-    for _, d in ipairs(tiers) do
-        -- Add a tiny space for single-digit tiers so they center nicely under the "Tier" header
-        local tierText = (d[1] < 10) and ("  " .. d[1]) or tostring(d[1])
-        
-        MakeScalingCol(16, tierText)
-        MakeScalingCol(60, tostring(d[2]))
-        MakeScalingCol(160, "|cFF00FF00" .. d[3] .. "|r")
-        MakeScalingCol(264, "|cFF00BFFF" .. d[4] .. "|r")
-        y = y + rH + 2
+
+    local rewards = DelveGuideData.tierRewards or {}
+    for tier = 1, 11 do
+        local r = rewards[tier]
+        if r then
+            local tierText = (tier < 10) and ("  " .. tier) or tostring(tier)
+            MakeScalingCol(16,  tierText)
+            MakeScalingCol(70,  "|cFF00FF00" .. (r.coffer or "?") .. "|r")
+            MakeScalingCol(190, "|cFF00BFFF" .. (r.vault or "?") .. "|r")
+            y = y + rH + 2
+        end
     end
     
     cf:SetHeight(y + 20)

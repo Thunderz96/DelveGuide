@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.8.0"
+local ADDON_VERSION    = "1.8.1"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -19,7 +19,7 @@ local TABS = {
     { label = "Companion", key = "companion" },
     { label = "Loot",     key = "loot"     },
     { label = "Voidforge", key = "voidforge" },
-    { label = "Quests",   key = "quests"   },
+    { label = "Journey",  key = "quests"   },
     { label = "Nemesis",  key = "nemesis"  },
     { label = "History",  key = "history"  },
     { label = "Future",   key = "future"   },
@@ -407,10 +407,8 @@ local function CacheCurrentChar()
         local ok, vf = pcall(DelveGuide.GetVoidforgeStatus)
         if ok and vf and vf.configured then
             voidforge = {
-                cores     = vf.cores,
-                shards    = vf.shards,
-                ascendant = vf.ascendant,
-                questDone = vf.questDone,
+                cores       = vf.cores,
+                venomstones = vf.venomstones,
             }
         end
     end
@@ -930,7 +928,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         DelveGuide.Toggle(); SwitchTab("roster")
     elseif msg=="voidforge" or msg=="forge" then
         DelveGuide.Toggle(); SwitchTab("voidforge")
-    elseif msg=="quests" then
+    elseif msg=="quests" or msg=="journey" then
         DelveGuide.Toggle(); SwitchTab("quests")
     elseif msg=="questscan" then
         if DelveGuide.ScanDelversCallQuests then DelveGuide.ScanDelversCallQuests() end
@@ -1075,8 +1073,8 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg bountiful|r          - Toggle widget filter to show only bountiful delves")
         print("  |cFFFFFF00/dg check|r              - Show pre-entry checklist")
         print("  |cFFFFFF00/dg roster|r             - Open Roster tab")
-        print("  |cFFFFFF00/dg voidforge|r          - Open Voidforge tab (cores, shards, slot priority)")
-        print("  |cFFFFFF00/dg quests|r             - Open Delver's Call quest tracker tab")
+        print("  |cFFFFFF00/dg voidforge|r          - Open Voidforge tab (bonus rolls, upgrades, slot priority)")
+        print("  |cFFFFFF00/dg journey|r            - Open the Journey tab: Delver's Journey ranks + Delver's Call quests (alias /dg quests)")
         print("  |cFFFFFF00/dg questscan|r          - Scan quest log for Delver's Call quest IDs")
         print("  |cFFFFFF00/dg export|r             - Snapshot zone/delve/quest data to SavedVariables (attach to bug reports)")
         print("  |cFFFFFF00/dg exportclear|r        - Clear export snapshots")

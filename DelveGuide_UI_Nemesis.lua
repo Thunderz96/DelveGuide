@@ -16,36 +16,45 @@ DelveGuide.RenderNemesis = function()
 
     -- ========================================================
     -- SEASON 2: VENOMFALL DEEPS (12.1 "Curse of Ula'tek")
-    -- Content compiled from Season 2 launch guides (2026-08-11).
-    -- Confirm mechanics/rewards through play; refine in 1.8.x.
+    -- Content compiled from Season 2 guides (wowhead/icy-veins/method),
+    -- last refreshed 2026-08-16. Confirm mechanics/rewards through play.
     -- ========================================================
     y = y + UI.CreateHeader(cf, y, "Venomfall Deeps  --  Season 2 Nemesis") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCCAzta'rec, tied to the Ula'tek storyline. A venom-and-memory fight: survive the poison, interrupt the big cast, and remember the safe zones.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCCAzta'rec, tied to the Ula'tek storyline. A venom-and-memory fight: survive the poison in the main phase, then nail the Simon-Says quadrant game in each intermission.|r") + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Location|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  The Serpent's Tail  -  The Coiled Isle|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888  /way #2512 51.2 30.3|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Venomfall Deeps  -  northern Coiled Isle|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  /way #2512 51.2 31.0|r") + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Unlock Requirements|r") + 4
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Tier ?:|r  clear any Tier 7 Delve with 1+ life remaining") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Tier ??:|r clear any Tier 10 Delve with 1+ life remaining  |cFF888888(opens with Season 2, Aug 18)|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Tier ??:|r clear any Tier 10 Delve with 1+ life remaining") + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Boss Mechanics  --  Azta'rec|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Sermon of Ula'tek |cFF888888(signature):|r|cFFCCCCCC splits the arena into four sections and flashes the safe zones, then repeats them with no visual guide -- memorise the pattern. Tier ?? extends it to five.|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Soul Extinction:|r interruptible -- top interrupt priority; huge damage if it lands.") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Noxious Bile:|r frontal poison cone that drops lingering ground pools -- don't point it at yourself.") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Void Toxin:|r stacking magic DoT that also cuts your damage -- dispel it.") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Venom Storm:|r slow poison waves cross the arena -- keep moving.") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Serpent's Strike:|r heavy physical melee hit.") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888  Three intermissions; Tier ?? adds an Echo of Azta'rec that copies his abilities.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Intro Questline|r  |cFF888888(optional -- toy reward)|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Valeera offers a short chain at the Delver's HQ (lvl 90): Slithering Spoils -> Fangs for the Memories. Not needed to fight Azta'rec, but it grants the Corrosive Victory toy once you beat him on any difficulty.|r") + 8
+
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Main Phase|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Soul Extinction:|r interruptible cast, ~2M damage -- kick it (Valeera will, if you don't).") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Void Toxin:|r magic DoT that also cuts your damage by 40% -- dispel it.") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Noxious Bile:|r frontal poison cone -- dodge it; it leaves ground puddles.") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Venom Storm:|r summons waves across the arena -- keep moving.") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Serpent's Strike:|r tank-only tankbuster (fairly mild physical hit).") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  He auto-attacks hard and outruns you, so kiting doesn't work -- surviving is the real test for non-tanks. A tank spec has it easiest (only the mild tankbuster).|r") + 8
+
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Intermissions  --  Memory Game (90% / 60% / 30%)|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  He goes immune and blasts 3 of the 4 quadrants (one is safe). Sermon of Ula'tek telegraphs the pattern; Echo of Ula'tek then repeats it with NO telegraph -- memorise the safe-spot order, then re-run it.|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  Tier ??: the sequence grows each intermission (5 -> 6 -> 7 safe spots), and an Echo of Azta'rec add spawns using his main-phase kit -- kill it before the game ends.|r") + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Recommended Setup|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Healer Valeera is the safe pick -- her sustain covers the melee/poison pressure and she helps dispel Void Toxin. DPS Valeera only if you self-heal and dispel well.|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888  Save your interrupt for Soul Extinction. Curios that rely on profession nodes may be dead here (as in the S1 arena) -- swap to Overflowing Voidspire / Ebon Crown if so.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Valeera:|r Healer for Tank & DPS specs; DPS Valeera for Healer specs.") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Aim for roughly 290 item level for the '?' difficulty.|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  Between you and Valeera, cover the Soul Extinction interrupt and the Void Toxin dispel every time.|r") + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Rewards|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Apophic Soul Crusher |cFF888888(mount -- solo Tier ?? kill)|r|cFFCCCCCC  -  Apophic Patagia |cFF888888(back)|r|cFFCCCCCC  -  Corrosive Victory |cFF888888(toy)|r|cFFCCCCCC  -  \"the Poisonous\" title |cFF888888(Tier ??)|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFFF8844  Time-limited:|r |cFFCCCCCCFabled Vanquisher of Azta'rec|r |cFF888888-- opening-season solo challenge (Fabled Let Me Solo Him). Grab it early; the S1 version ended mid-season.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Mistcrests |cFF888888(uncapped, every kill):|r|cFFCCCCCC ? drops 30 Hero; ?? drops 30 more Hero + Myth.|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Apophic Soul Crusher |cFF888888(flying mount -- solo ?? kill)|r|cFFCCCCCC  -  Apophic Patagia |cFF888888(back -- any difficulty)|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  \"the Poisonous\" title |cFF888888(?? kill)|r|cFFCCCCCC  -  Corrosive Victory |cFF888888(toy -- from the intro questline)|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFFF8844  Time-limited:|r |cFFCCCCCCFabled Vanquisher of Azta'rec|r |cFF888888title -- defeat ?? solo in the first week of Season 2.|r") + 8
 
     -- ========================================================
     -- LEGACY: NULLAEUS (Season 1)

@@ -1,9 +1,9 @@
 -- ============================================================
 -- DelveGuide_UI_Voidforge.lua  --  Voidforge tracker tab
 -- ============================================================
--- Surfaces the data already collected in DelveGuide_Voidforge.lua
--- (cores/shards/quest) plus two new readouts:
---   * lowest-ilvl gear slots (best Voidcore upgrade targets)
+-- Surfaces the Season 2 delve reward economy from DelveGuide_Voidforge.lua
+-- (Nebulous Voidcore bonus rolls + Ascendant Venomstone upgrades) plus:
+--   * lowest-ilvl gear slots (best Venomstone upgrade targets)
 --   * cross-character stockpile rolled up from DelveGuideDB.roster.
 -- ============================================================
 local UI = DelveGuide.UI
@@ -17,52 +17,42 @@ local function ColorIlvl(ilvl)
     return "|cFFFFFFFF" .. ilvl .. "|r"
 end
 
-local function ProgressBar(have, want, color)
-    have = math.min(have or 0, want)
-    color = color or "|cFFFFD700"
-    local filled = math.floor((have / want) * 10 + 0.5)
-    local bar = string.rep("=", filled) .. string.rep("-", 10 - filled)
-    return string.format("%s[%s]|r %d/%d", color, bar, have, want)
-end
-
 DelveGuide.RenderVoidforge = function()
     local cf = UI.NewContentFrame(); local y = 10
     UI.EnsureFontFiles()
 
-    y = y + UI.CreateHeader(cf, y, "Voidforge  --  Patch 12.0.5 Upgrade Tracker") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888Lingering Shadows added the Voidforge: a weekly gear-upgrade loop fed by Nebulous Voidcores (bonus rolls), Elementary Voidcore Shards (the 'Building the Voidforge' weekly), and Ascendant Voidcores (Hero/Myth/Radiance ilvl bumps).|r") + 8
+    y = y + UI.CreateHeader(cf, y, "Voidforge  --  Bonus Rolls & Gear Upgrades") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888Season 2 splits the delve reward economy in two: Nebulous Voidcores are bonus-roll tokens (roll for extra loot after a run), and Ascendant Venomstones -- arriving later this season -- upgrade your gear (10 per piece).|r") + 8
 
-    -- ---- This Week ----
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700This Week|r") + 4
     local s = DelveGuide.GetVoidforgeStatus and DelveGuide.GetVoidforgeStatus() or { configured = false }
 
-    if not s.configured then
-        y = y + UI.CreateRow(cf, y, "|cFF888888  No Voidforge currencies detected yet. They populate the moment you obtain one in-game (or after a /reload).|r") + 4
+    -- ---- Bonus Rolls (Nebulous Voidcore) ----
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Bonus Rolls  --  Nebulous Voidcore|r") + 4
+    if s.cores then
+        local capStr = s.coreMax and ("/" .. s.coreMax) or ""
+        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(spend one to roll for loot after a raid boss / M+ / Prey / Bountiful Delve)|r", s.cores, capStr)) + 2
     else
-        if s.cores then
-            local capStr = s.coreMax and ("/" .. s.coreMax) or ""
-            y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(bonus-roll tokens, +2 weekly cap)|r", s.cores, capStr)) + 2
-        end
-        if s.shards then
-            local pct = math.min(s.shards, s.shardTarget) / s.shardTarget
-            local color = pct >= 1 and "|cFF44FF44" or (pct >= 0.66 and "|cFFFFD700" or "|cFFFF8800")
-            y = y + UI.CreateRow(cf, y, "|cFFAA66CC  Building the Voidforge:|r " .. ProgressBar(s.shards, s.shardTarget, color)) + 2
-        elseif s.questDone ~= nil then
-            local tag = s.questDone and "|cFF44FF44Done|r" or "|cFFFF8800Pending|r  |cFF888888(1 raid + 1 M+ + 1 delve)|r"
-            y = y + UI.CreateRow(cf, y, "|cFFAA66CC  Building the Voidforge:|r " .. tag) + 2
-        end
-        if s.ascendant and s.ascendant > 0 then
-            y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Ascendant Voidcores:|r |cFFFFFFFF%d|r |cFF888888(Hero / Myth / Radiance ilvl upgrades)|r", s.ascendant)) + 2
-        end
+        y = y + UI.CreateRow(cf, y, "|cFF888888  None yet -- they drop from T8+ Bountiful Delves, M+, and Nightmare Prey. (Populates in-game or after a /reload.)|r") + 2
+    end
+    y = y + 6
+
+    -- ---- Gear Upgrades (Ascendant Venomstone) ----
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Gear Upgrades  --  Ascendant Venomstone|r") + 4
+    local perUp = (DelveGuide.Voidforge and DelveGuide.Voidforge.VENOMSTONE_PER_UPGRADE) or 10
+    if s.venomstones then
+        local ready = math.floor(s.venomstones / perUp)
+        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Ascendant Venomstones:|r |cFFFFFFFF%d|r |cFF888888(%d/%d toward the next upgrade -- %d ready)|r",
+            s.venomstones, s.venomstones % perUp, perUp, ready)) + 2
+    else
+        y = y + UI.CreateRow(cf, y, string.format("|cFF888888  Arriving later this season. %d upgrade one weapon / trinket / neck; a Tier 11 Bountiful Delve is a guaranteed source (~1-2 each). Your count appears here once it goes live.|r", perUp)) + 2
     end
     y = y + 6
 
     -- ---- Where to Earn ----
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Where to Earn|r") + 4
     local sources = {
-        { tag = "|cFFAA66CCNebulous|r",  text = "T8+ Bountiful Delves, M+6 or higher, Nightmare Prey hunts. Soft cap +2 per week." },
-        { tag = "|cFFAA66CCShards|r",    text = "Weekly quest 'Building the Voidforge' -- need 1 raid boss kill, 1 M+ run, 1 delve. Reward feeds the Voidforge." },
-        { tag = "|cFFAA66CCAscendant|r", text = "Higher-tier content (Mythic raid, M+8+, Tier 11 delves with 1+ life remaining)." },
+        { tag = "|cFFAA66CCVoidcores|r",   text = "T8+ Bountiful Delves, Mythic+, and Nightmare Prey hunts. Also selectable as a Great Vault consolation." },
+        { tag = "|cFFAA66CCVenomstones|r", text = "Tier 11 Bountiful Delves guarantee one (~1-2); also Heroic/Mythic raid and M+10+. Live later this season." },
     }
     for _, src in ipairs(sources) do
         y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. src.tag .. " |r|cFF888888" .. src.text .. "|r") + 2
@@ -153,26 +143,22 @@ DelveGuide.RenderVoidforge = function()
             return (va.cores or 0) > (vb.cores or 0)
         end)
 
-        local totalCores, totalShards, totalAscendant = 0, 0, 0
+        local totalCores, totalStones = 0, 0
         for _, k in ipairs(rosterKeys) do
             local v = roster[k].voidforge
-            totalCores     = totalCores + (v.cores or 0)
-            totalShards    = totalShards + (v.shards or 0)
-            totalAscendant = totalAscendant + (v.ascendant or 0)
+            totalCores  = totalCores + (v.cores or 0)
+            totalStones = totalStones + (v.venomstones or 0)
         end
 
-        y = y + UI.CreateRow(cf, y, string.format("|cFFCCCCCC  Account totals: |cFFAA66CC%d|r cores, |cFFAA66CC%d|r shards, |cFFAA66CC%d|r ascendant",
-            totalCores, totalShards, totalAscendant)) + 6
+        y = y + UI.CreateRow(cf, y, string.format("|cFFCCCCCC  Account totals: |cFFAA66CC%d|r Voidcores, |cFFAA66CC%d|r Venomstones",
+            totalCores, totalStones)) + 6
 
         for _, k in ipairs(rosterKeys) do
             local c = roster[k]
             local v = c.voidforge or {}
-            local questTag = ""
-            if v.questDone == true then questTag = "  |cFF44FF44[weekly done]|r"
-            elseif v.questDone == false then questTag = "  |cFFFF8800[weekly pending]|r" end
-            local line = string.format("|cFFCCCCCC  %s|r |cFF666666(%s)|r  --  cores |cFFAA66CC%d|r  shards |cFFAA66CC%d|r  ascendant |cFFAA66CC%d|r%s",
+            local line = string.format("|cFFCCCCCC  %s|r |cFF666666(%s)|r  --  Voidcores |cFFAA66CC%d|r  Venomstones |cFFAA66CC%d|r",
                 c.name or "?", c.realm or "?",
-                v.cores or 0, v.shards or 0, v.ascendant or 0, questTag)
+                v.cores or 0, v.venomstones or 0)
             y = y + UI.CreateRow(cf, y, line) + 2
         end
     end
