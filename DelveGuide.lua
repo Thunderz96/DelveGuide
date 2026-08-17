@@ -33,25 +33,9 @@ local TABS = {
 
 local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2424, 2444, 2413, 2405, 2512, 2537 }  -- 2512/2537 = The Coiled Isle + overview (12.1)
 
--- Widget set ID → English DELVE name (not variant name).
--- Set IDs are per-delve-entrance and their text content changes daily.
--- Used only to resolve localized delve names → English names on non-EN clients.
-local WIDGET_SET_DELVES = {
-    [1611] = "Collegiate Calamity",
-    [1738] = "The Grudge Pit",
-    [1799] = "Parhelion Plaza",
-    [1800] = "Sunkiller Sanctum",
-    [1801] = "Shadowguard Point",
-    [1802] = "Atal'Aman",
-    [1803] = "The Gulf of Memory",
-    [1804] = "The Shadow Enclave",
-    [1805] = "Twilight Crypts",
-    [1806] = "The Darkway",
-    [2044] = "Gnarldor Isle",       -- 12.1, The Coiled Isle
-    [2047] = "The Ring of Glory",   -- 12.1, The Coiled Isle
-    -- Note: Torment's Rise (set=0) is the Nullaeus Nemesis delve, not a rotational delve.
-    -- Venomfall Deeps (S2 Nemesis) had no POI on PTR build 68629 -- season-gated; recheck when S2 testing opens.
-}
+-- Widget set ID → English delve name lives in DelveGuideData.widgetSetDelves
+-- (DelveGuide_Data.lua). A duplicate local copy used to sit here and was never
+-- read -- new delve IDs went into it by mistake and had no effect. Removed.
 
 local ZONE_NAMES = {
     [2393] = "Silvermoon City",
@@ -105,6 +89,11 @@ local function InitSavedVars()
     end
     -- lastSeenVersion drives the "what's new" popup (nil = never shown)
     if DelveGuideDB.lastSeenVersion == nil then DelveGuideDB.lastSeenVersion = nil end
+    -- Learned localized delve name → English name. Persisted because the POI
+    -- scan that discovers it only runs OUTDOORS; without this, a non-EN player
+    -- who reloads or logs in inside a delve can't resolve the zone, so the HUD
+    -- (and its run timer) never appear for that run.
+    if DelveGuideDB.localeDelveNames == nil then DelveGuideDB.localeDelveNames = {} end
 end
 
 local activeDelves, activeVariants, rawScanResults = {}, {}, {}
@@ -127,8 +116,19 @@ local function ReadVariantFromWidgetSet(setID)
     return texts
 end
 
+-- Seed the localized-name map from the persisted cache so it survives reloads
+-- and logins that happen inside a delve (where no POI scan runs).
+local function SeedLocalizedNames()
+    localizedToEnglish = {}
+    if DelveGuideDB and DelveGuideDB.localeDelveNames then
+        for loc, eng in pairs(DelveGuideDB.localeDelveNames) do localizedToEnglish[loc] = eng end
+    end
+    DelveGuide.localizedToEnglish = localizedToEnglish
+end
+
 local function ScanActiveVariants()
-    activeDelves, activeVariants, rawScanResults, localizedToEnglish = {}, {}, {}, {}
+    activeDelves, activeVariants, rawScanResults = {}, {}, {}
+    SeedLocalizedNames()
     DelveGuide.activeDelves        = activeDelves
     DelveGuide.activeVariants      = activeVariants
     DelveGuide.rawScanResults       = rawScanResults
@@ -196,7 +196,13 @@ local function ScanActiveVariants()
                     end
                     if engZoneName~="" then
                         activeDelves[engZoneName]={bountiful=isBountiful,nemesis=hasNemesis}
-                        if delveName~=engZoneName then localizedToEnglish[delveName]=engZoneName end
+                        if delveName~=engZoneName then
+                            localizedToEnglish[delveName]=engZoneName
+                            -- Remember it across sessions (see SeedLocalizedNames).
+                            if DelveGuideDB and DelveGuideDB.localeDelveNames then
+                                DelveGuideDB.localeDelveNames[delveName]=engZoneName
+                            end
+                        end
                     end
 
                     -- Nemesis delves (e.g. Torment's Rise) have no rotational
@@ -242,6 +248,84 @@ local function ScanActiveVariants()
 end
 
 local function IsVariantActive(v) return activeVariants[v]==true end
+
+-- ============================================================
+-- DELVE TIER STATE
+-- ------------------------------------------------------------
+-- Two independent inputs, one derived answer:
+--   manualDelveTier -- set only by /dg tier N; wins while set
+--   autoDelveTier   -- refreshed by the HUD's detector on every update
+-- currentDelveTier / currentDelveTierNum are DERIVED (History and the
+-- Victory screen read them) and always use ONE format: "Tier N" and N.
+-- Previously the manual path wrote "8" while auto wrote "Tier 8", and an
+-- auto-detected tier was stored in the manual slot -- so the next HUD
+-- update relabelled it "(Manual)" and it survived into the next run.
+-- Both are cleared on delve exit and on completion.
+-- ============================================================
+DelveGuide.manualDelveTier = nil
+DelveGuide.autoDelveTier   = nil
+
+-- Recompute the derived fields. Returns: tierNum, isManual
+DelveGuide.ApplyDelveTier = function()
+    local n = DelveGuide.manualDelveTier or DelveGuide.autoDelveTier
+    DelveGuide.currentDelveTierNum = n
+    DelveGuide.currentDelveTier    = n and ("Tier " .. n) or nil
+    return n, (DelveGuide.manualDelveTier ~= nil)
+end
+
+-- nil clears the override and falls back to auto-detection.
+DelveGuide.SetManualDelveTier = function(n)
+    DelveGuide.manualDelveTier = n
+    return DelveGuide.ApplyDelveTier()
+end
+
+DelveGuide.SetAutoDelveTier = function(n)
+    DelveGuide.autoDelveTier = n
+    return DelveGuide.ApplyDelveTier()
+end
+
+DelveGuide.ClearDelveTier = function()
+    DelveGuide.manualDelveTier     = nil
+    DelveGuide.autoDelveTier       = nil
+    DelveGuide.currentDelveTier    = nil
+    DelveGuide.currentDelveTierNum = nil
+end
+
+-- Trovehunter's Bounty state, shared by the Delves tab, the pre-entry
+-- checklist, the roster snapshot and the debug export so they can never
+-- disagree. IDs live in DelveGuideData.trove (one place, per season).
+-- Returns: state, count, hasAura, weeklyDone
+--   state = "active"     -- buff is up right now
+--         | "inBags"     -- item held, not used yet
+--         | "weeklyDone" -- weekly turned in, bounty already spent
+--         | "none"       -- nothing yet this week
+DelveGuide.GetTroveStatus = function()
+    local T = (DelveGuideData and DelveGuideData.trove) or {}
+
+    local hasAura = false
+    if T.AURA_ID and C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID then
+        local ok, aura = pcall(C_UnitAuras.GetPlayerAuraBySpellID, T.AURA_ID)
+        hasAura = (ok and aura ~= nil) or false
+    end
+
+    local count = 0
+    if T.ITEM_ID and C_Item and C_Item.GetItemCount then
+        local ok, qty = pcall(C_Item.GetItemCount, T.ITEM_ID, true)
+        if ok then count = qty or 0 end
+    end
+
+    local weeklyDone = false
+    if T.WEEKLY_QUEST and C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
+        local ok, done = pcall(C_QuestLog.IsQuestFlaggedCompleted, T.WEEKLY_QUEST)
+        weeklyDone = (ok and done) or false
+    end
+
+    local state = (hasAura and "active")
+               or (count > 0 and "inBags")
+               or (weeklyDone and "weeklyDone")
+               or "none"
+    return state, count, hasAura, weeklyDone
+end
 
 -- Expose live scan data so DelveGuide_HUD.lua can read it
 DelveGuide = DelveGuide or {}
@@ -378,7 +462,7 @@ local function CacheCurrentChar()
         if info then shards = info.quantity or 0 end
     end)
 
-    local bounty = C_Item.GetItemCount(265714, true) or 0
+    local bounty = C_Item.GetItemCount((DelveGuideData.trove and DelveGuideData.trove.ITEM_ID) or 0, true) or 0
     local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
     local restoredKeys = restoredKeyInfo and restoredKeyInfo.quantity or 0
 
@@ -889,7 +973,11 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then snap.companionID = C_DelvesUI.GetCompanionInfoForActivePlayer() end
         end)
         pcall(function()
-            snap.bountyAura = (C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID and C_UnitAuras.GetPlayerAuraBySpellID(1254631)) ~= nil
+            local state, count, hasAura, weeklyDone = DelveGuide.GetTroveStatus()
+            snap.troveState  = state
+            snap.bountyAura  = hasAura
+            snap.bountyCount = count
+            snap.troveWeekly = weeklyDone
         end)
         pcall(function()
             snap.delversCallQuests = {}
@@ -946,6 +1034,17 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     elseif msg=="check" then
         if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(true) end
     elseif msg=="tierdebug" then
+        print("|cFF00BFFF[DelveGuide]|r === Tier State ===")
+        local function fmt(v) return v == nil and "|cFF555555nil|r" or ("|cFFFFFFFF"..tostring(v).."|r") end
+        print("  manual (/dg tier):  " .. fmt(DelveGuide.manualDelveTier))
+        print("  auto (detected):    " .. fmt(DelveGuide.autoDelveTier)
+              .. "   |cFF888888via " .. tostring(DelveGuide.autoDetectMethod or "none") .. "|r")
+        print("  --> effective num:  " .. fmt(DelveGuide.currentDelveTierNum))
+        print("  --> effective str:  " .. fmt(DelveGuide.currentDelveTier))
+        local inScen = false; pcall(function() inScen = C_Scenario.IsInScenario() end)
+        local zone = ""; pcall(function() zone = GetRealZoneText() or "" end)
+        print(string.format("  inScenario: %s   zone: |cFFCCCCCC%s|r   runTimer: %s",
+            tostring(inScen), zone, DelveGuide.runStartTime and "running" or "|cFF555555stopped|r"))
         print("|cFF00BFFF[DelveGuide]|r === Objective Tracker Dump ===")
         local tracker = _G["ObjectiveTrackerFrame"] or _G["ScenarioObjectiveTracker"]
         if tracker then
@@ -1093,14 +1192,18 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("|cFF888888  Debug:|r |cFFCCCCCCdump, chatdump, huddump, tierdebug, checkdebug, specinfo, findplaza|r")
         print("  |cFFFFFF00/dg help|r               - Show this help")
     elseif msg:sub(1,5)=="tier " then
-        local num = tonumber(msg:sub(6))
+        local arg = msg:sub(6)
+        local num = tonumber(arg)
         if num and num >= 1 and num <= 11 then
-            DelveGuide.currentDelveTier    = tostring(num)
-            DelveGuide.currentDelveTierNum = num
+            DelveGuide.SetManualDelveTier(num)
             if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
-            print("|cFF00BFFF[DelveGuide]|r Delve tier set to |cFFCCCCCC" .. num .. "|r")
+            print("|cFF00BFFF[DelveGuide]|r Delve tier set to |cFFCCCCCC" .. num .. "|r |cFF888888(manual override -- /dg tier auto to clear)|r")
+        elseif arg == "auto" or num == 0 then
+            DelveGuide.SetManualDelveTier(nil)
+            if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
+            print("|cFF00BFFF[DelveGuide]|r Manual tier cleared -- back to auto-detection.")
         else
-            print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg tier 3|r  (1-11)")
+            print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg tier 3|r  (1-11), or |cFFFFFF00/dg tier auto|r to clear")
         end
     elseif msg=="hud" then
         if DelveGuide.ToggleHUD then DelveGuide.ToggleHUD()
@@ -1197,10 +1300,17 @@ DelveGuide.GetVariantRunStats = function()
         if run.variant and type(run.elapsed) == "number" and run.elapsed > 0 then
             local key = (run.name or "?") .. "||" .. run.variant
             local a = agg[key]
-            if not a then a = { delve = run.name or "?", variant = run.variant, totSec = 0, totTier = 0, count = 0 }; agg[key] = a end
+            if not a then a = { delve = run.name or "?", variant = run.variant, totSec = 0, totTier = 0, count = 0, tierCount = 0 }; agg[key] = a end
             a.totSec  = a.totSec + run.elapsed
-            a.totTier = a.totTier + (tonumber(run.tierNum) or 0)
             a.count   = a.count + 1
+            -- Average tier over runs that actually HAVE a tier. Counting an
+            -- unknown tier as 0 dragged the average down and got otherwise
+            -- valid submissions filtered out by the aggregator's tier floor.
+            local t = tonumber(run.tierNum)
+            if t and t > 0 then
+                a.totTier   = a.totTier + t
+                a.tierCount = a.tierCount + 1
+            end
         end
     end
     local out = {}
@@ -1208,7 +1318,7 @@ DelveGuide.GetVariantRunStats = function()
         table.insert(out, {
             delve = a.delve, variant = a.variant, count = a.count,
             avgSec = math.floor(a.totSec / a.count + 0.5),
-            avgTier = math.floor(a.totTier / a.count + 0.5),
+            avgTier = (a.tierCount > 0) and math.floor(a.totTier / a.tierCount + 0.5) or 0,
         })
     end
     table.sort(out, function(x, y) return x.avgSec < y.avgSec end)
@@ -1306,7 +1416,7 @@ loadFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 loadFrame:SetScript("OnEvent",function(self,event,arg1)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
-        InitSavedVars(); icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
+        InitSavedVars(); SeedLocalizedNames(); icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
         print("|cFF00BFFF[DelveGuide]|r Loaded! |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
         self:UnregisterEvent("ADDON_LOADED")
     elseif event=="PLAYER_ENTERING_WORLD" then
@@ -1447,7 +1557,12 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
                 end
             end
 
-            table.insert(DelveGuideDB.history,1,{name=runName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,tierNum=tierNum,vaultIlvl=vaultIlvl,char=charName,elapsed=elapsed,variant=runVariant})
+            -- Store the ENGLISH delve name as the canonical `name` so history,
+            -- weekly grouping and /dg submit all agree across locales (a localized
+            -- name would fragment community rankings into per-language buckets).
+            -- `locName` keeps the player's own language for display.
+            local locName = (runName ~= engRunName) and runName or nil
+            table.insert(DelveGuideDB.history,1,{name=engRunName,locName=locName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,tierNum=tierNum,vaultIlvl=vaultIlvl,char=charName,elapsed=elapsed,variant=runVariant})
             if #DelveGuideDB.history>50 then table.remove(DelveGuideDB.history) end
             local vaultStr=vaultIlvl and ("  |cFFFFD700[Vault: "..vaultIlvl.." ilvl]|r") or ""
             local timeStr=elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(elapsed/60),math.floor(elapsed%60)) or ""
@@ -1458,6 +1573,10 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             if DelveGuide.ShowVictoryScreen then
                 DelveGuide.ShowVictoryScreen(runName, tier, vaultIlvl, elapsed)
             end
+
+            -- Run is logged and shown -- release the tier so the next delve
+            -- starts clean instead of inheriting this one's.
+            if DelveGuide.ClearDelveTier then DelveGuide.ClearDelveTier() end
 
         end
     end

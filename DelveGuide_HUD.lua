@@ -69,7 +69,12 @@ local function BuildHUD()
 
     local db = DelveGuideDB
     if db and db.hudX and db.hudY then
-        hudFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", db.hudX, db.hudY)
+        -- hudY is saved as (frame top - screen height), i.e. a negative offset
+        -- DOWN from the screen top -- so it must be restored against TOPLEFT.
+        -- Restoring it against BOTTOMLEFT (as this used to) placed the frame
+        -- below the screen and let SetClampedToScreen shove it to the bottom,
+        -- so the HUD never came back where the user left it.
+        hudFrame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", db.hudX, db.hudY)
     else
         hudFrame:SetPoint("CENTER", UIParent, "CENTER", 450, 100)
     end
@@ -164,7 +169,7 @@ local function BuildHUD()
     MakeRow("variant",   "Variant",   -48)
     MakeRow("grade",     "Grade",     -66)
     MakeRow("tier",      "Tier",      -84)
-    MakeRow("curio",     "Rec Curio", -102)
+    MakeRow("curio",     "Companion", -102)
     MakeRow("nemesis",   "Nemesis",   -120)
     MakeRow("bountiful", "Bountiful", -138)
     MakeRow("lives",     "Lives",     -156)
@@ -198,6 +203,7 @@ local function BuildHUD()
     hudFrame:Hide()
 end
 
+-- Returns: tierNum|nil, methodLabel|nil  (the label powers /dg tierdebug)
 local function AutoDetectDelveTier()
     -- Method 1: Instance Difficulty Name (locale-independent — grab any number 1-11)
     local _, _, _, difficultyName = GetInstanceInfo()
@@ -205,19 +211,23 @@ local function AutoDetectDelveTier()
         local tier = difficultyName:match("(%d+)")
         if tier then
             local n = tonumber(tier)
-            if n and n >= 1 and n <= 11 then return n end
+            if n and n >= 1 and n <= 11 then return n, "1: difficulty name" end
         end
     end
 
     -- Method 2: Scenario Name & Step Info (locale-independent)
+    -- NOTE: `return n` inside the pcall closure returns from the CLOSURE, not
+    -- from AutoDetectDelveTier -- so this method never actually reported a
+    -- tier. Capture into an upvalue and check it after the pcall instead.
     local scenarioName = ""
+    local scenarioTier = nil
     pcall(function()
         if C_Scenario and C_Scenario.GetInfo then
             scenarioName = C_Scenario.GetInfo() or ""
             local tier = scenarioName:match("(%d+)")
             if tier then
                 local n = tonumber(tier)
-                if n and n >= 1 and n <= 11 then return n end
+                if n and n >= 1 and n <= 11 then scenarioTier = n; return end
             end
 
             local stepName = C_Scenario.GetStepInfo()
@@ -225,11 +235,12 @@ local function AutoDetectDelveTier()
                 local tier = stepName:match("(%d+)")
                 if tier then
                     local n = tonumber(tier)
-                    if n and n >= 1 and n <= 11 then return n end
+                    if n and n >= 1 and n <= 11 then scenarioTier = n; return end
                 end
             end
         end
     end)
+    if scenarioTier then return scenarioTier, "2: scenario/step name" end
 
     -- Method 3: State-Machine UI Scraping!
     local tracker = _G["ObjectiveTrackerFrame"] or _G["ScenarioObjectiveTracker"]
@@ -273,10 +284,10 @@ local function AutoDetectDelveTier()
         end
         
         SearchForTier(tracker)
-        if foundTier then return foundTier end
+        if foundTier then return foundTier, "3: objective tracker" end
     end
 
-    return nil
+    return nil, nil
 end
 
 local function UpdateHUD()
@@ -321,35 +332,33 @@ local function UpdateHUD()
     rows.variant:SetText(varText)
     rows.grade:SetText(gradeText)
 
--- Auto-Detect Tier (with manual override fallback)
-    local detectedTier = AutoDetectDelveTier()
-    
-    if DelveGuide.currentDelveTier then
-        -- Manual override via /dg tier
-        rows.tier:SetText("|cFFCCCCCC" .. DelveGuide.currentDelveTier .. " |cFF888888(Manual)|r")
-    elseif detectedTier then
-        -- Successfully auto-detected!
-        rows.tier:SetText("|cFF00FF44" .. detectedTier .. " |cFF888888(Auto)|r")
-        -- Save it so the History tab logs the correct tier on completion
-        DelveGuide.currentDelveTierNum = detectedTier
-        DelveGuide.currentDelveTier = "Tier " .. detectedTier
+    -- Tier: refresh auto-detection every pass; a manual /dg tier override wins
+    -- while set. Derived fields (read by History/Victory) update in one place.
+    local autoTier, autoMethod = AutoDetectDelveTier()
+    DelveGuide.autoDetectMethod = autoMethod
+    DelveGuide.SetAutoDelveTier(autoTier)
+    local tierNum, isManual = DelveGuide.ApplyDelveTier()
+
+    if tierNum then
+        rows.tier:SetText(string.format("%s%d|r |cFF888888(%s)|r",
+            isManual and "|cFFCCCCCC" or "|cFF00FF44", tierNum,
+            isManual and "Manual" or "Auto"))
     else
-        -- Total fallback
         rows.tier:SetText("|cFFFF4444Unknown |cFF555555(/dg tier N)|r")
     end
 
-    -- Spec curio recommendation
+    -- Companion recommendation. The old per-spec combat/utility curio picks
+    -- named retired Season 1 curios, so the HUD was contradicting the Curios
+    -- and Companion tabs. Show Valeera's recommended role (still valid) until
+    -- per-spec Season 2 curio recs exist.
     local curioText = "|cFF888888--|r"
     pcall(function()
         local specIndex = GetSpecialization()
         if specIndex then
             local specID = GetSpecializationInfo(specIndex)
-            if specID and DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID] then
-                local rec = DelveGuideData.specCurioRecs[specID]
-                local parts = {}
-                if rec.combat  then table.insert(parts, "|cFF44AAFF"  .. rec.combat  .. "|r") end
-                if rec.utility then table.insert(parts, "|cFF44FF88" .. rec.utility .. "|r") end
-                if #parts > 0 then curioText = table.concat(parts, "  |cFF555555/|r  ") end
+            local rec = specID and DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID]
+            if rec and rec.companion then
+                curioText = "Valeera: |cFF00CFFF" .. rec.companion .. "|r"
             end
         end
     end)
@@ -456,6 +465,9 @@ hudEvents:SetScript("OnEvent", function(_, event)
             DelveGuide.runStartTime = GetTime()
         elseif not nowInside then
             DelveGuide.runStartTime = nil
+            -- Leaving a delve: drop the tier so it can't leak into the next run
+            -- (History and the Victory screen read the derived fields).
+            if DelveGuide.ClearDelveTier then DelveGuide.ClearDelveTier() end
         end
         UpdateHUD()
     end)

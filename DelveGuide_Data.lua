@@ -171,6 +171,26 @@ DelveGuideData.delversJourney = {
 
 
 -- ============================================================
+-- SECTION 1d: TROVEHUNTER'S BOUNTY  (weekly delve map)
+-- ------------------------------------------------------------
+-- Blizzard reissues these IDs each season, so they live HERE ONLY.
+-- Every surface (Delves tab, pre-entry checklist, roster snapshot,
+-- debug export) reads them through DelveGuide.GetTroveStatus() --
+-- update this table at a season flip and everything follows.
+--
+-- To find new IDs: shift-click the item for its ID, and run
+--   /run for i=1,40 do local a=C_UnitAuras.GetAuraDataByIndex("player",i); if a and a.name:find("Trove") then print(a.spellId, a.name) end end
+-- while the buff is up.
+-- ============================================================
+DelveGuideData.trove = {
+    ITEM_ID      = 274374,   -- "Trovehunter's Bounty" (Season 2 / 12.1)
+    AURA_ID      = 1293799,  -- buff applied while the bounty is active
+    WEEKLY_QUEST = 95520,    -- "Purging the Vaults" -- the weekly that awards it
+    -- Season 1 (retired): item 265714, aura 1254631
+}
+
+
+-- ============================================================
 -- SECTION 2: DELVE MAP PINS
 -- ------------------------------------------------------------
 -- mapID = WoW uiMapID for the zone
@@ -938,6 +958,9 @@ DelveGuideData.changelog = {
 -- ============================================================================
 
 -- Widget set ID → English DELVE name (not variant name).
+-- Set IDs are per-delve-entrance; their text content changes daily.
+-- This is the ONLY copy -- the scanner reads it at DelveGuide.lua to resolve
+-- localized delve names to English on non-EN clients. Add new delves here.
 DelveGuideData.widgetSetDelves = {
     [1611] = "Collegiate Calamity",
     [1738] = "The Grudge Pit",
@@ -949,7 +972,10 @@ DelveGuideData.widgetSetDelves = {
     [1804] = "The Shadow Enclave",
     [1805] = "Twilight Crypts",
     [1806] = "The Darkway",
+    [2044] = "Gnarldor Isle",       -- 12.1, The Coiled Isle
+    [2047] = "The Ring of Glory",   -- 12.1, The Coiled Isle
     -- Note: Torment's Rise (set=0) is the Nullaeus Nemesis delve, not a rotational delve.
+    -- Venomfall Deeps (S2 Nemesis) has no world-map delve POI -- detect by instanceID 3079.
 }
 
 
@@ -1071,7 +1097,7 @@ DelveGuideData.localeVariants = {
     ["Especial de esporasaurio"]         = "Sporasaur Special",         -- The Gulf of Memory
     ["Bocaditos para polillas de Aln"]   = "Alnmoth Munchies",          -- The Gulf of Memory
     ["Maná robado"]                      = "Stolen Mana",               -- Shadowguard Point
-    ["Fauna cautiva"]                    = "Captured Wildlife",          -- Shadowguard Point
+    ["Fauna cautiva"]                    = "Capture Wildlife",           -- Shadowguard Point
     ["Calamitoso"]                       = "Calamitous",                 -- Shadowguard Point
     ["Defender el frente"]               = "Holding the Line",           -- Parhelion Plaza
     ["Bombardeo"]                        = "Bombing Run",                -- Parhelion Plaza

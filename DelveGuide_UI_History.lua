@@ -68,7 +68,10 @@ DelveGuide.RenderHistory = function()
                 local charStr=run.char and ("|cFF00FF88"..run.char.."|r  ") or ""
                 local timeStr=run.elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(run.elapsed/60),math.floor(run.elapsed%60)) or ""
                 local varStr=run.variant and ("  |cFFCCAAFF("..run.variant..")|r") or ""
-                y=y+UI.CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  %s|cFF00BFFF%s|r",run.date,charStr,run.name)..varStr..tierStr..vaultStr..timeStr)
+                -- Show the player's own language when we captured it; `name` is
+                -- the canonical English used for grouping and submissions.
+                local displayName = run.locName or run.name
+                y=y+UI.CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  %s|cFF00BFFF%s|r",run.date,charStr,displayName)..varStr..tierStr..vaultStr..timeStr)
             end
         end
     end; cf:SetHeight(y+20)

@@ -91,28 +91,13 @@ DelveGuide.RenderDelves = function()
     local activeVariants = DelveGuide.activeVariants or {}
     local vc=0; for _ in pairs(activeVariants) do vc=vc+1 end
     
-    -- Trovehunter's Bounty (weekly). Check three states so the row is accurate
-    -- whether you've used it, are holding it, or still owe the weekly:
-    --   buff active (spell 1293799) -> item in bags (274374, Season 2) ->
-    --   "Purging the Vaults" weekly done (quest 95520 -> used it this week).
-    local troveCount = C_Item.GetItemCount(274374, true) or 0
-    local hasTroveAura = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
-        and C_UnitAuras.GetPlayerAuraBySpellID(1293799)
-    local troveWeeklyDone = false
-    if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
-        local ok, done = pcall(C_QuestLog.IsQuestFlaggedCompleted, 95520)
-        troveWeeklyDone = (ok and done) or false
-    end
-    local troveText
-    if hasTroveAura then
-        troveText = "|cFF00FF44Active|r"
-    elseif troveCount > 0 then
-        troveText = "|cFFFFFF00In Bags|r"
-    elseif troveWeeklyDone then
-        troveText = "|cFF44FF44Done this week|r"
-    else
-        troveText = "|cFFFF4444None|r"
-    end
+    -- Trovehunter's Bounty (weekly) -- state comes from the shared helper so
+    -- this row and the pre-entry checklist can't disagree. IDs: DelveGuideData.trove.
+    local troveState = DelveGuide.GetTroveStatus and DelveGuide.GetTroveStatus() or "none"
+    local troveText = (troveState == "active")     and "|cFF00FF44Active|r"
+                   or (troveState == "inBags")     and "|cFFFFFF00In Bags|r"
+                   or (troveState == "weeklyDone") and "|cFF44FF44Done this week|r"
+                   or "|cFFFF4444None|r"
     local beaconCount=C_Item.GetItemCount(253342,true) or 0
     local beaconText=beaconCount>0 and "|cFF00FF44"..beaconCount.." in Bags|r" or "|cFFFF4444None|r"
     local restoredKeyInfo=C_CurrencyInfo.GetCurrencyInfo(3028)

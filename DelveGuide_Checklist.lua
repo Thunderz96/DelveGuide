@@ -24,23 +24,30 @@ local function RunChecklistScan()
         tip   = not hasKey and "You need 100 shards (1 key) or a Restored Coffer Key to open a Bountiful Coffer." or nil,
     })
 
-    local hasBountyAura = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
-        and C_UnitAuras.GetPlayerAuraBySpellID(1254631) ~= nil
-    local bountyCount = C_Item.GetItemCount(265714, true) or 0
-    
-    if hasBountyAura then
+    -- Trovehunter's Bounty -- shared state helper (IDs in DelveGuideData.trove)
+    -- so this row always matches the Delves tab.
+    local troveState, troveCount = "none", 0
+    if DelveGuide.GetTroveStatus then troveState, troveCount = DelveGuide.GetTroveStatus() end
+
+    if troveState == "active" then
         table.insert(results, { label="Trovehunter's Bounty  |cFF00FF44(Active)|r", ok=true })
-    elseif bountyCount > 0 then
+    elseif troveState == "inBags" then
         table.insert(results, {
-            label = string.format("Trovehunter's Bounty  |cFFFFD700(%d in bags - not active)|r", bountyCount),
+            label = string.format("Trovehunter's Bounty  |cFFFFD700(%d in bags - not active)|r", troveCount),
             ok    = false,
             tip   = "Right-click the item to activate it before entering.",
+        })
+    elseif troveState == "weeklyDone" then
+        table.insert(results, {
+            label = "Trovehunter's Bounty  |cFF44FF44(Used this week)|r",
+            ok    = true,
+            tip   = "You've already claimed and spent this week's bounty. It resets with the weekly.",
         })
     else
         table.insert(results, {
             label = "Trovehunter's Bounty  |cFFFF4444(None)|r",
             ok    = false,
-            tip   = "Pick one up from the Delver's Journey rewards or the vendor.",
+            tip   = "Complete the weekly 'Purging the Vaults' on the Coiled Isle to earn one.",
         })
     end
 
