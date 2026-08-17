@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.8.3] - 2026-08-17
+
+### Changed
+- **Delve rankings are now community-timed.** The first data pass from `/dg submit` is in: **36 submissions** covering **28 variants**, ranked by average Tier 8+ clear time instead of hand-estimation. Several rankings moved a long way -- highlights:
+  - **The Gravitational Effect** (Sunkiller Sanctum) is the fastest variant measured overall at ~11:09 -- was rated C.
+  - **Bombing Run** (Parhelion Plaza) C -> A, **Trapped!** and **Loosed Loa** (Twilight Crypts) both -> A, **Ritual Interrupted** (Atal'Aman) -> A. All four were previously rated D/F.
+  - **Ogre Powered** (The Darkway) S -> B and **Sporasaur Special** (Gulf of Memory) A -> D -- the old speed-meta picks didn't hold up against the stopwatch.
+  - **Calamitous** (Shadowguard Point) C -> F at ~31:49, the slowest measured variant.
+- **`[Best]` flags rebuilt from the data** -- each delve now flags its fastest variant where the sample is solid (7+ runs), instead of the previous hand-picked routes.
+- Variants with no submitted times keep their old estimate and are marked as such in the data file. The two new Coiled Isle delves stay `[?]` until Season 2 runs come in.
+
+### Added
+- **Contributor credits in-game:** the Settings tab now has a **Community Rankings** section showing the submission stats, a **Contribute Your Times** button, and the handles of every player whose data built the current rankings.
+- The Delves tab notes that rankings are community-sourced and points to `/dg submit`.
+
 ## [1.8.2] - 2026-08-16
 
 ### Added

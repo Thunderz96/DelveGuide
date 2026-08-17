@@ -158,6 +158,10 @@ DelveGuide.RenderDelves = function()
     
     local note=vc>0 and "  |cFF44FF44("..vc.." active today)|r" or "  |cFFAAAAAA(use /dg scan)|r"
     y=y+UI.CreateHeader(cf,y,"Delve Rankings -- S=Fastest | F=Slowest"..note)+4
+    local rs=DelveGuideData.rankingStats
+    if rs then
+        y=y+UI.CreateRow(cf,y,string.format("|cFF888888Community-timed from |r|cFF00FF88%d|r|cFF888888 player submissions -- add yours with |r|cFFFFFF00/dg submit|r|cFF888888. Credits in Settings.|r", rs.submissions or 0))
+    end
     y=y+UI.CreateRow(cf,y,string.format("|cFF3088FFWeekly Items:|r  Trovehunter's Bounty: %s   |   Beacon of Hope: %s   |   Restored Coffer Key: %s",troveText,beaconText,restoredKeyText))
     
     local delveCount,_,_,vaultActs=UI.GetWeeklyVaultData()

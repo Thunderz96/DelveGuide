@@ -168,7 +168,54 @@ DelveGuide.RenderSettings = function()
     clBtn:SetSize(160, 26); clBtn:SetText("View Changelog")
     clBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
     clBtn:SetScript("OnClick", UI.ShowChangelogPopup)
+    y = y + 34 + 8
+
+    -- ---- Community Rankings & Contributors ----
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Community Rankings|r") + 6
+
+    local rs = DelveGuideData.rankingStats
+    if rs then
+        y = y + UI.CreateRow(cf, y, string.format(
+            "|cFFCCCCCCDelve rankings come from |cFF00FF88%d|r|cFFCCCCCC player submissions -- |cFF00FF88%d|r|cFFCCCCCC variants ranked by average Tier 8+ clear time.|r  |cFF888888(updated %s)|r",
+            rs.submissions or 0, rs.variants or 0, rs.updated or "?")) + 4
+    end
+
+    local subBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    subBtn:SetSize(200, 26); subBtn:SetText("Contribute Your Times")
+    subBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
+    subBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("|cFFFFD700Help rank the delves|r")
+        GameTooltip:AddLine("Copies your run times so you can paste them into the ranking form.", 1, 1, 1, true)
+        GameTooltip:AddLine("Same as /dg submit.", 0.7, 0.7, 0.7, true)
+        GameTooltip:Show()
+    end)
+    subBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    subBtn:SetScript("OnClick", function()
+        if DelveGuide.ShowSubmitDialog then DelveGuide.ShowSubmitDialog() end
+    end)
     y = y + 34
+
+    local contribs = DelveGuideData.contributors
+    if contribs and #contribs > 0 then
+        y = y + UI.CreateRow(cf, y, string.format("|cFF00FF88Thanks to the %d delvers who sent in their times:|r", #contribs)) + 4
+        -- Wrap the handles into lines that fit the window.
+        local line, lineLen = {}, 0
+        local function flush()
+            if #line > 0 then
+                y = y + UI.CreateRow(cf, y, "|cFFCCAAFF  " .. table.concat(line, "  ~  ") .. "|r") + 2
+                line, lineLen = {}, 0
+            end
+        end
+        for _, name in ipairs(contribs) do
+            if lineLen + #name > 62 then flush() end
+            table.insert(line, name)
+            lineLen = lineLen + #name + 5
+        end
+        flush()
+        y = y + 4
+        y = y + UI.CreateRow(cf, y, "|cFF888888Submit your own times and your name lands here next update.|r") + 4
+    end
 
     cf:SetHeight(y + 20)
 end

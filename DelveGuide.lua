@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.8.2"
+local ADDON_VERSION    = "1.8.3"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -936,13 +936,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     elseif msg=="questscan" then
         if DelveGuide.ScanDelversCallQuests then DelveGuide.ScanDelversCallQuests() end
     elseif msg=="submit" or msg=="rank" then
-        local code = DelveGuide.BuildSubmissionCode and DelveGuide.BuildSubmissionCode()
-        if not code then
-            print("|cFF00BFFF[DelveGuide]|r No timed runs yet -- complete a few delves, then |cFFFFFF00/dg submit|r to help rank them.")
-        else
-            print("|cFF00BFFF[DelveGuide]|r Thanks for helping rank the delves! Paste the copied code into the form: |cFFFFFF00"..SUBMIT_URL.."|r")
-            StaticPopup_Show("DELVEGUIDE_SUBMIT_EXPORT", nil, nil, code)
-        end
+        DelveGuide.ShowSubmitDialog()
     elseif msg=="minimap" then
         DelveGuideDB.minimap.hide = not DelveGuideDB.minimap.hide
         if icon then
@@ -1236,6 +1230,19 @@ DelveGuide.BuildSubmissionCode = function()
     return "DG1;" .. table.concat(parts, ";")
 end
 
+-- Shared entry point for the submission flow: slash command, the one-time
+-- call-to-arms popup, and the Settings tab button all funnel through here.
+DelveGuide.ShowSubmitDialog = function()
+    local code = DelveGuide.BuildSubmissionCode and DelveGuide.BuildSubmissionCode()
+    if not code then
+        print("|cFF00BFFF[DelveGuide]|r No timed runs yet -- complete a few delves, then |cFFFFFF00/dg submit|r to help rank them.")
+        return false
+    end
+    print("|cFF00BFFF[DelveGuide]|r Thanks for helping rank the delves! Paste the copied code into the form: |cFFFFFF00" .. SUBMIT_URL .. "|r")
+    StaticPopup_Show("DELVEGUIDE_SUBMIT_EXPORT", nil, nil, code)
+    return true
+end
+
 StaticPopupDialogs["DELVEGUIDE_SUBMIT_EXPORT"] = {
     text = "Copy the code below (it's pre-selected -- Ctrl+C), then paste it into the ranking form:\n\n" .. SUBMIT_URL,
     button1 = CLOSE or "Close",
@@ -1258,13 +1265,7 @@ StaticPopupDialogs["DELVEGUIDE_RANKING_CALL"] = {
     button1 = "Enlist Now!",
     button2 = "Maybe Later",
     OnAccept = function()
-        local code = DelveGuide.BuildSubmissionCode and DelveGuide.BuildSubmissionCode()
-        if not code then
-            print("|cFF00BFFF[DelveGuide]|r No timed runs yet -- complete a few delves, then |cFFFFFF00/dg submit|r to enlist!")
-        else
-            print("|cFF00BFFF[DelveGuide]|r Thanks for enlisting! Paste the copied code into the form: |cFFFFFF00" .. SUBMIT_URL .. "|r")
-            StaticPopup_Show("DELVEGUIDE_SUBMIT_EXPORT", nil, nil, code)
-        end
+        if DelveGuide.ShowSubmitDialog then DelveGuide.ShowSubmitDialog() end
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }

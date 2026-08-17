@@ -18,17 +18,17 @@ Notes:
   * --min-runs drops thinly-sampled variants (default 3 total runs).
   * --min-tier ignores a submitter's variant if their avg tier is below it
     (times balloon at low tiers -- comparing at T8+ is cleaner once data exists).
-  * Suggested S-F letters are relative to the FASTEST variant of the same
-    delve -- tweak the SUGGEST thresholds to taste; treat them as a starting
-    point, not gospel.
+  * Suggested S-F letters are GLOBAL -- relative to the fastest variant across
+    ALL delves, matching the addon's "S = fastest, F = slowest" scale. Tweak
+    the SUGGEST thresholds to taste; treat them as a starting point, not gospel.
 """
 
 import csv
 import argparse
 from collections import defaultdict
 
-# ratio-to-fastest (within a delve) -> suggested letter; anything slower = F
-SUGGEST = [(1.05, "S"), (1.15, "A"), (1.30, "B"), (1.50, "C"), (1.80, "D")]
+# ratio to the GLOBAL fastest variant -> suggested letter; anything slower = F
+SUGGEST = [(1.10, "S"), (1.25, "A"), (1.45, "B"), (1.60, "C"), (1.85, "D")]
 
 
 def parse_code(code):
@@ -116,13 +116,14 @@ def main():
     print(f"\nParsed {submissions} submissions -> {len(rows)} variants "
           f"(filters: >={args.min_runs} runs, avg tier >={args.min_tier})\n")
 
+    global_fastest = min((r["avg_sec"] for r in rows), default=1)
+
     lua = []
     for delve in sorted(by_delve):
         variants = sorted(by_delve[delve], key=lambda r: r["avg_sec"])
-        fastest = variants[0]["avg_sec"]
         print(f"== {delve} ==")
         for r in variants:
-            letter = suggest_letter(r["avg_sec"], fastest)
+            letter = suggest_letter(r["avg_sec"], global_fastest)
             print(f"  [{letter}]  {mmss(r['avg_sec']):>8}  {r['variant']:<34}"
                   f"({r['runs']} runs, ~T{r['avg_tier']})")
             lua.append(

@@ -11,3 +11,10 @@ roadmap.md
 research.md
 .luarc.json
 mockup_dashboard.html
+
+# Raw community ranking submissions + generated aggregator output.
+# Kept local: the CSV is the raw form dump (contributor handles live in
+# DelveGuideData.contributors instead), and rankings.txt is regenerated
+# any time via tools/aggregate_rankings.py.
+tools/*.csv
+tools/rankings.txt
