@@ -314,21 +314,30 @@ DelveGuideData.future = {
 -- vault   = Great Vault reward ilvl for completing this tier
 -- ============================================================
 -- Season 2 (12.1) item levels. coffer = end-of-run / Bountiful Coffer reward;
--- vault = Great Vault delve slot. Without a Restored Coffer Key, end-of-run
--- caps at Tier 3 (272). Tiers 9-11 don't raise the standard reward past T8+.
--- Source: community delve rewards guides (Aug 2026) -- verify against your drops.
+-- vault = the Great Vault item level that a delve of THAT TIER contributes.
+-- Without a Restored Coffer Key, end-of-run caps at Tier 3 (272).
+--
+-- IMPORTANT: the vault column is per-TIER, not the reward you'll actually get.
+-- A Great Vault slot pays out at the level of your Nth-best activity (N = 2, 4,
+-- 8), so a single Tier 9 run does NOT mean a 305 reward -- if your 2nd-best
+-- activity that week was Tier 8, slot 1 pays at Tier 8. The Delves tab reads
+-- the real numbers from C_WeeklyRewards; this table is only a per-tier guide.
+--
+-- vault values marked (confirmed) were read off in-game Great Vault tooltips.
+-- The community guide this was first sourced from had the upper tiers shifted
+-- one step high (it listed T7=302 / T8=305). Use /dg vaultdebug to verify more.
 DelveGuideData.tierRewards = {
-    [1]  = { coffer=266, vault=279 },
+    [1]  = { coffer=266, vault=279 },  -- vault confirmed in-game
     [2]  = { coffer=269, vault=282 },
     [3]  = { coffer=272, vault=285 },
     [4]  = { coffer=276, vault=289 },
     [5]  = { coffer=279, vault=292 },
-    [6]  = { coffer=282, vault=298 },
-    [7]  = { coffer=292, vault=302 },
-    [8]  = { coffer=295, vault=305 },
-    [9]  = { coffer=295, vault=305 },
-    [10] = { coffer=295, vault=305 },
-    [11] = { coffer=295, vault=305 },
+    [6]  = { coffer=282, vault=295 },  -- inferred (between confirmed 292 and 298)
+    [7]  = { coffer=292, vault=298 },  -- vault confirmed in-game
+    [8]  = { coffer=295, vault=302 },  -- vault confirmed in-game
+    [9]  = { coffer=295, vault=305 },  -- inferred
+    [10] = { coffer=295, vault=305 },  -- inferred
+    [11] = { coffer=295, vault=305 },  -- inferred
 }
 
 -- SECTION 7: SPEC CURIO RECOMMENDATIONS

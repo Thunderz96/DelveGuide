@@ -27,51 +27,82 @@ DelveGuide.RenderHistory = function()
     if not DelveGuideDB.history or #DelveGuideDB.history==0 then
         y=y+UI.CreateRow(cf,y,"|cFF888888No runs recorded yet. Go complete a Delve!|r")
     else
+        -- The Great Vault is PER CHARACTER, so vault progress must be counted
+        -- per character too. Grouping only by week (as this used to) merged
+        -- every alt's runs into one imaginary vault -- four alts with two runs
+        -- each looked like "8 runs, all 3 slots unlocked" when in reality none
+        -- of them had filled a single slot.
         local weeks,weekOrder={},{}
         for _,run in ipairs(DelveGuideDB.history) do
-            local key=run.resetKey or 0
-            if not weeks[key] then weeks[key]={}; table.insert(weekOrder,key) end
-            table.insert(weeks[key],run)
+            local wkey=run.resetKey or 0
+            if not weeks[wkey] then weeks[wkey]={chars={},order={},count=0}; table.insert(weekOrder,wkey) end
+            local wk=weeks[wkey]
+            -- Include realm so same-named alts on different realms don't merge.
+            local ckey=(run.char or "Unknown")..(run.realm and ("-"..run.realm) or "")
+            if not wk.chars[ckey] then wk.chars[ckey]={}; table.insert(wk.order,ckey) end
+            table.insert(wk.chars[ckey],run)
+            wk.count=wk.count+1
         end
         table.sort(weekOrder,function(a,b)
             if a==0 then return false end; if b==0 then return true end; return a>b
         end)
+
         local minCoreTier = (DelveGuide.Voidforge and DelveGuide.Voidforge.MIN_VOIDCORE_TIER) or 8
-        for _,key in ipairs(weekOrder) do
-            local runs=weeks[key]; local count=#runs
-            local weekLabel=key==0 and "|cFF888888Earlier / Legacy Runs|r" or ("|cFFFFD700Week of "..date("%b %d, %Y",key).."|r")
-            local vaultText
-            if count>=8 then vaultText="|cFF00FF44All 3 vault slots unlocked!|r"
-            elseif count>=4 then vaultText=string.format("|cFFFFFF002/3 vault slots|r  |cFF888888(%d more for 3rd)|r",8-count)
-            elseif count>=1 then vaultText=string.format("|cFFFF88441/3 vault slots|r  |cFF888888(%d more for 2nd)|r",4-count)
-            else vaultText="|cFFFF4444No vault slots|r" end
 
-            local voidcoreRuns = 0
-            for _,run in ipairs(runs) do
-                if type(run.tierNum)=="number" and run.tierNum>=minCoreTier then
-                    voidcoreRuns = voidcoreRuns + 1
-                end
-            end
-            local voidcoreText = ""
-            if voidcoreRuns > 0 then
-                voidcoreText = string.format("  --  |cFFAA66CC%d Voidcore%s eligible|r (T%d+)",
-                    voidcoreRuns, voidcoreRuns==1 and "" or "s", minCoreTier)
-            end
+        -- Great Vault delve slots unlock at 2 / 4 / 8 runs.
+        local function VaultText(n)
+            if n>=8 then return "|cFF00FF44All 3 vault slots|r"
+            elseif n>=4 then return string.format("|cFFFFFF002/3 vault slots|r  |cFF888888(%d more for 3rd)|r",8-n)
+            elseif n>=2 then return string.format("|cFFFF88441/3 vault slots|r  |cFF888888(%d more for 2nd)|r",4-n)
+            else return string.format("|cFFFF4444No vault slots|r  |cFF888888(%d more for 1st)|r",2-n) end
+        end
 
+        for _,wkey in ipairs(weekOrder) do
+            local wk=weeks[wkey]
+            local weekLabel=wkey==0 and "|cFF888888Earlier / Legacy Runs|r" or ("|cFFFFD700Week of "..date("%b %d, %Y",wkey).."|r")
             y=y+8
-            y=y+UI.CreateRow(cf,y,weekLabel.."  |cFF888888"..count.." run(s)|r  --  "..vaultText..voidcoreText)
+            y=y+UI.CreateRow(cf,y,weekLabel.."  |cFF888888"..wk.count.." run(s) across "..#wk.order.." character(s)|r")
             y=y+UI.CreateRow(cf,y,"|cFF555555"..string.rep("-",80).."|r")+2
-            
-            for _,run in ipairs(runs) do
-                local tierStr=run.tier and ("  |cFF888888["..run.tier.."]|r") or ""
-                local vaultStr=run.vaultIlvl and ("  |cFFFFD700"..run.vaultIlvl.." ilvl|r") or ""
-                local charStr=run.char and ("|cFF00FF88"..run.char.."|r  ") or ""
-                local timeStr=run.elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(run.elapsed/60),math.floor(run.elapsed%60)) or ""
-                local varStr=run.variant and ("  |cFFCCAAFF("..run.variant..")|r") or ""
-                -- Show the player's own language when we captured it; `name` is
-                -- the canonical English used for grouping and submissions.
-                local displayName = run.locName or run.name
-                y=y+UI.CreateRow(cf,y,string.format("  |cFFCCCCCC%-18s|r  %s|cFF00BFFF%s|r",run.date,charStr,displayName)..varStr..tierStr..vaultStr..timeStr)
+
+            -- Most-active character first
+            table.sort(wk.order,function(a,b) return #wk.chars[a] > #wk.chars[b] end)
+
+            for _,ckey in ipairs(wk.order) do
+                local runs=wk.chars[ckey]
+                local count=#runs
+
+                -- Voidcore eligibility needs a BOUNTIFUL run at T8+, not just
+                -- any T8+ run. Runs logged before we recorded that flag are
+                -- counted separately rather than silently assumed eligible.
+                local coreRuns, unknownCore = 0, 0
+                for _,run in ipairs(runs) do
+                    if type(run.tierNum)=="number" and run.tierNum>=minCoreTier then
+                        if run.bountiful==true then coreRuns=coreRuns+1
+                        elseif run.bountiful==nil then unknownCore=unknownCore+1 end
+                    end
+                end
+                local coreText=""
+                if coreRuns>0 then
+                    coreText=string.format("  --  |cFFAA66CC%d Voidcore-eligible|r |cFF888888(bountiful T%d+)|r",coreRuns,minCoreTier)
+                elseif unknownCore>0 then
+                    coreText=string.format("  --  |cFF888888%d T%d+ run(s), bountiful status not recorded|r",unknownCore,minCoreTier)
+                end
+
+                y=y+UI.CreateRow(cf,y,string.format("  |cFF00FF88%s|r  |cFF888888%d run(s)|r  --  %s%s",
+                    ckey,count,VaultText(count),coreText))
+
+                for _,run in ipairs(runs) do
+                    local tierStr=run.tier and ("  |cFF888888["..run.tier.."]|r") or ""
+                    local vaultStr=run.vaultIlvl and ("  |cFFFFD700"..run.vaultIlvl.." ilvl|r") or ""
+                    local timeStr=run.elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(run.elapsed/60),math.floor(run.elapsed%60)) or ""
+                    local varStr=run.variant and ("  |cFFCCAAFF("..run.variant..")|r") or ""
+                    local bountyStr=run.bountiful and "  |cFFFFD700[B]|r" or ""
+                    -- Show the player's own language when we captured it; `name`
+                    -- is the canonical English used for grouping and submissions.
+                    local displayName = run.locName or run.name
+                    y=y+UI.CreateRow(cf,y,string.format("      |cFFCCCCCC%-18s|r  |cFF00BFFF%s|r",run.date,displayName)..varStr..tierStr..bountyStr..vaultStr..timeStr)
+                end
+                y=y+4
             end
         end
     end; cf:SetHeight(y+20)

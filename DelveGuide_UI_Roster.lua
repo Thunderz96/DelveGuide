@@ -120,13 +120,32 @@ DelveGuide.RenderRoster = function()
             end
             MakeCol(COL.delves, 38, tostring(c.delveCount or 0), "RIGHT", {title="|cFFFFD700Completed Delves (This Week)|r", lines=delveLines})
 
-            -- Vault Tooltip Data!
+            -- Vault Tooltip: per-slot progress and the actual reward each slot
+            -- will hand out. vaultDetail is cached per character on login, so
+            -- alts show their own vault rather than the logged-in character's.
             local vaultText = (c.vaultSlots or 0) > 0 and ("|cFF00FF44" .. (c.vaultSlots or 0) .. "|r") or "|cFF888888-|r"
             local vaultLines = {}
-            if c.maxVaultIlvl and c.maxVaultIlvl > 0 then
+            if c.vaultDetail and #c.vaultDetail > 0 then
+                for i, s in ipairs(c.vaultDetail) do
+                    local prog, thresh = s.progress or 0, s.threshold or 0
+                    if prog >= thresh and thresh > 0 then
+                        local tierStr = s.tier and ("  |cFF888888(from Tier " .. s.tier .. ")|r") or ""
+                        table.insert(vaultLines, string.format("|cFF00FF44Slot %d|r  %d/%d delves  --  |cFFFFD700%s ilvl|r%s",
+                            i, prog, thresh, tostring(s.ilvl or "?"), tierStr))
+                    else
+                        table.insert(vaultLines, string.format("|cFF888888Slot %d   %d/%d delves  (%d more)|r",
+                            i, prog, thresh, math.max(0, thresh - prog)))
+                    end
+                end
+            elseif c.maxVaultIlvl and c.maxVaultIlvl > 0 then
                 table.insert(vaultLines, "Highest Unlock: |cFFFFD700" .. c.maxVaultIlvl .. " ilvl|r")
+                table.insert(vaultLines, "|cFF888888Log in on this character to record slot details.|r")
             else
                 table.insert(vaultLines, "|cFF888888Complete more high-tier delves to increase item level.|r")
+            end
+            if not isCurrent then
+                table.insert(vaultLines, " ")
+                table.insert(vaultLines, "|cFF666666As of " .. (c.lastSeen or "?") .. "|r")
             end
             MakeCol(COL.vault, 38, vaultText, "RIGHT", {title="|cFF00BFFFGreat Vault Status|r", lines=vaultLines})
 

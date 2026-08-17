@@ -155,8 +155,13 @@ DelveGuide.RenderDelves = function()
         for _,a in ipairs(vaultActs) do
             local done=a.progress>=a.threshold
             local tierNum=a.level and a.level>0 and a.level or nil
+            -- Prefer the real reward item level Blizzard reports for this slot;
+            -- the per-tier table is only a fallback (and can't know which of
+            -- your activities actually decides the slot).
             local reward=tierNum and DelveGuideData.tierRewards and DelveGuideData.tierRewards[tierNum]
-            local ilvlText=reward and ("|cFFFFD700"..reward.vault.." ilvl|r") or (tierNum and ("|cFFFFD700T"..tierNum.."|r") or "|cFF888888?|r")
+            local ilvlText=a.rewardIlvl and ("|cFFFFD700"..a.rewardIlvl.." ilvl|r")
+                or (reward and ("|cFFFFD700"..reward.vault.." ilvl|r"))
+                or (tierNum and ("|cFFFFD700T"..tierNum.."|r")) or "|cFF888888?|r"
             if done then
                 table.insert(parts,string.format("|cFF00FF44Slot %d|r (%s)",a.index or #parts+1,ilvlText))
             else

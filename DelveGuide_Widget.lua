@@ -6,7 +6,7 @@ local UI = DelveGuide.UI
 local RANK_ORDER       = {S=1, A=2, B=3, C=4, D=5, F=6}
 local W_HEADER_H       = 28
 local W_PAD            = 10
-local W_MAX_LINES      = 10
+local W_MAX_LINES      = 14   -- 12 rotational delves in Season 2, + headroom
 local W_BASE_W         = 220
 local W_BASE_ROW_SIZE  = 11
 local W_BASE_ROW_HEIGHT = 18
@@ -61,6 +61,7 @@ DelveGuide.UpdateCompactWidget = function()
     end)
     
     local lineH = GetLineH()
+    local overflow = math.max(0, #entries - W_MAX_LINES)
     local n = math.min(#entries, W_MAX_LINES)
     if n == 0 then
         local emptyMsg = bountifulOnly
@@ -85,8 +86,15 @@ DelveGuide.UpdateCompactWidget = function()
                 local bountyTag = isBountiful and "  |cFFFFD700[B]|r" or ""
                 local variantColor = isBountiful and "|cFFFFD700" or "|cFF00CFFF"
                 local displayName = pin and (variantColor..e.variant.."|r") or e.variant
-                line.label:SetText(rc.."["..e.ranking.."]|r  "..displayName..bountyTag)
-                line.pin = pin
+                -- If more variants are active than we can show, say so on the
+                -- last line instead of silently dropping them.
+                if i == W_MAX_LINES and overflow > 0 then
+                    line.label:SetText(string.format("|cFF888888...and %d more (see Delves tab)|r", overflow + 1))
+                    line.pin = nil
+                else
+                    line.label:SetText(rc.."["..e.ranking.."]|r  "..displayName..bountyTag)
+                    line.pin = pin
+                end
                 line:ClearAllPoints()
                 line:SetPoint("TOPLEFT", cw, "TOPLEFT", 8, -(W_HEADER_H+4+(i-1)*lineH))
                 line:Show()
@@ -389,7 +397,10 @@ DelveGuide.ToggleWidget = function()
     DelveGuideDB.widgetHidden = not DelveGuideDB.widgetHidden
     local cw = DelveGuide.compactWidget
     if cw then
-        if DelveGuideDB.widgetHidden then cw:Hide() else cw:Show() end
+        -- Refresh on show: UpdateCompactWidget early-returns while hidden, so
+        -- without this the widget can open showing yesterday's variants (or
+        -- nothing at all, if it was hidden at login before the first scan).
+        if DelveGuideDB.widgetHidden then cw:Hide() else cw:Show(); UI.UpdateCompactWidget() end
     end
     print("|cFF00BFFF[DelveGuide]|r Compact widget: "..(DelveGuideDB.widgetHidden and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
 end

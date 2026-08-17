@@ -420,6 +420,19 @@ local function GetWeeklyVaultData()
                 if a.progress > delveCount then delveCount = a.progress end
                 if a.threshold > maxThreshold then maxThreshold = a.threshold end
                 if a.progress >= a.threshold then slots = slots + 1 end
+                -- Read the REAL reward item level from Blizzard instead of
+                -- inferring it from a per-tier table. A vault slot pays at the
+                -- level of your Nth-best activity (N = threshold), which no
+                -- single run determines -- so a.level is the deciding tier and
+                -- a.rewardIlvl is what you'll actually receive.
+                pcall(function()
+                    local link = C_WeeklyRewards.GetExampleRewardItemHyperlinks
+                                 and C_WeeklyRewards.GetExampleRewardItemHyperlinks(a.id)
+                    if link and C_Item and C_Item.GetDetailedItemLevelInfo then
+                        local ilvl = C_Item.GetDetailedItemLevelInfo(link)
+                        if type(ilvl) == "number" and ilvl > 0 then a.rewardIlvl = ilvl end
+                    end
+                end)
                 table.insert(acts, a)
             end
         end
@@ -480,13 +493,37 @@ local function CacheCurrentChar()
         end
     end
 
+    -- Highest reward item level actually unlocked this week. This used to store
+    -- a.level (the deciding TIER, e.g. 8) into a field named maxVaultIlvl and
+    -- render it as an item level -- so the Roster showed "8 ilvl".
     local _, vaultSlots, _, acts = GetWeeklyVaultData()
     local maxVaultIlvl = 0
     for _, a in ipairs(acts) do
-        if a.progress >= a.threshold and a.level and a.level > maxVaultIlvl then
-            maxVaultIlvl = a.level
+        if a.progress >= a.threshold then
+            local ilvl = a.rewardIlvl
+            if not ilvl and a.level and a.level > 0 and DelveGuideData.tierRewards[a.level] then
+                ilvl = DelveGuideData.tierRewards[a.level].vault
+            end
+            if ilvl and ilvl > maxVaultIlvl then maxVaultIlvl = ilvl end
         end
     end
+
+    -- Per-slot vault snapshot so the Roster tooltip can show each slot's
+    -- progress and reward for ALTS too (they aren't logged in to query the API).
+    local vaultDetail = {}
+    for _, a in ipairs(acts) do
+        local ilvl = a.rewardIlvl
+        if not ilvl and a.level and a.level > 0 and DelveGuideData.tierRewards[a.level] then
+            ilvl = DelveGuideData.tierRewards[a.level].vault
+        end
+        table.insert(vaultDetail, {
+            threshold = a.threshold,
+            progress  = a.progress,
+            tier      = (a.level and a.level > 0) and a.level or nil,
+            ilvl      = ilvl,
+        })
+    end
+    table.sort(vaultDetail, function(x, y) return (x.threshold or 0) < (y.threshold or 0) end)
 
     -- Voidforge snapshot for the cross-character stockpile in the Voidforge tab.
     local voidforge = nil
@@ -513,6 +550,7 @@ local function CacheCurrentChar()
         weeklyRuns   = weeklyRuns,
         vaultSlots   = vaultSlots,
         maxVaultIlvl = maxVaultIlvl,
+        vaultDetail  = vaultDetail,
         voidforge    = voidforge,
         lastSeen     = date("%Y-%m-%d"),
         resetKey     = resetKey,
@@ -635,7 +673,18 @@ DelveGuide.UI = {
     ShowChangelogPopup = ShowChangelogPopup,
     RefreshCurrentTab  = function() if RefreshCurrentTab then RefreshCurrentTab() end end,
     UpdateMinimap      = function() if icon then if DelveGuideDB.minimap.hide then icon:Hide("DelveGuide") else icon:Show("DelveGuide") end end end,
-    UpdateWidgetVis    = function() if DelveGuide.compactWidget then if DelveGuideDB.widgetHidden then DelveGuide.compactWidget:Hide() else DelveGuide.compactWidget:Show() end end end,
+    -- Showing must also refresh: UpdateCompactWidget bails while hidden, so a
+    -- widget toggled back on would otherwise display stale/empty content.
+    UpdateWidgetVis    = function()
+        if DelveGuide.compactWidget then
+            if DelveGuideDB.widgetHidden then
+                DelveGuide.compactWidget:Hide()
+            else
+                DelveGuide.compactWidget:Show()
+                if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end
+            end
+        end
+    end,
     UpdateWidgetAlpha  = function() if DelveGuide.compactWidget then DelveGuide.compactWidget:SetAlpha(DelveGuideDB.widgetAutoHide and 0.15 or 1.0) end end,
     UpdateCompactWidget= function() if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end end,
 }
@@ -1033,6 +1082,39 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("|cFF00BFFF[DelveGuide]|r Minimap button: " .. (DelveGuideDB.minimap.hide and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
     elseif msg=="check" then
         if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(true) end
+    elseif msg=="vaultdebug" then
+        -- Dumps the real Great Vault activity data so the reward item levels can
+        -- be read from Blizzard rather than a hardcoded per-tier table.
+        print("|cFF00BFFF[DelveGuide]|r === Great Vault Activities ===")
+        local ok, acts = pcall(C_WeeklyRewards.GetActivities)
+        if not ok or type(acts) ~= "table" then
+            print("  |cFFFF4444GetActivities failed|r")
+        else
+            for _, a in ipairs(acts) do
+                local bits = {}
+                for _, f in ipairs({"id","type","index","level","threshold","progress","claimID"}) do
+                    if a[f] ~= nil then table.insert(bits, f.."="..tostring(a[f])) end
+                end
+                print("  " .. table.concat(bits, "  "))
+                -- Reward item level, if the API will give it to us directly.
+                pcall(function()
+                    local links = C_WeeklyRewards.GetExampleRewardItemHyperlinks and C_WeeklyRewards.GetExampleRewardItemHyperlinks(a.id)
+                    if links then
+                        local ilvl = C_Item and C_Item.GetDetailedItemLevelInfo and C_Item.GetDetailedItemLevelInfo(links)
+                        print("      reward: " .. tostring(links) .. "   ilvl=" .. tostring(ilvl))
+                    end
+                end)
+                pcall(function()
+                    if a.id and C_WeeklyRewards.GetActivityEncounterInfo then
+                        local enc = C_WeeklyRewards.GetActivityEncounterInfo(a.type, a.index)
+                        if enc then for _, e in ipairs(enc) do
+                            print("      encounter: bestDifficulty=" .. tostring(e.bestDifficulty) .. " name=" .. tostring(e.encounterName))
+                        end end
+                    end
+                end)
+            end
+        end
+        print("|cFF00BFFF[DelveGuide]|r === END ===")
     elseif msg=="tierdebug" then
         print("|cFF00BFFF[DelveGuide]|r === Tier State ===")
         local function fmt(v) return v == nil and "|cFF555555nil|r" or ("|cFFFFFFFF"..tostring(v).."|r") end
@@ -1516,26 +1598,29 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             local tier    = DelveGuide.currentDelveTier    or "?"
             local tierNum = DelveGuide.currentDelveTierNum or nil
 
-            -- Vault ilvl: look up from static table first, fall back to C_WeeklyRewards
+            -- Vault ilvl recorded against this run = what a delve of THIS TIER
+            -- contributes to the Great Vault. (The slot you actually receive is
+            -- decided by your Nth-best activity for the week, not by one run.)
+            -- Fall back to the live reward item level if the tier is unknown --
+            -- the old fallback stored a.level, i.e. a TIER, into an ilvl field.
             local vaultIlvl=nil
             if tierNum and DelveGuideData.tierRewards and DelveGuideData.tierRewards[tierNum] then
                 vaultIlvl=DelveGuideData.tierRewards[tierNum].vault
             else
                 pcall(function()
-                    local DELVE_TYPE = (Enum and Enum.WeeklyRewardChestThresholdType and Enum.WeeklyRewardChestThresholdType.World) or 6
-                    local data=C_WeeklyRewards.GetActivities()
-                    if data then
-                        for _,a in ipairs(data) do
-                            if a.type == DELVE_TYPE and a.level and a.level>0 and a.progress>=a.threshold then
-                                if not vaultIlvl or a.level>vaultIlvl then vaultIlvl=a.level end
-                            end
+                    local _,_,_,acts = GetWeeklyVaultData()
+                    for _,a in ipairs(acts or {}) do
+                        if a.progress>=a.threshold and a.rewardIlvl then
+                            if not vaultIlvl or a.rewardIlvl>vaultIlvl then vaultIlvl=a.rewardIlvl end
                         end
                     end
                 end)
             end
 
             local charName="Unknown"
+            local charRealm=nil
             pcall(function() charName=UnitName("player") or "Unknown" end)
+            pcall(function() charRealm=GetRealmName() end)
 
             -- Capture completion timer (runStartTime set by HUD on delve entry)
             local elapsed = nil
@@ -1562,8 +1647,18 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             -- name would fragment community rankings into per-language buckets).
             -- `locName` keeps the player's own language for display.
             local locName = (runName ~= engRunName) and runName or nil
-            table.insert(DelveGuideDB.history,1,{name=engRunName,locName=locName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,tierNum=tierNum,vaultIlvl=vaultIlvl,char=charName,elapsed=elapsed,variant=runVariant})
-            if #DelveGuideDB.history>50 then table.remove(DelveGuideDB.history) end
+            -- Bountiful status decides Voidcore eligibility, so record it with
+            -- the run instead of inferring "T8+ therefore eligible" later.
+            local runBountiful = nil
+            do
+                local st = activeDelves and activeDelves[engRunName]
+                if type(st)=="table" then runBountiful = st.bountiful and true or false end
+            end
+            table.insert(DelveGuideDB.history,1,{name=engRunName,locName=locName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,tierNum=tierNum,vaultIlvl=vaultIlvl,char=charName,realm=charRealm,bountiful=runBountiful,elapsed=elapsed,variant=runVariant})
+            -- 50 was too tight for an account running several alts each week --
+            -- a busy week could push older characters' runs out and undercount
+            -- their vault progress. History rows are tiny.
+            if #DelveGuideDB.history>200 then table.remove(DelveGuideDB.history) end
             local vaultStr=vaultIlvl and ("  |cFFFFD700[Vault: "..vaultIlvl.." ilvl]|r") or ""
             local timeStr=elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(elapsed/60),math.floor(elapsed%60)) or ""
             local varLogStr=runVariant and ("  |cFFCCAAFF("..runVariant..")|r") or ""
