@@ -189,6 +189,11 @@ local function BuildHUD()
     -- Tick the timer display once per second (OnUpdate only fires when frame is shown)
     local timerElapsed = 0
     hudFrame:SetScript("OnUpdate", function(self, dt)
+        -- Periodic full refresh. UpdateHUD otherwise only runs on zone-change
+        -- events, so a single early read (tracker not yet repopulated when you
+        -- zone into a delve) would stick for the whole run -- which is exactly
+        -- how the previous delve's tier ended up reported against a new one.
+        -- Re-reading lets it self-correct, and lives/bountiful stay fresh too.
         timerElapsed = timerElapsed + dt
         if timerElapsed < 1.0 then return end
         timerElapsed = 0
@@ -242,49 +247,75 @@ local function AutoDetectDelveTier()
     end)
     if scenarioTier then return scenarioTier, "2: scenario/step name" end
 
-    -- Method 3: State-Machine UI Scraping!
+    -- Method 3: Objective-tracker scrape.
+    -- The Delves tracker block renders as:
+    --     Delves                       <- generic header
+    --     0/1 <objective text>
+    --     <Delve Name>                 <- strong anchor
+    --     9                            <- TIER (always right after the name)
+    --     5                            <- lives
+    --     2
+    -- So the tier is the first bare number AFTER the delve-name line. Taking
+    -- the first number after the generic "Delves" header instead is what let a
+    -- stale/partial tracker report the previous run's tier, so that stays only
+    -- as a weak fallback.
     local tracker = _G["ObjectiveTrackerFrame"] or _G["ScenarioObjectiveTracker"]
     if tracker then
-        local foundDelveHeader = false
-        local foundTier = nil
         local zoneName = GetRealZoneText() or ""
-        
+        -- Only trust the zone name as an anchor when we're actually in a known
+        -- delve (otherwise an overworld zone header could arm the match).
+        local delveAnchor = GetCurrentDelveName() and zoneName or nil
+
+        local foundDelveHeader, afterDelveName = false, false
+        local strongTier, weakTier, explicitTier = nil, nil, nil
+
         local function SearchForTier(frame)
             if not frame or frame:IsForbidden() then return end
-            
+
             for _, r in ipairs({frame:GetRegions()}) do
                 if r:GetObjectType() == "FontString" and r:IsShown() then
                     local txt = r:GetText()
                     if txt and txt ~= "" then
                         -- Clean all color codes and whitespace
                         local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("^%s+", ""):gsub("%s+$", "")
-                        
-                        -- Explicit match fallback (just in case)
+
+                        -- An explicit "Tier N" always wins outright.
                         local tier = cleanTxt:match("Tier %s*(%d+)") or cleanTxt:match("Tier: %s*(%d+)") or cleanTxt:match("Difficulty: %s*(%d+)")
-                        if tier then foundTier = tonumber(tier); return end
-                        
-                        -- STATE MACHINE: Look for Delve identifier, then grab the next valid number!
-                        if cleanTxt == "Delves" or cleanTxt == scenarioName or cleanTxt == zoneName then
+                        if tier then explicitTier = tonumber(tier); return end
+
+                        if delveAnchor and cleanTxt == delveAnchor then
+                            afterDelveName  = true
                             foundDelveHeader = true
-                        elseif foundDelveHeader and cleanTxt:match("^%d+$") then
+                        elseif cleanTxt == "Delves" or (scenarioName ~= "" and cleanTxt == scenarioName) then
+                            foundDelveHeader = true
+                        elseif cleanTxt:match("^%d+$") then
                             local num = tonumber(cleanTxt)
                             if num and num >= 1 and num <= 11 then
-                                foundTier = num
-                                return -- We found the floating number!
+                                if afterDelveName and not strongTier then
+                                    strongTier = num
+                                    return
+                                elseif foundDelveHeader and not weakTier then
+                                    weakTier = num
+                                end
                             end
                         end
                     end
                 end
             end
-            
+
             for _, child in ipairs({frame:GetChildren()}) do
                 SearchForTier(child)
-                if foundTier then return end
+                if explicitTier or strongTier then return end
             end
         end
-        
+
         SearchForTier(tracker)
-        if foundTier then return foundTier, "3: objective tracker" end
+        local result = explicitTier or strongTier or weakTier
+        if result then
+            return result, explicitTier and "3: explicit Tier text"
+                        or strongTier and "3: after delve name"
+                        or "3: under Delves header (weak)"
+        end
     end
 
     return nil, nil
@@ -334,9 +365,14 @@ local function UpdateHUD()
 
     -- Tier: refresh auto-detection every pass; a manual /dg tier override wins
     -- while set. Derived fields (read by History/Victory) update in one place.
+    -- Only accept a POSITIVE detection. A failed read (tracker mid-refresh, or
+    -- the block swapping to "Collect Your Reward!" at the end of a run) must not
+    -- wipe a tier we already know -- ClearDelveTier() on exit/completion owns that.
     local autoTier, autoMethod = AutoDetectDelveTier()
-    DelveGuide.autoDetectMethod = autoMethod
-    DelveGuide.SetAutoDelveTier(autoTier)
+    if autoTier then
+        DelveGuide.autoDetectMethod = autoMethod
+        DelveGuide.SetAutoDelveTier(autoTier)
+    end
     local tierNum, isManual = DelveGuide.ApplyDelveTier()
 
     if tierNum then
@@ -411,6 +447,33 @@ local function UpdateHUD()
     end
 end
 
+-- ── shared state evaluation ──────────────────────────────────
+-- One authority for "are we in a delve, is the run timed, is the tier known".
+-- Called both from zone events (immediate response) and from a watchdog ticker
+-- (recovery), so a mistimed single read can never strand the HUD or the timer.
+local function EvaluateDelveState()
+    if not hudFrame then BuildHUD() end
+    local nowInside = IsInsideDelve()
+
+    if nowInside then
+        -- Start the run timer once per run. runCompleted guards against
+        -- restarting it while the player lingers inside after finishing.
+        if not DelveGuide.runStartTime and not DelveGuide.runCompleted then
+            DelveGuide.runStartTime = GetTime()
+        end
+        UpdateHUD()
+    else
+        -- Left the delve: release the timer and the tier so neither can leak
+        -- into the next run (History and Victory read the derived tier fields).
+        if DelveGuide.runStartTime or DelveGuide.runCompleted or DelveGuide.currentDelveTierNum then
+            DelveGuide.runStartTime = nil
+            DelveGuide.runCompleted = nil
+            if DelveGuide.ClearDelveTier then DelveGuide.ClearDelveTier() end
+        end
+        if hudFrame and hudFrame:IsShown() then UpdateHUD() end
+    end
+end
+
 -- ── event handler ────────────────────────────────────────────
 
 local hudEvents = CreateFrame("Frame")
@@ -429,6 +492,7 @@ hudEvents:SetScript("OnEvent", function(_, event)
     -- Delve completed — hide immediately, no zone check needed
     if event == "SCENARIO_COMPLETED" then
         DelveGuide.runStartTime = nil  -- Timer consumed by main addon's handler
+        DelveGuide.runCompleted = true -- stops the watchdog restarting a phantom timer
         if hudFrame then hudFrame:Hide() end
         return
     end
@@ -456,22 +520,19 @@ hudEvents:SetScript("OnEvent", function(_, event)
         end
         return
     end
-    -- Zone changes: defer slightly to let zone APIs settle
-    C_Timer.After(0.5, function()
-        if not hudFrame then BuildHUD() end
-        -- Start the completion timer when first entering a delve
-        local nowInside = IsInsideDelve()
-        if nowInside and not DelveGuide.runStartTime then
-            DelveGuide.runStartTime = GetTime()
-        elseif not nowInside then
-            DelveGuide.runStartTime = nil
-            -- Leaving a delve: drop the tier so it can't leak into the next run
-            -- (History and the Victory screen read the derived fields).
-            if DelveGuide.ClearDelveTier then DelveGuide.ClearDelveTier() end
-        end
-        UpdateHUD()
-    end)
+    -- Zone changes: defer slightly to let zone APIs settle, then let the shared
+    -- state check below do the work (the watchdog repeats it, so a too-early
+    -- read here is no longer permanent).
+    C_Timer.After(0.5, EvaluateDelveState)
 end)
+
+-- Watchdog: re-evaluate delve state every 2s regardless of HUD visibility.
+-- Zone events alone were not enough -- entering a delve fires ZONE_CHANGED
+-- before C_Scenario registers the scenario, so the single 0.5s check could
+-- decide "not in a delve", never start the run timer, and never re-check
+-- (SCENARIO_CRITERIA_UPDATE bails early while hidden, and OnUpdate doesn't
+-- run on a hidden frame). An untimed run also never reaches the rankings.
+C_Timer.NewTicker(2, function() EvaluateDelveState() end)
 
 -- ── public API (for /dg hud toggle and main addon refresh) ───
 
