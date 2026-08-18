@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.8.3"
+local ADDON_VERSION    = "1.8.4"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -1098,6 +1098,26 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("|cFF00BFFF[DelveGuide]|r Minimap button: " .. (DelveGuideDB.minimap.hide and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
     elseif msg=="check" then
         if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(true) end
+    elseif msg=="currencydebug" then
+        -- Dump every field of the delve currencies so season-scoped vs lifetime
+        -- totals can be told apart (the in-game tooltip shows both).
+        print("|cFF00BFFF[DelveGuide]|r === Currency Fields ===")
+        local ids = { 3418, 3513, 3310, 3028 }
+        for _, id in ipairs(ids) do
+            local ok, info = pcall(C_CurrencyInfo.GetCurrencyInfo, id)
+            if ok and info then
+                local bits = {}
+                for _, f in ipairs({"name","quantity","totalEarned","maxQuantity","maxWeeklyQuantity",
+                                    "quantityEarnedThisWeek","useTotalEarnedForMaxQty","isAccountWide",
+                                    "isAccountTransferable","discovered"}) do
+                    if info[f] ~= nil then table.insert(bits, f.."="..tostring(info[f])) end
+                end
+                print(string.format("  |cFFFFD700%d|r  %s", id, table.concat(bits, "  ")))
+            else
+                print(string.format("  |cFF888888%d  (no data)|r", id))
+            end
+        end
+        print("|cFF00BFFF[DelveGuide]|r === END ===")
     elseif msg=="vaultdebug" then
         -- Dumps the real Great Vault activity data so the reward item levels can
         -- be read from Blizzard rather than a hardcoded per-tier table.

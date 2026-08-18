@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.8.4] - 2026-08-18
+
+### Rankings
+- Refreshed from **47 player submissions** -- 9 variants changed grade. *The Gravitational Effect* (Sunkiller Sanctum) is the fastest measured variant at ~10m38s. `[Best]` flags now mark each delve's fastest well-tested variant.
+- Two new Coiled Isle variants added: **Adopt-a-thon** and **Minchi's Osseous Adventure**.
+
+### Fixed
+- **Great Vault item levels** now show what you'll actually receive, on both the Delves tab and the Roster.
+- **History is tracked per character** -- your alts no longer pool into one shared vault count. Slots correctly unlock at 2/4/8 delves.
+- **Curio and poison descriptions corrected.** Several were wrong -- notably *Corrosive Bilespear* (a damage proc, not the below-50% curse) and *Poison of the Forgotten Master*, which loses all its stacks when you take damage.
+- **Delve tier detection** no longer shows the previous run's tier, and the in-run HUD and timer start reliably.
+- **Trovehunter's Bounty** shows its real state on the pre-entry checklist again.
+- The compact widget fits all 12 delves, and Bountiful runs are tagged in History.
+- Fixes for non-English clients, including a variant that never displayed on Spanish clients.
+
+### Added
+- `/dg submit` now also reports variants your client doesn't recognise -- that's how new and non-English variants get discovered. Thank you to everyone contributing; your handles are on the Settings tab.
+
 ## [1.8.3] - 2026-08-17
 
 ### Changed

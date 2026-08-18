@@ -18,46 +18,46 @@ DelveGuideData = {}
 -- ============================================================
 DelveGuideData.delves = {
     -- ── Atal'Aman ─────────────────────────────────────────
-    { name="Atal'Aman",             zone="Zul'Aman",    variant="Ritual Interrupted",           ranking="A", mountable=true,  hasBug=false, isBestRoute=false },  -- 12:58 (4)
-    { name="Atal'Aman",             zone="Zul'Aman",    variant="Toadly Unbecoming",            ranking="C", mountable=true,  hasBug=false, isBestRoute=true  },  -- 16:26 (18)
-    { name="Atal'Aman",             zone="Zul'Aman",    variant="Totem Annihilation",           ranking="D", mountable=true,  hasBug=false, isBestRoute=false },  -- 19:17 (3)
+    { name="Atal'Aman",             zone="Zul'Aman",    variant="Ritual Interrupted",           ranking="A", mountable=true,  hasBug=false, isBestRoute=false },  -- 12m 58s, 4 runs
+    { name="Atal'Aman",             zone="Zul'Aman",    variant="Toadly Unbecoming",            ranking="C", mountable=true,  hasBug=false, isBestRoute=true  },  -- 15m 34s, 22 runs
+    { name="Atal'Aman",             zone="Zul'Aman",    variant="Totem Annihilation",           ranking="C", mountable=true,  hasBug=false, isBestRoute=false },  -- 16m 23s, 4 runs
     -- ── Collegiate Calamity ───────────────────────────────
-    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Academy Under Siege",          ranking="A", mountable=true,  hasBug=false, isBestRoute=false },  -- 13:52 (8)
-    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Invasive Glow",                ranking="A", mountable=true,  hasBug=false, isBestRoute=true  },  -- 13:55 (29)
-    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Faculty of Fear",              ranking="C", mountable=true,  hasBug=false, isBestRoute=false },  -- 16:49 (20)
+    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Academy Under Siege",          ranking="B", mountable=true,  hasBug=false, isBestRoute=false },  -- 13m 52s, 8 runs
+    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Invasive Glow",                ranking="A", mountable=true,  hasBug=false, isBestRoute=true  },  -- 12m 53s, 36 runs
+    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Faculty of Fear",              ranking="C", mountable=true,  hasBug=false, isBestRoute=false },  -- 16m 49s, 20 runs
     -- ── Parhelion Plaza ───────────────────────────────────
-    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="Bombing Run",                  ranking="A", mountable=true,  hasBug=false, isBestRoute=true  },  -- 13:24 (15)
-    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="Holding the Line",             ranking="D", mountable=true,  hasBug=false, isBestRoute=false },  -- 18:34 (10)
+    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="Bombing Run",                  ranking="B", mountable=true,  hasBug=false, isBestRoute=true  },  -- 13m 24s, 15 runs
+    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="Holding the Line",             ranking="D", mountable=true,  hasBug=false, isBestRoute=false },  -- 17m 18s, 13 runs
     { name="Parhelion Plaza",       zone="Quel'Danas",  variant="March of the Arcane Brigade",  ranking="F", mountable=true,  hasBug=false, isBestRoute=false },  -- no data yet
     -- ── Shadowguard Point ─────────────────────────────────
-    { name="Shadowguard Point",     zone="Voidstorm",   variant="Stolen Mana",                  ranking="B", mountable=true,  hasBug=false, isBestRoute=true  },  -- 15:26 (8)
-    { name="Shadowguard Point",     zone="Voidstorm",   variant="Capture Wildlife",             ranking="F", mountable=true,  hasBug=false, isBestRoute=false },  -- 22:04 (10)
-    { name="Shadowguard Point",     zone="Voidstorm",   variant="Calamitous",                   ranking="F", mountable=true,  hasBug=false, isBestRoute=false },  -- 31:49 (8)
+    { name="Shadowguard Point",     zone="Voidstorm",   variant="Stolen Mana",                  ranking="B", mountable=true,  hasBug=false, isBestRoute=true  },  -- 15m 26s, 8 runs
+    { name="Shadowguard Point",     zone="Voidstorm",   variant="Capture Wildlife",             ranking="F", mountable=true,  hasBug=false, isBestRoute=false },  -- 20m 54s, 11 runs
+    { name="Shadowguard Point",     zone="Voidstorm",   variant="Calamitous",                   ranking="F", mountable=true,  hasBug=false, isBestRoute=false },  -- 31m 49s, 8 runs
     -- ── Sunkiller Sanctum ─────────────────────────────────
-    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="The Gravitational Effect",     ranking="S", mountable=false, hasBug=true,  isBestRoute=true  },  -- 11:09 (8) -- fastest overall
-    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="Not What I Expected",          ranking="A", mountable=false, hasBug=false, isBestRoute=false },  -- 13:53 (9)
-    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="Core of the Problem",          ranking="C", mountable=false, hasBug=false, isBestRoute=false },  -- 16:31 (10)
+    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="The Gravitational Effect",     ranking="S", mountable=false, hasBug=true,  isBestRoute=true  },  -- 10m 38s, 10 runs
+    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="Not What I Expected",          ranking="B", mountable=false, hasBug=false, isBestRoute=false },  -- 13m 20s, 10 runs
+    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="Core of the Problem",          ranking="B", mountable=false, hasBug=false, isBestRoute=false },  -- 14m 45s, 13 runs
     -- ── The Darkway ───────────────────────────────────────
-    { name="The Darkway",           zone="Quel'Thalas", variant="Focusers Under Pressure",      ranking="B", mountable=false, hasBug=false, isBestRoute=true  },  -- 14:45 (11)
-    { name="The Darkway",           zone="Quel'Thalas", variant="Ogre Powered",                 ranking="B", mountable=false, hasBug=false, isBestRoute=false },  -- 15:29 (15)
-    { name="The Darkway",           zone="Quel'Thalas", variant="Leyline Technician",           ranking="D", mountable=false, hasBug=false, isBestRoute=false },  -- 17:57 (12)
+    { name="The Darkway",           zone="Quel'Thalas", variant="Focusers Under Pressure",      ranking="B", mountable=false, hasBug=false, isBestRoute=false },  -- 14m 04s, 13 runs
+    { name="The Darkway",           zone="Quel'Thalas", variant="Ogre Powered",                 ranking="B", mountable=false, hasBug=false, isBestRoute=true  },  -- 13m 51s, 20 runs
+    { name="The Darkway",           zone="Quel'Thalas", variant="Leyline Technician",           ranking="D", mountable=false, hasBug=false, isBestRoute=false },  -- 17m 03s, 13 runs
     -- ── The Grudge Pit ────────────────────────────────────
-    { name="The Grudge Pit",        zone="Harandar",    variant="Lightbloom Invasion",          ranking="B", mountable=true,  hasBug=false, isBestRoute=false },  -- 16:06 (4)
-    { name="The Grudge Pit",        zone="Harandar",    variant="Arena Champion",               ranking="B", mountable=true,  hasBug=false, isBestRoute=true  },  -- 16:08 (11)
-    { name="The Grudge Pit",        zone="Harandar",    variant="Dastardly Rotstalk",           ranking="D", mountable=true,  hasBug=false, isBestRoute=false },  -- 18:41 (5)
+    { name="The Grudge Pit",        zone="Harandar",    variant="Lightbloom Invasion",          ranking="C", mountable=true,  hasBug=false, isBestRoute=false },  -- 16m 43s, 5 runs
+    { name="The Grudge Pit",        zone="Harandar",    variant="Arena Champion",               ranking="C", mountable=true,  hasBug=false, isBestRoute=true  },  -- 16m 08s, 11 runs
+    { name="The Grudge Pit",        zone="Harandar",    variant="Dastardly Rotstalk",           ranking="D", mountable=true,  hasBug=false, isBestRoute=false },  -- 18m 41s, 5 runs
     -- ── The Gulf of Memory ────────────────────────────────
-    { name="The Gulf of Memory",    zone="Harandar",    variant="Alnmoth Munchies",             ranking="C", mountable=false, hasBug=false, isBestRoute=true  },  -- 17:44 (20)
-    { name="The Gulf of Memory",    zone="Harandar",    variant="Sporasaur Special",            ranking="D", mountable=false, hasBug=true,  isBestRoute=false },  -- 18:24 (16)
-    { name="The Gulf of Memory",    zone="Harandar",    variant="Descent of the Haranir",       ranking="F", mountable=false, hasBug=false, isBestRoute=false },  -- 25:06 (6)
+    { name="The Gulf of Memory",    zone="Harandar",    variant="Alnmoth Munchies",             ranking="D", mountable=false, hasBug=false, isBestRoute=true  },  -- 17m 44s, 20 runs
+    { name="The Gulf of Memory",    zone="Harandar",    variant="Sporasaur Special",            ranking="D", mountable=false, hasBug=true,  isBestRoute=false },  -- 18m 13s, 17 runs
+    { name="The Gulf of Memory",    zone="Harandar",    variant="Descent of the Haranir",       ranking="F", mountable=false, hasBug=false, isBestRoute=false },  -- 25m 06s, 6 runs
     -- ── The Shadow Enclave ────────────────────────────────
-    { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Traitor's Due",                ranking="C", mountable=false, hasBug=false, isBestRoute=true  },  -- 17:22 (7)
-    { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Mirror Shine",                 ranking="D", mountable=false, hasBug=false, isBestRoute=false },  -- 19:14 (6)
+    { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Traitor's Due",                ranking="D", mountable=false, hasBug=false, isBestRoute=true  },  -- 17m 22s, 7 runs
+    { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Mirror Shine",                 ranking="D", mountable=false, hasBug=false, isBestRoute=false },  -- 19m 14s, 6 runs
     { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Shadowy Supplies",             ranking="F", mountable=false, hasBug=true,  isBestRoute=false },  -- no data yet
     -- Note: Torment's Rise (Voidstorm, mapID 2405) is the Nemesis delve for Nullaeus, not a rotational delve.
     -- ── Twilight Crypts ───────────────────────────────────
-    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Trapped!",                    ranking="A", mountable=false, hasBug=true,  isBestRoute=true  },  -- 12:29 (9)
-    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Loosed Loa",                  ranking="A", mountable=false, hasBug=true,  isBestRoute=false },  -- 13:54 (7)
-    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Party Crasher",               ranking="C", mountable=false, hasBug=true,  isBestRoute=false },  -- 16:46 (14)
+    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Trapped!",                    ranking="A", mountable=false, hasBug=true,  isBestRoute=false },  -- 12m 29s, 9 runs
+    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Loosed Loa",                  ranking="A", mountable=false, hasBug=true,  isBestRoute=true  },  -- 12m 23s, 9 runs
+    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Party Crasher",               ranking="C", mountable=false, hasBug=true,  isBestRoute=false },  -- 15m 40s, 16 runs
 
     -- ============================================================
     -- SEASON 2 (12.1 "Curse of Ula'tek")
@@ -102,15 +102,16 @@ DelveGuideData.delves = {
 -- (handles come from the submission form; anonymous entries excluded).
 -- ============================================================
 DelveGuideData.rankingStats = {
-    submissions = 36,   -- total submissions in this data pass
+    submissions = 47,   -- total submissions in this data pass
     variants    = 28,   -- variants with enough Tier 8+ data to rank
-    updated     = "2026-08-17",
+    updated     = "2026-08-18",
 }
 
 DelveGuideData.contributors = {
-    "AitonAsd", "Daeadin", "Desu", "Farmers00", "Fennec", "GhostDog",
-    "Howreyanow", "jabberie", "Jangah", "Juan/Fury", "Kula", "Lavande",
-    "Naxios", "Rahkmon-Area52", "Sommes", "Thunderz", "weedyabyss", "Zejex",
+    "AitonAsd", "ChanJustWon", "Daeadin", "Desu", "Farmers00", "Feralnmuunro",
+    "Fennec", "GhostDog", "Howreyanow", "jabberie", "Jangah", "Juan/Fury",
+    "Kula", "Lavande", "Naxios", "Rahkmon-Area52", "Sommes", "That_Eriksson",
+    "Thunderz", "weedyabyss", "Zejex",
 }
 
 
@@ -526,6 +527,18 @@ DelveGuideData.gradeColors = {
 -- SECTION 8: CHANGELOG
 -- ============================================================
 DelveGuideData.changelog = {
+    {
+        version = "1.8.4",
+        date    = "2026-08-18",
+        entries = {
+            "Rankings refreshed from 47 player submissions -- 9 variants changed grade. The Gravitational Effect (Sunkiller Sanctum) is the fastest measured variant so far. [Best] now marks each delve's fastest well-tested variant.",
+            "Great Vault item levels now show what you'll actually receive, and History tracks vault progress per character instead of pooling your alts together.",
+            "Curio and poison descriptions corrected -- a few were plain wrong. Corrosive Bilespear is a damage proc, and Poison of the Forgotten Master loses all its stacks when you take damage.",
+            "Tier detection, the in-run HUD and the run timer are all more reliable, and the Trovehunter's Bounty row works again.",
+            "New Coiled Isle variants added, the widget fits all 12 delves, and Bountiful runs are tagged in History.",
+            "/dg submit now also reports variants your client doesn't recognise, which is how new and non-English variants get found. Thanks to everyone sending data in -- your handles are on the Settings tab.",
+        }
+    },
     {
         version = "1.8.3",
         date    = "2026-08-17",

@@ -30,7 +30,7 @@ DelveGuide.RenderVoidforge = function()
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Bonus Rolls  --  Nebulous Voidcore|r") + 4
     if s.cores then
         local capStr = s.coreMax and ("/" .. s.coreMax) or ""
-        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(spend one to roll for loot after a raid boss / M+ / Prey / Bountiful Delve)|r", s.cores, capStr)) + 2
+        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(transmute into gear after a raid boss / M+ / Bountiful Delve / Nightmare Prey)|r", s.cores, capStr)) + 2
     else
         y = y + UI.CreateRow(cf, y, "|cFF888888  None yet -- they drop from T8+ Bountiful Delves, M+, and Nightmare Prey. (Populates in-game or after a /reload.)|r") + 2
     end

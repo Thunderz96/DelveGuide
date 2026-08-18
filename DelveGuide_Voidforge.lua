@@ -5,9 +5,11 @@
 -- widget, checklist, Voidforge tab, history tab, and map tooltip.
 --
 -- Season 2 (12.1) model:
---   * Nebulous Voidcore (3418) -- BONUS-ROLL currency. Spend one to roll
---       for loot after a raid boss / M+ / Nightmare Prey / Bountiful Delve.
---       Drops from T8+ Bountiful Delves (among other content).
+--   * Nebulous Voidcore (3418) -- confirmed in game. Transmuted into gear
+--       after Midnight raid bosses, M+, Bountiful Delves and Nightmare Prey.
+--       One item per difficulty level until the spec's pool is exhausted.
+--       Blizzard's own tooltip lists per-character totals, so an account-wide
+--       read may be possible -- see /dg currencydebug.
 --   * Ascendant Venomstone -- GEAR-UPGRADE material, arriving later this
 --       season. 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful
 --       Delve is a guaranteed source (~1-2 each, unconfirmed). Currency/
@@ -18,9 +20,15 @@
 -- To find an ID once one is in your log:
 --   /run for i=3000,4200 do local c=C_CurrencyInfo.GetCurrencyInfo(i); if c and c.name and (c.name:find("Voidcore") or c.name:find("Venomstone")) then print(i, c.name) end end
 DelveGuide.Voidforge = {
-    NEBULOUS_CURRENCY_ID    = 3418, -- Season 2 "Nebulous Voidcore" (bonus rolls). Replaced the
-                                     -- S1 currency (3513) at the S2 flip. If maxWeeklyQuantity
-                                     -- is exposed the cap shows automatically; else raw count.
+    NEBULOUS_CURRENCY_ID    = 3418, -- "Nebulous Voidcore" -- CONFIRMED in game (tooltip shows
+                                     -- ID 3418). The addon previously used 3513, which appears
+                                     -- to have been wrong rather than a season change: alts show
+                                     -- balances on 3418 while "Season Total Earned" reads 0, i.e.
+                                     -- carried-over Season 1 currency on this same id.
+                                     -- NOTE: info.quantity is the running total INCLUDING those
+                                     -- leftovers, not what you earned this season. If a
+                                     -- season-scoped figure is wanted, check whether
+                                     -- info.totalEarned matches the tooltip (/dg currencydebug).
     VENOMSTONE_CURRENCY_ID  = nil,  -- "Ascendant Venomstone" -- not live yet (arrives later in
                                      -- S2). Set this when it appears as a currency...
     VENOMSTONE_ITEM_ID      = nil,  -- ...or set this if it turns out to be a bag item instead.
