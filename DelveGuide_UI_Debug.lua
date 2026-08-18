@@ -3,13 +3,11 @@
 -- ============================================================
 local UI = DelveGuide.UI
 
-local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2424, 2444, 2413, 2405 }
-local ZONE_NAMES = {
-    [2393] = "Silvermoon City",   [2437] = "Zul'Aman",
-    [2395] = "Eversong Woods",    [2424] = "Isle of Quel'Danas",
-    [2444] = "Isle of Quel'Danas (overlap)",
-    [2413] = "Harandar",          [2405] = "Voidstorm",
-}
+-- Shared with the scanner. This file used to keep its own copy, which was
+-- never updated for Season 2 -- so The Coiled Isle (2512/2537) never appeared
+-- in the scan-status list even though the scanner was checking it.
+local ALL_ZONE_MAP_IDS = DelveGuideData.zoneMapIDs
+local ZONE_NAMES       = DelveGuideData.zoneNames
 
 DelveGuide.RenderDebug = function()
     local cf = UI.NewContentFrame()
@@ -57,18 +55,26 @@ DelveGuide.RenderDebug = function()
         y = y + UI.CreateRow(cf, y, "|cFFFF4444No results at all -- /dg scan has not been run, or all map IDs returned empty.|r")
         y = y + UI.CreateRow(cf, y, "|cFFAAAAAA  Checked map IDs: " .. table.concat(ALL_ZONE_MAP_IDS, ", ") .. "|r")
     else
+        -- A map with 0 POIs is NOT an error: overview maps carry none, and a
+        -- delve only registers on one map even when several overlap (the
+        -- scanner dedupes by POI id). Only a total of 0 across every map means
+        -- something is actually broken, so don't paint individual zeroes red.
+        local grandTotal = 0
         for _, mapID in ipairs(ALL_ZONE_MAP_IDS) do
-            local found, total = 0, 0
+            local found = 0
             for _, r in ipairs(rawScanResults) do
                 if r.mapID == mapID then
-                    total = total + 1
                     if r.name ~= "" and not r.name:find("returned") then found = found + 1 end
                 end
             end
-            local col = found > 0 and "|cFF44FF44" or "|cFFFF4444"
+            grandTotal = grandTotal + found
+            local col = found > 0 and "|cFF44FF44" or "|cFF777777"
             local label = ZONE_NAMES[mapID] or ("mapID " .. mapID)
-            y = y + UI.CreateRow(cf, y, string.format("  %smapID %-6d  %-20s  %d POI(s)|r", col, mapID, label, found))
+            local note  = found == 0 and "  |cFF666666(none registered here)|r" or ""
+            y = y + UI.CreateRow(cf, y, string.format("  %smapID %-6d  %-20s  %d POI(s)|r%s", col, mapID, label, found, note))
         end
+        local totalCol = grandTotal > 0 and "|cFF44FF44" or "|cFFFF4444"
+        y = y + UI.CreateRow(cf, y, string.format("  %sTotal delve POIs found: %d|r", totalCol, grandTotal))
     end
 
     y = y + 8

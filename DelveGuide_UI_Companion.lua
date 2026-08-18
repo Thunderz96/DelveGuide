@@ -333,7 +333,7 @@ DelveGuide.RenderCompanion = function()
         local tag = p.base and "|cFF00FF88[Base] |r" or "|cFFFFD700[Quest]|r"
         y = y + UI.CreateRow(cf, y, string.format("%s |cFFAA66CC%s|r  |cFFCCCCCC%s|r  |cFF888888%s|r", tag, p.name, p.effect, p.use)) + 2
     end
-    y = y + UI.CreateRow(cf, y, "|cFF00FF88Rule of thumb:|r |cFFCCCCCCBloodcrypt Toxin to start; once unlocked, Frostheart Venom for defense, Forgotten Master or Bursting Toad Toxin for damage.|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF00FF88Rule of thumb:|r |cFFCCCCCCBloodcrypt Toxin is the safe default; Frostheart Venom for defense once unlocked. Forgotten Master loses all stacks when you take damage -- only worth it if you're rarely getting hit.|r") + 4
 
     cf:SetHeight(y + 20)
 end

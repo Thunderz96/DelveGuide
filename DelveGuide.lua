@@ -31,23 +31,14 @@ local TABS = {
     { label = "Debug",    key = "debug"    },
 }
 
-local ALL_ZONE_MAP_IDS = { 2393, 2437, 2395, 2424, 2444, 2413, 2405, 2512, 2537 }  -- 2512/2537 = The Coiled Isle + overview (12.1)
+-- Shared with the Debug tab -- see DelveGuideData.zoneMapIDs / .zoneNames.
+local ALL_ZONE_MAP_IDS = DelveGuideData.zoneMapIDs
 
 -- Widget set ID → English delve name lives in DelveGuideData.widgetSetDelves
 -- (DelveGuide_Data.lua). A duplicate local copy used to sit here and was never
 -- read -- new delve IDs went into it by mistake and had no effect. Removed.
 
-local ZONE_NAMES = {
-    [2393] = "Silvermoon City",
-    [2437] = "Zul'Aman",
-    [2395] = "Eversong Woods",
-    [2424] = "Isle of Quel'Danas",
-    [2444] = "Isle of Quel'Danas (overlap)",
-    [2413] = "Harandar",
-    [2405] = "Voidstorm",
-    [2512] = "The Coiled Isle",
-    [2537] = "The Coiled Isle (overview)",
-}
+local ZONE_NAMES = DelveGuideData.zoneNames
 
 -- Nemesis delves have no rotational story variant, so their widget set is 0 and
 -- their text is empty. Skip them in variant detection and don't log as missing.
@@ -80,11 +71,29 @@ local function InitSavedVars()
     DelveGuideDB.checklistDismissed = false
     if not DelveGuideDB.roster then DelveGuideDB.roster = {} end
     if not DelveGuideDB.missingTranslations then DelveGuideDB.missingTranslations = {} end
-    -- Purge stale entries from pre-1.7.5 when Torment's Rise was incorrectly
-    -- logged as a missing translation (it's a Nemesis delve with no variant).
-    for key, entry in pairs(DelveGuideDB.missingTranslations) do
-        if entry and entry.delve == "Torment's Rise" then
-            DelveGuideDB.missingTranslations[key] = nil
+    -- Purge entries that are no longer actually missing:
+    --   * Nemesis delves (no rotational variant, so their widget text is empty)
+    --   * variants that have since been added to the data table -- every Season 2
+    --     variant was logged as "missing" during the window before it was
+    --     catalogued, and nothing ever cleared those records afterwards, so the
+    --     Debug tab kept reporting translations that had long since been added.
+    do
+        local knownVariants = {}
+        if DelveGuideData and DelveGuideData.delves then
+            for _, d in ipairs(DelveGuideData.delves) do
+                if d.variant then knownVariants[d.variant] = true end
+            end
+        end
+        for key, entry in pairs(DelveGuideDB.missingTranslations) do
+            local stale = false
+            if entry and (entry.delve == "Torment's Rise" or entry.delve == "Venomfall Deeps") then
+                stale = true
+            elseif entry and entry.text then
+                for variant in pairs(knownVariants) do
+                    if string.find(entry.text, variant, 1, true) then stale = true; break end
+                end
+            end
+            if stale then DelveGuideDB.missingTranslations[key] = nil end
         end
     end
     -- lastSeenVersion drives the "what's new" popup (nil = never shown)
@@ -164,7 +173,11 @@ local function ScanActiveVariants()
                     if atlasName:find("bountiful",1,true) then isBountiful=true end
                     -- Variant detection: text matching first (reads today's actual widget text)
                     for _, t in ipairs(widgetTexts) do
-                        local clean=t:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
+                        -- Strip escapes. WoW uses BOTH hex colours (|cAARRGGBB)
+                        -- and named ones (|cnWHITE_FONT_COLOR:) -- the named form
+                        -- was being left in, so logged text came out as
+                        -- "Story Variant: |cnWHITE_FONT_COLOR:Basalisk Blitz".
+                        local clean=t:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|cn[%w_]+:",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
                         if string.find(clean,"Nemesis",1,true) then hasNemesis=true end
                         if not variantName then
                             -- Try English text match first (EN clients)
@@ -214,7 +227,7 @@ local function ScanActiveVariants()
                     if (not variantName or variantName == "") and not isNemesisDelve then
                         local safeText = (widgetTexts and widgetTexts[1]) and widgetTexts[1] or "Unknown Variant Text"
                         -- Strip WoW color codes from the raw text to make it readable
-                        safeText = safeText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
+                        safeText = safeText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|cn[%w_]+:",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
                         variantName = "[Missing Translation] " .. safeText
 
                         -- Log to SavedVariables for the Debug tab
@@ -776,8 +789,11 @@ local function CreateMainWindow()
         local wqCount = 0
         local seenQuests = {}
 
-        local mapIDs = {2393, 2437, 2395, 2444, 2413, 2405, 2424}
-        for _, z in ipairs(mapIDs) do
+        -- Shared zone list: this was a third hardcoded copy and, like the Debug
+        -- tab's, never gained the Coiled Isle -- so Season 2 world quests
+        -- rewarding Coffer Key Shards weren't counted. Quests are deduped by
+        -- questID below, so overlapping maps are harmless.
+        for _, z in ipairs(ALL_ZONE_MAP_IDS) do
             local quests = C_TaskQuest.GetQuestsOnMap(z)
             if quests then
                 for _, q in ipairs(quests) do
@@ -1136,7 +1152,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
                     if r:GetObjectType() == "FontString" and r:IsShown() then
                         local txt = r:GetText()
                         if txt and txt ~= "" then
-                            local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+                            local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn[%w_]+:", ""):gsub("|r", "")
                             print("  ["..depth.."] " .. cleanTxt)
                         end
                     end
@@ -1408,16 +1424,39 @@ DelveGuide.GetVariantRunStats = function()
 end
 
 -- Compact, form-friendly submission string. Format (version DG1):
---   DG1;delve~variant~avgTier~avgSec~count;delve~variant~...
--- ~ and ; are stripped from names so the aggregator can split cleanly.
+--   DG1;delve~variant~avgTier~avgSec~count;...[|MISSING;delve~locale~text;...]
+-- ~ ; and | are stripped from names so the aggregator can split cleanly.
+--
+-- The MISSING section reports variants this client saw but could not identify.
+-- It matters because such runs are logged WITHOUT a variant, so they can never
+-- appear in the run data above -- meaning a variant nobody has catalogued yet
+-- is invisible to the whole community pipeline and only gets discovered if the
+-- author happens to notice it in their own Debug tab. It also carries the
+-- localized variant text from non-English clients, which is the one thing that
+-- can't be looked up externally.
 DelveGuide.BuildSubmissionCode = function()
     local stats = DelveGuide.GetVariantRunStats()
-    if #stats == 0 then return nil end
     local parts = {}
     for _, s in ipairs(stats) do
-        local d = (s.delve or ""):gsub("[~;]", " ")
-        local v = (s.variant or ""):gsub("[~;]", " ")
+        local d = (s.delve or ""):gsub("[~;|]", " ")
+        local v = (s.variant or ""):gsub("[~;|]", " ")
         table.insert(parts, string.format("%s~%s~%d~%d~%d", d, v, s.avgTier or 0, s.avgSec or 0, s.count or 0))
+    end
+
+    local missing = {}
+    for _, entry in pairs(DelveGuideDB and DelveGuideDB.missingTranslations or {}) do
+        if entry and entry.text and entry.text ~= "" then
+            table.insert(missing, string.format("%s~%s~%s",
+                (entry.delve  or "?"):gsub("[~;|]", " "),
+                (entry.locale or "?"):gsub("[~;|]", " "),
+                entry.text:gsub("[~;|]", " ")))
+        end
+    end
+
+    -- A player with no timed runs can still contribute discoveries.
+    if #parts == 0 and #missing == 0 then return nil end
+    if #parts == 0 then
+        return "DG1;|MISSING;" .. table.concat(missing, ";")
     end
     return "DG1;" .. table.concat(parts, ";")
 end
@@ -1427,7 +1466,7 @@ end
 DelveGuide.ShowSubmitDialog = function()
     local code = DelveGuide.BuildSubmissionCode and DelveGuide.BuildSubmissionCode()
     if not code then
-        print("|cFF00BFFF[DelveGuide]|r No timed runs yet -- complete a few delves, then |cFFFFFF00/dg submit|r to help rank them.")
+        print("|cFF00BFFF[DelveGuide]|r Nothing to send yet -- complete a few delves, then |cFFFFFF00/dg submit|r to help rank them.")
         return false
     end
     print("|cFF00BFFF[DelveGuide]|r Thanks for helping rank the delves! Paste the copied code into the form: |cFFFFFF00" .. SUBMIT_URL .. "|r")
@@ -1442,7 +1481,15 @@ StaticPopupDialogs["DELVEGUIDE_SUBMIT_EXPORT"] = {
     editBoxWidth = 350,
     OnShow = function(self, data)
         local eb = self.editBox or self.EditBox
-        if eb then eb:SetText(data or ""); eb:HighlightText(); eb:SetFocus() end
+        if eb then
+            -- Default edit boxes cap input length; a long history would be
+            -- silently cut off mid-code. 0 = unlimited.
+            if eb.SetMaxLetters then eb:SetMaxLetters(0) end
+            eb:SetText(data or "")
+            eb:SetCursorPosition(0)   -- show the DG1; prefix, not the tail
+            eb:HighlightText()
+            eb:SetFocus()
+        end
     end,
     EditBoxOnEscapePressed = function(editBox) editBox:GetParent():Hide() end,
     EditBoxOnEnterPressed  = function(editBox) editBox:GetParent():Hide() end,

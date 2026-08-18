@@ -23,6 +23,7 @@ Notes:
     the SUGGEST thresholds to taste; treat them as a starting point, not gospel.
 """
 
+import re
 import csv
 import argparse
 from collections import defaultdict
@@ -31,12 +32,22 @@ from collections import defaultdict
 SUGGEST = [(1.10, "S"), (1.25, "A"), (1.45, "B"), (1.60, "C"), (1.85, "D")]
 
 
-def parse_code(code):
-    """Yield (delve, variant, avg_tier, avg_sec, count) from one DG1 code."""
+def split_sections(code):
+    """DG1 codes may carry a trailing |MISSING; section of unidentified variants."""
     code = code.strip()
     if not code.startswith("DG1;"):
-        return
-    for seg in code[4:].split(";"):
+        return "", ""
+    body = code[4:]
+    if "|MISSING;" in body:
+        runs, missing = body.split("|MISSING;", 1)
+        return runs, missing
+    return body, ""
+
+
+def parse_code(code):
+    """Yield (delve, variant, avg_tier, avg_sec, count) from one DG1 code."""
+    runs, _ = split_sections(code)
+    for seg in runs.split(";"):
         parts = seg.strip().split("~")
         if len(parts) != 5:
             continue
@@ -49,13 +60,40 @@ def parse_code(code):
             yield delve, variant, avg_tier, avg_sec, count
 
 
-def find_codes(csv_path):
-    """Yield every DG1 code found in any cell of the CSV (robust to column order)."""
+def parse_missing(code):
+    """Yield (delve, locale, text) for variants a client could not identify."""
+    _, missing = split_sections(code)
+    for seg in missing.split(";"):
+        parts = seg.strip().split("~")
+        if len(parts) != 3:
+            continue
+        delve, locale, text = (p.strip() for p in parts)
+        if text:
+            yield delve, locale, text
+
+
+# A run segment looks like: delve~variant~tier~seconds~count
+RUN_SEG = re.compile(r"[^~;|]+~[^~;|]+~\d+~\d+~\d+")
+
+
+def find_codes(csv_path, salvaged=None):
+    """Yield every DG1 code found in any cell of the CSV (robust to column order).
+
+    Also salvages codes whose "DG1;" prefix was lost -- players sometimes paste a
+    partial selection, and silently dropping the whole submission hides real data
+    loss. Salvaged cells are recorded in `salvaged` so it gets reported.
+    """
     with open(csv_path, newline="", encoding="utf-8-sig") as fh:
         for row in csv.reader(fh):
             for cell in row:
-                if cell and "DG1;" in cell:
+                if not cell:
+                    continue
+                if "DG1;" in cell:
                     yield cell[cell.index("DG1;"):]
+                elif RUN_SEG.search(cell):
+                    if salvaged is not None:
+                        salvaged.append(cell.strip()[:70])
+                    yield "DG1;" + cell.strip()
 
 
 def suggest_letter(sec, fastest):
@@ -83,9 +121,16 @@ def main():
     tot_runs = defaultdict(int)    # sum of count
     tot_tier = defaultdict(float)  # sum of avg_tier * count
 
+    unidentified = defaultdict(lambda: {"count": 0, "locales": set()})
+
+    salvaged = []
     submissions = 0
-    for code in find_codes(args.csv):
+    for code in find_codes(args.csv, salvaged):
         submissions += 1
+        for delve, locale, text in parse_missing(code):
+            rec = unidentified[(delve, text)]
+            rec["count"] += 1
+            rec["locales"].add(locale)
         for delve, variant, avg_tier, avg_sec, count in parse_code(code):
             if avg_tier < args.min_tier:
                 continue
@@ -94,8 +139,20 @@ def main():
             tot_runs[key] += count
             tot_tier[key] += avg_tier * count
 
+    def report_unidentified():
+        if not unidentified:
+            return
+        print(f"\n=== UNIDENTIFIED VARIANTS reported by {len(unidentified)} distinct text(s) ===")
+        print("These were seen in game but aren't in DelveGuideData.delves. English")
+        print("entries are new variants to catalogue; non-English ones are localized")
+        print("text for localeVariants.\n")
+        for (delve, text), rec in sorted(unidentified.items(), key=lambda kv: -kv[1]["count"]):
+            locs = ",".join(sorted(rec["locales"]))
+            print(f'   {delve:<22} [{locs}]  "{text}"   (reported by {rec["count"]})')
+
     if not tot_runs:
-        print(f"No DelveGuide (DG1) submission codes found in {args.csv}.")
+        print(f"No ranked run data found in {args.csv}.")
+        report_unidentified()
         return
 
     rows = []
@@ -114,7 +171,13 @@ def main():
         by_delve[r["delve"]].append(r)
 
     print(f"\nParsed {submissions} submissions -> {len(rows)} variants "
-          f"(filters: >={args.min_runs} runs, avg tier >={args.min_tier})\n")
+          f"(filters: >={args.min_runs} runs, avg tier >={args.min_tier})")
+    if salvaged:
+        print(f"\n!! {len(salvaged)} submission(s) had no DG1; prefix (partial paste). "
+              f"Salvaged what was parseable:")
+        for frag in salvaged:
+            print(f"   ...{frag}")
+    print()
 
     global_fastest = min((r["avg_sec"] for r in rows), default=1)
 
@@ -135,6 +198,7 @@ def main():
 
     print("---- Lua snippet (fill in zone / flags, then merge into DelveGuideData.delves) ----")
     print("\n".join(lua))
+    report_unidentified()
 
 
 if __name__ == "__main__":

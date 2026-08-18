@@ -72,8 +72,10 @@ DelveGuideData.delves = {
     -- ── The Coiled Isle -- new delves ─────────────────────
     { name="The Ring of Glory",   zone="The Coiled Isle", variant="Game Day",                      ranking="?", mountable=false, hasBug=false, isBestRoute=false },
     { name="The Ring of Glory",   zone="The Coiled Isle", variant="Open Night",                    ranking="?", mountable=false, hasBug=false, isBestRoute=false },
+    { name="The Ring of Glory",   zone="The Coiled Isle", variant="Adopt-a-thon",                  ranking="?", mountable=false, hasBug=false, isBestRoute=false },
     { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Speaking Their Language",       ranking="?", mountable=false, hasBug=false, isBestRoute=false },
     { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Olds and Ends",                 ranking="?", mountable=false, hasBug=false, isBestRoute=false },
+    { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Minchi's Osseous Adventure",    ranking="?", mountable=false, hasBug=false, isBestRoute=false },
     -- ── S2 variants on existing delves ────────────────────
     { name="Atal'Aman",           zone="Zul'Aman",    variant="Venomous Vapors",               ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
     { name="Collegiate Calamity", zone="Quel'Thalas", variant="An Elementary Antidote",        ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
@@ -171,6 +173,29 @@ DelveGuideData.delversJourney = {
 
 
 -- ============================================================
+-- SECTION 1c2: DELVE ZONE MAP IDS
+-- ------------------------------------------------------------
+-- Single source of truth for which maps to scan for delve POIs, shared by
+-- the scanner and the Debug tab. These used to be duplicated per-file and
+-- the Debug tab's copy was never updated for Season 2, so The Coiled Isle
+-- silently vanished from its scan-status readout.
+-- ============================================================
+DelveGuideData.zoneMapIDs = { 2393, 2437, 2395, 2424, 2444, 2413, 2405, 2512, 2537 }
+
+DelveGuideData.zoneNames = {
+    [2393] = "Silvermoon City",
+    [2437] = "Zul'Aman",
+    [2395] = "Eversong Woods",
+    [2424] = "Isle of Quel'Danas",
+    [2444] = "Isle of Quel'Danas (overlap)",
+    [2413] = "Harandar",
+    [2405] = "Voidstorm",
+    [2512] = "The Coiled Isle",
+    [2537] = "The Coiled Isle (overview)",
+}
+
+
+-- ============================================================
 -- SECTION 1d: TROVEHUNTER'S BOUNTY  (weekly delve map)
 -- ------------------------------------------------------------
 -- Blizzard reissues these IDs each season, so they live HERE ONLY.
@@ -245,13 +270,13 @@ DelveGuideData.mapPins = {
 -- meta settles; id = wowhead spell ID (reference only -- curios match by name).
 DelveGuideData.curios = {
     -- ── Combat ──
-    { name="Corrosive Bilespear",        id=1295761, description="At <50% HP: Horrify nearby enemies 6s; you gain +5% primary & +50% leech/avoid/speed for 20s (2 min cd). A strong, safe all-purpose pick.", curiotype="Combat",  ranking="?" },
+    { name="Corrosive Bilespear",        id=1248877, description="Chance in combat for your companion to impale the highest- and lowest-health nearby targets for tremendous Nature damage.", curiotype="Combat",  ranking="?" },
     { name="Ouroboric Curse",            id=1248856, description="At <50% HP: Horrify nearby enemies 6s; you gain +20% primary & +50% leech/avoid/speed for 20s (2 min cd).",                                          curiotype="Combat",  ranking="?" },
-    { name="Essence Trap",               id=1295975, description="In combat Valeera may drop a trap; enemies within 3 yds are slowed 20% (5s), then it detonates for moderate Nature damage and a 1s stun.",           curiotype="Combat",  ranking="?" },
+    { name="Essence Trap",               id=1288788, description="In combat your companion may place a trap. An enemy within 3 yds triggers it: slows 20% for 5s, then detonates for moderate Nature damage and stuns for 5s.", curiotype="Combat",  ranking="?" },
     -- ── Utility ──
-    { name="Soul-Cracking Dreamcatcher", id=1296121, description="When a party member interrupts or CCs an Elite, that enemy takes +10% damage for 30s, stacking up to 2.",                                            curiotype="Utility", ranking="?" },
-    { name="Dundun's Favor",             id=1296018, description="In combat a Mislaid Spirit may appear; walking over a Mislaid Curiosity/Spirit fires 3 Volatile Sprites at random enemies. Curiosity contents auto-loot.", curiotype="Utility", ranking="?" },
-    { name="Venom Infusion",             id=1305686, description="On entering combat the party is Poisoned: 1% current HP/min as Nature, but +1% move & +1% haste per 5% HP missing (reversed for the first 6s).",       curiotype="Utility", ranking="?" },
+    { name="Soul-Cracking Dreamcatcher", id=1248899, description="When a party member interrupts or crowd-controls an Elite, that enemy takes +15% damage for 10s (stacks up to 1).",                                     curiotype="Utility", ranking="?" },
+    { name="Dundun's Favor",             id=1248894, description="In combat a Mislaid Spirit may appear; walking over a Mislaid Curiosity/Spirit fires 4 Volatile Sprites at random enemies. Curiosity contents auto-loot.", curiotype="Utility", ranking="?" },
+    { name="Venom Infusion",             id=1288782, description="On entering combat the party is Poisoned: 1% current HP/min as Nature, but +1% move & +1% haste per 5% HP missing (reversed for the first 6s).",       curiotype="Utility", ranking="?" },
 }
 
 -- ============================================================
@@ -261,9 +286,9 @@ DelveGuideData.curios = {
 -- No source crowns a "best" one, so `use` is an effect-based hint, not a meta.
 -- ============================================================
 DelveGuideData.poisons = {
-    { name="Bloodcrypt Toxin",               base=true,  effect="Enemies hit deal -10% damage & -10% Haste (20s).",                                  use="Survivability -- solo, progression, high tiers." },
-    { name="Poison of the Forgotten Master", base=true,  effect="+5% damage, stacking every 3s up to 5.",                                            use="Speed-farming tiers you already clear." },
-    { name="Soulthirst Venom",               base=true,  effect="+10% Leech / Avoidance / Speed.",                                                   use="Niche stat-stick." },
+    { name="Bloodcrypt Toxin",               id=1251120, base=true,  effect="Enemies hit deal -10% damage & -10% Haste (20s).",                                  use="Survivability -- solo, progression, high tiers." },
+    { name="Poison of the Forgotten Master", id=1249934, base=true,  effect="+5% damage, stacking every 3s up to 5 -- ALL stacks are lost when you take damage.", use="Best when you can avoid damage; weak while getting hit." },
+    { name="Soulthirst Venom",               id=1250826, base=true,  effect="+10% Leech / Avoidance / Speed.",                                                   use="Niche stat-stick." },
     { name="Frostheart Venom",               base=false, effect="Enemies hit: -30% movement and -20% melee/ranged/cast speed (10s).",               use="Strong control/defense vs melee & caster packs." },
     { name="Phantasmal Spore Toxin",         base=false, effect="Enemies hit are interrupted and feared for 1s.",                                    use="Interrupt-heavy or caster-dense pulls." },
     { name="Bursting Toad Toxin",            base=false, effect="Enemies hit occasionally burst: Nature damage every 1s for 8s to enemies within 8 yds.", use="Extra AoE for trash-heavy runs." },

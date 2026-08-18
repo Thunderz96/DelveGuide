@@ -22,7 +22,7 @@ DelveGuide.RenderCurios = function()
     else
         y=y+UI.CreateRow(cf,y,"|cFF888888No spec data - enter the world to detect your specialization.|r")
     end
-    y=y+UI.CreateRow(cf,y,"|cFF888888Per-spec curio picks are being rebuilt for Season 2. For now, the safest all-purpose Combat pick is |r|cFFFFD700Corrosive Bilespear|r|cFF888888.|r")+8
+    y=y+UI.CreateRow(cf,y,"|cFF888888Per-spec curio picks are being rebuilt for Season 2. The most commonly recommended Combat pick so far is |r|cFFFFD700Corrosive Bilespear|r|cFF888888.|r")+8
 
     -- Season 2 curios, grouped by type
     for _,ctype in ipairs({"Combat","Utility"}) do
@@ -41,7 +41,7 @@ DelveGuide.RenderCurios = function()
         local tag = p.base and "|cFF00FF88[Base] |r" or "|cFFFFD700[Quest]|r"
         y=y+UI.CreateRow(cf,y,string.format("%s |cFFAA66CC%s|r  |cFFCCCCCC%s|r  |cFF888888%s|r", tag, p.name, p.effect, p.use))
     end
-    y=y+UI.CreateRow(cf,y,"|cFF00FF88Rule of thumb:|r |cFFCCCCCCBloodcrypt Toxin to start; once unlocked, Frostheart Venom is a strong all-round defensive pick, and Forgotten Master or Bursting Toad Toxin when you'd rather push damage.|r")+8
+    y=y+UI.CreateRow(cf,y,"|cFF00FF88Rule of thumb:|r |cFFCCCCCCBloodcrypt Toxin is the safe default; Frostheart Venom (once unlocked) is a strong all-round defensive pick. Forgotten Master looks strong but drops every stack the moment you take a hit, so it only pays off when you're comfortably out-gearing the tier.|r")+8
 
     cf:SetHeight(y+20)
 end
