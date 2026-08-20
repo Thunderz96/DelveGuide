@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.5] - 2026-08-19
+
+### Rankings
+- Updated from **54 player submissions** -- 10 variants shifted a grade. Contributor credits updated to 27.
+
+### Added
+- `/dg resethud` -- recentres the in-run HUD, matching the existing `/dg resetwidget`.
+
 ## [1.8.4] - 2026-08-18
 
 ### Rankings

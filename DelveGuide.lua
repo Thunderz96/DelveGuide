@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.8.4"
+local ADDON_VERSION    = "1.8.5"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -1292,6 +1292,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg hud|r                - Toggle in-run HUD overlay")
         print("  |cFFFFFF00/dg widget|r             - Toggle compact floating widget")
         print("  |cFFFFFF00/dg resetwidget|r        - Reset widget position to center")
+        print("  |cFFFFFF00/dg resethud|r           - Reset the in-run HUD position")
         print("  |cFFFFFF00/dg bountiful|r          - Toggle widget filter to show only bountiful delves")
         print("  |cFFFFFF00/dg check|r              - Show pre-entry checklist")
         print("  |cFFFFFF00/dg roster|r             - Open Roster tab")
@@ -1328,6 +1329,18 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         else print("|cFF00BFFF[DelveGuide]|r HUD not loaded.") end
     elseif msg=="widget" then
         if DelveGuide.ToggleWidget then DelveGuide.ToggleWidget() end
+    elseif msg=="resethud" then
+        -- Parity with /dg resetwidget. Asked for by a user whose HUD kept
+        -- landing at the bottom of the screen (the restore-anchor bug), with
+        -- no way to put it back.
+        DelveGuideDB.hudX = nil
+        DelveGuideDB.hudY = nil
+        local hf = _G["DelveGuideHUDFrame"]
+        if hf then
+            hf:ClearAllPoints()
+            hf:SetPoint("CENTER", UIParent, "CENTER", 450, 100)
+        end
+        print("|cFF00BFFF[DelveGuide]|r In-run HUD position reset. Drag it where you want it and it will stay there.")
     elseif msg=="resetwidget" then
         DelveGuideDB.widgetX = nil
         DelveGuideDB.widgetY = nil
