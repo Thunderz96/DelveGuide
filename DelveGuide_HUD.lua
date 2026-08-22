@@ -24,6 +24,23 @@ local function GetCurrentDelveName()
     return nil
 end
 
+-- Looser check used for TIMING only. The completion handler logs any run whose
+-- scenario is "Delves", but the run timer used to start only when the zone name
+-- matched a catalogued delve -- so a non-English client whose localized name
+-- hadn't been learned, a Nemesis delve (deliberately not in DelveGuideData.delves),
+-- or any uncatalogued delve would log runs with elapsed = nil. Those runs then
+-- never reach /dg submit, so affected players silently contributed no data at all.
+-- Timing must therefore use the same broad test the logger uses.
+local function IsInDelveScenario()
+    local inScenario = false
+    pcall(function() inScenario = C_Scenario.IsInScenario() end)
+    if not inScenario then return false end
+    if GetCurrentDelveName() then return true end          -- recognised by name
+    local sName = ""
+    pcall(function() sName = C_Scenario.GetInfo() or "" end)
+    return sName == "Delves"                                -- generic delve scenario
+end
+
 local function IsInsideDelve()
     -- Zone name alone is unreliable for seamless delves (e.g. Atal'Aman bleeds into
     -- the Zul'Aman overworld). Require an active scenario as a second condition.
@@ -324,7 +341,26 @@ end
 local function UpdateHUD()
     if not hudFrame then BuildHUD() end
 
-    if not IsInsideDelve() or (DelveGuideDB and not DelveGuideDB.hudEnabled) then
+    if not IsInsideDelve() then
+        hudFrame:Hide()
+        return
+    end
+
+    -- Detect the tier BEFORE the hudEnabled gate. Tier is not just a HUD field:
+    -- History records it and /dg submit sends it, and the community aggregator
+    -- discards anything below Tier 8 -- so when this ran after the gate, every
+    -- player who simply switched the overlay off silently submitted tier-0 runs
+    -- that were thrown away. Only accept a POSITIVE detection; a failed read
+    -- (tracker mid-refresh, or the block swapping to "Collect Your Reward!" at
+    -- the end of a run) must not wipe a tier we already know -- ClearDelveTier()
+    -- on exit/completion owns that.
+    local autoTier, autoMethod = AutoDetectDelveTier()
+    if autoTier then
+        DelveGuide.autoDetectMethod = autoMethod
+        DelveGuide.SetAutoDelveTier(autoTier)
+    end
+
+    if DelveGuideDB and not DelveGuideDB.hudEnabled then
         hudFrame:Hide()
         return
     end
@@ -368,11 +404,6 @@ local function UpdateHUD()
     -- Only accept a POSITIVE detection. A failed read (tracker mid-refresh, or
     -- the block swapping to "Collect Your Reward!" at the end of a run) must not
     -- wipe a tier we already know -- ClearDelveTier() on exit/completion owns that.
-    local autoTier, autoMethod = AutoDetectDelveTier()
-    if autoTier then
-        DelveGuide.autoDetectMethod = autoMethod
-        DelveGuide.SetAutoDelveTier(autoTier)
-    end
     local tierNum, isManual = DelveGuide.ApplyDelveTier()
 
     if tierNum then
@@ -453,7 +484,9 @@ end
 -- (recovery), so a mistimed single read can never strand the HUD or the timer.
 local function EvaluateDelveState()
     if not hudFrame then BuildHUD() end
-    local nowInside = IsInsideDelve()
+    -- Time any delve scenario, even one we can't name; only the HUD's *display*
+    -- needs a recognised name (UpdateHUD hides itself when it has none).
+    local nowInside = IsInDelveScenario()
 
     if nowInside then
         -- Start the run timer once per run. runCompleted guards against
@@ -491,7 +524,13 @@ hudEvents:SetScript("OnEvent", function(_, event)
     end
     -- Delve completed — hide immediately, no zone check needed
     if event == "SCENARIO_COMPLETED" then
-        DelveGuide.runStartTime = nil  -- Timer consumed by main addon's handler
+        -- Do NOT clear runStartTime here. This frame and the main addon's frame
+        -- BOTH listen for SCENARIO_COMPLETED, and WoW does not guarantee which
+        -- one fires first. Clearing it here meant that whenever this frame won
+        -- the race, the completion handler found no start time and logged the
+        -- run with elapsed = nil -- the timer had run correctly the whole way,
+        -- the value was just destroyed a moment before it was read. The main
+        -- handler consumes and clears it; the watchdog clears it on exit.
         DelveGuide.runCompleted = true -- stops the watchdog restarting a phantom timer
         if hudFrame then hudFrame:Hide() end
         return

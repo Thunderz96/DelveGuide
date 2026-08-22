@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.8.7] - 2026-08-22
+
+### Fixed
+- **Runs were being logged with no elapsed time.** Both the main addon and the HUD hooked `SCENARIO_COMPLETED`, and the HUD cleared `runStartTime` without ever using it -- so whenever it won the (unordered) race, the completion handler found no start time and saved the run without a duration. The timer had run correctly the whole way; the value was destroyed a moment before it was read. Affected players could not submit anything via `/dg submit`. **Found and diagnosed by Zaph0n.**
+- **Delve tier was not detected when the in-run HUD was disabled.** Tier detection sat behind the `hudEnabled` early-return, so switching the overlay off meant runs logged without a tier -- and tier-0 runs are filtered out of the community rankings entirely. Detection now runs before the display gate.
+
+### Added
+- The addon version is shown in the main window title and at the top of `/dg help`.
+
 ## [1.8.6] - 2026-08-21
 
 ### Rankings

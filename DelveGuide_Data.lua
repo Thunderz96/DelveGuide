@@ -529,6 +529,15 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.8.7",
+        date    = "2026-08-22",
+        entries = {
+            "Fixed runs being logged with no time on them. Two parts of the addon both cleared the run timer when a delve finished, so depending on which ran first the time could get wiped a moment before it was saved. If /dg submit kept telling you to go run more, this was why. Big thanks to Zaph0n for tracking it down.",
+            "Fixed the delve tier not being detected while the in-run HUD is switched off. Those runs were being logged without a tier, which quietly filtered them out of the community rankings.",
+            "The version number now shows in the window title and in /dg help, which makes bug reports a lot easier.",
+        }
+    },
+    {
         version = "1.8.6",
         date    = "2026-08-21",
         entries = {

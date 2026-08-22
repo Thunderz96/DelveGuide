@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.8.6"
+local ADDON_VERSION    = "1.8.7"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -757,7 +757,7 @@ local function CreateMainWindow()
     
     local closeBtn=CreateFrame("Button",nil,f,"UIPanelCloseButton"); closeBtn:SetPoint("TOPRIGHT",f,"TOPRIGHT",-4,-4)
     f.TitleText=f:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
-    f.TitleText:SetPoint("TOPLEFT",f,"TOPLEFT",16,-12); f.TitleText:SetText("|cFF00BFFFDelveGuide|r -- Midnight Reference")
+    f.TitleText:SetPoint("TOPLEFT",f,"TOPLEFT",16,-12); f.TitleText:SetText("|cFF00BFFFDelveGuide|r |cFF888888v"..ADDON_VERSION.."|r -- Midnight Reference")
     f.TrackerText=f:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall"); f.TrackerText:SetPoint("TOPRIGHT",f,"TOPRIGHT",-40,-14)
     
     -- Resize Grip Handle
@@ -1284,6 +1284,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         end
         if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
     elseif msg=="help" then
+        print("|cFF00BFFF[DelveGuide]|r |cFFFFFFFFv"..ADDON_VERSION.."|r  |cFF888888(include this in bug reports)|r")
         print("|cFF00BFFF[DelveGuide]|r Commands:")
         print("  |cFFFFFF00/dg|r                    - Toggle window")
         print("  |cFFFFFF00/dg scan|r               - Rescan active delve variants")
