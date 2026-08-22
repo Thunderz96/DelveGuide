@@ -114,18 +114,47 @@ def main():
     ap.add_argument("csv", help="CSV export of the Google Form responses")
     ap.add_argument("--min-runs", type=int, default=3)
     ap.add_argument("--min-tier", type=int, default=0)
+    ap.add_argument("--min-submitters", type=int, default=3,
+                    help="require this many DIFFERENT players before grading a variant. "
+                         "Run counts alone let one person grinding a variant set its grade.")
     args = ap.parse_args()
 
     # weighted accumulation per (delve, variant)
     tot_sec = defaultdict(float)   # sum of avg_sec * count
     tot_runs = defaultdict(int)    # sum of count
     tot_tier = defaultdict(float)  # sum of avg_tier * count
+    submitters = defaultdict(set)  # distinct submissions contributing to each variant
 
     unidentified = defaultdict(lambda: {"count": 0, "locales": set()})
 
     salvaged = []
+    all_codes = list(find_codes(args.csv, salvaged))
+
+    # Drop superseded resubmissions. Each /dg submit code is a COMPLETE snapshot
+    # of that player's history (GetVariantRunStats walks all of it), not an
+    # increment -- so a player who submits again would otherwise have every run
+    # counted twice, inflating run totals and the >=7-run confidence threshold.
+    # A later code that repeats >=70% of an earlier one's exact entries is
+    # treated as that player resubmitting.
+    def entries(code):
+        out = set()
+        for d, v, t, s, c in parse_code(code):
+            out.add((d, v, s))
+        return out
+
+    ent = [entries(c) for c in all_codes]
+    superseded = set()
+    for i in range(len(all_codes)):
+        if not ent[i]:
+            continue
+        for j in range(i + 1, len(all_codes)):
+            if ent[j] and len(ent[i] & ent[j]) / len(ent[i]) >= 0.70:
+                superseded.add(i)
+                break
+    codes = [c for i, c in enumerate(all_codes) if i not in superseded]
+
     submissions = 0
-    for code in find_codes(args.csv, salvaged):
+    for code in codes:
         submissions += 1
         for delve, locale, text in parse_missing(code):
             rec = unidentified[(delve, text)]
@@ -138,6 +167,7 @@ def main():
             tot_sec[key] += avg_sec * count
             tot_runs[key] += count
             tot_tier[key] += avg_tier * count
+            submitters[key].add(submissions)  # submission index = one player
 
     def report_unidentified():
         if not unidentified:
@@ -155,15 +185,19 @@ def main():
         report_unidentified()
         return
 
-    rows = []
+    rows, thin = [], []
     for key, runs in tot_runs.items():
         if runs < args.min_runs:
+            continue
+        if len(submitters[key]) < args.min_submitters:
+            thin.append((key, runs, len(submitters[key])))
             continue
         delve, variant = key
         rows.append({
             "delve": delve, "variant": variant, "runs": runs,
             "avg_sec": tot_sec[key] / runs,
             "avg_tier": round(tot_tier[key] / runs),
+            "submitters": len(submitters[key]),
         })
 
     by_delve = defaultdict(list)
@@ -172,6 +206,9 @@ def main():
 
     print(f"\nParsed {submissions} submissions -> {len(rows)} variants "
           f"(filters: >={args.min_runs} runs, avg tier >={args.min_tier})")
+    if superseded:
+        print(f"   ({len(superseded)} earlier resubmission(s) dropped -- each code is a full "
+              f"history snapshot, so counting both would double a player's runs)")
     if salvaged:
         print(f"\n!! {len(salvaged)} submission(s) had no DG1; prefix (partial paste). "
               f"Salvaged what was parseable:")
@@ -188,12 +225,19 @@ def main():
         for r in variants:
             letter = suggest_letter(r["avg_sec"], global_fastest)
             print(f"  [{letter}]  {mmss(r['avg_sec']):>8}  {r['variant']:<34}"
-                  f"({r['runs']} runs, ~T{r['avg_tier']})")
+                  f"({r['runs']} runs / {r['submitters']} players, ~T{r['avg_tier']})")
             lua.append(
                 f'    {{ name="{delve}", zone="?", variant="{r["variant"]}", '
                 f'ranking="{letter}", mountable=false, hasBug=false, isBestRoute=false }},'
                 f'  -- {mmss(r["avg_sec"])}, {r["runs"]} runs'
             )
+        print()
+
+    if thin:
+        print(f"~~ {len(thin)} variant(s) withheld -- enough runs but fewer than "
+              f"{args.min_submitters} different players (one grinder shouldn't set a grade):")
+        for (d, v), runs, subs in sorted(thin):
+            print(f"   {d:<22} {v:<32} {runs} runs from {subs} player(s)")
         print()
 
     print("---- Lua snippet (fill in zone / flags, then merge into DelveGuideData.delves) ----")

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.6] - 2026-08-21
+
+### Rankings
+- Updated from **60 player submissions** -- 7 variants shifted a grade. **Gnarldor Isle / Olds and Ends** takes the first Season 2 ranking (**A**), now that Season 2 runs are reporting real tiers.
+- A variant now requires times from at least **three different players** before it is graded -- previously a single player with enough runs could set a ranking alone. Repeat submissions from the same player are also no longer double-counted.
+- Contributor credits updated to 31.
+- **Still unranked:** the two Coiled Isle delves and the Season 2 venom variants (13 in total). Tier 8+ clears of those are what `/dg submit` needs to grade them.
+
 ## [1.8.5] - 2026-08-19
 
 ### Rankings
