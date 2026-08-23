@@ -38,7 +38,14 @@ local function IsInDelveScenario()
     if GetCurrentDelveName() then return true end          -- recognised by name
     local sName = ""
     pcall(function() sName = C_Scenario.GetInfo() or "" end)
-    return sName == "Delves"                                -- generic delve scenario
+    -- The localized word for "Delves", learned by the completion handler from a
+    -- previously confirmed delve. Without this the fallback below is English-only,
+    -- so a non-English client in a Nemesis or uncatalogued delve was never timed.
+    if sName ~= "" and DelveGuideDB and DelveGuideDB.localeScenarioName
+       and sName == DelveGuideDB.localeScenarioName then
+        return true
+    end
+    return sName == "Delves"                                -- generic delve scenario (EN)
 end
 
 local function IsInsideDelve()

@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.8.8"
+local ADDON_VERSION    = "1.9.0"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -44,7 +44,12 @@ local ZONE_NAMES = DelveGuideData.zoneNames
 -- their text is empty. Skip them in variant detection and don't log as missing.
 local NEMESIS_DELVES = {
     ["Torment's Rise"] = true,
-    ["Venomfall Deeps"] = true,  -- S2 Nemesis (12.1); no delve POI on world map, detect by instanceID 3079
+    ["Venomfall Deeps"] = true,  -- S2 Nemesis (12.1), on The Coiled Isle. It DOES
+                                 -- have a world-map POI (poiID 8779, atlas
+                                 -- delves-regular, widget set 0) -- an earlier note
+                                 -- here claimed otherwise. Matched by the set-0 rule
+                                 -- in the scanner on every locale; this name entry
+                                 -- is now only a belt-and-braces.
 }
 
 local function InitSavedVars()
@@ -91,6 +96,19 @@ local function InitSavedVars()
             elseif entry and entry.text then
                 for variant in pairs(knownVariants) do
                     if string.find(entry.text, variant, 1, true) then stale = true; break end
+                end
+                -- ...and entries whose LOCALIZED name has since been added. This is
+                -- the case that actually matters: a "missing translation" is by
+                -- definition non-English, so a purge that only checked English
+                -- names could never clear one. Records survived forever and the
+                -- Debug tab / login warning kept reporting variants long after
+                -- they were mapped -- reported on esMX (GitHub #5) for Destello
+                -- invasor and Potenciamiento ogro, which resolved correctly in
+                -- game while still being listed as missing.
+                if not stale and DelveGuideData and DelveGuideData.localeVariants then
+                    for locName in pairs(DelveGuideData.localeVariants) do
+                        if string.find(entry.text, locName, 1, true) then stale = true; break end
+                    end
                 end
             end
             if stale then DelveGuideDB.missingTranslations[key] = nil end
@@ -149,6 +167,13 @@ local function ScanActiveVariants()
     -- Dedupe: Blizzard exposes the same POI on multiple map IDs (e.g. Collegiate
     -- Calamity on 2393 AND 2395). Process each POI once to avoid wasted work
     -- and duplicate rows in the Debug tab.
+    --
+    -- CAUTION when reading /dg chatdump: the mapID recorded against a POI is
+    -- simply the FIRST map in ALL_ZONE_MAP_IDS order that returned it -- NOT
+    -- where the delve actually is. 2437 sits second in that order, so POIs it
+    -- also exposes get stamped 2437 (The Shadow Enclave reads 2437 though it is
+    -- in Eversong 2395; Venomfall Deeps reads 2437 though it is on The Coiled
+    -- Isle 2512). Use DelveGuideData.mapPins for real locations, never the dump.
     local seenPOI = {}
     for _, mapID in ipairs(ALL_ZONE_MAP_IDS) do
         local poiIDs = C_AreaPoiInfo.GetDelvesForMap(mapID)
@@ -220,7 +245,31 @@ local function ScanActiveVariants()
                             if d.variant == variantName then engZoneName = d.name; break end
                         end
                     end
-                    if engZoneName~="" then
+                    -- Nemesis delves (e.g. Torment's Rise) have no rotational
+                    -- variant, so their widget set is 0 and text is empty.
+                    -- Don't treat them as "missing translation".
+                    -- Widget set 0 + no widget text is the locale-INDEPENDENT
+                    -- signature of a Nemesis delve, and the only test that works
+                    -- on non-English clients: NEMESIS_DELVES is keyed by English
+                    -- name, and for these delves engZoneName also stays localized
+                    -- (no widgetSetDelves entry, since their set is 0). On esMX
+                    -- that meant Venomfall Deeps ("Sima del Tosigo", set 0, no
+                    -- widget text) failed both name checks and leaked into the
+                    -- rotational delve list as a 13th delve with "Unknown Variant
+                    -- Text". English clients only escaped this by luck -- delveName
+                    -- happens to already be English there.
+                    local isNemesisDelve = NEMESIS_DELVES[delveName]
+                        or NEMESIS_DELVES[engZoneName]
+                        or (widgetSetID == 0 and #widgetTexts == 0)
+
+                    -- Nemesis delves are NOT rotational, so they must never enter
+                    -- activeDelves: the Delves tab and the compact widget both fall
+                    -- back to iterating it, and anything in there is rendered as a
+                    -- delve of the day. This check used to sit BELOW the insertion,
+                    -- so it only suppressed the missing-translation record and the
+                    -- delve still showed up -- as "New variant" instead of "Unknown
+                    -- Variant Text", which looked fixed but was not.
+                    if engZoneName~="" and not isNemesisDelve then
                         activeDelves[engZoneName]={bountiful=isBountiful,nemesis=hasNemesis}
                         if delveName~=engZoneName then
                             localizedToEnglish[delveName]=engZoneName
@@ -231,14 +280,21 @@ local function ScanActiveVariants()
                         end
                     end
 
-                    -- Nemesis delves (e.g. Torment's Rise) have no rotational
-                    -- variant, so their widget set is 0 and text is empty.
-                    -- Don't treat them as "missing translation".
-                    local isNemesisDelve = NEMESIS_DELVES[delveName] or NEMESIS_DELVES[engZoneName]
 
                     -- If we don't know the translation, quarantine the text safely
                     if (not variantName or variantName == "") and not isNemesisDelve then
-                        local safeText = (widgetTexts and widgetTexts[1]) and widgetTexts[1] or "Unknown Variant Text"
+                        -- Bountiful delves prepend a multi-line coffer blurb, so
+                        -- widgetTexts[1] is that blurb and the variant line is
+                        -- widgetTexts[2]. Blindly taking [1] filed the blurb as the
+                        -- "missing translation", making the report worthless for
+                        -- exactly the delves most worth reporting. Take the last
+                        -- single-line entry -- that is the variant in both layouts.
+                        local safeText
+                        for i = #widgetTexts, 1, -1 do
+                            local t = widgetTexts[i]
+                            if t and t ~= "" and not t:find("\n", 1, true) then safeText = t; break end
+                        end
+                        safeText = safeText or (widgetTexts and widgetTexts[1]) or "Unknown Variant Text"
                         -- Strip WoW color codes from the raw text to make it readable
                         safeText = safeText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|cn[%w_]+:",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
                         variantName = "[Missing Translation] " .. safeText
@@ -376,19 +432,46 @@ local RANK_COLORS={S="|cFF00FF44",A="|cFF66FF44",B="|cFFAAFF44",C="|cFFFFFF44",D
 local RANK_ORDER={S=1,A=2,B=3,C=4,D=5,F=6}
 local function TypeColor(t) return (typeColors[t] or "|cFFFFFFFF")..t.."|r" end
 
+-- UID of the waypoint WE set, so we can clear it before setting the next one.
+local lastWaypointUID = nil
+
 local function SetDelveWaypoint(pin)
+    if not pin or not pin.mapID then return end
+
     if TomTom then
-        TomTom:AddWaypoint(pin.mapID, pin.x, pin.y, {
-            title = pin.name,
+        -- TomTom de-duplicates: AddWaypoint on coordinates that already hold a
+        -- waypoint hands back the existing one WITHOUT re-announcing it or
+        -- re-pointing the arrow. Clicking a delve, clicking others, then coming
+        -- back to the first therefore looked like a dead button -- our chat line
+        -- printed but TomTom stayed silent. Clearing ours first makes every
+        -- click produce a genuinely fresh waypoint. (GitHub #6)
+        if lastWaypointUID and TomTom.RemoveWaypoint then
+            pcall(TomTom.RemoveWaypoint, TomTom, lastWaypointUID)
+        end
+        lastWaypointUID = nil
+        local ok, uid = pcall(TomTom.AddWaypoint, TomTom, pin.mapID, pin.x, pin.y, {
+            title      = pin.name,
             persistent = false,
-            minimap = true,
-            world = true
+            minimap    = true,
+            world      = true,
+            crazy      = true,   -- point the arrow at it, every time
         })
+        if ok then lastWaypointUID = uid end
         print("|cFF00BFFF[DelveGuide]|r TomTom waypoint set: |cFFFFD700"..pin.name.."|r")
     else
         C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(pin.mapID, pin.x, pin.y))
-        print("|cFF00BFFF[DelveGuide]|r Waypoint set: |cFFFFD700"..pin.name.."|r |cFF888888(press M to open map)|r")
+        print("|cFF00BFFF[DelveGuide]|r Waypoint set: |cFFFFD700"..pin.name.."|r")
     end
+
+    -- Actually open the map. Both the widget and the Delves tab have always
+    -- advertised "Click to open map & set waypoint", but nothing here ever
+    -- opened it -- the tooltip was simply wrong for every user. (GitHub #6)
+    pcall(function()
+        if WorldMapFrame then
+            if not WorldMapFrame:IsShown() then ToggleWorldMap() end
+            if WorldMapFrame.SetMapID then WorldMapFrame:SetMapID(pin.mapID) end
+        end
+    end)
 end
 
 local function FindPinByName(name)
@@ -1279,7 +1362,11 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print(string.format("|cFF00BFFF[DelveGuide]|r specIndex=%d  specID=%d  specName=%s", idx, specID or -1, specName or "nil"))
         local rec = DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID]
         if rec then
-            print(string.format("|cFF00BFFF[DelveGuide]|r Rec found: Combat=%s  Utility=%s", rec.combat, rec.utility))
+            -- combat/utility were Season 1 curios and are gone from the table.
+            -- Printing them with %s would also error outright, since string.format
+            -- rejects nil for %s.
+            print(string.format("|cFF00BFFF[DelveGuide]|r Rec found: %s (%s)  Valeera=%s",
+                tostring(rec.spec or "?"), tostring(rec.role or "?"), tostring(rec.companion or "?")))
         else
             print("|cFF00BFFF[DelveGuide]|r No rec entry for specID "..tostring(specID))
         end
@@ -1667,16 +1754,72 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
     elseif event=="SCENARIO_COMPLETED" then
         local scenarioName=C_Scenario.GetInfo()
         if not scenarioName then return end
-        -- In Midnight 12.0, C_Scenario.GetInfo() returns the generic "Delves" for all delve completions.
-        -- Also fall back to matching specific names in case Blizzard changes this later.
+        -- Deciding "was that a delve?" USED to be `scenarioName == "Delves"` plus a
+        -- match against English delve names. C_Scenario.GetInfo() returns a
+        -- LOCALIZED string, so on a non-English client both tests failed and this
+        -- handler returned before reaching the single write to DelveGuideDB.history.
+        -- Confirmed in game on esMX (2026-08-23): the run timer ran, the HUD showed
+        -- the delve and tier correctly, and the completed run was still never logged.
+        -- Non-English players therefore had NO history and could never /dg submit,
+        -- so every ranking shipped to date came from English clients only. Worse,
+        -- the bug hides its own victims: with nothing logged they cannot appear in
+        -- the response data at all.
+        --
+        -- Five tests now, ordered cheapest first. Only the last is language-bound.
         local isDelve=false
-        pcall(function() isDelve=(scenarioName=="Delves") end)
-        if not isDelve and DelveGuideData and DelveGuideData.delves then
-            for _,d in ipairs(DelveGuideData.delves) do
-                local ok,match=pcall(function() return d.name==scenarioName end)
-                if ok and match then isDelve=true; break end
+
+        -- (a) scenarioType (10th return of C_Scenario.GetInfo) == 8. A plain
+        --     number, identical in every language, and it works on a fresh
+        --     install's FIRST delve with nothing learned yet. Observed on esMX
+        --     2026-08-23 inside Gnarldor Isle:
+        --       { "Abismos", 2, 4, 18, false,false,false, 0, 0, 8, "UNKNOWN", nil, 3414 }
+        --     ("Abismos" being exactly why the old English check failed.) Only one
+        --     sample so far, so it is a signal rather than the sole authority --
+        --     the checks below still stand behind it.
+        pcall(function()
+            local sType = select(10, C_Scenario.GetInfo())
+            if sType == 8 then isDelve=true end
+        end)
+
+        -- (b) The zone is a delve we catalogue. localizedToEnglish maps the
+        --     localized zone name back to English, so this works on every locale.
+        pcall(function()
+            local zone=GetRealZoneText() or ""
+            if zone~="" then
+                local eng=(localizedToEnglish and localizedToEnglish[zone]) or zone
+                for _,d in ipairs(DelveGuideData.delves or {}) do
+                    if d.name==eng then isDelve=true; break end
+                end
+            end
+        end)
+
+        -- (c) A run timer was started, i.e. the HUD already identified this as a
+        --     delve on entry. Covers Nemesis and uncatalogued delves too.
+        if not isDelve and DelveGuide.runStartTime then isDelve=true end
+
+        -- (d) The localized scenario name we learned on a previous confirmed delve.
+        if not isDelve and DelveGuideDB and DelveGuideDB.localeScenarioName then
+            pcall(function() isDelve=(scenarioName==DelveGuideDB.localeScenarioName) end)
+        end
+
+        -- (e) English literal / catalogued English delve name (EN clients).
+        if not isDelve then
+            pcall(function() isDelve=(scenarioName=="Delves") end)
+            if not isDelve and DelveGuideData and DelveGuideData.delves then
+                for _,d in ipairs(DelveGuideData.delves) do
+                    local ok,match=pcall(function() return d.name==scenarioName end)
+                    if ok and match then isDelve=true; break end
+                end
             end
         end
+
+        -- Learn this client's word for "Delves" from any confirmed delve, so a
+        -- later run in an uncatalogued zone still logs via (d). Self-healing:
+        -- no translation table, works in locales neither of us can test.
+        if isDelve and DelveGuideDB and scenarioName~="" then
+            DelveGuideDB.localeScenarioName = scenarioName
+        end
+
         if isDelve then
             -- Get the actual delve name from the zone — more specific than the generic "Delves" scenario name
             local runName="Unknown Delve"

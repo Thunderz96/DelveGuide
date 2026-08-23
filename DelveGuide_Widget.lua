@@ -42,6 +42,7 @@ DelveGuide.UpdateCompactWidget = function()
     local bountifulOnly = DelveGuideDB.widgetBountifulOnly
     local entries = {}
 
+    local shownDelve = {}
     if DelveGuideData and DelveGuideData.delves then
         local seen = {}
         for _, d in ipairs(DelveGuideData.delves) do
@@ -50,7 +51,41 @@ DelveGuide.UpdateCompactWidget = function()
                 local isB = type(ds) == "table" and ds.bountiful
                 if (not bountifulOnly) or isB then
                     seen[d.variant] = true
+                    shownDelve[d.name] = true
                     table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                end
+            end
+        end
+    end
+
+    -- Fallback: surface any delve the scan flagged active whose variant we could
+    -- not match. The Delves tab has had this since 1.8.1; the widget never got
+    -- it, so an unrecognised variant made the entire delve invisible here --
+    -- including its Bountiful flag. That is why [B] reported "No bountiful
+    -- delves today" on esMX while the Delves tab listed them correctly: the
+    -- variant had no localeVariants entry, so the delve never entered the loop
+    -- above at all. Affects any client with an uncatalogued variant, not just
+    -- non-English ones. (GitHub #7)
+    do
+        -- rawScanResults is keyed by the LOCALIZED delve name; activeDelves is
+        -- keyed by the English one. Map across so non-EN clients get the real
+        -- variant text instead of a placeholder.
+        local l10n = DelveGuide.localizedToEnglish or {}
+        local variantByDelve = {}
+        for _, r in ipairs(DelveGuide.rawScanResults or {}) do
+            if r.name and type(r.variantName) == "string" then
+                local v = r.variantName:gsub("^%[Missing Translation%] ", "")
+                if v ~= "" and v ~= "(not found)" and v ~= "(nil)" and v ~= "(nemesis)" then
+                    variantByDelve[l10n[r.name] or r.name] = v
+                end
+            end
+        end
+        for name, st in pairs(activeDelves) do
+            if not shownDelve[name] then
+                local isB = type(st) == "table" and st.bountiful
+                if (not bountifulOnly) or isB then
+                    shownDelve[name] = true
+                    table.insert(entries, {variant = variantByDelve[name] or name, ranking = "?", delve = name})
                 end
             end
         end

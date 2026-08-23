@@ -102,7 +102,11 @@ DelveGuideData.delves = {
     { name="The Shadow Enclave",  zone="Quel'Thalas", variant="Infiltrate and Ameliorate",     ranking="?", mountable=false, hasBug=false, isBestRoute=false },
     { name="Twilight Crypts",     zone="Zul'Aman",    variant="Why Did it Have to Be Snakes?", ranking="?", mountable=false, hasBug=false, isBestRoute=false },
     -- Reference IDs -- Coiled Isle uiMapID 2512 / overview 2537 (live, build 69299).
-    -- Ring of Glory: POI 8764, widgetSet 2047.  Gnarldor Isle: POI 8761, widgetSet 2044.
+    -- Ring of Glory: widgetSet 2047.  Gnarldor Isle: widgetSet 2044.
+    -- Do NOT key anything on poiID: it changes with Bountiful state (The Darkway
+    -- was 8439 regular / 8440 bountiful on consecutive days) and differs per map
+    -- (Gnarldor Isle is 8760 on 2512 but 8759 on 2537). widgetSetID is the stable
+    -- identifier and is what widgetSetDelves uses.
     -- Venomfall Deeps (S2 Nemesis): instanceID 3079 (PTR; verify inside) -- /way #2512 51.2 30.3.
     -- Torment's Rise (S1 Nemesis, legacy, still enterable): instanceID 2966 (PTR; verify inside).
     -- ============================================================
@@ -161,12 +165,9 @@ DelveGuideData.delversCall = {
     { delve = "The Gulf of Memory",  questID = 93416 },
     { delve = "The Shadow Enclave",  questID = 93372 },
     { delve = "Twilight Crypts",     questID = 93410 },
-    -- Season 2 (12.1): new delves likely add Delver's Call quests.
-    -- NOT available on PTR build 68629 (2026-07-11) -- likely gated
-    -- until Season 2 opens. RECHECK AT S2 LAUNCH (~Aug 2026) with
-    -- /dg questscan, then uncomment:
-    -- { delve = "The Ring of Glory",  questID = nil },
-    -- { delve = "Gnarldor Isle",      questID = nil },
+    -- The two Season 2 delves (The Ring of Glory, Gnarldor Isle) have NO
+    -- Delver's Call quests -- confirmed in game after Season 2 opened
+    -- (2026-08-23). This list is complete; do not add rows for them.
 }
 
 
@@ -263,7 +264,7 @@ DelveGuideData.mapPins = {
     { name="The Shadow Enclave",  mapID=2395, x=0.4549, y=0.8638 },  -- verified in-game
 
     -- ── Isle of Quel'Danas (2424) ─────────────────────────
-    { name="Parhelion Plaza",     mapID=2424, x=0.4850, y=0.5200 },  -- coords still estimate; verify in-game
+    { name="Parhelion Plaza",     mapID=2424, x=0.4850, y=0.5200 },  -- verified in-game
 
     -- ── Harandar (2413) ───────────────────────────────────
     { name="The Grudge Pit",      mapID=2413, x=0.7051, y=0.6535 },  -- verified in-game
@@ -274,8 +275,8 @@ DelveGuideData.mapPins = {
     { name="Sunkiller Sanctum",   mapID=2405, x=0.5524, y=0.4741 },  -- verified in-game
 
     -- ── The Coiled Isle (2512) -- 12.1 Season 2 ───────────
-    { name="Gnarldor Isle",       mapID=2512, x=0.5787, y=0.7859 },  -- from /dg export at entrance (PTR build 68629); verify precise spot
-    { name="The Ring of Glory",   mapID=2512, x=0.7126, y=0.5654 },  -- from /dg export at entrance (PTR build 68629); verify precise spot
+    { name="Gnarldor Isle",       mapID=2512, x=0.6445, y=0.7771 },  -- verified in-game
+    { name="The Ring of Glory",   mapID=2512, x=0.7126, y=0.5654 },  -- verified in-game
     -- Venomfall Deeps (S2 Nemesis) entrance: The Serpent's Tail, /way #2512 51.2 30.3 --
     -- intentionally not pinned here (Nemesis delves aren't rotational; location lives in the Nemesis tab)
 }
@@ -384,150 +385,67 @@ DelveGuideData.tierRewards = {
     [11] = { coffer=295, vault=305 },  -- inferred
 }
 
--- SECTION 7: SPEC CURIO RECOMMENDATIONS
+-- SECTION 7: SPEC -> VALEERA COMPANION RECOMMENDATIONS
 -- ------------------------------------------------------------
 -- Keys are WoW specIDs returned by GetSpecializationInfo().
--- combat / utility = name string matching DelveGuideData.curios entries.
--- companion = recommended Valeera role for that spec.
--- Only `role`/`companion` (recommended Valeera role) are still used by the UI.
--- The `combat`/`utility`/`notes` fields point at RETIRED Season 1 curios and
--- are no longer displayed -- kept only until per-spec S2 recommendations exist.
--- The live Season 2 curio set is in DelveGuideData.curios; the meta isn't
--- settled, so the Curios tab lists effects and defers on per-spec picks.
+-- companion = recommended Valeera role for that spec. This is the ONLY field
+-- the UI renders (HUD, Curios tab, Companion tab); spec/role are labels.
 --
--- NOTE: Sanctum's Edict is rated F in the curio table as a tanking curio,
--- but community data recommends it for some physical DPS specs as a stat
--- stick. The F rating reflects its tanking value; consider revising.
+-- This table used to also carry per-spec combat/utility curio picks and notes.
+-- All six curios they named -- Mandate of Sacred Death, Porcelain Blade Tip,
+-- Sanctum's Edict, Ebon Crown of Subjugation, Mantle of Stars, Time Lost Edict
+-- -- were retired in 12.1. The curio rework changed the UI to stop rendering
+-- them but left the data in place, so they kept leaking out through the Delves
+-- tab's [Nemesis] tooltip and /dg specinfo. Removed in 1.8.9.
 --
--- NEMESIS WARNING: Mandate of Sacred Death procs require profession nodes.
--- The seasonal Nemesis arena may lack them (Nullaeus's did; verify Venomfall
--- Deeps) — swap Mandate specs to Overflowing Voidspire or Ebon Crown there.
---
+-- Do NOT re-add per-spec picks until the Season 2 meta settles and there is
+-- data behind them -- the S2 curios in DelveGuideData.curios are all ranked "?"
+-- for exactly that reason, and the Curios tab says so on screen.
 -- ============================================================
 DelveGuideData.specCurioRecs = {
     -- ── Tanks ─────────────────────────────────────────────────
-    [250] = { spec="Blood Death Knight",    role="Tank",   companion="Damage Dealer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="High self-sustain but sluggish damage. Sanctum's Edict provides the raw damage boost needed for high-HP elite packs." },
-    [73]  = { spec="Protection Warrior",    role="Tank",   companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Lacks passive self-healing - Healer Valeera mandatory. Ebon Crown scales Shield Block and Ignore Pain values." },
-    [66]  = { spec="Protection Paladin",    role="Tank",   companion="Damage Dealer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Highly competitive damage output. Blade Tip synergizes with Grand Crusader crit resets. Swap Mandate for Nemesis (no nodes)." },
-    [104] = { spec="Guardian Druid",        role="Tank",   companion="Damage Dealer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Recent Maul and Raze buffs reward aggressive stat-scaling. May need Healer Valeera in magic-heavy delves." },
-    [268] = { spec="Brewmaster Monk",       role="Tank",   companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Ebon Crown of Subjugation",
-              notes="Stagger can overwhelm without external healing. Blade Tip crit buffs boost Celestial Fortune procs for self-heals." },
-    [581] = { spec="Vengeance Demon Hunter",role="Tank",   companion="Damage Dealer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="High mobility plus strong Soul Cleave/Spirit Bomb output. Can chain-pull between nodes to abuse Mandate procs. Swap for Nemesis." },
+    [250] = { spec="Blood Death Knight",    role="Tank",   companion="Damage Dealer" },
+    [73]  = { spec="Protection Warrior",    role="Tank",   companion="Healer" },
+    [66]  = { spec="Protection Paladin",    role="Tank",   companion="Damage Dealer" },
+    [104] = { spec="Guardian Druid",        role="Tank",   companion="Damage Dealer" },
+    [268] = { spec="Brewmaster Monk",       role="Tank",   companion="Healer" },
+    [581] = { spec="Vengeance Demon Hunter",role="Tank",   companion="Damage Dealer" },
     -- ── Healers ───────────────────────────────────────────────
-    [65]  = { spec="Holy Paladin",          role="Healer", companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Aligns with Holy damage profile, enabling massive throughput windows during Avenging Wrath. Swap Mandate for Nemesis." },
-    [257] = { spec="Holy Priest",           role="Healer", companion="Healer",
-              combat="Mantle of Stars",           utility="Time Lost Edict",
-              notes="Lacks damage-to-healing conversion. Mantle survives long Smite casting windows; Time Lost Edict aids positioning." },
-    [256] = { spec="Discipline Priest",     role="Healer", companion="Healer",
-              combat="Mantle of Stars",           utility="Ebon Crown of Subjugation",
-              notes="Ebon Crown provides consistent Intellect scaling for both Atonement damage and healing output." },
-    [105] = { spec="Restoration Druid",     role="Healer", companion="Healer",
-              combat="Mantle of Stars",           utility="Time Lost Edict",
-              notes="HoT-and-Rot kiting strategy. Time Lost Edict essential for repositioning while contributing Sunfire/Moonfire damage." },
-    [264] = { spec="Restoration Shaman",    role="Healer", companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Acid Rain and Lava Burst procs consistently trigger Mandate's Holy damage. Swap Mandate for Nemesis." },
-    [270] = { spec="Mistweaver Monk",       role="Healer", companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Mandate needed for damage scaling so bosses die before mana exhausts - a common Tier 11 failure point. Swap for Nemesis." },
-    [1468]= { spec="Preservation Evoker",   role="Healer", companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="High-frequency Living Flame and Azure Strike ticks consistently trigger Mandate procs. Swap Mandate for Nemesis." },
+    [65]  = { spec="Holy Paladin",          role="Healer", companion="Healer" },
+    [257] = { spec="Holy Priest",           role="Healer", companion="Healer" },
+    [256] = { spec="Discipline Priest",     role="Healer", companion="Healer" },
+    [105] = { spec="Restoration Druid",     role="Healer", companion="Healer" },
+    [264] = { spec="Restoration Shaman",    role="Healer", companion="Healer" },
+    [270] = { spec="Mistweaver Monk",       role="Healer", companion="Healer" },
+    [1468]= { spec="Preservation Evoker",   role="Healer", companion="Healer" },
     -- ── DPS ───────────────────────────────────────────────────
-    [70]  = { spec="Retribution Paladin",   role="DPS",    companion="Damage Dealer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="High Holy damage output heavily bolstered by Mandate's max-HP procs. Swap Mandate for Nemesis." },
-    [71]  = { spec="Arms Warrior",          role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Standard physical scaling. Ebon Crown boosts primary stat for raw physical output." },
-    [72]  = { spec="Fury Warrior",          role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Susceptible to burst without Enraged Regeneration. Ebon Crown scales both damage and passive regeneration." },
-    [251] = { spec="Frost Death Knight",    role="DPS",    companion="Damage Dealer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Reliable stat scaling boosts consistent physical and frost damage output." },
-    [252] = { spec="Unholy Death Knight",   role="DPS",    companion="Damage Dealer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Reliable stat scaling for minion and plague damage stability." },
-    [102] = { spec="Balance Druid",         role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Ebon Crown of Subjugation",
-              notes="Crit synergy pairs well with Blade Tip for Starsurge/Starfall scaling." },
-    [103] = { spec="Feral Druid",           role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Physical bleed outputs scale best with the Agility influx from Ebon Crown." },
-    [262] = { spec="Elemental Shaman",      role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Extreme crit-based kit synergy. Blade Tip scales exponentially with gear. Swap Mandate for Nemesis." },
-    [263] = { spec="Enhancement Shaman",    role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Physical/magic hybrid benefits from primary stat padding via Ebon Crown." },
-    [258] = { spec="Shadow Priest",         role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Psychic Link makes them elite AoE clearers. High DoT frequency triggers both curios flawlessly. Swap Mandate for Nemesis." },
-    [259] = { spec="Assassination Rogue",   role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Physical scaling reinforces Ebon Crown as the best raw stat amplifier for Bleed damage." },
-    [260] = { spec="Outlaw Rogue",          role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="High APM physical spec relies on flat stat padding for consistency." },
-    [261] = { spec="Subtlety Rogue",        role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Ebon Crown of Subjugation",
-              notes="Stat and crit setup for burst stealth windows." },
-    [253] = { spec="Beast Mastery Hunter",  role="DPS",    companion="Damage Dealer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Pet multi-hit triggers Mandate more frequently than almost any other spec. Swap Mandate for Nemesis." },
-    [254] = { spec="Marksmanship Hunter",   role="DPS",    companion="Damage Dealer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Ranged burst relies on high crit values. Swap Mandate for Nemesis." },
-    [255] = { spec="Survival Hunter",       role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Steady stat increases for pet/melee hybrid consistency." },
-    [265] = { spec="Affliction Warlock",    role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Steady DoT damage scales reliably with constant primary stat buffs." },
-    [266] = { spec="Demonology Warlock",    role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Ebon Crown of Subjugation",
-              notes="Pets hold aggro allowing flexibility. Ebon Crown strongly buffs demon throughput." },
-    [267] = { spec="Destruction Warlock",   role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Ebon Crown of Subjugation",
-              notes="Crit scaling drastically increases Chaos Bolt burst output." },
-    [62]  = { spec="Arcane Mage",           role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Primary stat scaling from Ebon Crown deletes priority targets during Touch of the Magi." },
-    [63]  = { spec="Fire Mage",             role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Total reliance on crit synergies makes Blade Tip optimal. Swap Mandate for Nemesis." },
-    [64]  = { spec="Frost Mage",            role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Shattering procs with Valeera holding aggro. Swap to Mantle of Stars if kiting is impossible (e.g., Shadow Enclave). Swap Mandate for Nemesis." },
-    [269] = { spec="Windwalker Monk",       role="DPS",    companion="Healer",
-              combat="Sanctum's Edict",          utility="Ebon Crown of Subjugation",
-              notes="Raw stats over random procs keeps alternating attacks fluid." },
-    [577] = { spec="Havoc Demon Hunter",    role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="High baseline crit synergies make Blade Tip outstanding. Swap Mandate for Nemesis." },
-    [1480]= { spec="Devourer Demon Hunter", role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Mandate of Sacred Death",
-              notes="Apex Rank 1 ensures Collapsing Star always crits, making Blade Tip mandatory. Swap Mandate for Nemesis." },
-    [1467]= { spec="Devastation Evoker",    role="DPS",    companion="Healer",
-              combat="Porcelain Blade Tip",       utility="Ebon Crown of Subjugation",
-              notes="Glass cannon setup. Crit amplifier scales immensely with Eternity Surge and Deep Breath." },
-    [1473]= { spec="Augmentation Evoker",   role="DPS",    companion="Healer",
-              combat="Mantle of Stars",           utility="Ebon Crown of Subjugation",
-              notes="Dependent on keeping self and Valeera alive. Mantle prevents one-shots; Ebon Crown boosts supportive damage." },
+    [70]  = { spec="Retribution Paladin",   role="DPS",    companion="Damage Dealer" },
+    [71]  = { spec="Arms Warrior",          role="DPS",    companion="Healer" },
+    [72]  = { spec="Fury Warrior",          role="DPS",    companion="Healer" },
+    [251] = { spec="Frost Death Knight",    role="DPS",    companion="Damage Dealer" },
+    [252] = { spec="Unholy Death Knight",   role="DPS",    companion="Damage Dealer" },
+    [102] = { spec="Balance Druid",         role="DPS",    companion="Healer" },
+    [103] = { spec="Feral Druid",           role="DPS",    companion="Healer" },
+    [262] = { spec="Elemental Shaman",      role="DPS",    companion="Healer" },
+    [263] = { spec="Enhancement Shaman",    role="DPS",    companion="Healer" },
+    [258] = { spec="Shadow Priest",         role="DPS",    companion="Healer" },
+    [259] = { spec="Assassination Rogue",   role="DPS",    companion="Healer" },
+    [260] = { spec="Outlaw Rogue",          role="DPS",    companion="Healer" },
+    [261] = { spec="Subtlety Rogue",        role="DPS",    companion="Healer" },
+    [253] = { spec="Beast Mastery Hunter",  role="DPS",    companion="Damage Dealer" },
+    [254] = { spec="Marksmanship Hunter",   role="DPS",    companion="Damage Dealer" },
+    [255] = { spec="Survival Hunter",       role="DPS",    companion="Healer" },
+    [265] = { spec="Affliction Warlock",    role="DPS",    companion="Healer" },
+    [266] = { spec="Demonology Warlock",    role="DPS",    companion="Healer" },
+    [267] = { spec="Destruction Warlock",   role="DPS",    companion="Healer" },
+    [62]  = { spec="Arcane Mage",           role="DPS",    companion="Healer" },
+    [63]  = { spec="Fire Mage",             role="DPS",    companion="Healer" },
+    [64]  = { spec="Frost Mage",            role="DPS",    companion="Healer" },
+    [269] = { spec="Windwalker Monk",       role="DPS",    companion="Healer" },
+    [577] = { spec="Havoc Demon Hunter",    role="DPS",    companion="Healer" },
+    [1480]= { spec="Devourer Demon Hunter", role="DPS",    companion="Healer" },
+    [1467]= { spec="Devastation Evoker",    role="DPS",    companion="Healer" },
+    [1473]= { spec="Augmentation Evoker",   role="DPS",    companion="Healer" },
 }
 
 -- ============================================================
@@ -545,6 +463,17 @@ DelveGuideData.gradeColors = {
 -- SECTION 8: CHANGELOG
 -- ============================================================
 DelveGuideData.changelog = {
+    {
+        version = "1.9.0",
+        date    = "2026-08-23",
+        entries = {
+            "Delve runs are now recorded on non-English clients. Before this they were not being saved at all, so those players had no run history and could not submit times.",
+            "Clicking a delve now opens the map and sets the waypoint.",
+            "Other non-English fixes: the Season 2 Nemesis delve no longer shows up as a regular delve, the [B] bountiful filter works, and variants stop being listed as untranslated once they have been added.",
+            "Voidforge: item levels are colour-coded again, and \"Equipped average\" now matches your character sheet.",
+            "Thanks to Kajunnas for reporting most of this.",
+        }
+    },
     {
         version = "1.8.8",
         date    = "2026-08-22",

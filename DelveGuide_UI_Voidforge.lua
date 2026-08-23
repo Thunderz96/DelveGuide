@@ -9,11 +9,19 @@
 local UI = DelveGuide.UI
 
 -- Color helpers kept local; everything else routes through UI.CreateRow.
+-- Bands are read from DelveGuideData.tierRewards so they rescale with the
+-- season instead of going stale. They were hardcoded at 680/700/720 -- The War
+-- Within numbers -- while Midnight Season 2 runs 266-305, so every item level
+-- on this tab fell through to the white fallback and the colouring was dead.
 local function ColorIlvl(ilvl)
     if not ilvl or ilvl == 0 then return "|cFF888888--|r" end
-    if ilvl >= 720 then return "|cFFFF8000" .. ilvl .. "|r" end -- legendary tier
-    if ilvl >= 700 then return "|cFFA335EE" .. ilvl .. "|r" end -- epic
-    if ilvl >= 680 then return "|cFF0070DD" .. ilvl .. "|r" end -- rare
+    local t    = (DelveGuideData and DelveGuideData.tierRewards) or {}
+    local top  = (t[11] and t[11].vault) or 305   -- best the season pays out
+    local epic = (t[8]  and t[8].vault)  or 302   -- Hero track, Tier 8+
+    local rare = (t[4]  and t[4].vault)  or 289
+    if ilvl >= top  then return "|cFFFF8000" .. ilvl .. "|r" end
+    if ilvl >= epic then return "|cFFA335EE" .. ilvl .. "|r" end
+    if ilvl >= rare then return "|cFF0070DD" .. ilvl .. "|r" end
     return "|cFFFFFFFF" .. ilvl .. "|r"
 end
 
@@ -76,7 +84,22 @@ DelveGuide.RenderVoidforge = function()
                 if not lowest or row.ilvl < lowest then lowest = row.ilvl end
             end
         end
-        local avg = count > 0 and math.floor(total / count + 0.5) or 0
+        -- Use Blizzard's own equipped average rather than averaging the slots we
+        -- can see. They are not the same calculation: for a two-hander Blizzard
+        -- counts the weapon TWICE (once into the empty off-hand) and divides by
+        -- 16, while averaging filled slots divides by 15. On a Marksmanship
+        -- Hunter with a 321 bow that read 300 here against 301.69 on the
+        -- character sheet, which looks like a bug rather than a different metric.
+        local avg = 0
+        pcall(function()
+            local _, equipped = GetAverageItemLevel()
+            if type(equipped) == "number" and equipped > 0 then
+                avg = math.floor(equipped + 0.5)
+            end
+        end)
+        if avg == 0 then  -- fall back to our own slot average
+            avg = count > 0 and math.floor(total / count + 0.5) or 0
+        end
         lowest = lowest or 0
 
         y = y + UI.CreateRow(cf, y, string.format("|cFFCCCCCC  Equipped average: %s  --  Lowest: %s  --  Gap: |cFFFFD700%d|r |cFF888888ilvls|r",
