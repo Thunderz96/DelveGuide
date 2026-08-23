@@ -26,6 +26,7 @@ Notes:
 import re
 import csv
 import argparse
+import statistics
 from collections import defaultdict
 
 # ratio to the GLOBAL fastest variant -> suggested letter; anything slower = F
@@ -114,9 +115,19 @@ def main():
     ap.add_argument("csv", help="CSV export of the Google Form responses")
     ap.add_argument("--min-runs", type=int, default=3)
     ap.add_argument("--min-tier", type=int, default=0)
-    ap.add_argument("--min-submitters", type=int, default=3,
+    ap.add_argument("--min-submitters", type=int, default=4,
                     help="require this many DIFFERENT players before grading a variant. "
-                         "Run counts alone let one person grinding a variant set its grade.")
+                         "Also caps any one player's influence at 1/N of the grade.")
+    ap.add_argument("--weight", choices=("players", "runs"), default="players",
+                    help="'players' (default) counts each submitter ONCE regardless of how "
+                         "many times they ran it -- no single player can hold more than "
+                         "1/min-submitters of a grade. 'runs' weights by run count, which "
+                         "let one player with 14 runs outvote 14 players with one each.")
+    ap.add_argument("--stat", choices=("median", "mean"), default="median",
+                    help="central-tendency estimator. Clear time has a hard floor but no "
+                         "ceiling (an AFK/wipe/disconnect run can be 45m+), so the sample is "
+                         "right-skewed and a single bad run drags the mean several minutes. "
+                         "The median ignores that. 'mean' reproduces pre-1.8.8 grades.")
     args = ap.parse_args()
 
     # weighted accumulation per (delve, variant)
@@ -124,6 +135,7 @@ def main():
     tot_runs = defaultdict(int)    # sum of count
     tot_tier = defaultdict(float)  # sum of avg_tier * count
     submitters = defaultdict(set)  # distinct submissions contributing to each variant
+    samples = defaultdict(list)    # per-variant (avg_sec, count) from each submitter
 
     unidentified = defaultdict(lambda: {"count": 0, "locales": set()})
 
@@ -167,6 +179,7 @@ def main():
             tot_sec[key] += avg_sec * count
             tot_runs[key] += count
             tot_tier[key] += avg_tier * count
+            samples[key].append((avg_sec, count))
             submitters[key].add(submissions)  # submission index = one player
 
     def report_unidentified():
@@ -193,9 +206,20 @@ def main():
             thin.append((key, runs, len(submitters[key])))
             continue
         delve, variant = key
+        mean_sec = tot_sec[key] / runs
+        # One player, one vote (default). Weighting by run count let a single
+        # player with 14 runs outvote 14 players with one run each -- and their
+        # runs are not 14 independent samples anyway (same character, gear and
+        # route), so they carry far less information than the count implies.
+        if args.weight == "runs":
+            pool = [sec for sec, cnt in samples[key] for _ in range(cnt)]
+        else:
+            pool = [sec for sec, _cnt in samples[key]]
+        median_sec = statistics.median(pool)
         rows.append({
             "delve": delve, "variant": variant, "runs": runs,
-            "avg_sec": tot_sec[key] / runs,
+            "avg_sec": median_sec if args.stat == "median" else mean_sec,
+            "mean_sec": mean_sec, "median_sec": median_sec,
             "avg_tier": round(tot_tier[key] / runs),
             "submitters": len(submitters[key]),
         })
@@ -205,7 +229,8 @@ def main():
         by_delve[r["delve"]].append(r)
 
     print(f"\nParsed {submissions} submissions -> {len(rows)} variants "
-          f"(filters: >={args.min_runs} runs, avg tier >={args.min_tier})")
+          f"(filters: >={args.min_runs} runs, >={args.min_submitters} players, "
+          f"tier >={args.min_tier}, stat={args.stat}, weight={args.weight})")
     if superseded:
         print(f"   ({len(superseded)} earlier resubmission(s) dropped -- each code is a full "
               f"history snapshot, so counting both would double a player's runs)")
@@ -224,8 +249,10 @@ def main():
         print(f"== {delve} ==")
         for r in variants:
             letter = suggest_letter(r["avg_sec"], global_fastest)
+            skew = r["mean_sec"] - r["median_sec"]
+            note = f"   [mean {mmss(r['mean_sec'])}]" if abs(skew) >= 60 else ""
             print(f"  [{letter}]  {mmss(r['avg_sec']):>8}  {r['variant']:<34}"
-                  f"({r['runs']} runs / {r['submitters']} players, ~T{r['avg_tier']})")
+                  f"({r['runs']} runs / {r['submitters']} players, ~T{r['avg_tier']}){note}")
             lua.append(
                 f'    {{ name="{delve}", zone="?", variant="{r["variant"]}", '
                 f'ranking="{letter}", mountable=false, hasBug=false, isBestRoute=false }},'

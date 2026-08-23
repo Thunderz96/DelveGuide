@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.8.8] - 2026-08-22
+
+### Changed
+- **Grades now use the median clear time, not the mean.** Clear time has a hard floor but no ceiling -- an AFK, a wipe chain or a disconnect produces a 45m+ "run" that no amount of good data cancels out. *Academy Under Siege* was the clearest casualty: eight of ten players clear it in 8-15 minutes, but a single submitter at **49m09s x2** pulled the mean to 20m13s and would have shipped it as **F**. **18 of 33 variants changed grade depending purely on the statistic used.**
+  - Dropping outliers instead was tested at 1.5x/2x/2.5x/3x median and by IQR fence, and is *worse*: **20 of 33 variants changed grade depending only on where the cutoff sat**, and trimming at 1.5x promoted *Calamitous* -- the slowest variant in the game -- to **S**. It also cannot work in principle, since `/dg submit` transmits each player's own average, so trimming never sees the bad run inside someone's 4-run average.
+- **One vote per player, not per run.** Run-weighting let one player with 14 runs outvote 14 players with one run each -- and those 14 runs are not independent samples (same character, gear, route), so they carry far less information than the count implies. Measured before the change: *Invasive Glow* had 15 players and 41 runs, but one player held 14 of them and their average **was** the grade. `--weight runs` restores the old behaviour.
+- **Minimum raised from 3 players to 4.** This caps any single player at 25% of a grade, and removes thin-sample grades: at 3 players *Olds and Ends* was scoring **S** -- the best variant in the game -- on three people's word.
+- **Variants below the floor now read `?` instead of keeping a stale estimate.** A gap invites data; a wrong grade quietly misleads. *Olds and Ends*, *Shadowy Supplies* and *March of the Arcane Brigade* revert to `?`.
+
+### Rankings
+- Refreshed from **66 submissions** (73 responses, 6 resubmissions dropped, 1 blank) covering **30 variants**.
+- vs live v1.8.7: **23 of 44 entries unchanged**, 13 improved, 3 dropped, 2 newly graded (*Game Day* B, *Caustic Crush* F), 3 lost their grade. Ten moves of one grade, five of two.
+- The skew toward improvement is the outlier problem unwinding -- under the mean, slow outliers only ever pushed grades down.
+- The "fastest in the game" reference moved from *Olds and Ends* (3 players) to **The Gravitational Effect** (7 players, 10m52s). Every grade is a ratio to that reference, so it now rests on firmer ground.
+- Contributor credits updated to 36.
+
+### Fixed
+- **Variant matching now prefers the longest match, in both the English and localized paths.** Some localized names contain another as a substring: esMX *"Bombardeo basilisco"* (**Basalisk Blitz**, Shadowguard Point) contains esES *"Bombardeo"* (**Bombing Run**, Parhelion Plaza). Both loops previously took first/last match over `pairs()`, whose order Lua does not define — so the collision resolved to the wrong variant **non-deterministically**, silently logging bad runs that then fed the community rankings. A superstring always has more bytes than its substring, so comparing name length is exact. Reported via [#5](https://github.com/Thunderz96/DelveGuide/issues/5).
+- **10 esMX variant mappings added** (GitHub [#5](https://github.com/Thunderz96/DelveGuide/issues/5), thanks Kajunnas). esMX wording differs from esES for five existing variants (*Destello invasor*, *Potenciamiento ogro*, *Brillo espejado*, *Última defensa*, *Invasión de floraluz*), and five Season 2 variants had no Spanish mapping at all (*Why Did it Have to Be Snakes?*, *Venomous Vapors*, *Basalisk Blitz*, *Minchi's Osseous Adventure*, *Open Night*). Canonical variants with no locale mapping: 14 → 9.
+
+### Added
+- `tools/RANKING.md` -- the full ranking spec. It is the authority; the data-file header is a summary.
+- Aggregator gained `--stat median|mean` and `--weight players|runs` to reproduce any prior method.
+
+### Notes
+- 14 variants remain ungraded. **Gnarldor Isle has none of its three graded** -- that is the biggest gap.
+- This is the last data pass carrying the pre-v1.8.7 tier bug, which discarded 34% of submitted runs as tier 0. Coverage should improve markedly next pass.
+
 ## [1.8.7] - 2026-08-22
 
 ### Fixed

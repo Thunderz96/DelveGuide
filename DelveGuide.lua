@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.8.7"
+local ADDON_VERSION    = "1.8.8"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -181,15 +181,28 @@ local function ScanActiveVariants()
                         if string.find(clean,"Nemesis",1,true) then hasNemesis=true end
                         if not variantName then
                             -- Try English text match first (EN clients)
+                            -- LONGEST match wins, in both loops below. Some variant
+                            -- names contain another as a substring: esMX
+                            -- "Bombardeo basilisco" (Basalisk Blitz, Shadowguard
+                            -- Point) contains "Bombardeo" (Bombing Run, Parhelion
+                            -- Plaza) -- a different variant on a different delve.
+                            -- These loops used first/last-match-wins over pairs(),
+                            -- whose order Lua does not define, so a collision
+                            -- resolved to the wrong variant NON-DETERMINISTICALLY
+                            -- and silently logged bad runs into the rankings.
+                            -- A superstring always has more bytes than its
+                            -- substring, so comparing #name is exact here.
+                            local bestLen = 0
                             for kVariant in pairs(knownVariants) do
-                                if string.find(clean,kVariant,1,true) then variantName=kVariant end
+                                if #kVariant > bestLen and string.find(clean,kVariant,1,true) then
+                                    variantName = kVariant; bestLen = #kVariant
+                                end
                             end
-                            -- Non-EN fallback: Substring match!
+                            -- Non-EN fallback: substring match against localized names.
                             if not variantName and DelveGuideData.localeVariants then
                                 for locName, engName in pairs(DelveGuideData.localeVariants) do
-                                    if string.find(clean, locName, 1, true) then
-                                        variantName = engName
-                                        break
+                                    if #locName > bestLen and string.find(clean, locName, 1, true) then
+                                        variantName = engName; bestLen = #locName
                                     end
                                 end
                             end

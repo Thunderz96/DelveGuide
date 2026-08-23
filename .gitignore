@@ -18,3 +18,4 @@ mockup_dashboard.html
 # any time via tools/aggregate_rankings.py.
 tools/*.csv
 tools/rankings.txt
+tools/__pycache__/
