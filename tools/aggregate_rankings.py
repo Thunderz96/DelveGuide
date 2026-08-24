@@ -18,8 +18,8 @@ Notes:
   * --min-runs drops thinly-sampled variants (default 3 total runs).
   * --min-tier ignores a submitter's variant if their avg tier is below it
     (times balloon at low tiers -- comparing at T8+ is cleaner once data exists).
-  * Suggested S-F letters are GLOBAL -- relative to the fastest variant across
-    ALL delves, matching the addon's "S = fastest, F = slowest" scale. Tweak
+  * Suggested S-F letters are GLOBAL -- relative to the MEDIAN variant across
+    ALL delves (see SUGGEST for why not the fastest). Tweak
     the SUGGEST thresholds to taste; treat them as a starting point, not gospel.
 """
 
@@ -29,8 +29,20 @@ import argparse
 import statistics
 from collections import defaultdict
 
-# ratio to the GLOBAL fastest variant -> suggested letter; anything slower = F
-SUGGEST = [(1.10, "S"), (1.25, "A"), (1.45, "B"), (1.60, "C"), (1.85, "D")]
+# Ratio to the MEDIAN variant -> suggested letter; anything slower = F.
+# S therefore means "clears in roughly 4/5 the time of a typical variant".
+#
+# This used to be a ratio to the single FASTEST variant, which made the whole
+# table hostage to one sample. Measured across two consecutive data pulls
+# (73 -> 84 responses): the fastest variant moved 51s while the median moved 17s,
+# and 15 variants gained a grade purely because the yardstick got longer. Anchoring
+# to the median gives an identical grade distribution with half the churn
+# (18 -> 9 changes between those same two pulls).
+#
+# Absolute bands ("S = under 12 minutes") would be perfectly stable but need
+# retuning every season as gear inflates -- exactly how the Voidforge item-level
+# thresholds ended up dead at 680/700/720. A median anchor rescales itself.
+SUGGEST = [(0.82, "S"), (0.93, "A"), (1.08, "B"), (1.19, "C"), (1.37, "D")]
 
 
 def split_sections(code):
@@ -241,7 +253,8 @@ def main():
             print(f"   ...{frag}")
     print()
 
-    global_fastest = min((r["avg_sec"] for r in rows), default=1)
+    import statistics as _st
+    global_fastest = _st.median(sorted(r["avg_sec"] for r in rows)) if rows else 1
 
     lua = []
     for delve in sorted(by_delve):

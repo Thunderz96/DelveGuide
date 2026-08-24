@@ -464,6 +464,17 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.9.1",
+        date    = "2026-08-24",
+        entries = {
+            "Fixed /dg submit producing a code far too long to paste into the form. The list of unrecognised variants could grow without limit -- one report had a code over 116,000 characters past what the form accepts. The junk clears itself on your next login, and the code is capped from now on.",
+            "/dg submit now reports unrecognised variants even when you have runs to send. It was only including them if you had no runs at all, so in practice they were never getting through.",
+            "Added a Copy Form Link button to the /dg submit window, so you can get the form address out of the game without retyping it.",
+            "The main window and the changelog window now close when you press ESC, like the rest of the game.",
+            "Ten more Spanish variant names recognised, including four that had no Spanish entry at all.",
+        }
+    },
+    {
         version = "1.9.0",
         date    = "2026-08-23",
         entries = {
@@ -1146,6 +1157,21 @@ DelveGuideData.localeVariants = {
     ["Bombardeo basilisco"]              = "Basalisk Blitz",             -- Shadowguard Point
     ["La aventura ósea de Minchi"]       = "Minchi's Osseous Adventure", -- Gnarldor Isle
     ["Noche abierta"]                    = "Open Night",                 -- The Ring of Glory
+
+    -- Español (esMX) batch 2 -- reported by Kajunnas, GitHub issue #5, on v1.9.0.
+    -- Six are esMX wording that differs from esES; four had no Spanish mapping at
+    -- all. "Aniquilación de tótems" and "Especial de esporasaurio" were in the
+    -- same dump but already resolved, so they are not repeated here.
+    ["Asedio a la academia"]             = "Academy Under Siege",         -- Collegiate Calamity (esES: Academia asediada)
+    ["Tecnicatura en líneas ley"]        = "Leyline Technician",          -- The Darkway (esES: Técnico de líneas Ley)
+    ["Loa liberado"]                     = "Loosed Loa",                  -- Twilight Crypts (esES: Loa a la fuga)
+    ["Marcha de la Brigada Arcana"]      = "March of the Arcane Brigade", -- Parhelion Plaza (esES: La marcha de la brigada Arcana)
+    ["No era lo que esperaba"]           = "Not What I Expected",         -- Sunkiller Sanctum (esES: No es lo que esperaba)
+    ["Fauna capturada"]                  = "Capture Wildlife",            -- Shadowguard Point (esES: Fauna cautiva)
+    ["Infiltrar y aliviar"]              = "Infiltrate and Ameliorate",   -- The Shadow Enclave (no prior Spanish mapping)
+    ["Fármaco fúngico"]                  = "Fungal Pharmacon",            -- The Grudge Pit (no prior Spanish mapping)
+    ["Antigüedades varias"]              = "Olds and Ends",               -- Gnarldor Isle (no prior Spanish mapping)
+    ["Día de partido"]                   = "Game Day",                    -- The Ring of Glory (no prior Spanish mapping)
     ["La marcha de la brigada Arcana"]   = "March of the Arcane Brigade", -- Parhelion Plaza
 
     -- Traditional Chinese (zhTW)

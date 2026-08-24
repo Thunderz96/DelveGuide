@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.9.1] - 2026-08-24
+
+### Fixed
+- **10 more esMX variant mappings** ([#5](https://github.com/Thunderz96/DelveGuide/issues/5), Kajunnas, dumped on v1.9.0). Six are esMX wording that differs from esES -- *Asedio a la academia* (Academy Under Siege), *Tecnicatura en líneas ley* (Leyline Technician), *Loa liberado* (Loosed Loa), *Marcha de la Brigada Arcana*, *No era lo que esperaba* (Not What I Expected), *Fauna capturada* (Capture Wildlife). Four had no Spanish mapping at all: *Infiltrar y aliviar*, *Fármaco fúngico*, *Antigüedades varias*, *Día de partido*.
+- Canonical variants with no locale mapping: **9 → 5** (Adopt-a-thon, An Elementary Antidote, Caustic Crush, Eggsplosive Growth, Speaking Their Language).
+- Two entries in the same dump (*Aniquilación de tótems*, *Especial de esporasaurio*) already resolved and were not re-added. Collision-checked against all 200 keys before merging: no new substring collisions.
+
+### Fixed
+- **`/dg submit` could produce a code far too large to paste.** `missingTranslations` is keyed by the recorded text, and before v1.9.0 that text was `widgetTexts[1]` -- on a Bountiful delve, the multi-line coffer blurb, which embeds a live countdown ("Tiempo restante: 9 h 17 min") and a shard count. Both change constantly, so **every scan minted a new key** and the table grew without bound. One reporter's code came out **116,701 characters** over what the form accepts. Three fixes: the load-time purge now drops any entry that is multi-line or over 80 characters (a real variant line is neither, so blurb junk could never match a variant name and be cleared by the existing rules); a hard cap of 40 entries regardless of cause; and the built code is capped at 8000 characters, trimming MISSING entries first since run data is the point of the submission.
+- **The MISSING section was only ever attached when the player had no runs at all.** `BuildSubmissionCode` returned `"DG1;" .. parts` whenever there was run data, silently discarding unidentified variants for every real submitter -- which is why not one of 66 submissions carried a MISSING entry despite the feature shipping in 1.8.4. Now always attached, within the length budget.
+  - These two compound: a non-English player had no runs (the v1.9.0 bug), so their code was the `DG1;|MISSING;` branch -- i.e. pure accumulated blurb garbage and nothing else.
+
+### Added
+- **ESC now closes the main window and the changelog window.** `UISpecialFrames` had never been wired up, so neither responded to ESC -- a convention essentially every WoW addon follows. Requested by a submitter. Both frames already carried global names, which is what `UISpecialFrames` needs.
+- **Copy Form Link button** on the `/dg submit` window. The URL was plain dialog text with no way to get it out of the game short of retyping it. Requested by a submitter.
+- `tools/screen_handles.py` -- screens contributor handles before they ship. They are free text from a public form written verbatim into a Lua string literal, so the risk is not only taste: a `"` or `\` breaks the file for every user, and `|cFFFF0000` lets a submitter colour or hide text on the Settings tab. Flags Lua-breaking characters, WoW markup, control/invisible characters, URLs, over-long handles, impersonation (Blizzard/GM/author/addon) and profanity/slurs, matched against a leetspeak- and spacing-normalised form so `ButtH0le` and `B U T T H O L E` both trip. It flags rather than decides. All 36 shipping handles screened clean.
+
+### Changed (tooling only -- no shipped grades yet)
+- **Grades now anchor to the median variant, not the fastest.** A ratio to the single fastest variant made the whole table hostage to one sample. Across two consecutive pulls (73 → 84 responses) the fastest moved **51s** while the median moved **17s**, and 15 variants gained a grade purely because the yardstick got longer. Re-anchoring gives an **identical grade distribution** (S:4 A:6 B:12 C:8 D:2 F:1 either way) with **half the churn** -- 18 → 9 changes across those same two pulls. Bands recalibrated to 0.82/0.93/1.08/1.19/1.37× the median. Aggregator-only; the rankings refresh itself is deliberately held back so it lands once, against a dataset that includes the non-English players v1.9.0 unblocked.
+
+### Confirmed
+- **v1.9.0's run-logging fix verified on esMX by the reporter** -- history now saves correctly on non-English clients.
+
 ## [1.9.0] - 2026-08-23
 
 All four reported from the esMX client by Kajunnas ([#5](https://github.com/Thunderz96/DelveGuide/issues/5), [#6](https://github.com/Thunderz96/DelveGuide/issues/6), [#7](https://github.com/Thunderz96/DelveGuide/issues/7)). Three of the four are English-only logic that was never extended to the localized path.

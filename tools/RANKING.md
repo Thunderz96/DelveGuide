@@ -28,6 +28,21 @@ Submitting again resends everything.
 **3. The player pastes it into the Google Form.** Handle is optional and only
 used for the contributor credits on the Settings tab.
 
+> **Screen handles before shipping them.** They are free text typed by strangers
+> and get written verbatim into a Lua string literal that goes out to every user.
+> A double quote or backslash breaks the file for everyone; `|cFFFF0000` lets a
+> submitter colour or hide text on the Settings tab; and profanity, slurs,
+> impersonation or advertising would ship under Thunderz's name.
+>
+> ```bash
+> python tools/screen_handles.py tools/responses.csv --new-only
+> ```
+>
+> It flags, it never decides — exit 1 means read the output. An unflagged handle
+> is not "approved", it just did not trip a rule, so **always eyeball the NEW
+> list**: no word list catches everything, and a determined submitter will pick
+> something no list has.
+
 **4. `aggregate_rankings.py` turns responses into grades.** In order:
 
 | Step | Rule | Why |
@@ -37,10 +52,21 @@ used for the contributor credits on the Settings tab.
 | Run floor | Variant needs **≥3 total runs** (`--min-runs`) | One clear is noise |
 | Player floor | Variant needs **≥4 different submitters** (`--min-submitters`) | Stops one person grading a variant alone, and caps anyone at 1/4 of a grade |
 | Aggregate | **Median** clear time, **one vote per player** (`--stat median --weight players`) | See below |
-| Grade | Ratio to the **global fastest** variant across all delves | S = fastest in the game, F = slowest |
+| Grade | Ratio to the **median** variant across all delves | S = clears in ~4/5 the time of a typical variant |
 
-Grade thresholds live in `SUGGEST` at the top of the script: ≤1.10× the fastest
-is S, ≤1.25× A, ≤1.45× B, ≤1.60× C, ≤1.85× D, slower is F.
+Grade thresholds live in `SUGGEST` at the top of the script: ≤0.82× the median
+variant is S, ≤0.93× A, ≤1.08× B, ≤1.19× C, ≤1.37× D, slower is F.
+
+**Why the median and not the fastest.** Grades were a ratio to the single fastest
+variant until 1.9.2, which made the whole table hostage to one sample. Measured
+across two consecutive pulls (73 → 84 responses) the fastest variant moved **51s**
+while the median moved **17s**, and 15 variants gained a grade purely because the
+yardstick got longer — nothing about them had changed. Re-anchoring gives an
+identical grade distribution (S:4 A:6 B:12 C:8 D:2 F:1 either way) with **half the
+churn: 18 → 9** changes across those same two pulls. Absolute bands ("S = under 12
+minutes") would be perfectly stable but need retuning every season as gear
+inflates — exactly how the Voidforge item-level thresholds ended up dead at
+680/700/720. A median anchor rescales itself.
 
 **5. Paste into `DelveGuideData.delves`.** `[Best]` marks the fastest variant of
 each delve that has **≥7 runs**. Variants below the player floor are written as

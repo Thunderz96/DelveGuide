@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.9.0"
+local ADDON_VERSION    = "1.9.1"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -111,7 +111,37 @@ local function InitSavedVars()
                     end
                 end
             end
+            -- Blurb garbage. Before 1.9.0 the recorder stored widgetTexts[1],
+            -- which on a Bountiful delve is the multi-line coffer blurb, and the
+            -- table is keyed BY that text. The blurb embeds a live countdown
+            -- ("Tiempo restante: 9 h 17 min") and a shard count, so every single
+            -- scan minted a brand-new key and the table grew without limit --
+            -- one reporter's /dg submit code came out 116,701 characters over
+            -- what the form would accept. A real variant line is short and
+            -- single-line, so anything else is junk and can never match a
+            -- variant name to be purged by the rules above.
+            if not stale and entry and entry.text then
+                if #entry.text > 80 or string.find(entry.text, string.char(10), 1, true) then
+                    stale = true
+                end
+            end
             if stale then DelveGuideDB.missingTranslations[key] = nil end
+        end
+
+        -- Hard cap regardless of cause. Unidentified variants are a handful per
+        -- locale; anything beyond this is a bug producing junk, and the cost of
+        -- that junk is a submission code nobody can paste. Keep the newest.
+        local MAX_MISSING = 40
+        local keys = {}
+        for k in pairs(DelveGuideDB.missingTranslations) do table.insert(keys, k) end
+        if #keys > MAX_MISSING then
+            table.sort(keys, function(a, b)
+                local ea, eb = DelveGuideDB.missingTranslations[a], DelveGuideDB.missingTranslations[b]
+                return (ea and ea.firstSeen or "") > (eb and eb.firstSeen or "")
+            end)
+            for i = MAX_MISSING + 1, #keys do
+                DelveGuideDB.missingTranslations[keys[i]] = nil
+            end
         end
     end
     -- lastSeenVersion drives the "what's new" popup (nil = never shown)
@@ -678,6 +708,7 @@ local function ShowChangelogPopup()
             insets = { left=4, right=4, top=4, bottom=4 },
         }
         local f = CreateFrame("Frame", "DelveGuideChangelogFrame", UIParent, "BackdropTemplate")
+        tinsert(UISpecialFrames, "DelveGuideChangelogFrame")   -- ESC closes it
         f:SetSize(440, 460)
         f:SetBackdrop(BACKDROP)
         f:SetBackdropColor(0, 0, 0, 0.95)
@@ -830,6 +861,10 @@ RefreshCurrentTab = function() if currentTabKey then SwitchTab(currentTabKey) en
 
 local function CreateMainWindow()
     local f=CreateFrame("Frame","DelveGuideFrame",UIParent,"BackdropTemplate")
+    -- ESC closes it, like every other WoW window. Requested by a submitter, and
+    -- it had simply never been wired up -- UISpecialFrames needs the frame's
+    -- GLOBAL name, which is why both windows here are named rather than anonymous.
+    tinsert(UISpecialFrames, "DelveGuideFrame")
     
     -- Load saved size or default to WINDOW_W / WINDOW_H
     local startW = DelveGuideDB.windowW or WINDOW_W
@@ -1589,10 +1624,43 @@ DelveGuide.BuildSubmissionCode = function()
 
     -- A player with no timed runs can still contribute discoveries.
     if #parts == 0 and #missing == 0 then return nil end
-    if #parts == 0 then
-        return "DG1;|MISSING;" .. table.concat(missing, ";")
+
+    -- Length budget. The code is pasted into a Google Form field, and a code that
+    -- will not fit is worth nothing -- one reporter's came out 116,701 characters
+    -- over. Run data is the point of the submission, so it is never trimmed;
+    -- MISSING entries are extras and get dropped until the whole thing fits.
+    local MAX_CODE = 8000
+    local body = table.concat(parts, ";")
+    local code = (#parts > 0) and ("DG1;" .. body) or "DG1;"
+
+    -- The MISSING section used to be attached ONLY when the player had no runs at
+    -- all, so every real submitter silently dropped their unidentified variants --
+    -- which is why no submission had ever carried one. Always attach it now.
+    if #missing > 0 then
+        local kept = {}
+        for _, m in ipairs(missing) do
+            local candidate = code .. "|MISSING;" .. table.concat(kept, ";")
+                              .. ((#kept > 0) and ";" or "") .. m
+            if #candidate <= MAX_CODE then
+                table.insert(kept, m)
+            else
+                break
+            end
+        end
+        if #kept > 0 then
+            code = code .. "|MISSING;" .. table.concat(kept, ";")
+        end
     end
-    return "DG1;" .. table.concat(parts, ";")
+
+    -- Runs alone over budget means a genuinely enormous history; better a
+    -- truncated code at a segment boundary than one the form rejects outright.
+    if #code > MAX_CODE then
+        code = code:sub(1, MAX_CODE)
+        local cut = code:match("^.*()[;|]")
+        if cut and cut > 5 then code = code:sub(1, cut - 1) end
+    end
+
+    return code
 end
 
 -- Shared entry point for the submission flow: slash command, the one-time
@@ -1611,6 +1679,11 @@ end
 StaticPopupDialogs["DELVEGUIDE_SUBMIT_EXPORT"] = {
     text = "Copy the code below (it's pre-selected -- Ctrl+C), then paste it into the ranking form:\n\n" .. SUBMIT_URL,
     button1 = CLOSE or "Close",
+    -- The form URL was plain dialog text, so there was no way to get it out of
+    -- the game short of retyping it -- asked for by a submitter. This swaps to a
+    -- popup holding the link in a highlighted edit box.
+    button2 = "Copy Form Link",
+    OnCancel = function() StaticPopup_Show("DELVEGUIDE_SUBMIT_URL") end,
     hasEditBox = true,
     editBoxWidth = 350,
     OnShow = function(self, data)
@@ -1621,6 +1694,26 @@ StaticPopupDialogs["DELVEGUIDE_SUBMIT_EXPORT"] = {
             if eb.SetMaxLetters then eb:SetMaxLetters(0) end
             eb:SetText(data or "")
             eb:SetCursorPosition(0)   -- show the DG1; prefix, not the tail
+            eb:HighlightText()
+            eb:SetFocus()
+        end
+    end,
+    EditBoxOnEscapePressed = function(editBox) editBox:GetParent():Hide() end,
+    EditBoxOnEnterPressed  = function(editBox) editBox:GetParent():Hide() end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs["DELVEGUIDE_SUBMIT_URL"] = {
+    text = "Ranking form link (pre-selected -- Ctrl+C):",
+    button1 = CLOSE or "Close",
+    hasEditBox = true,
+    editBoxWidth = 350,
+    OnShow = function(self)
+        local eb = self.editBox or self.EditBox
+        if eb then
+            if eb.SetMaxLetters then eb:SetMaxLetters(0) end
+            eb:SetText(SUBMIT_URL)
+            eb:SetCursorPosition(0)
             eb:HighlightText()
             eb:SetFocus()
         end
