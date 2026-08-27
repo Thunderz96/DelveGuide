@@ -19,3 +19,4 @@ mockup_dashboard.html
 tools/*.csv
 tools/rankings.txt
 tools/__pycache__/
+tools/_grades.json

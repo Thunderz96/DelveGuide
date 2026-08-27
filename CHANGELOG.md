@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.2] - 2026-08-26
+
+### Rankings
+- Refreshed from **80 submissions** (94 responses, 11 resubmissions dropped) covering **33 variants**, up from 30. **23 grades moved** -- 17 up, 3 down, 3 newly graded.
+- Cumulative across two data pulls since v1.9.0 shipped its rankings, not one week's drift. Decomposed: the anchor change alone accounts for **2** of the 23; data 84 → 94 accounts for 4 under the new anchor (6 under the old).
+- Best-sampled movers are the trustworthy ones: *Ogre Powered* C→B (62 runs / 23 players), *Academy Under Siege* B→A (34r/18p), *Faculty of Fear* D→B (31r/14p). **The Darkway moved three variants up at once**, all well-sampled -- a delve-wide shift rather than noise.
+- Downgrades are all well-sampled: *Mirror Shine* B→C (19r/16p), *Stolen Mana* B→C (10r/9p), *Totem Annihilation* B→C (7r/6p).
+- Newly graded: *March of the Arcane Brigade* (B), *An Elementary Antidote* (D), *Minchi's Osseous Adventure* (F). **Gnarldor Isle has a ranked variant again** -- it had shown 0/3 since the player floor went to 4, which was the flagged cost of that change.
+- **Five sit at or near the 4-player floor** and are the most likely to move next pull: Caustic Crush (6p), Lightbloom Invasion (4p), Dastardly Rotstalk (6p), Traitor's Due (6p), March of the Arcane Brigade (4p).
+- Contributor credits 36 → 45. Two submissions arrived as `/handle Jemhadar` and `/handle jemhadar-Saurfang-EU` -- same person, having typed the field label along with the value; credited once as *Jemhadar*. `screen_handles.py` gained a rule for command- and label-prefixed handles, which it had missed at 16 characters.
+
+### Changed
+- **Grades now anchor to the median variant rather than the fastest** (shipped as tooling in 1.9.1, first applied here). See `tools/RANKING.md`.
+
 ## [1.9.1] - 2026-08-24
 
 ### Fixed

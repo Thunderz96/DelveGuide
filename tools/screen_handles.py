@@ -74,6 +74,14 @@ def screen(name):
         flags.append("URL / ADVERTISING")
     if len(name) > 24:
         flags.append(f"UNUSUALLY LONG ({len(name)} chars)")
+    # Someone typing a command instead of a name. Two submissions arrived as
+    # "/handle Jemhadar" and "/handle jemhadar-Saurfang-EU" -- the intended handle
+    # is obviously "Jemhadar", and shipping the literal string would look broken.
+    # Usually means the form's wording was read as a command prompt.
+    if name.lstrip().startswith("/"):
+        flags.append("LOOKS LIKE A COMMAND -- probably meant just the name after it")
+    if re.match(r"^\s*(handle|name|nick|user|my name is|im|i am)[\s:=-]+", name, re.I):
+        flags.append("PREFIXED WITH A LABEL -- probably meant just the value after it")
 
     flat = normalise(name)
     for w in PROFANITY:
