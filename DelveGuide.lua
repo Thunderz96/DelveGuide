@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.9.2"
+local ADDON_VERSION    = "1.9.3"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -313,29 +313,36 @@ local function ScanActiveVariants()
 
                     -- If we don't know the translation, quarantine the text safely
                     if (not variantName or variantName == "") and not isNemesisDelve then
-                        -- Bountiful delves prepend a multi-line coffer blurb, so
-                        -- widgetTexts[1] is that blurb and the variant line is
-                        -- widgetTexts[2]. Blindly taking [1] filed the blurb as the
-                        -- "missing translation", making the report worthless for
-                        -- exactly the delves most worth reporting. Take the last
-                        -- single-line entry -- that is the variant in both layouts.
+                        -- Find a line that plausibly IS the variant name: single
+                        -- line and short. Bountiful delves prepend a multi-line
+                        -- coffer blurb, so widgetTexts[1] is that blurb and the
+                        -- variant is widgetTexts[2].
                         local safeText
                         for i = #widgetTexts, 1, -1 do
                             local t = widgetTexts[i]
-                            if t and t ~= "" and not t:find("\n", 1, true) then safeText = t; break end
+                            if t and t ~= "" and not t:find(string.char(10), 1, true) and #t <= 120 then
+                                safeText = t; break
+                            end
                         end
-                        safeText = safeText or (widgetTexts and widgetTexts[1]) or "Unknown Variant Text"
+                        local displayText = safeText or "Unknown Variant Text"
                         -- Strip WoW color codes from the raw text to make it readable
-                        safeText = safeText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|cn[%w_]+:",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
-                        variantName = "[Missing Translation] " .. safeText
+                        displayText = displayText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|cn[%w_]+:",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
+                        variantName = "[Missing Translation] " .. displayText
 
                         -- Log to SavedVariables for the Debug tab
-                        if DelveGuideDB and DelveGuideDB.missingTranslations then
+                        -- Record ONLY when a variant-looking line was found. 1.9.1
+                        -- fell back to widgetTexts[1] here, which re-filed the coffer
+                        -- blurb as a "missing translation" -- exactly what the purge
+                        -- exists to delete. The two fought each other: the purge
+                        -- cleared the junk at login and the next scan put it straight
+                        -- back. A blurb is not a missing translation; recording
+                        -- nothing is strictly better than recording noise.
+                        if safeText and DelveGuideDB and DelveGuideDB.missingTranslations then
                             local locale = GetLocale and GetLocale() or "unknown"
-                            local entryKey = locale .. ":" .. safeText
+                            local entryKey = locale .. ":" .. displayText
                             if not DelveGuideDB.missingTranslations[entryKey] then
                                 DelveGuideDB.missingTranslations[entryKey] = {
-                                    text      = safeText,
+                                    text      = displayText,
                                     locale    = locale,
                                     delve     = delveName,
                                     mapID     = mapID,

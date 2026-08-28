@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.9.3] - 2026-08-28
+
+### Fixed
+- **The Bountiful coffer blurb was still being filed as a missing translation.** 1.9.1 added a picker that takes the last single-line widget text, but kept `safeText or widgetTexts[1]` as a fallback -- so when the widget carried *only* the blurb, it fell straight back to it. The purge deleted the junk at login and the next scan put it back; the two fought each other and the table refilled indefinitely. Now a record is written **only** when a variant-looking line (single-line, ≤120 chars) is actually found. A blurb is not a missing translation, and recording nothing beats recording noise.
+
+### Localization
+- **Zero canonical variants are now without a locale mapping** (was 5). 14 deDE mappings added -- the first batch harvested automatically from `/dg submit`'s MISSING section rather than a hand-filed report, which only became possible once 1.9.1 made that section transmit at all.
+- The five that had no mapping in **any** language are all covered: *Adopt-a-thon*, *An Elementary Antidote*, *Caustic Crush*, *Eggsplosive Growth*, *Speaking Their Language*.
+- Collision-checked against all 214 keys: no new substring collisions.
+
+### Rankings
+- Refreshed from **87 submissions** (105 responses, 15 resubmissions dropped) covering **36 variants**, up from 33. **12 grades moved** -- down from 23 last release, which is the median anchor doing its job.
+- Newly graded: *Eggsplosive Growth* (A), *Adopt-a-thon* (B), *Speaking Their Language* (D). **Both Coiled Isle delves are now fully ranked.**
+- Contributor credits 45 → 48. Jemhadar submitted under three spellings (`/handle Jemhadar`, `/handle jemhadar-Saurfang-EU`, `Jemhadar-SaurfangEU`) and is credited once.
+
+### Notes
+- **4 of the 5 thin grades flagged in 1.9.2 moved**, as predicted -- Caustic Crush, Dastardly Rotstalk, Traitor's Due and March of the Arcane Brigade. *Calamitous* also swung B→D. Measured cause is **sample size, not spread**: the swinging variants sit at 7-11 players while stable ones like *Ogre Powered* (26) and *Invasive Glow* (25) hold, and their time ranges are comparable (~20-30 min either way). A higher player floor would not have prevented these -- all had ≥6 players. Worth considering a confidence marker for thinly-sampled grades rather than raising the floor further.
+
 ## [1.9.2] - 2026-08-26
 
 ### Rankings
