@@ -6,6 +6,36 @@ local checklistFrame
 local function RunChecklistScan()
     local results = {}
 
+    -- Scalebound Herald's Flute. Tooltip: "Play the Scalebound Herald's Flute,
+    -- luring the Nemesis to its location. Only usable after activating an
+    -- Abandoned Restoration Stone inside of a Delve. (1 Hour Cooldown)"
+    --
+    -- So it is used in ANY delve to summon the Nemesis to you -- NOT an access item
+    -- for Venomfall Deeps. An earlier cut of this gated the row on targeting a
+    -- Nemesis delve, which was exactly backwards and would have hidden it in every
+    -- place it is actually used.
+    --
+    -- Using it guarantees a Trovehunter's Bounty map if you have not looted one
+    -- this week, so the reminder leans on the trove state the addon already
+    -- tracks: holding a flute with the bounty still unclaimed is the case worth
+    -- interrupting someone for.
+    do
+        local NI = (DelveGuideData and DelveGuideData.nemesisItem) or {}
+        local flutes = (NI.ITEM_ID and C_Item.GetItemCount(NI.ITEM_ID, true)) or 0
+        if flutes > 0 then
+            local label = NI.NAME or "Nemesis flute"
+            local troveState = DelveGuide.GetTroveStatus and DelveGuide.GetTroveStatus() or "none"
+            local bountyPending = (troveState ~= "weeklyDone")
+            table.insert(results, {
+                label = string.format("%s  |cFF00FF44(%d in bags)|r", label, flutes),
+                ok    = true,
+                tip   = bountyPending
+                    and "Use it at the Abandoned Restoration Stone to summon the Nemesis. Guarantees this week's Trovehunter's Bounty map, which you have not claimed yet. 1 hour cooldown."
+                    or  "Use it at the Abandoned Restoration Stone to summon the Nemesis. You already have this week's Bounty, so no map from this one. 1 hour cooldown.",
+            })
+        end
+    end
+
     local keyInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
     local shards = keyInfo and keyInfo.quantity or 0
     local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
@@ -166,18 +196,31 @@ DelveGuide.OnTargetChanged = function()
     if not DelveGuideDB.checklistEnabled then return end
     if DelveGuideDB.checklistDismissed then return end
     
+    local targetName
+    pcall(function() targetName = UnitName("target") end)
+    if not targetName or targetName == "" then return end
+
+    -- Map a localized target name back to English before matching. d.name is
+    -- always English, so comparing it directly meant this never fired on a
+    -- non-English client -- the checklist simply did not exist for those players.
+    local engName = (DelveGuide.localizedToEnglish and DelveGuide.localizedToEnglish[targetName]) or targetName
+
     local matched = false
     if DelveGuideData and DelveGuideData.delves then
         for _, d in ipairs(DelveGuideData.delves) do
-            local ok, result = pcall(function()
-                local targetName = UnitName("target")
-                return targetName and targetName == d.name
-            end)
-            if ok and result then matched = true; break end
+            if d.name == engName then matched = true; break end
         end
     end
-    
-    if matched and DelveGuide.ShowChecklist then 
-        DelveGuide.ShowChecklist(false) 
+    -- Nemesis delves are deliberately absent from DelveGuideData.delves, so the
+    -- checklist never fired when you targeted one -- which is exactly where the
+    -- access-item reminder is wanted.
+    if not matched then
+        for _, n in ipairs((DelveGuideData and DelveGuideData.nemesisDelves) or {}) do
+            if n == engName then matched = true; break end
+        end
+    end
+
+    if matched and DelveGuide.ShowChecklist then
+        DelveGuide.ShowChecklist(false)
     end
 end

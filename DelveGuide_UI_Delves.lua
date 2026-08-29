@@ -98,7 +98,11 @@ DelveGuide.RenderDelves = function()
                    or (troveState == "inBags")     and "|cFFFFFF00In Bags|r"
                    or (troveState == "weeklyDone") and "|cFF44FF44Done this week|r"
                    or "|cFFFF4444None|r"
-    local beaconCount=C_Item.GetItemCount(253342,true) or 0
+    -- ID lives in DelveGuideData.nemesisItem, not here. It was hardcoded to the
+    -- Season 1 Beacon of Hope (253342), so after 12.1 replaced it this row was
+    -- counting an item nobody could obtain and always read "None".
+    local NI = DelveGuideData.nemesisItem or {}
+    local beaconCount = (NI.ITEM_ID and C_Item.GetItemCount(NI.ITEM_ID, true)) or 0
     local beaconText=beaconCount>0 and "|cFF00FF44"..beaconCount.." in Bags|r" or "|cFFFF4444None|r"
     local restoredKeyInfo=C_CurrencyInfo.GetCurrencyInfo(3028)
     local restoredKeyCount=restoredKeyInfo and restoredKeyInfo.quantity or 0
@@ -151,7 +155,8 @@ DelveGuide.RenderDelves = function()
     if rs then
         y=y+UI.CreateRow(cf,y,string.format("|cFF888888Community-timed from |r|cFF00FF88%d|r|cFF888888 player submissions -- add yours with |r|cFFFFFF00/dg submit|r|cFF888888. Credits in Settings.|r", rs.submissions or 0))
     end
-    y=y+UI.CreateRow(cf,y,string.format("|cFF3088FFWeekly Items:|r  Trovehunter's Bounty: %s   |   Beacon of Hope: %s   |   Restored Coffer Key: %s",troveText,beaconText,restoredKeyText))
+    y=y+UI.CreateRow(cf,y,string.format("|cFF3088FFWeekly Items:|r  Trovehunter's Bounty: %s   |   %s: %s   |   Restored Coffer Key: %s",
+        troveText, (DelveGuideData.nemesisItem and DelveGuideData.nemesisItem.NAME) or "Nemesis Item", beaconText, restoredKeyText))
     
     local delveCount,_,_,vaultActs=UI.GetWeeklyVaultData()
     if #vaultActs>0 then

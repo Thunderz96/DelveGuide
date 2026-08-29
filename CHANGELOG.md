@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.1] - 2026-08-29
+
+### Fixed
+- **The Delves tab's Weekly Items row tracked a retired item.** The ID `253342` (Season 1's *Beacon of Hope*) was hardcoded in `DelveGuide_UI_Delves.lua`, so once 12.1 replaced it the row counted something nobody could obtain and read `None` for every player. Now `275910` (*Scalebound Herald's Flute*), and **the ID lives in `DelveGuideData.nemesisItem`** -- the same centralisation the trove IDs got, for the same reason: this is the second time Blizzard has swapped it between seasons.
+- **The pre-entry checklist never appeared on non-English clients.** It matched `UnitName("target")` -- localized -- against English delve names. Now resolves through `localizedToEnglish` first. Same bug family as the run-logging and Nemesis-detection failures fixed in 1.9.0.
+- **Nemesis tab, Season 1 section carried three wrong facts** about Beacon of Hope: it called the item a "Skip" (it summons), placed the vendor at "Delver's HQ" (Silvermoon City), and described a "burn to 50%" effect that appears in no tooltip and has no traceable source. Corrected, and noted as the same item as Season 2's flute one season earlier.
+
+### Added
+- **Flute reminder on the pre-entry checklist.** Requested by a submitter who kept forgetting to use it at the summoning stone. Shows when you are carrying one, and leans on the trove state the addon already tracks -- if this week's Trovehunter's Bounty is unclaimed the tip says so, since that is when using it actually matters.
+  - A first cut gated this on targeting a Nemesis delve. That was backwards: research showed the flute is used in **any** delve to summon the Nemesis *to you*, so gating it there would have hidden the reminder everywhere it is useful.
+- **Nemesis tab: "Summon Him Anywhere" section** with the verbatim tooltip, the 1-hour cooldown, the guaranteed Trovehunter's Bounty map, and all three sources (Mislaid Curiosities, 5,000 Undercoin from Naleidea Rivergleam in Silvermoon City, weekly *A Nightmarish Task* prey quest).
+- `DelveGuideData.nemesisDelves` -- single source of truth for Nemesis delve names, read by both the scanner and the checklist. It was previously a local list in `DelveGuide.lua`, so the checklist had no idea those delves existed and never fired at them.
+
 ## [1.10.0] - 2026-08-29
 
 ### Added

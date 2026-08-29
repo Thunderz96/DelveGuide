@@ -238,6 +238,30 @@ DelveGuideData.zoneNames = {
 --   /run for i=1,40 do local a=C_UnitAuras.GetAuraDataByIndex("player",i); if a and a.name:find("Trove") then print(a.spellId, a.name) end end
 -- while the buff is up.
 -- ============================================================
+-- Nemesis delves. NOT rotational, so they never belong in DelveGuideData.delves.
+-- Single source of truth: DelveGuide.lua and the pre-entry checklist both read
+-- this. It used to be a local list in DelveGuide.lua only, which meant the
+-- checklist had no idea these delves existed.
+DelveGuideData.nemesisDelves = {
+    "Torment's Rise",    -- S1 (Nullaeus), still enterable
+    "Venomfall Deeps",   -- S2 (Azta'rec), The Coiled Isle
+}
+
+-- Nemesis access item, tracked on the Delves tab's Weekly Items row.
+-- Centralised for the same reason the trove IDs are: this ID changed between
+-- seasons and was hardcoded in DelveGuide_UI_Delves.lua, so the row silently
+-- tracked a retired Season 1 item once 12.1 replaced it.
+DelveGuideData.nemesisItem = {
+    ITEM_ID = 275910,   -- "Scalebound Herald's Flute" (Season 2 / 12.1)
+    NAME    = "Herald's Flute",
+    -- Summons the Nemesis into ANY delve after you activate the Abandoned
+    -- Restoration Stone (1h cooldown), and guarantees a Trovehunter's Bounty map
+    -- if you have not looted one that week. Sources: Mislaid Curiosities, 5,000
+    -- Undercoin from Naleidea Rivergleam in Silvermoon City, or the weekly prey
+    -- quest "A Nightmarish Task".
+    -- Season 1 (retired): 253342 "Beacon of Hope" -- functionally identical.
+}
+
 DelveGuideData.trove = {
     ITEM_ID      = 274374,   -- "Trovehunter's Bounty" (Season 2 / 12.1)
     AURA_ID      = 1293799,  -- buff applied while the bounty is active
@@ -474,6 +498,16 @@ DelveGuideData.gradeColors = {
 -- SECTION 8: CHANGELOG
 -- ============================================================
 DelveGuideData.changelog = {
+    {
+        version = "1.10.1",
+        date    = "2026-08-29",
+        entries = {
+            "Fixed the Weekly Items row tracking the wrong item. It was still counting Season 1's Beacon of Hope, so it read None for everyone no matter what you were carrying. It now tracks the Scalebound Herald's Flute.",
+            "The pre-entry checklist reminds you when you are carrying a flute, and tells you whether using it will get you this week's Trovehunter's Bounty map.",
+            "Corrected the Nemesis tab. The flute summons the Nemesis into ANY delve once you have activated the Abandoned Restoration Stone -- you do not need to run Venomfall Deeps at all. Added the tooltip, the cooldown, and all three ways to get one.",
+            "The pre-entry checklist now appears on non-English clients. It was matching your target against English delve names only, so it never opened for those players.",
+        }
+    },
     {
         version = "1.10.0",
         date    = "2026-08-29",

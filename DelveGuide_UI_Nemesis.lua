@@ -28,7 +28,18 @@ DelveGuide.RenderNemesis = function()
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Unlock Requirements|r") + 4
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Tier ?:|r  clear any Tier 7 Delve with 1+ life remaining") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Tier ??:|r clear any Tier 10 Delve with 1+ life remaining") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Tier ??:|r clear any Tier 10 Delve with 1+ life remaining") + 2
+    -- Tooltip verbatim: "Play the Scalebound Herald's Flute, luring the Nemesis to
+    -- its location. Only usable after activating an Abandoned Restoration Stone
+    -- inside of a Delve. (1 Hour Cooldown)" -- i.e. it SUMMONS him into whatever
+    -- delve you are already in. It is not an access item for Venomfall Deeps.
+    y = y + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Summon Him Anywhere|r  |cFF888888(Scalebound Herald's Flute)|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  You do not have to run Venomfall Deeps. The flute lures Azta'rec to you in |cFFFFD700any|r|cFFCCCCCC delve, at the mid-delve respawn point.|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  \"Play the Scalebound Herald's Flute, luring the Nemesis to its location. Only usable after activating an Abandoned Restoration Stone inside of a Delve. (1 Hour Cooldown)\"|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF00FF88  Guarantees a Trovehunter's Bounty map|r |cFFCCCCCCif you have not looted one this week.|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Where to get it: drops from Mislaid Curiosities in delves  -  5,000 Undercoin from Naleidea Rivergleam in Silvermoon City  -  weekly reward from the prey quest \"A Nightmarish Task\".|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  DelveGuide shows how many you are carrying on the Delves tab, and reminds you on the pre-entry checklist.|r") + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Intro Questline|r  |cFF888888(optional -- toy reward)|r") + 4
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Valeera offers a short chain at the Delver's HQ (lvl 90): Slithering Spoils -> Fangs for the Memories. Not needed to fight Azta'rec, but it grants the Corrosive Victory toy once you beat him on any difficulty.|r") + 8
@@ -72,7 +83,7 @@ DelveGuide.RenderNemesis = function()
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Location:|r |cFFCCCCCCTorment's Rise - Voidstorm   |cFF888888/way #2405 61.17 71.37|r") + 2
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Unlock:|r |cFFCCCCCCTier ? = any Tier 7 delve clear / Tier ?? = any Tier 10 clear, with 1+ life remaining|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Skip:|r |cFFCCCCCCBeacon of Hope (5,000 Undercoins, Naleidea Rivergleam at Delver's HQ) - use in any delve past the checkpoint, burn to 50%|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Summon:|r |cFFCCCCCCBeacon of Hope - the same item as Season 2's flute, one season earlier: place it after the Restoration Stone in any delve to lure Nullaeus to you (1 hour cooldown). |cFFFF8844No longer obtainable.|r") + 6
 
     y = y + UI.CreateRow(cf, y, "|cFF00FF88Still obtainable |cFF888888(Season 1 rewards; some may retire under Season 2 -- check before grinding)|r") + 2
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Nullaeus Domaneye (cosmetic helm)  -  Arcanovoid Construct (mount, solo Tier ??)  -  Dominating Victory (toy)  -  \"the Ominous\" title (Tier ??)|r") + 4

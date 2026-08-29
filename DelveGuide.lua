@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.10.0"
+local ADDON_VERSION    = "1.10.1"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -42,15 +42,16 @@ local ZONE_NAMES = DelveGuideData.zoneNames
 
 -- Nemesis delves have no rotational story variant, so their widget set is 0 and
 -- their text is empty. Skip them in variant detection and don't log as missing.
-local NEMESIS_DELVES = {
-    ["Torment's Rise"] = true,
-    ["Venomfall Deeps"] = true,  -- S2 Nemesis (12.1), on The Coiled Isle. It DOES
-                                 -- have a world-map POI (poiID 8779, atlas
-                                 -- delves-regular, widget set 0) -- an earlier note
-                                 -- here claimed otherwise. Matched by the set-0 rule
-                                 -- in the scanner on every locale; this name entry
-                                 -- is now only a belt-and-braces.
-}
+-- Built from DelveGuideData.nemesisDelves so this list exists in exactly one
+-- place. Kept as a lookup table for the hot path in the scanner.
+local NEMESIS_DELVES = {}
+for _, n in ipairs((DelveGuideData and DelveGuideData.nemesisDelves) or {}) do
+    NEMESIS_DELVES[n] = true
+end
+-- Note: Venomfall Deeps DOES have a world-map POI (poiID 8779, atlas
+-- delves-regular, widget set 0) -- an earlier note here claimed otherwise. It is
+-- matched by the set-0 rule in the scanner on every locale, so these name
+-- entries are only a belt-and-braces for English clients.
 
 local function InitSavedVars()
     if not DelveGuideDB then
