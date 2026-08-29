@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.10.2] - 2026-08-29
+
+### Changed
+- **Grade hysteresis: a published grade no longer moves unless the new time clears the band boundary by 30 seconds** (`--hysteresis`, default 30, `0` disables).
+  - The grade distribution is squeezed into roughly nine minutes (12m–21m) with five band edges inside it, so edges land ~1.5 minutes apart while normal data movement is tens of seconds. **21 of 37 variants sit within 30s of an edge.** Grades were flipping because the boundaries slice through a dense cluster.
+  - This is **not** a sample-size problem and no player floor addresses it. *Faculty of Fear* was about to change letter on a **3-second** move with **20 players** behind it. *Calamitous* had taken three different grades in three releases; its last two swings were boundary noise inside 22 seconds.
+  - Measured on this batch: **8 changes → 4**. Held were Faculty of Fear (3s past the line), Eggsplosive Growth (5s), March of the Arcane Brigade (17s), Calamitous (22s). What still moved was clear of the edge — Totem Annihilation by a full minute, Adopt-a-thon by 30s, Caustic Crush by 38s.
+  - Held grades are **printed on every run** with the distance involved, so suppression is auditable rather than silent.
+
+### Rankings
+- Refreshed from **89 submissions** (109 responses, 17 resubmissions dropped) covering **37 variants**, up from 36. **4 grade changes**: *Adopt-a-thon* B→A, *Totem Annihilation* C→B, *Caustic Crush* D→C, and *Infiltrate and Ameliorate* graded for the first time (F).
+- Contributor credits 48 → 49.
+- `rankingStats.runs` and `mostRunRuns` are both all-tier now; they had been mixing an all-tier total with a Tier 8+ per-variant count in the same on-screen block.
+
 ## [1.10.1] - 2026-08-29
 
 ### Fixed

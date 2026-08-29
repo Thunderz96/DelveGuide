@@ -130,6 +130,16 @@ def main():
     ap.add_argument("--min-submitters", type=int, default=4,
                     help="require this many DIFFERENT players before grading a variant. "
                          "Also caps any one player's influence at 1/N of the grade.")
+    ap.add_argument("--hysteresis", type=int, default=30, metavar="SECONDS",
+                    help="do not move a PUBLISHED grade unless the new time clears the band "
+                         "boundary by this many seconds (default 30; 0 disables). The grade "
+                         "distribution is squeezed into ~9 minutes with 5 band edges in it, so "
+                         "edges land ~1.5min apart while normal data movement is tens of "
+                         "seconds -- without this, variants sitting seconds from an edge flip "
+                         "letter almost every refresh regardless of sample size.")
+    ap.add_argument("--published", default="DelveGuide_Data.lua", metavar="LUA",
+                    help="data file read for the currently published grades, which hysteresis "
+                         "is measured against. Ignored if --hysteresis 0.")
     ap.add_argument("--weight", choices=("players", "runs"), default="players",
                     help="'players' (default) counts each submitter ONCE regardless of how "
                          "many times they ran it -- no single player can hold more than "
@@ -256,12 +266,39 @@ def main():
     import statistics as _st
     global_fastest = _st.median(sorted(r["avg_sec"] for r in rows)) if rows else 1
 
-    lua = []
+    # Currently published grades, for hysteresis.
+    published = {}
+    if args.hysteresis > 0:
+        try:
+            with open(args.published, encoding="utf-8") as fh:
+                # `.` excludes newlines without DOTALL, so this stays on one Lua line.
+                for m in re.finditer(r'variant="([^"]+)".*?ranking="([SABCDF])"', fh.read()):
+                    published[m.group(1)] = m.group(2)
+        except Exception:
+            pass
+
+    band_edges = sorted(global_fastest * ratio for ratio, _ in SUGGEST)
+
+    def settle(sec, fresh, variant):
+        """Keep the published letter when the new time has not clearly cleared the
+        boundary. Returns (letter, held_note_or_None)."""
+        old = published.get(variant)
+        if not old or old == fresh:
+            return fresh, None
+        gap = min(abs(sec - e) for e in band_edges)
+        if gap < args.hysteresis:
+            return old, f"held {old} (would be {fresh}, only {int(gap)}s past the line)"
+        return fresh, None
+
+    lua, held_notes = [], []
     for delve in sorted(by_delve):
         variants = sorted(by_delve[delve], key=lambda r: r["avg_sec"])
         print(f"== {delve} ==")
         for r in variants:
             letter = suggest_letter(r["avg_sec"], global_fastest)
+            letter, held = settle(r["avg_sec"], letter, r["variant"])
+            if held:
+                held_notes.append((delve, r["variant"], held))
             skew = r["mean_sec"] - r["median_sec"]
             note = f"   [mean {mmss(r['mean_sec'])}]" if abs(skew) >= 60 else ""
             print(f"  [{letter}]  {mmss(r['avg_sec']):>8}  {r['variant']:<34}"
@@ -271,6 +308,14 @@ def main():
                 f'ranking="{letter}", mountable=false, hasBug=false, isBestRoute=false }},'
                 f'  -- {mmss(r["avg_sec"])}, {r["runs"]} runs'
             )
+        print()
+
+    if held_notes:
+        print(f"== {len(held_notes)} grade(s) HELD by hysteresis (--hysteresis {args.hysteresis}) ==")
+        print("   These sit close enough to a band edge that the change is boundary noise,")
+        print("   not a real shift. Re-run with --hysteresis 0 to see them move.")
+        for d, v, note in sorted(held_notes):
+            print(f"   {d:<22} {v:<32} {note}")
         print()
 
     if thin:
