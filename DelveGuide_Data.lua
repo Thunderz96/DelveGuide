@@ -499,6 +499,13 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.10.3",
+        date    = "2026-08-29",
+        entries = {
+            "Hotfix: changing target in a raid or delve could spam an error. Introduced in the last update -- sorry about that one.",
+        }
+    },
+    {
         version = "1.10.2",
         date    = "2026-08-29",
         entries = {

@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.10.3] - 2026-08-29
+
+### Fixed
+- **Hotfix: changing target in a raid or delve threw `attempt to compare local 'targetName' (a secret string value)`** — 215 times in one report ([#8](https://github.com/Thunderz96/DelveGuide/issues/8)). Introduced in 1.10.1's checklist-matcher rewrite. In Midnight, `UnitName("target")` on protected units (other players, mostly) returns a **secret string** that tainted code cannot compare or table-index without raising. The original code kept every comparison inside a pcall — and `InjectDelveData`'s comment documents exactly this rule — but the rewrite fetched the name inside a pcall and then compared it outside. All target-name work is back inside one bubble; a secret string aborts on first comparison and the checklist simply doesn't fire, which is correct — a protected unit name is never a delve.
+- Audited every other `UnitName` call site: all remaining uses are `UnitName("player")`, which is never protected.
+
 ## [1.10.2] - 2026-08-29
 
 ### Changed

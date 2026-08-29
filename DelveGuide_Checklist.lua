@@ -195,30 +195,35 @@ end
 DelveGuide.OnTargetChanged = function()
     if not DelveGuideDB.checklistEnabled then return end
     if DelveGuideDB.checklistDismissed then return end
-    
-    local targetName
-    pcall(function() targetName = UnitName("target") end)
-    if not targetName or targetName == "" then return end
 
-    -- Map a localized target name back to English before matching. d.name is
-    -- always English, so comparing it directly meant this never fired on a
-    -- non-English client -- the checklist simply did not exist for those players.
-    local engName = (DelveGuide.localizedToEnglish and DelveGuide.localizedToEnglish[targetName]) or targetName
-
+    -- EVERYTHING that touches the target name stays inside one pcall. In
+    -- Midnight, UnitName("target") can return a SECRET STRING (protected unit
+    -- names -- other players in raids, mostly), and tainted code cannot compare
+    -- or table-index one without raising. The 1.10.1 rewrite fetched the name
+    -- inside a pcall but compared it OUTSIDE, so every target change in a raid
+    -- threw "attempt to compare local 'targetName' (a secret string value)" --
+    -- 215 times in one report (GitHub #8). The original code had every
+    -- comparison inside the bubble, and InjectDelveData's comment spells out
+    -- the rule; this restores it. A secret string aborts the pcall on first
+    -- comparison and matched stays false, which is correct: a protected unit
+    -- name is never a delve.
     local matched = false
-    if DelveGuideData and DelveGuideData.delves then
-        for _, d in ipairs(DelveGuideData.delves) do
-            if d.name == engName then matched = true; break end
+    pcall(function()
+        local targetName = UnitName("target")
+        if not targetName or targetName == "" then return end
+
+        -- Localized -> English first, so the checklist fires on non-EN clients.
+        local engName = (DelveGuide.localizedToEnglish
+                         and DelveGuide.localizedToEnglish[targetName]) or targetName
+
+        for _, d in ipairs((DelveGuideData and DelveGuideData.delves) or {}) do
+            if d.name == engName then matched = true; return end
         end
-    end
-    -- Nemesis delves are deliberately absent from DelveGuideData.delves, so the
-    -- checklist never fired when you targeted one -- which is exactly where the
-    -- access-item reminder is wanted.
-    if not matched then
+        -- Nemesis delves are deliberately absent from DelveGuideData.delves.
         for _, n in ipairs((DelveGuideData and DelveGuideData.nemesisDelves) or {}) do
-            if n == engName then matched = true; break end
+            if n == engName then matched = true; return end
         end
-    end
+    end)
 
     if matched and DelveGuide.ShowChecklist then
         DelveGuide.ShowChecklist(false)
