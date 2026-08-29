@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.10.0] - 2026-08-29
+
+### Added
+- **Community block on the History tab**, between *Your Fastest Variants* and the weekly vault summary. Shows contributor count, total timed runs, variants ranked, the most-run and fastest/slowest variants, and the fastest-to-slowest spread -- the last of which is the single number that says what the rankings are worth (currently **10m 17s** a run).
+- **You vs the Community** -- your average against the community median, per variant.
+  - Both sides use the **Tier 8+ filter**. The first cut compared `GetVariantRunStats` (every tier) against a T8+ median, which on real data produced *"Totem Annihilation, 71% faster"* where every run had been Tier 2. It would have told every player they were a speedrunner. Variants with no T8+ runs of yours are omitted rather than compared dishonestly.
+  - Run counts are shown per row, so a one-run comparison reads as one run.
+
+### Changed
+- `DelveGuideData.delves` entries carry `medianSec` and `players` as real fields rather than trailing comments -- that is what makes any client-side comparison possible.
+- `rankingStats` gains `runs`, `mostRun`, `mostRunRuns`, `fastest`, `fastestSec`, `slowest`, `slowestSec`. Regenerate these with the rankings or the tab will contradict the table.
+
+### Known issue (pre-existing, not introduced here)
+- **`NewContentFrame` leaks a frame on every render.** WoW frames cannot be destroyed; `Hide()` + `SetParent(nil)` orphans them for the session, and `CreateRow` allocates a fresh FontString per row. There are 26 re-render call sites, and window resize triggers one on mouse-up -- which is why FPS degrades as you resize repeatedly. This also rules out any live-filtering UI until it is fixed: a filter that re-renders per keystroke leaks a frame and ~70 font strings per character. Fixing it needs frame/font-string pooling in `NewContentFrame`, `CreateRow` and `CreateHeader`.
+
 ## [1.9.3] - 2026-08-28
 
 ### Fixed

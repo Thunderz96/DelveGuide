@@ -19,6 +19,82 @@ DelveGuide.RenderHistory = function()
         y=y+10
     end
 
+    -- ── Community ────────────────────────────────────────────────
+    -- Sits between your own times and the weekly vault summary. Every figure
+    -- comes from the shipped ranking data -- nothing is fetched or computed at
+    -- runtime, so this cannot fail or hang.
+    do
+        local RS = DelveGuideData and DelveGuideData.rankingStats
+        if RS and RS.submissions then
+            local function T(sec) return string.format("%dm %02ds", math.floor(sec/60), sec%60) end
+            y=y+UI.CreateRow(cf,y,"|cFFFFD700Community|r  |cFF888888(from player submissions -- updated "..(RS.updated or "?")..")|r")+4
+            y=y+UI.CreateRow(cf,y,string.format(
+                "  |cFF00FF88%d|r delvers  |cFF888888--|r  |cFF00FF88%d|r timed runs  |cFF888888--|r  |cFF00FF88%d|r variants ranked",
+                #(DelveGuideData.contributors or {}), RS.runs or 0, RS.variants or 0))
+            if RS.mostRun then
+                y=y+UI.CreateRow(cf,y,string.format("  |cFF888888Most-run:|r |cFFCCAAFF%s|r  |cFF888888(%d runs)|r",
+                    RS.mostRun, RS.mostRunRuns or 0))
+            end
+            if RS.fastest and RS.fastestSec then
+                y=y+UI.CreateRow(cf,y,string.format("  |cFF888888Fastest:|r |cFFCCAAFF%s|r |cFF00BFFF%s|r   |cFF888888Slowest:|r |cFFCCAAFF%s|r |cFF00BFFF%s|r",
+                    RS.fastest, T(RS.fastestSec), RS.slowest or "?", T(RS.slowestSec or 0)))
+                local gap = (RS.slowestSec or 0) - RS.fastestSec
+                if gap > 0 then
+                    y=y+UI.CreateRow(cf,y,string.format(
+                        "  |cFF888888Picking well saves about|r |cFFFFD700%s|r |cFF888888a run.|r", T(gap)))
+                end
+            end
+
+            -- Your side must use the SAME filter the community medians do: Tier 8+
+            -- only. vstats averages every tier, so comparing it against a T8+
+            -- median flatters everyone -- on real data it produced "71% faster" on
+            -- variants where every run was Tier 2. Variants with no T8+ runs of
+            -- yours are left out rather than compared dishonestly.
+            local med = {}
+            for _,d in ipairs(DelveGuideData.delves or {}) do
+                if d.medianSec then med[d.variant] = d.medianSec end
+            end
+            local mineT8 = {}
+            for _, run in ipairs(DelveGuideDB.history or {}) do
+                local tn = tonumber(run.tierNum)
+                if run.variant and tn and tn >= 8
+                   and type(run.elapsed) == "number" and run.elapsed > 0 then
+                    local a = mineT8[run.variant]
+                    if not a then a = {sec=0, n=0}; mineT8[run.variant] = a end
+                    a.sec = a.sec + run.elapsed
+                    a.n   = a.n + 1
+                end
+            end
+            local cmp = {}
+            for variant, a in pairs(mineT8) do
+                local m = med[variant]
+                if m and m > 0 and a.n > 0 then
+                    local mine = a.sec / a.n
+                    table.insert(cmp, { variant=variant, mine=mine, theirs=m, runs=a.n,
+                                        pct=(mine - m) / m * 100 })
+                end
+            end
+            if #cmp > 0 then
+                table.sort(cmp, function(a,b) return a.pct < b.pct end)
+                y=y+6
+                y=y+UI.CreateRow(cf,y,"  |cFFFFD700You vs the Community|r  |cFF888888(your Tier 8+ average vs the community median -- same filter both sides)|r")+2
+                for i,c in ipairs(cmp) do
+                    if i<=10 then
+                        local verdict, col
+                        if math.abs(c.pct) < 2 then verdict, col = "even", "|cFF888888"
+                        elseif c.pct < 0 then verdict, col = string.format("%.0f%% faster", -c.pct), "|cFF00FF88"
+                        else verdict, col = string.format("%.0f%% slower", c.pct), "|cFFFF8844" end
+                        y=y+UI.CreateRow(cf,y,string.format(
+                            "    |cFFCCAAFF%-28s|r |cFF00BFFF%8s|r |cFF888888vs|r |cFF888888%8s|r   %s%s|r |cFF666666(%d run%s)|r",
+                            c.variant, T(c.mine), T(c.theirs), col, verdict, c.runs, c.runs==1 and "" or "s"))
+                    end
+                end
+                if #cmp>10 then y=y+UI.CreateRow(cf,y,"|cFF888888    ...and "..(#cmp-10).." more|r") end
+            end
+            y=y+10
+        end
+    end
+
     local clearBtn=CreateFrame("Button",nil,cf,"UIPanelButtonTemplate")
     clearBtn:SetSize(110,22); clearBtn:SetPoint("TOPRIGHT",cf,"TOPRIGHT",-10,-8)
     clearBtn:SetText("Clear History")
