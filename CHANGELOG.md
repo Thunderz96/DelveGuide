@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.11.0] - 2026-09-03
+
+### Localization
+- **First French (frFR) coverage: 12 variant mappings**, taking `localeVariants` from 170 keys to 182. Every one was harvested from the `MISSING` section of `/dg submit` reports rather than a hand-filed bug, which is the self-feeding pipeline working exactly as intended -- the same route that delivered the deDE batch in 1.9.3.
+- **The keys were copied from the reported bytes, never retyped.** Two would have silently failed if they had been:
+  - `L’effet gravitationnel` uses U+2019 RIGHT SINGLE QUOTATION MARK, not an ASCII apostrophe.
+  - `Un piège !` carries a U+00A0 NO-BREAK SPACE before the exclamation mark, per French typography.
+  The scanner does a plain substring match against live widget text, so either substitution would have produced a key that never matches and a variant that stays unrecognised. Verified byte-for-byte against the reports after writing.
+- `Sur un coup de tête` -> *Adopt-a-thon* is assigned **by elimination**: it was reported on Arène de la Gloire (The Ring of Glory), whose other two variants have their own distinct frFR names. Worth a confirmation from a French player.
+- Collision-checked all 182 keys plus the 44 canonical English names: no new substring collisions.
+- The deDE reports in this batch (14 of them) were **already shipped in 1.9.3**. They arrive from players still on older builds, so no action was needed. The same is true of the `cnWHITE_FONT_COLOR:` prefixes in that data: the scanner has stripped the named-colour form since 1.8.x.
+
+### Rankings
+- Refreshed from **99 submissions** (122 responses, 20 resubmissions dropped, 1 partial paste salvaged) covering **39 variants**, up from 37.
+- **5 grade changes.** *Adopt-a-thon* A->S, *Arena Champion* A->B, *Descent of the Haranir* D->F, plus first grades for *Olds and Ends* (S) and *Shadowy Supplies* (D).
+- **7 held by hysteresis**, including *Faculty of Fear* at **0 seconds** past the line -- the clearest illustration yet of why the rule exists.
+- *Adopt-a-thon* replaces *Bombing Run* as the fastest variant (11m 17s), and *Descent of the Haranir* replaces *Minchi's Osseous Adventure* as the slowest (24m 39s).
+- *Open Night* has 5 runs but only 3 players, so it stays withheld under the 4-player floor.
+- **Both new grades sit at the floor** -- Olds and Ends on 5 players, Shadowy Supplies on exactly 4 -- and are the most likely to move next pull.
+- Contributor credits 49 -> 52.
+
+### Fixed
+- **`rankingStats.runs` and `mostRunRuns` were briefly regenerated as Tier 8+ figures** while preparing this release, which would have reintroduced the exact inconsistency 1.10.2 fixed (an all-tier total sitting beside a T8+ per-variant count in the same on-screen block). Both are all-tier again: 2,463 runs, *Ogre Powered* at 172.
+
+### Notes
+- The rankings were applied by a targeted in-place edit rather than by pasting the aggregator's emitted snippet. The emitter blanks `zone`, `mountable`, `hasBug` and `isBestRoute` and drops `medianSec`/`players`, so pasting it would erase hand-curated data (review finding `data-file#1`). Verified after the edit: 44 entries in and 44 out, with zero drift in any curated field.
+- Two feedback reports in this batch were **already fixed** before they were filed. The *Corrosive Bilespear* curio description was corrected in 1.8.4 (2026-08-18, one day after the report), and the HUD-anchors-to-the-bottom bug was fixed in the same release. A player whose position was saved by a pre-1.8.4 build still carries the bad value until they run `/dg resethud`, which is worth remembering when the report recurs.
+
+
 ## [1.10.3] - 2026-08-29
 
 ### Fixed

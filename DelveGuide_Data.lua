@@ -35,45 +35,45 @@ DelveGuideData = {}
 DelveGuideData.delves = {
     -- ── Atal'Aman ─────────────────────────────────────────
     { name="Atal'Aman",             zone="Zul'Aman",    variant="Ritual Interrupted",           ranking="S", mountable=true,  hasBug=false, isBestRoute=true , medianSec=742, players=8 },  -- 12m 22s, 8 players
-    { name="Atal'Aman",             zone="Zul'Aman",    variant="Toadly Unbecoming",            ranking="A", mountable=true,  hasBug=false, isBestRoute=false, medianSec=802, players=24 },  -- 13m 22s, 24 players
-    { name="Atal'Aman",             zone="Zul'Aman",    variant="Totem Annihilation",           ranking="B", mountable=true,  hasBug=false, isBestRoute=false, medianSec=937, players=7 },  -- 15m 37s, 7 players
+    { name="Atal'Aman",             zone="Zul'Aman",    variant="Toadly Unbecoming",            ranking="A", mountable=true,  hasBug=false, isBestRoute=false, medianSec=876, players=28 },  -- 14m 36s, 28 players
+    { name="Atal'Aman",             zone="Zul'Aman",    variant="Totem Annihilation",           ranking="B", mountable=true,  hasBug=false, isBestRoute=false, medianSec=937, players=13 },  -- 15m 37s, 13 players
     -- ── Collegiate Calamity ───────────────────────────────
-    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Academy Under Siege",          ranking="A", mountable=true,  hasBug=false, isBestRoute=true , medianSec=806, players=21 },  -- 13m 26s, 21 players
-    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Invasive Glow",                ranking="A", mountable=true,  hasBug=false, isBestRoute=false, medianSec=806, players=26 },  -- 13m 26s, 26 players
-    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Faculty of Fear",              ranking="B", mountable=true,  hasBug=false, isBestRoute=false, medianSec=855, players=20 },  -- 14m 15s, 20 players
+    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Academy Under Siege",          ranking="A", mountable=true,  hasBug=false, isBestRoute=true , medianSec=799, players=22 },  -- 13m 19s, 22 players
+    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Invasive Glow",                ranking="A", mountable=true,  hasBug=false, isBestRoute=false, medianSec=811, players=29 },  -- 13m 31s, 29 players
+    { name="Collegiate Calamity",   zone="Quel'Thalas", variant="Faculty of Fear",              ranking="B", mountable=true,  hasBug=false, isBestRoute=false, medianSec=855, players=22 },  -- 14m 15s, 22 players
     -- ── Parhelion Plaza ───────────────────────────────────
-    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="Bombing Run",                  ranking="S", mountable=true,  hasBug=false, isBestRoute=true , medianSec=694, players=16 },  -- 11m 34s, 16 players
-    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="Holding the Line",             ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1092, players=18 },  -- 18m 12s, 18 players
-    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="March of the Arcane Brigade",  ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=980, players=8 },  -- 16m 20s, 8 players
+    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="Bombing Run",                  ranking="S", mountable=true,  hasBug=false, isBestRoute=true , medianSec=696, players=17 },  -- 11m 36s, 17 players
+    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="Holding the Line",             ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1086, players=21 },  -- 18m 06s, 21 players
+    { name="Parhelion Plaza",       zone="Quel'Danas",  variant="March of the Arcane Brigade",  ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1014, players=11 },  -- 16m 54s, 11 players
     -- ── Shadowguard Point ─────────────────────────────────
-    { name="Shadowguard Point",     zone="Voidstorm",   variant="Stolen Mana",                  ranking="B", mountable=true,  hasBug=false, isBestRoute=true , medianSec=892, players=10 },  -- 14m 52s, 10 players
+    { name="Shadowguard Point",     zone="Voidstorm",   variant="Stolen Mana",                  ranking="B", mountable=true,  hasBug=false, isBestRoute=true , medianSec=1070, players=12 },  -- 17m 50s, 12 players
     { name="Shadowguard Point",     zone="Voidstorm",   variant="Capture Wildlife",             ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1072, players=11 },  -- 17m 52s, 11 players
-    { name="Shadowguard Point",     zone="Voidstorm",   variant="Calamitous",                   ranking="D", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1077, players=12 },  -- 17m 57s, 12 players
+    { name="Shadowguard Point",     zone="Voidstorm",   variant="Calamitous",                   ranking="D", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1113, players=14 },  -- 18m 33s, 14 players
     -- ── Sunkiller Sanctum ─────────────────────────────────
-    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="The Gravitational Effect",     ranking="S", mountable=false, hasBug=true,  isBestRoute=true , medianSec=706, players=16 },  -- 11m 46s, 16 players
-    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="Not What I Expected",          ranking="S", mountable=false, hasBug=false, isBestRoute=false, medianSec=722, players=10 },  -- 12m 02s, 10 players
-    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="Core of the Problem",          ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=943, players=15 },  -- 15m 43s, 15 players
+    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="The Gravitational Effect",     ranking="S", mountable=false, hasBug=true,  isBestRoute=true , medianSec=748, players=20 },  -- 12m 28s, 20 players
+    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="Not What I Expected",          ranking="S", mountable=false, hasBug=false, isBestRoute=false, medianSec=704, players=11 },  -- 11m 44s, 11 players
+    { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="Core of the Problem",          ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=923, players=16 },  -- 15m 23s, 16 players
     -- ── The Darkway ───────────────────────────────────────
-    { name="The Darkway",           zone="Quel'Thalas", variant="Focusers Under Pressure",      ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=947, players=21 },  -- 15m 47s, 21 players
-    { name="The Darkway",           zone="Quel'Thalas", variant="Ogre Powered",                 ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=900, players=27 },  -- 15m 00s, 27 players
-    { name="The Darkway",           zone="Quel'Thalas", variant="Leyline Technician",           ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=985, players=17 },  -- 16m 25s, 17 players
+    { name="The Darkway",           zone="Quel'Thalas", variant="Focusers Under Pressure",      ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=905, players=27 },  -- 15m 05s, 27 players
+    { name="The Darkway",           zone="Quel'Thalas", variant="Ogre Powered",                 ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=879, players=29 },  -- 14m 39s, 29 players
+    { name="The Darkway",           zone="Quel'Thalas", variant="Leyline Technician",           ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=985, players=21 },  -- 16m 25s, 21 players
     -- ── The Grudge Pit ────────────────────────────────────
-    { name="The Grudge Pit",        zone="Harandar",    variant="Lightbloom Invasion",          ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1072, players=7 },  -- 17m 52s, 7 players
-    { name="The Grudge Pit",        zone="Harandar",    variant="Arena Champion",               ranking="A", mountable=true,  hasBug=false, isBestRoute=true , medianSec=853, players=18 },  -- 14m 13s, 18 players
-    { name="The Grudge Pit",        zone="Harandar",    variant="Dastardly Rotstalk",           ranking="D", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1110, players=7 },  -- 18m 30s, 7 players
+    { name="The Grudge Pit",        zone="Harandar",    variant="Lightbloom Invasion",          ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1080, players=8 },  -- 18m 00s, 8 players
+    { name="The Grudge Pit",        zone="Harandar",    variant="Arena Champion",               ranking="B", mountable=true,  hasBug=false, isBestRoute=true , medianSec=920, players=21 },  -- 15m 20s, 21 players
+    { name="The Grudge Pit",        zone="Harandar",    variant="Dastardly Rotstalk",           ranking="D", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1110, players=8 },  -- 18m 30s, 8 players
     -- ── The Gulf of Memory ────────────────────────────────
-    { name="The Gulf of Memory",    zone="Harandar",    variant="Alnmoth Munchies",             ranking="B", mountable=false, hasBug=false, isBestRoute=true , medianSec=877, players=20 },  -- 14m 37s, 20 players
-    { name="The Gulf of Memory",    zone="Harandar",    variant="Sporasaur Special",            ranking="B", mountable=false, hasBug=true,  isBestRoute=false, medianSec=924, players=23 },  -- 15m 24s, 23 players
-    { name="The Gulf of Memory",    zone="Harandar",    variant="Descent of the Haranir",       ranking="D", mountable=false, hasBug=false, isBestRoute=false, medianSec=1219, players=7 },  -- 20m 19s, 7 players
+    { name="The Gulf of Memory",    zone="Harandar",    variant="Alnmoth Munchies",             ranking="B", mountable=false, hasBug=false, isBestRoute=true , medianSec=858, players=21 },  -- 14m 18s, 21 players
+    { name="The Gulf of Memory",    zone="Harandar",    variant="Sporasaur Special",            ranking="B", mountable=false, hasBug=true,  isBestRoute=false, medianSec=875, players=26 },  -- 14m 35s, 26 players
+    { name="The Gulf of Memory",    zone="Harandar",    variant="Descent of the Haranir",       ranking="F", mountable=false, hasBug=false, isBestRoute=false, medianSec=1479, players=11 },  -- 24m 39s, 11 players
     -- ── The Shadow Enclave ────────────────────────────────
     { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Traitor's Due",                ranking="D", mountable=false, hasBug=false, isBestRoute=false, medianSec=1106, players=7 },  -- 18m 26s, 7 players
-    { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Mirror Shine",                 ranking="C", mountable=false, hasBug=false, isBestRoute=true , medianSec=1071, players=21 },  -- 17m 51s, 21 players
-    { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Shadowy Supplies",             ranking="?", mountable=false, hasBug=true,  isBestRoute=false },
+    { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Mirror Shine",                 ranking="C", mountable=false, hasBug=false, isBestRoute=true , medianSec=1077, players=24 },  -- 17m 57s, 24 players
+    { name="The Shadow Enclave",    zone="Quel'Thalas", variant="Shadowy Supplies",             ranking="D", mountable=false, hasBug=true,  isBestRoute=false, medianSec=1178, players=4 },  -- 19m 38s, 4 players
     -- Note: Torment's Rise (Voidstorm, mapID 2405) is the Nemesis delve for Nullaeus, not a rotational delve.
     -- ── Twilight Crypts ───────────────────────────────────
-    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Trapped!",                    ranking="A", mountable=false, hasBug=true,  isBestRoute=false, medianSec=793, players=10 },  -- 13m 13s, 10 players
+    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Trapped!",                    ranking="A", mountable=false, hasBug=true,  isBestRoute=false, medianSec=796, players=11 },  -- 13m 16s, 11 players
     { name="Twilight Crypts",       zone="Zul'Aman",    variant="Loosed Loa",                  ranking="S", mountable=false, hasBug=true,  isBestRoute=true , medianSec=717, players=12 },  -- 11m 57s, 12 players
-    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Party Crasher",               ranking="A", mountable=false, hasBug=true,  isBestRoute=false, medianSec=839, players=27 },  -- 13m 59s, 27 players
+    { name="Twilight Crypts",       zone="Zul'Aman",    variant="Party Crasher",               ranking="A", mountable=false, hasBug=true,  isBestRoute=false, medianSec=848, players=32 },  -- 14m 08s, 32 players
 
     -- ============================================================
     -- SEASON 2 (12.1 "Curse of Ula'tek")
@@ -86,20 +86,20 @@ DelveGuideData.delves = {
     -- not seen active as of this build).
     -- (Venomfall Deeps is the S2 Nemesis delve -> Nemesis tab, not a row.)
     -- ── The Coiled Isle -- new delves ─────────────────────
-    { name="The Ring of Glory",   zone="The Coiled Isle", variant="Game Day",                      ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=900, players=17 },  -- 15m 00s, 17 players
+    { name="The Ring of Glory",   zone="The Coiled Isle", variant="Game Day",                      ranking="B", mountable=false, hasBug=false, isBestRoute=false, medianSec=892, players=20 },  -- 14m 52s, 20 players
     { name="The Ring of Glory",   zone="The Coiled Isle", variant="Open Night",                    ranking="?", mountable=false, hasBug=false, isBestRoute=false },
-    { name="The Ring of Glory",   zone="The Coiled Isle", variant="Adopt-a-thon",                  ranking="A", mountable=false, hasBug=false, isBestRoute=true , medianSec=788, players=6 },  -- 13m 08s, 6 players
-    { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Speaking Their Language",       ranking="D", mountable=false, hasBug=false, isBestRoute=true , medianSec=1124, players=5 },  -- 18m 44s, 5 players
-    { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Olds and Ends",                 ranking="?", mountable=false, hasBug=false, isBestRoute=false },
-    { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Minchi's Osseous Adventure",    ranking="F", mountable=false, hasBug=false, isBestRoute=false, medianSec=1307, players=11 },  -- 21m 47s, 11 players
+    { name="The Ring of Glory",   zone="The Coiled Isle", variant="Adopt-a-thon",                  ranking="S", mountable=false, hasBug=false, isBestRoute=true , medianSec=677, players=13 },  -- 11m 17s, 13 players
+    { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Speaking Their Language",       ranking="D", mountable=false, hasBug=false, isBestRoute=true , medianSec=1089, players=7 },  -- 18m 09s, 7 players
+    { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Olds and Ends",                 ranking="S", mountable=false, hasBug=false, isBestRoute=false, medianSec=684, players=5 },  -- 11m 24s, 5 players
+    { name="Gnarldor Isle",       zone="The Coiled Isle", variant="Minchi's Osseous Adventure",    ranking="F", mountable=false, hasBug=false, isBestRoute=false, medianSec=1291, players=14 },  -- 21m 31s, 14 players
     -- ── S2 variants on existing delves ────────────────────
     { name="Atal'Aman",           zone="Zul'Aman",    variant="Venomous Vapors",               ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
     { name="Collegiate Calamity", zone="Quel'Thalas", variant="An Elementary Antidote",        ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1001, players=9 },  -- 16m 41s, 9 players
-    { name="Parhelion Plaza",     zone="Quel'Danas",  variant="Caustic Crush",                 ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1061, players=8 },  -- 17m 41s, 8 players
+    { name="Parhelion Plaza",     zone="Quel'Danas",  variant="Caustic Crush",                 ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=1110, players=10 },  -- 18m 30s, 10 players
     { name="Shadowguard Point",   zone="Voidstorm",   variant="Basalisk Blitz",                ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
-    { name="The Darkway",         zone="Quel'Thalas", variant="Eggsplosive Growth",            ranking="A", mountable=false, hasBug=false, isBestRoute=true , medianSec=865, players=9 },  -- 14m 25s, 9 players
+    { name="The Darkway",         zone="Quel'Thalas", variant="Eggsplosive Growth",            ranking="A", mountable=false, hasBug=false, isBestRoute=true , medianSec=865, players=10 },  -- 14m 25s, 10 players
     { name="The Grudge Pit",      zone="Harandar",    variant="Fungal Pharmacon",              ranking="?", mountable=true,  hasBug=false, isBestRoute=false },
-    { name="The Shadow Enclave",  zone="Quel'Thalas", variant="Infiltrate and Ameliorate",     ranking="F", mountable=false, hasBug=false, isBestRoute=false, medianSec=1272, players=4 },  -- 21m 12s, 4 players
+    { name="The Shadow Enclave",  zone="Quel'Thalas", variant="Infiltrate and Ameliorate",     ranking="F", mountable=false, hasBug=false, isBestRoute=false, medianSec=1258, players=7 },  -- 20m 58s, 7 players
     { name="Twilight Crypts",     zone="Zul'Aman",    variant="Why Did it Have to Be Snakes?", ranking="?", mountable=false, hasBug=false, isBestRoute=false },
     -- Reference IDs -- Coiled Isle uiMapID 2512 / overview 2537 (live, build 69299).
     -- Ring of Glory: widgetSet 2047.  Gnarldor Isle: widgetSet 2044.
@@ -122,18 +122,18 @@ DelveGuideData.delves = {
 -- (handles come from the submission form; anonymous entries excluded).
 -- ============================================================
 DelveGuideData.rankingStats = {
-    submissions = 89,   -- total submissions in this data pass
-    variants    = 37,   -- variants with enough Tier 8+ data to rank
-    runs        = 2138,  -- every timed run submitted (all tiers)
-    updated     = "2026-08-29",
+    submissions = 99,   -- total submissions in this data pass
+    variants    = 39,   -- variants with enough Tier 8+ data to rank
+    runs        = 2463,  -- every timed run submitted (all tiers)
+    updated     = "2026-09-03",
     -- Headline figures for the History tab's community block. Regenerated with
     -- the rankings; keep them in step or the tab will contradict the table.
     mostRun     = "Ogre Powered",
-    mostRunRuns = 154,
-    fastest     = "Bombing Run",
-    fastestSec  = 694,
-    slowest     = "Minchi's Osseous Adventure",
-    slowestSec  = 1307,
+    mostRunRuns = 172,
+    fastest     = "Adopt-a-thon",
+    fastestSec  = 677,
+    slowest     = "Descent of the Haranir",
+    slowestSec  = 1479,
 }
 
 DelveGuideData.contributors = {
@@ -145,6 +145,7 @@ DelveGuideData.contributors = {
     "Savïna-Thrall", "Soda", "Sommes", "Stoddard-Sargeras", "Sundee", "That_Eriksson",
     "Thunderz", "Tyrania", "Vaelnyssa", "Veloci", "VoteForPedro", "Waketech", "weedyabyss",
     "Widz", "Zaphon", "Zejex", "Zephyrg",
+    "Scartotem", "Kudah", "oskarr",
 }
 
 
@@ -498,6 +499,14 @@ DelveGuideData.gradeColors = {
 -- SECTION 8: CHANGELOG
 -- ============================================================
 DelveGuideData.changelog = {
+    {
+        version = "1.11.0",
+        date    = "2026-09-03",
+        entries = {
+            "Rankings updated from the latest round of submissions.",
+            "Added French translations for delve variants.",
+        }
+    },
     {
         version = "1.10.3",
         date    = "2026-08-29",
@@ -1113,6 +1122,19 @@ DelveGuideData.widgetSetDelves = {
 --   Need verified text from a koKR/itIT client while those variants are active.
 --   Submit via /dg chatdump when they hit rotation.
 DelveGuideData.localeVariants = {
+    -- French (frFR) -- first French coverage, harvested from /dg submit reports
+    ["Focalisateurs sous pression"] = "Focusers Under Pressure",       -- The Darkway
+    ["Antiquités et fins"]          = "Olds and Ends",                 -- Gnarldor Isle
+    ["Tenir le front"]              = "Holding the Line",              -- Parhelion Plaza
+    ["Luisance de miroir"]          = "Mirror Shine",                  -- The Shadow Enclave
+    ["Mana volé"]                   = "Stolen Mana",                   -- Shadowguard Point
+    ["Descente des Haranir"]        = "Descent of the Haranir",        -- The Gulf of Memory
+    ["Pharmakon fongique"]          = "Fungal Pharmacon",              -- The Grudge Pit
+    ["Un piège !"]                  = "Trapped!",                      -- Twilight Crypts -- note the no-break space before '!'
+    ["Un antidote élémentaire"]     = "An Elementary Antidote",        -- Collegiate Calamity
+    ["Sur un coup de tête"]         = "Adopt-a-thon",                  -- The Ring of Glory -- by elimination: Game Day and Open Night have their own frFR names
+    ["L’effet gravitationnel"]      = "The Gravitational Effect",      -- Sunkiller Sanctum -- note the typographic apostrophe
+    ["Rituel interrompu"]           = "Ritual Interrupted",            -- Atal'Aman
     -- English Typos (Blizzard mistakes)
     ["Captured Widlife"] = "Capture Wildlife",     -- Shadowguard Point typo
     ["Captured Wildlife"] = "Capture Wildlife",    -- Just in case they fix the 'L' but keep 'Captured'
