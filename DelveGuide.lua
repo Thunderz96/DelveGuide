@@ -1344,12 +1344,13 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         -- reputations: "Delves: Season 2" and "The Labyrinth of Kindo'jan" both
         -- award rep in chat yet neither appears in the list even with every
         -- header expanded. GetFactionDataByID answers for them directly, so
-        -- sweep the modern ID range and keep whatever returns a name. Range
-        -- chosen around known Midnight IDs (Amani Tribe 2696, Valeera 2744).
+        -- sweep the modern ID range and keep whatever returns a name. A first
+        -- pass over 2400-2900 returned 130+ factions but neither target (top hit
+        -- 2838), so the new warband reps sit above that -- widened to 2200-3400.
         pcall(function()
             snap.factionSweep = {}
             if C_Reputation and C_Reputation.GetFactionDataByID then
-                for id = 2400, 2900 do
+                for id = 2200, 3400 do
                     local d = C_Reputation.GetFactionDataByID(id)
                     if d and d.name and d.name ~= "" then
                         table.insert(snap.factionSweep, {
