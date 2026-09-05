@@ -1339,6 +1339,17 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             end
         end)
 
+        -- Tier, as the addon currently believes it. Read the stored fields
+        -- rather than calling ApplyDelveTier so the export stays side-effect
+        -- free. Needed to correlate scenarioID against tier: 3580 was seen at
+        -- tier 11 and 3582 at tier 1, and until tier is recorded alongside the
+        -- ID we cannot tell whether scenarioID is per-chamber or per-tier (5.7).
+        pcall(function()
+            snap.tierNum    = DelveGuide.currentDelveTierNum
+            snap.tierManual = DelveGuide.manualDelveTier
+            snap.tierAuto   = DelveGuide.autoDelveTier
+        end)
+
         -- Reputations, id + name + standing. 12.1.5 adds a "The Labyrinth of
         -- Kindo'jan" faction; capturing the whole list means its factionID (and
         -- any future one) is on disk without having to guess or paste it.
