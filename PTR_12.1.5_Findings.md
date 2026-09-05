@@ -270,15 +270,41 @@ matching the advertised nine chambers.
 ⚠️ Node names are therefore **not unique keys**, and they are localized. Key on node ID, and
 curate an ID -> chamber mapping rather than counting names.
 
+### 5.2a Chambers are separate scenarios, and the content is unfinished
+
+Each chamber runs its own scenario. Three observed inside instance 3043:
+
+| scenarioID | name | flags | context |
+|---|---|---|---|
+| 3580 | "Soul King" | 146 | step-1 chamber |
+| 3342 | "Delves" | 18 | the "Choose Your Path" hub |
+| 3345 | **"[PH] Soul Jars"** | 146 | a later chamber |
+
+`[PH]` is Blizzard's own placeholder marker — this content is visibly mid-development, so
+**names and IDs may still move before launch.** Re-verify everything here against a later
+build rather than treating it as final.
+
+Note flags 146 appears in chambers and 18 in the hub, so bit 7 tracks *chamber vs hub*, not
+Labyrinth vs Delve. Consistent with the §1 retraction.
+
+The chamber-entry prompt art is themed rather than per-chamber: "Halazzi's Lair" reuses the
+identical portrait and body text as "The Reliquary" ("ominous chants of dark rituals"),
+while "The Central Chamber" has its own goblin-shredder art. More placeholder reuse.
+
+**Criteria come in two shapes.** The step-1 chamber used a count (`qty=5, total=6,
+qtyStr="5"`); the "[PH] Soul Jars" chamber uses a percentage (`qty=0, total=100,
+qtyStr="0%", cflags=32`). Any HUD progress display must handle both.
+
 ### 5.3 New reputation
 
 12.1.5 adds a faction named **"The Labyrinth of Kindo'jan"** (note the lowercase `j`, as on
 the POI, not the capitalised `Kindo'Jan` used by the zone — see 4.1). Nick wants this
 tracked in the addon.
 
-The factionID is not yet captured. `/dg export` now snapshots the full faction list
-(id, name, reaction, standing, next threshold) so the ID lands on disk rather than being
-guessed. Tracking itself is Stage 3 feature work, not a 12.1.5 compatibility fix.
+The factionID is **still not captured**. The first attempt returned only 9 factions and
+missed it: `C_Reputation.GetNumFactions()` enumerates only rows that are currently
+*visible*, so collapsed headers hide most of the list. `/dg export` now expands every header
+before scanning (which leaves the Reputation pane expanded as a side effect). Tracking itself is Stage 3 feature work, not a 12.1.5 compatibility fix.
 
 ### 5.4 Encounter IDs
 

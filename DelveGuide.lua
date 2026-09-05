@@ -1255,6 +1255,8 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             probe("C_DelvesUI.HasActiveLair",               C_DelvesUI,     "HasActiveLair")
             probe("C_AreaPoiInfo.GetDelvesForMap",          C_AreaPoiInfo,  "GetDelvesForMap")
             probe("C_Reputation.GetFactionDataByIndex",     C_Reputation,   "GetFactionDataByIndex")
+            probe("C_Reputation.GetNumFactions",            C_Reputation,   "GetNumFactions")
+            probe("C_Reputation.ExpandFactionHeader",       C_Reputation,   "ExpandFactionHeader")
             probe("C_TaxiMap.GetAllTaxiNodes",              C_TaxiMap,      "GetAllTaxiNodes")
             snap.api["GetTaxiMapID (global)"] = type(GetTaxiMapID)
             snap.api["NumTaxiNodes (global)"] = type(NumTaxiNodes)
@@ -1340,23 +1342,35 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         -- Reputations, id + name + standing. 12.1.5 adds a "The Labyrinth of
         -- Kindo'jan" faction; capturing the whole list means its factionID (and
         -- any future one) is on disk without having to guess or paste it.
+        -- GetNumFactions only enumerates rows that are currently VISIBLE, so
+        -- collapsed headers hide most of the list -- the first attempt at this
+        -- returned 9 factions and missed the new one entirely. Expand every
+        -- header first. NOTE: this leaves the Reputation pane expanded.
         pcall(function()
-            snap.factions = {}
-            if C_Reputation and C_Reputation.GetNumFactions then
-                if C_Reputation.ExpandAllFactionHeaders then
-                    pcall(C_Reputation.ExpandAllFactionHeaders)
-                end
+            local guard, again = 0, true
+            while again and guard < 200 do
+                again, guard = false, guard + 1
                 for i = 1, (C_Reputation.GetNumFactions() or 0) do
                     local d = C_Reputation.GetFactionDataByIndex(i)
-                    if d and not d.isHeader then
-                        table.insert(snap.factions, {
-                            id = d.factionID, name = d.name, reaction = d.reaction,
-                            standing = d.currentStanding,
-                            nextThreshold = d.nextReactionThreshold,
-                        })
+                    if d and d.isHeader and d.isCollapsed then
+                        C_Reputation.ExpandFactionHeader(i)
+                        again = true
+                        break
                     end
                 end
             end
+            snap.factions = {}
+            for i = 1, (C_Reputation.GetNumFactions() or 0) do
+                local d = C_Reputation.GetFactionDataByIndex(i)
+                if d then
+                    table.insert(snap.factions, {
+                        id = d.factionID, name = d.name, header = d.isHeader or nil,
+                        reaction = d.reaction, standing = d.currentStanding,
+                        nextThreshold = d.nextReactionThreshold,
+                    })
+                end
+            end
+            snap.factionCount = #snap.factions
         end)
 
         -- Taxi network. Labyrinths carry their own in-instance flight map
@@ -1367,6 +1381,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         -- Both the modern and classic APIs are tried; whichever answers, answers.
         pcall(function()
             snap.taxiMapID = GetTaxiMapID and GetTaxiMapID() or nil
+            snap.taxiMapOpen = (snap.taxiMapID ~= nil)
             snap.taxiNodes = {}
             local nodes = C_TaxiMap and C_TaxiMap.GetAllTaxiNodes
                 and C_TaxiMap.GetAllTaxiNodes(snap.taxiMapID)
