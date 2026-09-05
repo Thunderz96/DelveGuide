@@ -110,7 +110,8 @@ regular delve is untested — that single command is the cheapest open item.
 **4.1 Case mismatch in the delve name.** The POI returns `The Labyrinth of Kindo'jan`
 (lowercase j); the zone and instance name return `The Labyrinth of Kindo'Jan` (capital J).
 Any exact string comparison between POI name and zone name fails silently. More evidence
-for ID-based identity.
+for ID-based identity. Observed live: `/dg huddump` reports
+`localizedToEnglish[The Labyrinth of Kindo'Jan] = nil`.
 
 **4.2 Widget set 2316 yields no usable variant text.** Outdoors, Kindo'jan is quarantined
 as `[Missing Translation] Unknown Variant Text`. Nothing was written to
@@ -129,6 +130,36 @@ Code that treats `scenario[1]` as a category will read a proper noun inside a La
 
 **4.4 `numStages` does not track chambers.** It reported 2 while the Labyrinth advertises
 9 chambers. Chamber progress needs its own source — see 5.1, `subzone` is a candidate.
+
+**4.6 BREAKING: scenario criteria moved namespace.** `C_Scenario.GetNumCriteria` and
+`C_Scenario.GetCriteriaInfo` are **removed** in 12.1.5. Criteria now live on
+`C_ScenarioInfo.GetCriteriaInfo`, which returns the same field names
+(`description`, `quantity`, `totalQuantity`, `quantityString`) — only the namespace moved.
+
+This is not Labyrinth-specific; it affects Delves equally, and it is the most shippable
+finding here. Six call sites were affected, all inside `pcall`, so the removal produced
+**no Lua error and no BugSack entry** — the HUD silently stopped showing lives and
+objectives:
+
+| File | Lines | Symptom |
+|---|---|---|
+| `DelveGuide_HUD.lua` | 456, 458 | lives counter falls back to `--` |
+| `DelveGuide_HUD.lua` | 549, 551 | `SCENARIO_CRITERIA_UPDATE` refresh does nothing |
+| `DelveGuide.lua` | 1385, 1388 | `/dg huddump` reports 0 criteria |
+
+Fixed via `DelveGuide.GetCriteriaCount()` / `DelveGuide.GetCriteria(i)`, which prefer the
+new namespace and keep the old as fallback so one build serves 12.1.0 and 12.1.5. The count
+comes from the 3rd return of `C_Scenario.GetStepInfo()`, which survives. Verified in-game
+on 69594 inside Kindo'jan: `count: 1`, `crit[1] desc=[Defeat Hexbound Defenders] qty=5 total=6`.
+
+**Surviving `C_Scenario` functions** (confirmed on 69594): `GetInfo`, `GetStepInfo`,
+`IsInScenario`.
+
+**Chamber progress source.** Criteria give quantified, locale-free progress (5/6), which is
+a better source than the subzone approach in 5.1 — it measures completion rather than
+position and needs no string matching. Chambers are sequentially gated (the door to
+Halazzi's Lair stays shut until the current step completes), so criteria and chamber order
+line up.
 
 **4.5 `mapName` is an unlocalized internal string:** `12_15_Labyrinth_A`. Do not display
 it. The `_A` suffix implies further Labyrinths, which is worth accounting for in the data
