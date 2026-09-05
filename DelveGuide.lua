@@ -1340,6 +1340,27 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             end
         end)
 
+        -- Faction ID sweep. GetNumFactions does not enumerate warband
+        -- reputations: "Delves: Season 2" and "The Labyrinth of Kindo'jan" both
+        -- award rep in chat yet neither appears in the list even with every
+        -- header expanded. GetFactionDataByID answers for them directly, so
+        -- sweep the modern ID range and keep whatever returns a name. Range
+        -- chosen around known Midnight IDs (Amani Tribe 2696, Valeera 2744).
+        pcall(function()
+            snap.factionSweep = {}
+            if C_Reputation and C_Reputation.GetFactionDataByID then
+                for id = 2400, 2900 do
+                    local d = C_Reputation.GetFactionDataByID(id)
+                    if d and d.name and d.name ~= "" then
+                        table.insert(snap.factionSweep, {
+                            id = id, name = d.name, standing = d.currentStanding,
+                            reaction = d.reaction, nextThreshold = d.nextReactionThreshold,
+                        })
+                    end
+                end
+            end
+        end)
+
         -- Major factions (renown). The new Kindo'jan reputation did not appear
         -- in the standard C_Reputation list even with every header expanded, so
         -- it is probably a renown track rather than a classic faction.
