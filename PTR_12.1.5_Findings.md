@@ -407,13 +407,33 @@ Bit 7 (128) is set in chambers and clear in the hub, so it distinguishes chamber
 but **not** Labyrinth from Delve, per the §1 retraction. Bit 1 (2) varies between chambers
 for reasons not yet established.
 
-### 5.10 The new reputation is not a classic faction
+### 5.10 Warband reputations are invisible to GetNumFactions
 
-"The Labyrinth of Kindo'jan" does **not** appear in `C_Reputation` even with every header
-expanded (25 rows captured; under the Midnight header only `Amani Tribe` 2696 and
-`Valeera Sanguinar` 2744). It is therefore probably a **renown/major faction** track, or it
-only becomes visible after earning progress with it. `/dg export` now also captures
-`C_MajorFactions` data.
+Looting inside a Labyrinth awards:
+
+```
+Your Warband's reputation with Delves: Season 2 increased by 100.
+Your Warband's reputation with The Labyrinth of Kindo'jan increased by 80.
+You receive currency: [Corrosive Coin] x100
+```
+
+**Neither faction appears in `C_Reputation.GetNumFactions()`**, even with every header
+expanded (25 rows captured; under Midnight only `Amani Tribe` 2696 and `Valeera Sanguinar`
+2744), and neither is in `C_MajorFactions`.
+
+This is **not specific to the new content** — `Delves: Season 2` is a faction the addon
+already depends on, and it is equally invisible. Any code that enumerates reputations to
+find a Delve faction is looking at an incomplete list.
+
+`C_Reputation.GetFactionDataByID(id)` answers for factions the enumeration omits, so
+`/dg export` now sweeps IDs 2400-2900 and keeps everything that returns a name. Once the
+IDs are known, query them directly and never enumerate.
+
+⚠️ Still unverified: the actual IDs, and whether the sweep range is wide enough.
+
+**New currency: "Corrosive Coin"**, awarded 100 at a time from Labyrinth looting. ID not yet
+captured; the addon makes 13 `C_CurrencyInfo.GetCurrencyInfo` calls, so this likely wants
+adding to the currency model once the ID is known.
 
 ## 6. Open items, cheapest first
 
