@@ -1257,6 +1257,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             probe("C_Reputation.GetFactionDataByIndex",     C_Reputation,   "GetFactionDataByIndex")
             probe("C_Reputation.GetNumFactions",            C_Reputation,   "GetNumFactions")
             probe("C_Reputation.ExpandFactionHeader",       C_Reputation,   "ExpandFactionHeader")
+            probe("C_MajorFactions.GetMajorFactionIDs",     C_MajorFactions,"GetMajorFactionIDs")
             probe("C_TaxiMap.GetAllTaxiNodes",              C_TaxiMap,      "GetAllTaxiNodes")
             snap.api["GetTaxiMapID (global)"] = type(GetTaxiMapID)
             snap.api["NumTaxiNodes (global)"] = type(NumTaxiNodes)
@@ -1336,6 +1337,26 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
                     mapID = r.mapID, poiID = r.poiID, name = r.name,
                     atlas = r.atlasName, set = r.widgetSetID, texts = r.widgetTexts,
                 })
+            end
+        end)
+
+        -- Major factions (renown). The new Kindo'jan reputation did not appear
+        -- in the standard C_Reputation list even with every header expanded, so
+        -- it is probably a renown track rather than a classic faction.
+        pcall(function()
+            snap.majorFactions = {}
+            if C_MajorFactions and C_MajorFactions.GetMajorFactionIDs then
+                for _, id in ipairs(C_MajorFactions.GetMajorFactionIDs() or {}) do
+                    local d = C_MajorFactions.GetMajorFactionData(id)
+                    if d then
+                        table.insert(snap.majorFactions, {
+                            id = id, name = d.name, renown = d.renownLevel,
+                            current = d.renownReputationEarned,
+                            needed = d.renownLevelThreshold,
+                            unlocked = d.isUnlocked,
+                        })
+                    end
+                end
             end
         end)
 
