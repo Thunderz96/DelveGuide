@@ -359,22 +359,61 @@ Verified twice against combat-log GUIDs:
 A locale-free criterion -> NPC mapping, available without the combat log. Useful for
 identifying objectives regardless of client language.
 
-### 5.7 Scenario names are reused across chambers
+### 5.7 RESOLVED: chamber content is randomised per run
 
-The same chamber theme appears at multiple nodes with **different scenarioIDs**:
+Each run rolls different content onto the same chamber nodes. The starting node, Chamber of
+Rites, hosted two entirely different scenarios on consecutive runs:
 
-| scenarioID | name | subzone | boss |
-|---|---|---|---|
-| 3580 | "Soul King" | Chamber of Rites | King of Souls (269822 / encounter 3648) |
-| 3582 | "Soul King" | Central Chamber | King of Souls (269822 / encounter 3648) |
+| Run | Tier | scenarioID | name | objective |
+|---|---|---|---|---|
+| 1 | 11 | 3580 | "Soul King" | Defeat Hexbound Defenders -> King of Souls |
+| 2 | 8 | 3615 | "Labyrinth" | "Collect Stolen Artifacts" |
 
-Same name, same boss creature, same encounterID, different scenarioID.
+Same subzone, different scenario, different objective *type* (boss kill vs collection). A
+third, 3582 "Soul King", appeared at Central Chamber in run 1 — the same content as 3580 at
+a different node.
 
-⚠️ Two readings, not yet separated. Either scenarioID is per-**chamber-node** (favoured: the
-subzones differ), or it moves with **tier** (the tier was 11 for 3580 and 1 for 3582). This
-bears directly on 2.0 plan §5 item 1 and on the plan's core claim that scenarioID is an exact
-`(delve, variant)` key. **Do not treat scenarioID as a stable content key until this is
-resolved** — run the same chamber node twice at two tiers.
+**So scenarioID keys chamber CONTENT, and content is rolled per run.** It is neither
+per-node nor per-tier, which retires both readings offered earlier in this document.
+Progression resets to Chamber of Rites each run — confirmed by observation, and not a
+consequence of abandoning the previous run.
+
+**Consequences for the 2.0 plan.** The plan's §2 treats scenarioID as an exact
+`(delve, variant)` key. For Delves that may still hold. For Labyrinths, scenarioID is closer
+to "which chamber content did this run roll", which is a *per-run* fact, not a stable
+content identity. A Labyrinth run is a randomised sequence, so run-to-run comparison and
+anything ranking-shaped needs a different model than the Delve one.
+
+⚠️ Untested: whether the same content ID reappears across runs (i.e. whether 3580 is drawn
+from a fixed pool that will recur), and whether the pool differs by tier.
+
+### 5.8 The addon cannot detect tier in a Labyrinth
+
+`snap.tierNum`, `tierManual` and `tierAuto` are all **nil** in every Labyrinth snapshot, so
+`DelveGuide.currentDelveTierNum` is never populated. This is the internal cause of the
+`tier = "?"` in the logged history row (§1), and it is consistent with
+`C_DelvesUI.GetActiveDelveTier()` returning zeros (§3). Neither the API nor the tracker
+scrape recognises Labyrinth tiers, even though the objective tracker visibly displays one.
+
+### 5.9 Scenario flags observed so far
+
+| flags | binary | context |
+|---|---|---|
+| 18 | `0_0010010` | "Choose Your Path" hub |
+| 144 | `1_0010000` | chamber (3615, collection objective) |
+| 146 | `1_0010010` | chamber (3580/3582/3345, boss and percentage objectives) |
+
+Bit 7 (128) is set in chambers and clear in the hub, so it distinguishes chamber from hub —
+but **not** Labyrinth from Delve, per the §1 retraction. Bit 1 (2) varies between chambers
+for reasons not yet established.
+
+### 5.10 The new reputation is not a classic faction
+
+"The Labyrinth of Kindo'jan" does **not** appear in `C_Reputation` even with every header
+expanded (25 rows captured; under the Midnight header only `Amani Tribe` 2696 and
+`Valeera Sanguinar` 2744). It is therefore probably a **renown/major faction** track, or it
+only becomes visible after earning progress with it. `/dg export` now also captures
+`C_MajorFactions` data.
 
 ## 6. Open items, cheapest first
 
