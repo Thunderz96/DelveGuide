@@ -327,37 +327,55 @@ So chambers come in at least two kinds:
 Any completion tracking must read criteria; encounter events are a bonus on boss chambers,
 not the primary source.
 
-### 5.5 Confirmed bug: boss kill not credited to the scenario
+### 5.5 Confirmed bug: kills not credited to scenario criteria
 
-Reproduced and fully evidenced on 2026-09-05, instance 3043, scenario 3582 stage 2
-("You Got to Have Soul" / "Defeat the King of Souls", criteria 116103, total 1).
+Reproduced twice on 2026-09-05 in instance 3043, with **two distinct failure modes**.
+
+**Case A — no encounter fired.** Scenario 3582 stage 2, criteria 116103
+("Defeat the King of Souls", total 1).
 
 | Time | Event | Source |
 |---|---|---|
 | 02:51:08 | combat begins with King of Souls (creature 269822) | combat log |
 | 02:51:21.775 | `UNIT_DIED` King of Souls, health `0/285089` | combat log |
-| 02:53:30 | criterion still `qty=0, total=1, completed=false` | export #15 |
+| 02:53:30 | criterion still `qty=0, total=1` | export #15 |
 
-**The boss died and the criterion never incremented** — still 0/1 more than two minutes
-later, unchanged across exports #14 (02:50:44) and #15 (02:53:30). No player deaths occurred,
-so this is not a wipe-and-reset.
+No `ENCOUNTER_START`/`END` for this kill at all — the only pair that session was an earlier
+02:32 kill of the same boss.
 
-`ENCOUNTER_START`/`ENCOUNTER_END` did **not** fire for this kill. The only encounter pair
-all session was the earlier 02:32 kill of the same boss. So the encounter framework failed
-to engage on the second chamber, which is the likely root cause rather than a separate
-symptom. Consistent with the placeholder state in 5.2a.
+**Case B — encounter fired and succeeded, criterion still stuck.** Scenario 3548
+"Graverobbers" stage 2, step "Drill or be Drilled", criteria 117895 ("Drill Sergeant slain",
+ctype 165, assetID 3622, total 1).
 
-### 5.6 criteria.assetID is the creature ID
+| Time | Event | Source |
+|---|---|---|
+| 03:04:30.384 | `ENCOUNTER_START,3622,"Drill Sergeant",208,1,3043` | combat log |
+| 03:05:52.673 | `ENCOUNTER_END,3622,...,1,82271` — **success=1**, 82s fight | combat log |
+| 03:20:32 | criterion `qty=0, total=1, completed=false` | export |
+| 03:24:08 | criterion **unchanged**, 18 minutes after the kill | export |
 
-Verified twice against combat-log GUIDs:
+Case B is the more damning of the two: the encounter system reported a clean success and the
+criterion tracking it never moved. So criteria updating is failing **independently** of
+encounter events, not as a downstream consequence of them.
 
-| Criterion | assetID | Creature GUID fragment | NPC |
-|---|---|---|---|
-| "Defeat the King of Souls." | 269822 | `Creature-0-5769-3043-2107-269822-...` | King of Souls |
-| "Defeat Hexbound Defenders" | 262929 | `Creature-...-262929-...` | Hexbound Defender |
+⚠️ Hypothesis, untested: in Case B the criterion belongs to **stage 2** while the encounter
+completed during stage 1, leaving a stage-2 objective that requires killing a boss which is
+already dead and does not respawn. The player killed "Thundering Hexmask" 13 times while
+stuck, consistent with trash respawning in a chamber that cannot be completed.
 
-A locale-free criterion -> NPC mapping, available without the combat log. Useful for
-identifying objectives regardless of client language.
+Both cases leave the run unfinishable without abandoning it. Consistent with the placeholder
+state in 5.2a.
+
+### 5.6 criteria.assetID meaning depends on criteriaType
+
+| ctype | assetID refers to | Example |
+|---|---|---|
+| 0 | **creature ID** | "Defeat the King of Souls." assetID 269822 = `Creature-...-269822-...` |
+| 0 | creature ID | "Defeat Hexbound Defenders" assetID 262929 = Hexbound Defender |
+| 165 | **encounter ID** | "Drill Sergeant slain" assetID 3622 = `ENCOUNTER_START,3622,"Drill Sergeant"` |
+
+Both are locale-free and identify the objective's target without the combat log, but they are
+**not interchangeable** — read `criteriaType` before interpreting `assetID`.
 
 ### 5.7 RESOLVED: chamber content is randomised per run
 
