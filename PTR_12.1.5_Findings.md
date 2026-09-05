@@ -27,31 +27,54 @@ currently uses says "this is a delve".
 | instanceID | 2933 | 3043 | no |
 | numStages | 3 | 2 | no |
 
-**Consequence today:** a completed Labyrinth run logs a history row with `variant=nil`,
-because no outdoor variant text resolves for widget set 2316. This is the §2 data-loss
-path, now observed rather than inferred. It was not triggered during capture only because
-the export was taken before completing the run.
-
-### The discriminator: flags bit 7
+**Consequence, now observed.** A completed Labyrinth step logged exactly the predicted row:
 
 ```
-delve      18 = 0b0_0010010
-labyrinth 146 = 0b1_0010010
-                 ^ bit 7 (128) set only on the Labyrinth
+[DelveGuide] Logged: The Labyrinth of Kindo'Jan  [?]  [Vault: 305 ilvl]
 ```
 
-146 - 18 = 128 exactly. Proposed gate:
+The `[?]` is the null variant — no outdoor variant text resolves for widget set 2316. This
+is the §2 data-loss path as an artifact rather than an inference. The delve name and vault
+ilvl were captured correctly; only the variant was lost.
+
+### ~~The discriminator: flags bit 7~~ — RETRACTED, use instanceID
+
+An earlier reading of this document proposed scenario flags bit 7 (delve 18 / labyrinth 146)
+as the Labyrinth discriminator. **That is wrong and must not be built on.**
+
+Observed at 02:32 on 2026-09-05, inside Kindo'jan, after killing the step-1 boss
+(`ENCOUNTER_START,3648,"King of Souls",208,1,3043`), `C_Scenario.GetInfo()` returned:
+
+| | before boss | after boss |
+|---|---|---|
+| name `[1]` | "Soul King" | **"Delves"** |
+| flags `[4]` | 146 | **18** |
+| scenarioID `[13]` | 3580 | **3342** |
+| numStages | 2 | 1 |
+
+The combat log proves this was **not** a zone change: exactly one `ZONE_CHANGE` and one
+`MAP_CHANGE` for the whole session (both at 02:17 into instance 3043), and every creature
+GUID in the log carries instance 3043. The scenario swapped underneath a stationary player.
+
+So flags, scenarioID, numStages and the scenario name all describe the **current scenario
+phase**, not the run type. A Labyrinth sampled at the wrong moment is indistinguishable
+from a Delve on every one of them. Any gate gets the answer right on entry and wrong later.
+
+**Use instanceID instead.** It is stable for the whole run and verified from three
+independent sources: `GetInstanceInfo()` returned 3043, every combat-log creature GUID
+embeds 3043, and `ZONE_CHANGE,3043` fired once on entry and never again.
 
 ```lua
-local flags = select(4, C_Scenario.GetInfo())
-local isLabyrinth = flags and bit.band(flags, 128) ~= 0
+local _,_,_,_,_,_,_, instanceID = GetInstanceInfo()
+local isLabyrinth = DelveGuideData.labyrinthInstances[instanceID]
 ```
 
-⚠️ **One sample each.** Before Stage 2 builds on this, confirm against a second delve and,
-once it exists, Labyrinth B. If bit 7 does not hold, fall back to `instanceID` /
-`scenarioID` allowlists, which are verified below.
+This costs an allowlist that grows with each new Labyrinth, which is the tradeoff for
+correctness. Capture the instanceID of Labyrinth B when it appears.
 
----
+⚠️ Still unverified: whether instanceID is stable across tiers and bountiful state. Prior
+research says instance maps are fixed per delve, and nothing here contradicts that, but it
+has not been tested for Labyrinths.
 
 ## 2. Verified IDs
 
@@ -199,6 +222,45 @@ than free-roam.
   (`companionID = 12` resolved normally inside both).
 
 ---
+
+### 5.2 Progression is a taxi network inside the instance
+
+The Labyrinth has its own flight map, `12_15_Labyrinth_Taxi`, on the instance's own uiMap.
+At the point of capture exactly one destination was unlocked: **"Labyrinth, Entrance to
+The Reliquary"**.
+
+This is the mechanism behind "do it all at once or over time": clearing a section unlocks
+its entrance as a flight node, so a later visit can fly straight to the deepest unlocked
+point instead of re-clearing. Progression is persistent and expressed as taxi nodes.
+
+**For the addon this is the best chamber-progress source found so far.**
+`C_TaxiMap.GetAllTaxiNodes(uiMapID)` returns nodes carrying a numeric `nodeID` and a
+`state`, so unlocked-node count is quantified progression keyed on **IDs, not localized
+strings** — unlike subzone (5.1), and unlike scenario criteria it survives the scenario
+swap documented in §1 because it is a property of the instance, not the current phase.
+
+⚠️ Unverified: the node table's exact shape here, whether `state` distinguishes
+unlocked-and-cleared from merely reachable, and whether the API returns anything while
+the flight map is closed. Capture with the flight map open:
+
+```
+/dump C_TaxiMap.GetAllTaxiNodes(C_TaxiMap.GetTaxiMapID())
+```
+
+Also note the map name is another unlocalized internal string (`12_15_Labyrinth_Taxi`),
+consistent with 4.5.
+
+### 5.3 Encounter IDs
+
+From the combat log, locale-free and exact:
+
+| Encounter | ID | Notes |
+|---|---|---|
+| King of Souls | **3648** | step-1 boss; `ENCOUNTER_START,3648,"King of Souls",208,1,3043` |
+
+`ENCOUNTER_START` / `ENCOUNTER_END` fire normally inside a Labyrinth and carry the
+instanceID, so they are a reliable completion signal per chamber boss. Collect the
+remaining eight as they are cleared.
 
 ## 6. Open items, cheapest first
 
