@@ -1233,6 +1233,166 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
                 end
             end
         end)
+        -- API presence probe. Records type() for every call this addon depends
+        -- on, so a Blizzard namespace move (as 12.1.5 did to scenario criteria)
+        -- shows up in the export instead of failing silently inside a pcall.
+        pcall(function()
+            snap.api = {}
+            local function probe(label, tbl, key)
+                local ok, v = pcall(function() return tbl and tbl[key] end)
+                snap.api[label] = ok and type(v) or "err"
+            end
+            probe("C_Scenario.GetInfo",                     C_Scenario,     "GetInfo")
+            probe("C_Scenario.GetStepInfo",                 C_Scenario,     "GetStepInfo")
+            probe("C_Scenario.IsInScenario",                C_Scenario,     "IsInScenario")
+            probe("C_Scenario.GetNumCriteria",              C_Scenario,     "GetNumCriteria")
+            probe("C_Scenario.GetCriteriaInfo",             C_Scenario,     "GetCriteriaInfo")
+            probe("C_ScenarioInfo.GetScenarioInfo",         C_ScenarioInfo, "GetScenarioInfo")
+            probe("C_ScenarioInfo.GetScenarioStepInfo",     C_ScenarioInfo, "GetScenarioStepInfo")
+            probe("C_ScenarioInfo.GetCriteriaInfo",         C_ScenarioInfo, "GetCriteriaInfo")
+            probe("C_DelvesUI.GetActiveDelveTier",          C_DelvesUI,     "GetActiveDelveTier")
+            probe("C_DelvesUI.GetCompanionInfoForActivePlayer", C_DelvesUI, "GetCompanionInfoForActivePlayer")
+            probe("C_DelvesUI.HasActiveLair",               C_DelvesUI,     "HasActiveLair")
+            probe("C_AreaPoiInfo.GetDelvesForMap",          C_AreaPoiInfo,  "GetDelvesForMap")
+            probe("C_Reputation.GetFactionDataByIndex",     C_Reputation,   "GetFactionDataByIndex")
+            probe("C_TaxiMap.GetAllTaxiNodes",              C_TaxiMap,      "GetAllTaxiNodes")
+            snap.api["GetTaxiMapID (global)"] = type(GetTaxiMapID)
+            snap.api["NumTaxiNodes (global)"] = type(NumTaxiNodes)
+        end)
+
+        -- Scenario criteria, through the 12.1.5-safe helpers.
+        pcall(function()
+            snap.criteria = {}
+            local n = DelveGuide.GetCriteriaCount and DelveGuide.GetCriteriaCount() or 0
+            snap.criteriaCount = n
+            for i = 1, n do
+                local c = DelveGuide.GetCriteria(i)
+                if c then
+                    table.insert(snap.criteria, {
+                        id = c.criteriaID, desc = c.description, qty = c.quantity,
+                        total = c.totalQuantity, qtyStr = c.quantityString,
+                        completed = c.completed, failed = c.failed, assetID = c.assetID,
+                        elapsed = c.elapsed, duration = c.duration,
+                        ctype = c.criteriaType, cflags = c.flags,
+                    })
+                end
+            end
+        end)
+
+        -- Modern scenario structs, which carry named fields the positional
+        -- C_Scenario.GetInfo array does not.
+        pcall(function()
+            if C_ScenarioInfo and C_ScenarioInfo.GetScenarioInfo then
+                local si = C_ScenarioInfo.GetScenarioInfo()
+                if si then
+                    snap.scenarioInfo = {
+                        name = si.name, scenarioID = si.scenarioID, type = si.type,
+                        flags = si.flags, currentStage = si.currentStage,
+                        numStages = si.numStages, isComplete = si.isComplete, area = si.area,
+                    }
+                end
+            end
+            if C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo then
+                local st = C_ScenarioInfo.GetScenarioStepInfo()
+                if st then
+                    snap.scenarioStepInfo = {
+                        title = st.title, description = st.description,
+                        numCriteria = st.numCriteria, stageID = st.stageID,
+                        isComplete = st.isComplete,
+                    }
+                end
+            end
+        end)
+
+        -- Delve tier struct. Returned all zeros inside a Labyrinth on 69594;
+        -- captured in full so the shape can be compared across content types.
+        pcall(function()
+            if C_DelvesUI and C_DelvesUI.GetActiveDelveTier then
+                local t = C_DelvesUI.GetActiveDelveTier()
+                if type(t) == "table" then
+                    snap.delveTier = {
+                        tier = t.tier, unlocked = t.unlocked, difficultyID = t.difficultyID,
+                        suggestedILvl = t.suggestedILvl, tierDescription = t.tierDescription,
+                        modifierUIWidgetSetID = t.modifierUIWidgetSetID,
+                        overrideTooltipSpellID = t.overrideTooltipSpellID,
+                        queueAsLFG = t.queueAsLFG,
+                    }
+                else
+                    snap.delveTier = { raw = tostring(t) }
+                end
+            end
+        end)
+
+        -- Outdoor POI widget texts, so the variant-text question no longer needs
+        -- /dg scan + /dg chatdump pasted into chat. Populated only if a scan has
+        -- run this session.
+        pcall(function()
+            snap.zoneEnglish = localizedToEnglish and localizedToEnglish[GetRealZoneText() or ""] or nil
+            snap.rawScan = {}
+            for _, r in ipairs(rawScanResults or {}) do
+                table.insert(snap.rawScan, {
+                    mapID = r.mapID, poiID = r.poiID, name = r.name,
+                    atlas = r.atlasName, set = r.widgetSetID, texts = r.widgetTexts,
+                })
+            end
+        end)
+
+        -- Reputations, id + name + standing. 12.1.5 adds a "The Labyrinth of
+        -- Kindo'jan" faction; capturing the whole list means its factionID (and
+        -- any future one) is on disk without having to guess or paste it.
+        pcall(function()
+            snap.factions = {}
+            if C_Reputation and C_Reputation.GetNumFactions then
+                if C_Reputation.ExpandAllFactionHeaders then
+                    pcall(C_Reputation.ExpandAllFactionHeaders)
+                end
+                for i = 1, (C_Reputation.GetNumFactions() or 0) do
+                    local d = C_Reputation.GetFactionDataByIndex(i)
+                    if d and not d.isHeader then
+                        table.insert(snap.factions, {
+                            id = d.factionID, name = d.name, reaction = d.reaction,
+                            standing = d.currentStanding,
+                            nextThreshold = d.nextReactionThreshold,
+                        })
+                    end
+                end
+            end
+        end)
+
+        -- Taxi network. Labyrinths carry their own in-instance flight map
+        -- (12_15_Labyrinth_Taxi) whose unlocked nodes track how deep the run has
+        -- been cleared -- numeric nodeIDs, and a property of the instance rather
+        -- than the current scenario phase, so unlike criteria it survives the
+        -- mid-run scenario swap. Needs the flight map OPEN to return anything.
+        -- Both the modern and classic APIs are tried; whichever answers, answers.
+        pcall(function()
+            snap.taxiMapID = GetTaxiMapID and GetTaxiMapID() or nil
+            snap.taxiNodes = {}
+            local nodes = C_TaxiMap and C_TaxiMap.GetAllTaxiNodes
+                and C_TaxiMap.GetAllTaxiNodes(snap.taxiMapID)
+            if nodes then
+                for _, n in ipairs(nodes) do
+                    table.insert(snap.taxiNodes, {
+                        id    = n.nodeID,
+                        name  = n.name,
+                        state = n.state,
+                        x     = n.position and n.position.x,
+                        y     = n.position and n.position.y,
+                    })
+                end
+            end
+            snap.taxiClassic = {}
+            if NumTaxiNodes then
+                for i = 1, (NumTaxiNodes() or 0) do
+                    table.insert(snap.taxiClassic, {
+                        i    = i,
+                        name = TaxiNodeName and TaxiNodeName(i) or nil,
+                        kind = TaxiNodeGetType and TaxiNodeGetType(i) or nil,
+                    })
+                end
+            end
+        end)
+
         table.insert(DelveGuideDB.ptrExports, snap)
         print(string.format("|cFF00BFFF[DelveGuide]|r Export snapshot |cFF44FF44#%d|r captured (%s). |cFFFFD700/reload|r or logout to write to disk.",
             #DelveGuideDB.ptrExports, snap.zone or "?"))

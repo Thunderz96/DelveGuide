@@ -33,7 +33,22 @@ currently uses says "this is a delve".
 [DelveGuide] Logged: The Labyrinth of Kindo'Jan  [?]  [Vault: 305 ilvl]
 ```
 
-The `[?]` is the null variant — no outdoor variant text resolves for widget set 2316. This
+```lua
+["history"][1] = {
+    ["char"]      = "Thunderclapz",
+    ["name"]      = "The Labyrinth of Kindo'Jan",
+    ["resetKey"]  = 1788271200,
+    ["date"]      = "2026-09-05 02:32",
+    ["tier"]      = "?",
+    ["vaultIlvl"] = 305,
+    ["realm"]     = "Fyrakk",
+}
+```
+
+**Worse than predicted.** The plan expected `variant=nil`. In the stored row the `variant`
+key is **absent entirely**, and `tier` is also lost (`"?"`), because
+`C_DelvesUI.GetActiveDelveTier()` returns zeros here (§3) and the tracker scrape does not
+recognise the Labyrinth. Only `name` and `vaultIlvl` (305) survived. The `[?]` in chat — no outdoor variant text resolves for widget set 2316. This
 is the §2 data-loss path as an artifact rather than an inference. The delve name and vault
 ilvl were captured correctly; only the variant was lost.
 
@@ -192,65 +207,80 @@ model rather than hardcoding one.
 
 ## 5. Content notes (from in-game tooltips)
 
-### 5.1 Layout — chambers are named sub-areas
+### 5.1 A Labyrinth run is choose-your-path, push-your-luck
 
-The in-game map names its regions after Zul'Aman's bosses: **Akil'zon's Roost**,
-**Nalorakk's Den**, **Halazzi's Lair**, **The Cave Towers**, and **Chamber of Rites**.
-The Labyrinth is built on Zul'Aman geography rather than delve geometry.
+Corrects an earlier reading of this document that called the chambers "sequentially gated".
+They are gated, but the **order is the player's choice**, and the run is a bank-or-continue
+loop rather than a fixed clear.
 
-`GetSubZoneText()` returned **"Chamber of Rites"** in the 02:10:14 snapshot, matching the
-map label. So subzone tracks which chamber the player is standing in, and is the most
-promising source for chamber progress given `numStages` does not carry it (4.4).
+Between chambers the scenario step is **"Choose Your Path"**, described by Blizzard as:
 
-Two caveats before relying on it: subzone strings are **localized**, so this reintroduces
-exactly the text-matching problem ID-based identity exists to remove; and it reports
-*location*, not *completion* — standing in a chamber is not clearing it. Treat it as a
-position signal, and find a separate completion source.
+> Select the next chamber you wish to challenge in the Labyrinth, or speak to Kinduru if
+> you wish to end your run.
 
-Access is gated through Akil'zon's Roost (see below), so the sub-areas are ordered rather
-than free-roam.
+And entering the next chamber prompts:
 
+> Continue into the Reliquary? ... Continue your run to gather more rewards, at the risk of
+> increased challenge.
 
-- Tier 11 exists. "Fabled Let Me Solo Him: Kindo'jan" requires Tier 11, solo, before the
-  first weekly reset — **first week only**, so it is time-boxed content.
-- Kindo'jan must be beaten in a Tier 8+ Labyrinth for Vault credit + a Heroic Soul
-  Fragment, once per week per character.
-- Access gate: clear all nine chambers, then gain entry via Akil'zon's Roost. Once proven,
-  Kindo'jan's chamber can be entered at will.
-- Heavy Trunk Crest rewards are doubled inside Labyrinths.
-- Companion is Valeera, as in Delves — the Companion tab shape carries over
-  (`companionID = 12` resolved normally inside both).
+So difficulty and rewards escalate per chamber, and the player can stop and bank at any
+point via the NPC Kinduru. **This does not fit the addon's delve model** — one variant, one
+tier, run to completion. A Labyrinth run is a variable-length chain of chosen chambers with
+an explicit bail-out, so run history, timing and "rankings" all need a different shape here.
+Do not try to force it into the existing history row.
 
----
+### 5.2 Progression is a taxi network — verified
 
-### 5.2 Progression is a taxi network inside the instance
+The instance has its own flight map (`taxiMapID = 2671`, internal name
+`12_15_Labyrinth_Taxi`). `C_TaxiMap.GetAllTaxiNodes(GetTaxiMapID())` returns the node table;
+`GetTaxiMapID` is a **global**, not a member of `C_TaxiMap`.
 
-The Labyrinth has its own flight map, `12_15_Labyrinth_Taxi`, on the instance's own uiMap.
-At the point of capture exactly one destination was unlocked: **"Labyrinth, Entrance to
-The Reliquary"**.
+Node `state` is confirmed by cross-checking the classic `TaxiNodeGetType` strings:
 
-This is the mechanism behind "do it all at once or over time": clearing a section unlocks
-its entrance as a flight node, so a later visit can fly straight to the deepest unlocked
-point instead of re-clearing. Progression is persistent and expressed as taxi nodes.
+| state | classic type | meaning |
+|---|---|---|
+| 0 | `CURRENT` | where the player is |
+| 1 | `REACHABLE` | unlocked, can fly there now |
+| 2 | `DISTANT` | not yet unlocked |
 
-**For the addon this is the best chamber-progress source found so far.**
-`C_TaxiMap.GetAllTaxiNodes(uiMapID)` returns nodes carrying a numeric `nodeID` and a
-`state`, so unlocked-node count is quantified progression keyed on **IDs, not localized
-strings** — unlike subzone (5.1), and unlike scenario criteria it survives the scenario
-swap documented in §1 because it is a property of the instance, not the current phase.
+**Progress = counting nodes that have left state 2.** Numeric node IDs, a property of the
+instance rather than the current scenario phase, so it survives the scenario swap in §1.
 
-⚠️ Unverified: the node table's exact shape here, whether `state` distinguishes
-unlocked-and-cleared from merely reachable, and whether the API returns anything while
-the flight map is closed. Capture with the flight map open:
+**The 9-chamber count is resolved.** 11 nodes were returned, but names are not unique:
 
-```
-/dump C_TaxiMap.GetAllTaxiNodes(C_TaxiMap.GetTaxiMapID())
-```
+| Node ID | Name | state |
+|---|---|---|
+| 3300 | Chamber of Rites | 0 CURRENT |
+| 3301 | Entrance to The Reliquary | 1 REACHABLE |
+| 3305 | Entrance to Halazzi's Lair | 2 |
+| 3307 | Entrance to The Central Chamber | 2 |
+| 3309 | Entrance to The Catacombs | 2 |
+| 3311 | Entrance to The Central Chamber | 2 |
+| 3312 | Entrance to The Cave Towers | 2 |
+| 3314 | Entrance to Jan'alai's Refuge | 2 |
+| 3316 | Entrance to Akil'zon's Roost | 2 |
+| 3318 | Entrance to Nalorakk's Den | 2 |
+| 3329 | Entrance to The Catacombs | 2 |
 
-Also note the map name is another unlocalized internal string (`12_15_Labyrinth_Taxi`),
-consistent with 4.5.
+"The Central Chamber" appears twice (3307, 3311) at **different** coordinates — two
+entrances to one chamber. "The Catacombs" appears twice (3309, 3329) at **identical**
+coordinates — a genuine duplicate node. Deduplicating gives exactly **9 destinations**,
+matching the advertised nine chambers.
 
-### 5.3 Encounter IDs
+⚠️ Node names are therefore **not unique keys**, and they are localized. Key on node ID, and
+curate an ID -> chamber mapping rather than counting names.
+
+### 5.3 New reputation
+
+12.1.5 adds a faction named **"The Labyrinth of Kindo'jan"** (note the lowercase `j`, as on
+the POI, not the capitalised `Kindo'Jan` used by the zone — see 4.1). Nick wants this
+tracked in the addon.
+
+The factionID is not yet captured. `/dg export` now snapshots the full faction list
+(id, name, reaction, standing, next threshold) so the ID lands on disk rather than being
+guessed. Tracking itself is Stage 3 feature work, not a 12.1.5 compatibility fix.
+
+### 5.4 Encounter IDs
 
 From the combat log, locale-free and exact:
 
