@@ -411,6 +411,26 @@ DelveGuide.ClearDelveTier = function()
     DelveGuide.currentDelveTierNum = nil
 end
 
+-- Scenario criteria, 12.1.5-safe. Patch 12.1.5 removed C_Scenario.GetNumCriteria
+-- and C_Scenario.GetCriteriaInfo; criteria now live on C_ScenarioInfo. Every
+-- caller here is inside a pcall, so the removal failed silently -- the HUD just
+-- stopped showing lives with no error to notice. Verified on build 69594:
+-- C_ScenarioInfo.GetCriteriaInfo returns the same field names the callers read
+-- (description, quantity, totalQuantity, quantityString), so only the namespace
+-- moved. Both paths are kept so one build runs on 12.1.0 and 12.1.5.
+DelveGuide.GetCriteriaCount = function()
+    if C_Scenario.GetNumCriteria then return C_Scenario.GetNumCriteria() or 0 end
+    -- 3rd return of GetStepInfo is numCriteria, and GetStepInfo survives.
+    return select(3, C_Scenario.GetStepInfo()) or 0
+end
+
+DelveGuide.GetCriteria = function(i)
+    if C_ScenarioInfo and C_ScenarioInfo.GetCriteriaInfo then
+        return C_ScenarioInfo.GetCriteriaInfo(i)
+    end
+    return C_Scenario.GetCriteriaInfo and C_Scenario.GetCriteriaInfo(i)
+end
+
 -- Trovehunter's Bounty state, shared by the Delves tab, the pre-entry
 -- checklist, the roster snapshot and the debug export so they can never
 -- disagree. IDs live in DelveGuideData.trove (one place, per season).
@@ -1382,10 +1402,10 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         end)
         -- Scenario criteria (lives detection)
         pcall(function()
-            local numCrit = C_Scenario.GetNumCriteria and C_Scenario.GetNumCriteria() or 0
+            local numCrit = DelveGuide.GetCriteriaCount()
             print("Scenario criteria count: "..tostring(numCrit))
             for i = 1, (numCrit or 0) do
-                local crit = C_Scenario.GetCriteriaInfo(i)
+                local crit = DelveGuide.GetCriteria(i)
                 if crit then
                     print(string.format("  crit[%d] desc=[%s]  qtyStr=[%s]  qty=%s  total=%s",
                         i, tostring(crit.description), tostring(crit.quantityString),

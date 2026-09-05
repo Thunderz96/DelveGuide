@@ -453,9 +453,9 @@ local function UpdateHUD()
     -- Check both description and quantityString, with locale-independent fallbacks
     local livesText = "|cFF888888--|r"
     pcall(function()
-        local numCrit = C_Scenario.GetNumCriteria()
+        local numCrit = DelveGuide.GetCriteriaCount()
         for i = 1, (numCrit or 0) do
-            local crit = C_Scenario.GetCriteriaInfo(i)
+            local crit = DelveGuide.GetCriteria(i)
             if crit then
                 local desc  = crit.description  and crit.description:lower()  or ""
                 local qStr  = crit.quantityString and crit.quantityString:lower() or ""
@@ -546,9 +546,9 @@ hudEvents:SetScript("OnEvent", function(_, event)
         -- Fast path: refresh lives row if HUD is visible
         if hudFrame and hudFrame:IsShown() and hudFrame.rows then
             pcall(function()
-                local numCrit = C_Scenario.GetNumCriteria()
+                local numCrit = DelveGuide.GetCriteriaCount()
                 for i = 1, (numCrit or 0) do
-                    local crit = C_Scenario.GetCriteriaInfo(i)
+                    local crit = DelveGuide.GetCriteria(i)
                     if crit then
                         local desc  = crit.description  and crit.description:lower()  or ""
                         local qStr  = crit.quantityString and crit.quantityString:lower() or ""
