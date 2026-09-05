@@ -124,13 +124,13 @@ poiID is stable per (delve, map, bountiful state).
 | 1 | scenarioID stable across tiers / bountiful | **not yet tested** — needs 2 tiers + 1 bountiful |
 | 2 | Nemesis lair scenarioID (expect 3395) | **not yet tested** |
 | 3 | scenario readable at `SCENARIO_COMPLETED` | **not yet tested** |
-| 4 | `C_DelvesUI.GetActiveDelveTier()` returns a tier | **assumption was wrong** — see below |
+| 4 | `C_DelvesUI.GetActiveDelveTier()` returns a tier | **no** — returns an empty struct in Delves *and* Labyrinths |
 | 5 | Labyrinth scenario type / scenario ID / instance ID | **answered** — 8 / 3580 / 3043 |
 
-### §5 item 4 correction
+### §5 item 4 correction — the tracker scrape cannot be retired
 
-The plan assumed this "returns a tier number". It returns a **table**, and inside the
-Labyrinth every field is empty despite the run visibly being Tier 11:
+The plan assumed this "returns a tier number". It returns a **table**, and every field is
+empty in both content types:
 
 ```
 { tier=0, unlocked=false, suggestedILvl=0, difficultyID=0,
@@ -138,10 +138,15 @@ Labyrinth every field is empty despite the run visibly being Tier 11:
   queueAsLFG=false, tierDescription="", rewards={} }
 ```
 
-So the objective-tracker scrape **cannot** be retired for Labyrinths. Whether it works in a
-regular delve is untested — that single command is the cheapest open item.
+Verified inside **Atal'Aman, a regular Delve, at tier 8** — while the addon's own tracker
+scrape correctly reported `tierNum = 8` in the same snapshot. So this is not a Labyrinth
+quirk: the API is empty for Delves too.
 
----
+**The whole-frame-tree walk that runs every two seconds has to stay.** The plan hoped to
+remove it; that is off the table until Blizzard populates this struct.
+
+Related: the addon's tier detection works in Delves (`tierNum = 8`) but returns nil in
+Labyrinths (5.8), so the scrape is Delve-shaped and does not generalise.
 
 ## 4. Bugs and risks found
 
@@ -421,8 +426,9 @@ scrape recognises Labyrinth tiers, even though the objective tracker visibly dis
 | 144 | `1_0010000` | chamber (3615, collection objective) |
 | 146 | `1_0010010` | chamber (3580/3582/3345, boss and percentage objectives) |
 
-Bit 7 (128) is set in chambers and clear in the hub, so it distinguishes chamber from hub —
-but **not** Labyrinth from Delve, per the §1 retraction. Bit 1 (2) varies between chambers
+A regular Delve (Atal'Aman, scenario 3117) also reports **flags 18** — identical to the
+Labyrinth hub. So bit 7 distinguishes chamber from hub, but a Delve and a Labyrinth hub are
+indistinguishable on flags, confirming the §1 retraction from the other direction. Bit 1 (2) varies between chambers
 for reasons not yet established.
 
 ### 5.10 Warband reputations are invisible to GetNumFactions
@@ -447,7 +453,12 @@ find a Delve faction is looking at an incomplete list.
 `/dg export` now sweeps IDs 2400-2900 and keeps everything that returns a name. Once the
 IDs are known, query them directly and never enumerate.
 
-⚠️ Still unverified: the actual IDs, and whether the sweep range is wide enough.
+⚠️ **Still not recovered.** A `GetFactionDataByID` sweep of 2200-3400 returned 151 factions
+and neither target (nothing above 2838), so warband reputations answer to neither the
+enumeration nor a direct ID lookup in that range. Remaining approach:
+`C_Reputation.GetWatchedFactionData()` returns the factionID of whatever the player tracks
+on the XP bar, so tracking the reputation in the UI and exporting recovers its ID. `/dg
+export` now captures it.
 
 **New currency: "Corrosive Coin"**, awarded 100 at a time from Labyrinth looting. ID not yet
 captured; the addon makes 13 `C_CurrencyInfo.GetCurrencyInfo` calls, so this likely wants
