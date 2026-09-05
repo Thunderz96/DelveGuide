@@ -1362,6 +1362,23 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             end
         end)
 
+        -- Watched faction. Warband reputations answer to neither GetNumFactions
+        -- nor a GetFactionDataByID sweep of 2200-3400, but GetWatchedFactionData
+        -- returns the factionID of whatever the player is tracking on the XP bar.
+        -- Track "The Labyrinth of Kindo'jan" (or "Delves: Season 2") and export
+        -- to capture its ID directly.
+        pcall(function()
+            if C_Reputation and C_Reputation.GetWatchedFactionData then
+                local w = C_Reputation.GetWatchedFactionData()
+                if w then
+                    snap.watchedFaction = {
+                        id = w.factionID, name = w.name, standing = w.currentStanding,
+                        reaction = w.reaction, nextThreshold = w.nextReactionThreshold,
+                    }
+                end
+            end
+        end)
+
         -- Major factions (renown). The new Kindo'jan reputation did not appear
         -- in the standard C_Reputation list even with every header expanded, so
         -- it is probably a renown track rather than a classic faction.
