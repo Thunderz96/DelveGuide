@@ -453,12 +453,27 @@ find a Delve faction is looking at an incomplete list.
 `/dg export` now sweeps IDs 2400-2900 and keeps everything that returns a name. Once the
 IDs are known, query them directly and never enumerate.
 
-⚠️ **Still not recovered.** A `GetFactionDataByID` sweep of 2200-3400 returned 151 factions
-and neither target (nothing above 2838), so warband reputations answer to neither the
-enumeration nor a direct ID lookup in that range. Remaining approach:
-`C_Reputation.GetWatchedFactionData()` returns the factionID of whatever the player tracks
-on the XP bar, so tracking the reputation in the UI and exporting recovers its ID. `/dg
-export` now captures it.
+**Conclusion: the reputation is not implemented client-side yet.** Confirmed in-game — it
+cannot be tracked in the reputation UI. It awards rep via chat messages but has no queryable
+entry anywhere:
+
+| Approach | Result |
+|---|---|
+| `C_Reputation.GetNumFactions()` enumeration, all headers expanded | absent (25 rows) |
+| `C_Reputation.GetFactionDataByID` sweep, 2200-3400 | absent (151 factions, none above 2838) |
+| `C_MajorFactions` | absent |
+| `C_Reputation.GetWatchedFactionData()` | unavailable — cannot be tracked in the UI |
+
+So this is **blocked on Blizzard**, not on finding the right API. Consistent with the
+placeholder state in 5.2a.
+
+`Delves: Season 2` is equally invisible, which is the part that matters beyond this patch:
+it is a faction the addon already depends on, so **any code that enumerates reputations to
+find a Delve faction is working from an incomplete list on 12.1.5**. That much is worth
+handling regardless of whether Kindo'jan ever gets an entry.
+
+Re-test on a later build. `/dg export` captures the enumeration, an ID sweep, major factions
+and the watched faction, so a single export will show the moment it lands.
 
 **New currency: "Corrosive Coin"**, awarded 100 at a time from Labyrinth looting. ID not yet
 captured; the addon makes 13 `C_CurrencyInfo.GetCurrencyInfo` calls, so this likely wants
