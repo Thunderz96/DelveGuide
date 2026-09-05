@@ -306,17 +306,34 @@ missed it: `C_Reputation.GetNumFactions()` enumerates only rows that are current
 *visible*, so collapsed headers hide most of the list. `/dg export` now expands every header
 before scanning (which leaves the Reputation pane expanded as a side effect). Tracking itself is Stage 3 feature work, not a 12.1.5 compatibility fix.
 
-### 5.4 Encounter IDs
-
-From the combat log, locale-free and exact:
+### 5.4 Encounter IDs — boss chambers only
 
 | Encounter | ID | Notes |
 |---|---|---|
-| King of Souls | **3648** | step-1 boss; `ENCOUNTER_START,3648,"King of Souls",208,1,3043` |
+| King of Souls | **3648** | `ENCOUNTER_START,3648,"King of Souls",208,1,3043`, ended success=1 |
 
-`ENCOUNTER_START` / `ENCOUNTER_END` fire normally inside a Labyrinth and carry the
-instanceID, so they are a reliable completion signal per chamber boss. Collect the
-remaining eight as they are cleared.
+⚠️ **Corrects an earlier claim in this document.** `ENCOUNTER_START`/`END` are *not* a
+general per-chamber completion signal. Over a 34-minute run (02:17-02:51) covering several
+chambers, exactly one encounter pair fired — the King of Souls boss. The objective chamber
+"Disrupt the Vilebranch" produced none at all despite 44 mob kills.
+
+So chambers come in at least two kinds:
+
+| Chamber kind | Completion signal | Example |
+|---|---|---|
+| Boss | `ENCOUNTER_START` / `ENCOUNTER_END` + criteria | King of Souls (3648) |
+| Objective | criteria only (percentage) | "Disrupt the Vilebranch" (`0%`, total 100) |
+
+Any completion tracking must read criteria; encounter events are a bonus on boss chambers,
+not the primary source.
+
+### 5.5 Observed bug: uncredited chamber completion
+
+On 2026-09-05 the "Disrupt the Vilebranch" chamber did not credit completion. The combat
+log shows 44 Vilebranch-type kills through 02:50:32 with no encounter events, and the
+02:42:59 export shows the criterion at `qty=0, total=100, qtyStr="0%"`. The one boss
+encounter that did fire (3648) returned success=1, so this reads as a stuck scenario
+criterion rather than a missed kill. Consistent with the placeholder state noted in 5.2a.
 
 ## 6. Open items, cheapest first
 
