@@ -327,13 +327,54 @@ So chambers come in at least two kinds:
 Any completion tracking must read criteria; encounter events are a bonus on boss chambers,
 not the primary source.
 
-### 5.5 Observed bug: uncredited chamber completion
+### 5.5 Confirmed bug: boss kill not credited to the scenario
 
-On 2026-09-05 the "Disrupt the Vilebranch" chamber did not credit completion. The combat
-log shows 44 Vilebranch-type kills through 02:50:32 with no encounter events, and the
-02:42:59 export shows the criterion at `qty=0, total=100, qtyStr="0%"`. The one boss
-encounter that did fire (3648) returned success=1, so this reads as a stuck scenario
-criterion rather than a missed kill. Consistent with the placeholder state noted in 5.2a.
+Reproduced and fully evidenced on 2026-09-05, instance 3043, scenario 3582 stage 2
+("You Got to Have Soul" / "Defeat the King of Souls", criteria 116103, total 1).
+
+| Time | Event | Source |
+|---|---|---|
+| 02:51:08 | combat begins with King of Souls (creature 269822) | combat log |
+| 02:51:21.775 | `UNIT_DIED` King of Souls, health `0/285089` | combat log |
+| 02:53:30 | criterion still `qty=0, total=1, completed=false` | export #15 |
+
+**The boss died and the criterion never incremented** — still 0/1 more than two minutes
+later, unchanged across exports #14 (02:50:44) and #15 (02:53:30). No player deaths occurred,
+so this is not a wipe-and-reset.
+
+`ENCOUNTER_START`/`ENCOUNTER_END` did **not** fire for this kill. The only encounter pair
+all session was the earlier 02:32 kill of the same boss. So the encounter framework failed
+to engage on the second chamber, which is the likely root cause rather than a separate
+symptom. Consistent with the placeholder state in 5.2a.
+
+### 5.6 criteria.assetID is the creature ID
+
+Verified twice against combat-log GUIDs:
+
+| Criterion | assetID | Creature GUID fragment | NPC |
+|---|---|---|---|
+| "Defeat the King of Souls." | 269822 | `Creature-0-5769-3043-2107-269822-...` | King of Souls |
+| "Defeat Hexbound Defenders" | 262929 | `Creature-...-262929-...` | Hexbound Defender |
+
+A locale-free criterion -> NPC mapping, available without the combat log. Useful for
+identifying objectives regardless of client language.
+
+### 5.7 Scenario names are reused across chambers
+
+The same chamber theme appears at multiple nodes with **different scenarioIDs**:
+
+| scenarioID | name | subzone | boss |
+|---|---|---|---|
+| 3580 | "Soul King" | Chamber of Rites | King of Souls (269822 / encounter 3648) |
+| 3582 | "Soul King" | Central Chamber | King of Souls (269822 / encounter 3648) |
+
+Same name, same boss creature, same encounterID, different scenarioID.
+
+⚠️ Two readings, not yet separated. Either scenarioID is per-**chamber-node** (favoured: the
+subzones differ), or it moves with **tier** (the tier was 11 for 3580 and 1 for 3582). This
+bears directly on 2.0 plan §5 item 1 and on the plan's core claim that scenarioID is an exact
+`(delve, variant)` key. **Do not treat scenarioID as a stable content key until this is
+resolved** — run the same chamber node twice at two tiers.
 
 ## 6. Open items, cheapest first
 
