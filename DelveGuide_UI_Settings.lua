@@ -1,5 +1,12 @@
 local UI = DelveGuide.UI
 
+-- Labels for the bindings declared in Bindings.xml (the client auto-loads that
+-- file from the addon root, so it has no .toc entry).
+BINDING_HEADER_DELVEGUIDE             = "DelveGuide"
+BINDING_NAME_DELVEGUIDE_TOGGLE        = "Toggle DelveGuide window"
+BINDING_NAME_DELVEGUIDE_TOGGLE_HUD    = "Toggle in-run HUD"
+BINDING_NAME_DELVEGUIDE_TOGGLE_WIDGET = "Toggle compact widget"
+
 local function MakeSettingCheckbox(parent, y, labelText, getValue, onToggle)
     UI.EnsureFontFiles(); local _, rSize = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
