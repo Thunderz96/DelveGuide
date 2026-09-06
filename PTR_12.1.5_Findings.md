@@ -107,6 +107,7 @@ Confirmed in a running 12.1.5 client, not read from data files.
 | Item: Kindo'jan | 285875 | Vault credit + Heroic Soul Fragment, Tier 8+, 1/week/char |
 | Item: Heroic Soul Fragment | 285807 | Hero 2/6; 3 combine into a random Hero 2/6 piece |
 | Spell: Labyrinth Chambers | 1314915 | 9 chambers; rewards every 3; min 3 unlocks next tier |
+| **Vault credit rule** | — | **Every 3 chambers (3 / 6 / 9), any tier** — confirmed by Nick 2026-09-06. The Kindo'jan kill at T8+ is a *separate* reward (Heroic Soul Fragment); an earlier reading of this doc conflated the two |
 
 **Kindo'jan appears outdoors through the delve POI API.** `C_AreaPoiInfo.GetDelvesForMap`
 returns it on maps 2437, 2395 and 2537. Its atlas is `overworld-active-64x64`, not
@@ -293,6 +294,13 @@ printed those fields for all twelve rotational delves plus the Labyrinth: **`wid
 the empty string and `textureKit` is `nil` on every one**; `orderIndex` only distinguishes
 the two widgets a bountiful set carries (coffer blurb, variant). There is nothing to compare
 across days. The honest limit stands: outdoors, the variant reaches the client only as text.
+
+### 5.1c The hub is a scenario step with its own criteria
+
+Seen live 2026-09-06 in the D6 HUD: between chambers the hub reports step **"Choose Your
+Path"** with two count-type criteria, **"Speak to Kinduru 0/1"** and **"Path chosen 0/1"**.
+So the hub is not criteria-free; anything that treats "no criteria" as "in the hub" is
+wrong. The generic scenario name ("Delves") remains the hub's only cheap signature.
 
 ### 5.2a Chambers are separate scenarios, and the content is unfinished
 
