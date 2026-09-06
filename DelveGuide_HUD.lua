@@ -5,6 +5,11 @@
 
 local HUD_W, HUD_H = 290, 196
 
+-- A persisted run start older than this is a stale record from a run that was
+-- never finished (logout, disconnect), not something to resume. Three hours
+-- comfortably exceeds any real delve.
+local RUN_RESUME_MAX = 3 * 60 * 60
+
 local hudFrame  = nil
 local lockBtn   = nil
 
@@ -509,8 +514,28 @@ local function EvaluateDelveState()
     if nowInside then
         -- Start the run timer once per run. runCompleted guards against
         -- restarting it while the player lingers inside after finishing.
+        --
+        -- GetTime() is session uptime and resets on /reload, so a reload
+        -- mid-run used to restart the timer from zero and log a fabricated
+        -- fast time straight into the community median. The start is now also
+        -- persisted as wall clock in DelveGuideDB.activeRun; if a record for
+        -- THIS instance is found and is recent, the timer resumes from it
+        -- instead of starting fresh. Cleared on completion (main handler) and
+        -- on leaving (below), so it cannot bleed into the next run.
         if not DelveGuide.runStartTime and not DelveGuide.runCompleted then
-            DelveGuide.runStartTime = GetTime()
+            local instanceID = select(8, GetInstanceInfo())
+            local ar = DelveGuideDB and DelveGuideDB.activeRun
+            if ar and ar.instanceID == instanceID and ar.startEpoch
+               and (time() - ar.startEpoch) >= 0 and (time() - ar.startEpoch) < RUN_RESUME_MAX then
+                DelveGuide.runStartTime = GetTime() - (time() - ar.startEpoch)
+                DelveGuide.runResumed   = true
+            else
+                DelveGuide.runStartTime = GetTime()
+                DelveGuide.runResumed   = nil
+                if DelveGuideDB then
+                    DelveGuideDB.activeRun = { startEpoch = time(), instanceID = instanceID }
+                end
+            end
         end
         UpdateHUD()
     else
@@ -519,6 +544,8 @@ local function EvaluateDelveState()
         if DelveGuide.runStartTime or DelveGuide.runCompleted or DelveGuide.currentDelveTierNum then
             DelveGuide.runStartTime = nil
             DelveGuide.runCompleted = nil
+            DelveGuide.runResumed   = nil
+            if DelveGuideDB then DelveGuideDB.activeRun = nil end
             if DelveGuide.ClearDelveTier then DelveGuide.ClearDelveTier() end
         end
         if hudFrame and hudFrame:IsShown() then UpdateHUD() end

@@ -8,7 +8,7 @@ DelveGuide.RenderHistory = function()
     -- exactly the data /dg submit shares to help build community rankings.
     local vstats = DelveGuide.GetVariantRunStats and DelveGuide.GetVariantRunStats() or {}
     if #vstats > 0 then
-        y=y+UI.CreateRow(cf,y,"|cFFFFD700Your Fastest Variants|r  |cFF888888(avg clear time from your timed runs -- help rank these via /dg submit)|r")+4
+        y=y+UI.CreateRow(cf,y,"|cFFFFD700Your Fastest Variants|r  |cFF888888(median clear time from your timed runs -- help rank these via /dg submit)|r")+4
         for i,s in ipairs(vstats) do
             if i<=12 then
                 y=y+UI.CreateRow(cf,y,string.format("  |cFF00BFFF[%dm %02ds]|r  |cFFCCAAFF%s|r |cFF888888(%s)|r  |cFF888888x%d run%s, ~T%d|r",
@@ -171,7 +171,9 @@ DelveGuide.RenderHistory = function()
                     local tierStr=run.tier and ("  |cFF888888["..run.tier.."]|r") or ""
                     local vaultStr=run.vaultIlvl and ("  |cFFFFD700"..run.vaultIlvl.." ilvl|r") or ""
                     local timeStr=run.elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(run.elapsed/60),math.floor(run.elapsed%60)) or ""
-                    local varStr=run.variant and ("  |cFFCCAAFF("..run.variant..")|r") or ""
+                    local varStr=run.variant and ("  |cFFCCAAFF("..run.variant..")|r")
+                        or (run.kind=="labyrinth" and ("  |cFFCCAAFF(Labyrinth"..(run.chambers and (", "..run.chambers.." chambers") or "")..")|r"))
+                        or ""
                     local bountyStr=run.bountiful and "  |cFFFFD700[B]|r" or ""
                     -- Show the player's own language when we captured it; `name`
                     -- is the canonical English used for grouping and submissions.

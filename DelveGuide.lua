@@ -482,8 +482,9 @@ DelveGuide.TrackLabyrinthPresence = function()
     local was = DelveGuide.currentLabyrinth
     if now == was then return end
     if was then
-        DelveGuide.LogLabyrinth({ kind = "leave", labyrinth = was,
-            elapsed = DelveGuide.labyrinthEnteredAt and (GetTime() - DelveGuide.labyrinthEnteredAt) or nil })
+        local ran = DelveGuide.labyrinthEnteredAt and (GetTime() - DelveGuide.labyrinthEnteredAt) or nil
+        DelveGuide.LogLabyrinth({ kind = "leave", labyrinth = was, elapsed = ran })
+        if DelveGuide.LogLabyrinthRun then DelveGuide.LogLabyrinthRun(was, ran) end
     end
     if now then
         DelveGuide.labyrinthEnteredAt    = GetTime()
@@ -686,6 +687,47 @@ local function GetWeeklyVaultData()
         end
     end
     return delveCount, slots, maxThreshold, acts
+end
+
+-- D2: the Labyrinth run record. Called from TrackLabyrinthPresence on leave.
+-- A Labyrinth grants delve vault credit only when its final boss dies, and
+-- that boss's encounterID is not known on placeholder content
+-- (DelveGuideData.labyrinths[].finalEncounterID is nil today), so this writes
+-- nothing until the ID is filled in -- the D3 log still captures every run.
+-- Once it fires, a completed run lands in history as kind="labyrinth": no
+-- variant, so rankings and /dg submit skip it; counted by the weekly vault
+-- tallies (Roster, Victory) exactly like a delve, because for the vault that
+-- is what it is. Defined here, after GetWeeklyVaultData, so it can use it.
+DelveGuide.LogLabyrinthRun = function(name, elapsed)
+    if not (DelveGuideDB and DelveGuideDB.labyrinthLog and DelveGuideData and DelveGuideData.labyrinths) then return end
+    local def
+    for _, L in ipairs(DelveGuideData.labyrinths) do if L.name == name then def = L; break end end
+    if not def or not def.finalEncounterID then return end
+    -- Walk the log back to this run's "enter": count chambers, find the boss.
+    local chambers, completed = 0, false
+    for i = #DelveGuideDB.labyrinthLog, 1, -1 do
+        local e = DelveGuideDB.labyrinthLog[i]
+        if e.kind == "enter" and e.labyrinth == name then break end
+        if e.kind == "chamber" then chambers = chambers + 1 end
+        if e.kind == "encounter" and e.encounterID == def.finalEncounterID and e.success then completed = true end
+    end
+    if not completed then return end
+    local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
+    local resetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
+    local vaultIlvl
+    pcall(function()
+        local _, _, _, acts = GetWeeklyVaultData()
+        for _, a in ipairs(acts or {}) do
+            if a.progress >= a.threshold and a.rewardIlvl and (not vaultIlvl or a.rewardIlvl > vaultIlvl) then vaultIlvl = a.rewardIlvl end
+        end
+    end)
+    local charName, charRealm = "Unknown", nil
+    pcall(function() charName = UnitName("player") or "Unknown" end)
+    pcall(function() charRealm = GetRealmName() end)
+    table.insert(DelveGuideDB.history, 1, { kind = "labyrinth", name = name, date = date("%Y-%m-%d %H:%M"), resetKey = resetKey,
+        tier = "?", tierNum = nil, vaultIlvl = vaultIlvl, char = charName, realm = charRealm, elapsed = elapsed, chambers = chambers })
+    if #DelveGuideDB.history > 200 then table.remove(DelveGuideDB.history) end
+    print("|cFF00BFFF[DelveGuide]|r Logged Labyrinth: |cFF00FF44" .. name .. "|r  |cFF888888(" .. chambers .. " chambers)|r")
 end
 
 -- Snapshot the current character's state into SavedVariables.
@@ -1937,8 +1979,8 @@ DelveGuide.GetVariantRunStats = function()
         if run.variant and type(run.elapsed) == "number" and run.elapsed > 0 then
             local key = (run.name or "?") .. "||" .. run.variant
             local a = agg[key]
-            if not a then a = { delve = run.name or "?", variant = run.variant, totSec = 0, totTier = 0, count = 0, tierCount = 0 }; agg[key] = a end
-            a.totSec  = a.totSec + run.elapsed
+            if not a then a = { delve = run.name or "?", variant = run.variant, secs = {}, totTier = 0, count = 0, tierCount = 0 }; agg[key] = a end
+            table.insert(a.secs, run.elapsed)
             a.count   = a.count + 1
             -- Average tier over runs that actually HAVE a tier. Counting an
             -- unknown tier as 0 dragged the average down and got otherwise
@@ -1952,9 +1994,18 @@ DelveGuide.GetVariantRunStats = function()
     end
     local out = {}
     for _, a in pairs(agg) do
+        -- Median, not mean. One disconnect or AFK run used to drag a player's
+        -- figure for a variant, and that figure is what /dg submit ships; the
+        -- aggregator medians ACROSS players, so a mean here was the one
+        -- outlier-sensitive step left in the pipeline. The field keeps its
+        -- wire name (avgSec) because the DG1 submission format and the
+        -- aggregator read it by position.
+        table.sort(a.secs)
+        local n = #a.secs
+        local median = (n % 2 == 1) and a.secs[(n + 1) / 2] or (a.secs[n / 2] + a.secs[n / 2 + 1]) / 2
         table.insert(out, {
             delve = a.delve, variant = a.variant, count = a.count,
-            avgSec = math.floor(a.totSec / a.count + 0.5),
+            avgSec = math.floor(median + 0.5),
             avgTier = (a.tierCount > 0) and math.floor(a.totTier / a.tierCount + 0.5) or 0,
         })
     end
@@ -2403,7 +2454,16 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
                 local st = activeDelves and activeDelves[engRunName]
                 if type(st)=="table" then runBountiful = st.bountiful and true or false end
             end
-            table.insert(DelveGuideDB.history,1,{name=engRunName,locName=locName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,tierNum=tierNum,vaultIlvl=vaultIlvl,char=charName,realm=charRealm,bountiful=runBountiful,elapsed=elapsed,variant=runVariant})
+            -- SCENARIO_COMPLETED can fire twice for one completion. The second
+            -- pass found runStartTime already consumed and appended a duplicate
+            -- row with elapsed=nil. Five seconds cannot collide with a real run.
+            if DelveGuide.lastRunLoggedAt and (GetTime() - DelveGuide.lastRunLoggedAt) < 5 then return end
+            DelveGuide.lastRunLoggedAt = GetTime()
+            -- The run is over: drop the persisted start so it cannot resume.
+            local runResumed = DelveGuide.runResumed or nil
+            DelveGuide.runResumed = nil
+            DelveGuideDB.activeRun = nil
+            table.insert(DelveGuideDB.history,1,{name=engRunName,locName=locName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,tierNum=tierNum,vaultIlvl=vaultIlvl,char=charName,realm=charRealm,bountiful=runBountiful,elapsed=elapsed,variant=runVariant,resumed=runResumed})
             -- 50 was too tight for an account running several alts each week --
             -- a busy week could push older characters' runs out and undercount
             -- their vault progress. History rows are tiny.
