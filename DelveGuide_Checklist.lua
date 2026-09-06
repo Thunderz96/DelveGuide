@@ -101,6 +101,44 @@ local function RunChecklistScan()
         tip   = not valeeraOk and "Open the companion panel to configure Valeera." or nil,
     })
 
+    -- Delve glove enhancement (12.1.5). Says something only when it can be
+    -- definite: the gloves are above the 334 cap and cannot take one, or --
+    -- once DelveGuideData.delveGloveEnhancements has IDs -- one is present or
+    -- absent. With the table empty and the gloves under the cap it stays quiet
+    -- rather than guess. The enchant ID is field 2 of the item link.
+    pcall(function()
+        local link = GetInventoryItemLink("player", INVSLOT_HAND or 10)
+        if not link then return end
+        local enchantID = tonumber(link:match("item:%d+:(%d+):")) or 0
+        local ilvl = 0
+        if C_Item and C_Item.GetDetailedItemLevelInfo then
+            local ok, eff = pcall(C_Item.GetDetailedItemLevelInfo, link)
+            if ok and type(eff) == "number" then ilvl = eff end
+        end
+        local known = (DelveGuideData and DelveGuideData.delveGloveEnhancements) or {}
+        local cap = (DelveGuideData and DelveGuideData.DELVE_GLOVE_ENHANCEMENT_MAX_ILVL) or 334
+        local hasKnown = next(known) ~= nil
+        local name = known[enchantID]
+        if name then
+            table.insert(results, {
+                label = "Delve glove enhancement  |cFF00FF44(" .. name .. ")|r",
+                ok    = true,
+            })
+        elseif ilvl > cap then
+            table.insert(results, {
+                label = string.format("Delve glove enhancement  |cFFFF4444(gloves are ilvl %d)|r", ilvl),
+                ok    = false,
+                tip   = string.format("The 12.1.5 glove enhancements only apply to gloves of item level %d or below. Yours cannot take one.", cap),
+            })
+        elseif hasKnown then
+            table.insert(results, {
+                label = "Delve glove enhancement  |cFFFF4444(None)|r",
+                ok    = false,
+                tip   = "A permanent bonus inside delve content. Apply one to your gloves before entering.",
+            })
+        end
+    end)
+
     -- (The Season 1 "Building the Voidforge" weekly row was retired in 12.1 --
     -- Season 2 has no weekly shard quest; bonus rolls / upgrades live in the
     -- Voidforge tab instead.)
@@ -222,6 +260,11 @@ DelveGuide.OnTargetChanged = function()
         -- Nemesis delves are deliberately absent from DelveGuideData.delves.
         for _, n in ipairs((DelveGuideData and DelveGuideData.nemesisDelves) or {}) do
             if n == engName then matched = true; return end
+        end
+        -- Labyrinths (12.1.5). Assumes the entrance object carries the
+        -- Labyrinth's name like delve entrances do -- unverified on the PTR.
+        for _, L in ipairs((DelveGuideData and DelveGuideData.labyrinths) or {}) do
+            if L.name == engName then matched = true; return end
         end
     end)
 

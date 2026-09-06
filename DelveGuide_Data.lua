@@ -291,6 +291,19 @@ DelveGuideData.trove = {
 DelveGuideData.labyrinths = {
     { name = "The Labyrinth of Kindo'jan", instanceID = 3043, widgetSetID = 2316, verifiedBuild = 69594 },
 }
+-- Delve glove enhancements (12.1.5). Wowhead datamined four on the PTR:
+-- permanent bonuses that apply "while inside delve content", and only to
+-- gloves of item level 334 or below. Names, effects and enchant IDs are not
+-- yet known here, and how they are obtained is not known anywhere -- the
+-- article says so. Keyed by the enchant ID that appears in the gloves' item
+-- link (item:itemID:ENCHANT:...), which is what the checklist can read
+-- outside a delve. Fill from a /dg export taken with one applied: the export
+-- records the gloves link and its parsed enchant ID.
+DelveGuideData.delveGloveEnhancements = {
+    -- [enchantID] = "Name",
+}
+DelveGuideData.DELVE_GLOVE_ENHANCEMENT_MAX_ILVL = 334
+
 -- Derived lookups; the table above is the single source of truth.
 DelveGuideData.labyrinthInstances  = {}   -- instanceID  -> name
 DelveGuideData.labyrinthWidgetSets = {}   -- widgetSetID -> name

@@ -1812,6 +1812,26 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             end
         end)
 
+        -- Equipped gloves: link, parsed enchant ID, item level. The first export
+        -- taken with a 12.1.5 delve glove enhancement applied gives the enchant
+        -- ID that DelveGuideData.delveGloveEnhancements is keyed on.
+        pcall(function()
+            local link = GetInventoryItemLink("player", INVSLOT_HAND or 10)
+            if link then
+                local ilvl
+                if C_Item and C_Item.GetDetailedItemLevelInfo then
+                    local ok, eff = pcall(C_Item.GetDetailedItemLevelInfo, link)
+                    if ok then ilvl = eff end
+                end
+                snap.gloves = { link = link, enchantID = tonumber(link:match("item:%d+:(%d+):")) or 0, ilvl = ilvl }
+            end
+        end)
+
+        -- Last PLAYER_INTERACTION_MANAGER_FRAME_SHOW type seen, to learn the
+        -- delve entrance dialog's real enum value.
+        snap.lastInteractionType = DelveGuide.lastInteractionType
+        snap.pickerEnum = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.DelvesDifficultyPicker
+
         -- Tier, as the addon currently believes it. Read the stored fields
         -- rather than calling ApplyDelveTier so the export stays side-effect
         -- free. Needed to correlate scenarioID against tier: 3580 was seen at
@@ -2673,11 +2693,20 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
             if DelveGuide.TrackLabyrinthPresence then DelveGuide.TrackLabyrinthPresence() end
         end)
     elseif event=="PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
-        -- arg1==3 is the delve entrance UI. No accessible tier API exists in Midnight 12.0;
-        -- tier is set manually via /dg tier N.
-        if arg1 == 3 then
+        -- The delve entrance dialog (the tier picker) opens through this event.
+        -- It is the real pre-entry moment: a delve entrance is a game object,
+        -- not a unit, so the checklist's PLAYER_TARGET_CHANGED trigger could
+        -- never see one and the automatic checklist never fired. The Labyrinth
+        -- uses the same dialog, so this covers it without a name match.
+        -- The interaction type is matched by enum name, with the literal 3 this
+        -- code has always used kept as a fallback; the value seen is recorded
+        -- so /dg export shows which one the client actually sends.
+        DelveGuide.lastInteractionType = arg1
+        local pickerType = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.DelvesDifficultyPicker
+        if (pickerType and arg1 == pickerType) or arg1 == 3 then
             -- Refresh HUD when player is at the entrance (outside the instance)
             if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
+            if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(false) end
         end
     elseif event=="UNIT_AURA" then
         -- Reserved for future aura-based detection if Blizzard exposes tier via auras.
