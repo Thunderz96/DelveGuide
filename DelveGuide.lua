@@ -2084,6 +2084,40 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             end
         end)
 
+        -- Where the player is standing: the map the client considers current
+        -- and the position on it. Replaces a hand-typed /dump with a guessed
+        -- map ID (2512 came back empty at Venomfall Deeps -- wrong map).
+        pcall(function()
+            local mapID = C_Map.GetBestMapForUnit("player")
+            local pos = mapID and C_Map.GetPlayerMapPosition(mapID, "player")
+            local info = mapID and C_Map.GetMapInfo(mapID)
+            snap.playerMap = { mapID = mapID, name = info and info.name,
+                x = pos and pos.x, y = pos and pos.y }
+        end)
+
+        -- A vendor window that is open right now: every item with its price
+        -- and currency. Run /dg export with the delve vendor open and the
+        -- cosmetic rows' IDs, sources and costs come straight from the game.
+        pcall(function()
+            if not (MerchantFrame and MerchantFrame:IsShown()) then return end
+            snap.merchant = { npc = UnitName("npc"), items = {} }
+            for i = 1, (GetMerchantNumItems() or 0) do
+                local name, _, price, qty = GetMerchantItemInfo(i)
+                local link = GetMerchantItemLink(i)
+                local entry = { name = name, price = price, qty = qty, link = link,
+                    itemID = link and tonumber(link:match("item:(%d+)")) }
+                local nCosts = GetMerchantItemCostInfo(i) or 0
+                if nCosts > 0 then
+                    entry.costs = {}
+                    for j = 1, nCosts do
+                        local _, value, costLink, currencyName = GetMerchantItemCostItem(i, j)
+                        table.insert(entry.costs, { value = value, link = costLink, currency = currencyName })
+                    end
+                end
+                table.insert(snap.merchant.items, entry)
+            end
+        end)
+
         -- Last PLAYER_INTERACTION_MANAGER_FRAME_SHOW type seen, to learn the
         -- delve entrance dialog's real enum value.
         snap.lastInteractionType = DelveGuide.lastInteractionType

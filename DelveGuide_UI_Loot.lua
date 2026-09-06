@@ -68,7 +68,7 @@ DelveGuide.RenderLoot = function()
     local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
     
-    y = y + UI.CreateHeader(cf, y, "Notable Loot  --  Trinkets & Weapons from Midnight Delves") + 4
+    y = y + UI.CreateHeader(cf, y, "Notable Loot  --  Trinkets, Weapons & Cosmetics from Midnight Delves") + 4
     y = y + UI.CreateRow(cf, y, "|cFF888888Hover an item name to preview its tooltip.|r") + 4
 
     -- Season 2 delve reward currencies
@@ -77,9 +77,12 @@ DelveGuide.RenderLoot = function()
     y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888Transmute into powerful equipment after Midnight raid bosses, Mythic+ dungeons, Bountiful Delves, or Nightmare Prey Hunts. One item per difficulty level, until your spec's pool is exhausted.|r")
     y = y + UI.CreateRow(cf, y, "  |cFFAA66CCAscendant Venomstone|r   |cFF888888Gear-upgrade material (arriving later this season). 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful Delve guarantees one (~1-2).|r") + 6
     
-    for _, slot in ipairs({"Trinket", "Weapon"}) do
+    for _, slot in ipairs({"Trinket", "Weapon", "Cosmetic"}) do
         y = y + 4
         y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. slot .. "s|r")
+        if slot == "Cosmetic" then
+            y = y + UI.CreateRow(cf, y, "|cFF888888Mounts, back pieces and toys. Rows marked unverified came from guide sites and have not been seen in game yet.|r")
+        end
         
         -- Custom perfectly-aligned header row
         local hName = UI.AcquireFontString("OVERLAY")
@@ -97,8 +100,18 @@ DelveGuide.RenderLoot = function()
         y = y + rH + 2
         
         for _, item in ipairs(DelveGuideData.loot) do
-            if item.slot == slot then 
-                y = y + CreateLootRow(cf, y, item) 
+            if item.slot == slot then
+                if slot == "Cosmetic" then
+                    -- Cosmetics are about where they come from, not what they do,
+                    -- so the notes column carries the source. Render a shallow copy;
+                    -- the data row stays untouched.
+                    local shown = { name = item.name, id = item.id,
+                        notes = (item.notes or "") .. "  |cFF888888" .. (item.source or "") .. "|r"
+                              .. (item.verified == false and "  |cFFFF8800unverified|r" or "") }
+                    y = y + CreateLootRow(cf, y, shown)
+                else
+                    y = y + CreateLootRow(cf, y, item)
+                end
             end
         end
         y = y + 8

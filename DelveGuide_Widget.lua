@@ -145,11 +145,17 @@ DelveGuide.UpdateCompactWidget = function()
     -- display. The [?] fallback below would otherwise re-add every one of them
     -- as an unranked row, which defeated the filter completely.
     local tierFiltered = {}
+    -- An unranked variant ("?") could be any rank, so it shows while at least
+    -- one rank is ticked. With nothing ticked the filter means "show nothing",
+    -- and it used to slip through here regardless (PTR, 2026-09-06: all six
+    -- boxes clear, widget still listed "[?] Why Did it Have to Be Snakes?").
+    local anyTier = false
+    for r in pairs(RANK_ORDER) do if tiers[r] then anyTier = true; break end end
     if DelveGuideData and DelveGuideData.delves then
         local seen = {}
         for _, d in ipairs(DelveGuideData.delves) do
             if activeVariants[d.variant] and not seen[d.variant] then
-                if tiers[d.ranking] or not RANK_ORDER[d.ranking] then
+                if tiers[d.ranking] or (anyTier and not RANK_ORDER[d.ranking]) then
                     local ds = activeDelves[d.name]
                     local isB = type(ds) == "table" and ds.bountiful
                     if (not bountifulOnly) or isB then
@@ -187,6 +193,7 @@ DelveGuide.UpdateCompactWidget = function()
             end
         end
         for name, st in pairs(activeDelves) do
+            if not anyTier then tierFiltered[name] = true end
             if not shownDelve[name] and not tierFiltered[name] then
                 local isB = type(st) == "table" and st.bountiful
                 if (not bountifulOnly) or isB then

@@ -459,7 +459,7 @@ DelveGuideData.loot = {
     { name="Delver's Arcane Golem",        id=262496, slot="Cosmetic", season=2, verified=false, source="Sturdy Chest, Gnarldor Isle",      notes="Mount" },
     { name="Giganto Manis",                id=257199, slot="Cosmetic", season=2, verified=false, source="Glory of the Midnight Delver",     notes="Mount -- meta achievement" },
     { name="Apophic Patagia",              id=276163, slot="Cosmetic", season=2, verified=false, source="Azta'rec, any difficulty",         notes="Back" },
-    { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Back" },
+    { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=true,  source="Naleidea Rivergleam (vendor), 2500",  notes="Back" },  -- seen on the PTR vendor, page 2 of 4, 2026-09-06
     { name="Corroded Patagia",             id=276164, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Back" },
     { name="Corrosive Victory",            id=275988, slot="Cosmetic", season=2, verified=false, source="Season 2 Nemesis intro questline", notes="Toy" },
     { name="Effigy of Dundun",             id=276189, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Toy" },

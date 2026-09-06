@@ -77,7 +77,7 @@ local function RunChecklistScan()
         table.insert(results, {
             label = "Trovehunter's Bounty  |cFFFF4444(None)|r",
             ok    = false,
-            tip   = "Complete the weekly 'Purging the Vaults' on the Coiled Isle to earn one.",
+            tip   = "Complete the weekly 'Purging the Vaults' on the Coiled Isle to earn one, or use a flute to summon the Nemesis and loot one from it.",
         })
     end
 
