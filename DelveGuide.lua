@@ -258,6 +258,9 @@ local API_PROBES = {
     { "C_Reputation.ExpandFactionHeader",            "C_Reputation",   "ExpandFactionHeader",              false },
     { "C_MajorFactions.GetMajorFactionIDs",          "C_MajorFactions","GetMajorFactionIDs",               false },
     { "C_CurrencyInfo.GetCurrencyInfo",              "C_CurrencyInfo", "GetCurrencyInfo",                  true  },
+    { "C_Item.GetItemInfoInstant",                   "C_Item",         "GetItemInfoInstant",               true  }, -- global form deleted in 12.1.5
+    { "C_Item.GetItemCount",                         "C_Item",         "GetItemCount",                     true  },
+    { "C_Item.GetDetailedItemLevelInfo",             "C_Item",         "GetDetailedItemLevelInfo",         true  },
     { "C_WeeklyRewards.GetActivities",               "C_WeeklyRewards","GetActivities",                    true  },
     { "C_TaxiMap.GetAllTaxiNodes",                   "C_TaxiMap",      "GetAllTaxiNodes",                  false },
     { "C_Map.SetUserWaypoint",                       "C_Map",          "SetUserWaypoint",                  true  },
