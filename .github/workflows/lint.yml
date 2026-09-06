@@ -1,0 +1,92 @@
+name: Lint
+
+# The parse/lint gate. Nothing mechanical used to stand between a bad commit and
+# the CurseForge release, so this runs on every branch push and every pull
+# request, and the release workflow calls it (workflow_call) and gates on it.
+#
+# `push` is filtered to branches so a tag push does not run this twice -- once
+# standalone and once through the release workflow's `lint` job.
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      # Same reason as the release workflow: actions/checkout v4 is a node20
+      # action and node20 is being removed from the runners.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        # Pinned to a full commit SHA rather than the moving v4 tag. See the
+        # comment on the same pin in release.yml.
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Install Lua 5.1
+        # It MUST be 5.1 (or LuaJIT, which is 5.1 syntax). WoW runs Lua 5.1, and
+        # a 5.4 parser happily accepts goto/::labels::, the // integer-division
+        # operator and the bitwise operators & | ~ << >>, none of which exist in
+        # 5.1 -- so a luac5.4 gate would go green on code that throws a syntax
+        # error in the game. Ubuntu ships `lua5.1` (universe) whose binaries are
+        # /usr/bin/lua5.1 and /usr/bin/luac5.1; luac's -p flag is parse-only, so
+        # nothing is executed and no bytecode is written. The alternative,
+        # `luajit` (binary /usr/bin/luajit), would work equally well.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1
+          lua5.1 -v
+
+      - name: Parse every tracked .lua with Lua 5.1
+        # Every tracked .lua, including the embedded libraries under libs/:
+        # they are committed to the repo and shipped to users verbatim, so a
+        # syntax error in one breaks the addon exactly as badly as one in
+        # DelveGuide.lua. Parsing is opinion-free, so there is no reason to
+        # exempt third-party code from it.
+        run: |
+          status=0
+          count=0
+          while IFS= read -r f; do
+            count=$((count + 1))
+            if ! out=$(luac5.1 -p "$f" 2>&1); then
+              status=1
+              echo "::error file=${f}::${out}"
+              echo "PARSE FAIL  ${f}"
+              echo "${out}"
+            fi
+          done < <(git ls-files '*.lua')
+          echo "parsed ${count} tracked .lua file(s) with $(lua5.1 -v 2>&1)"
+          exit $status
+
+      - name: Validate locale variant mappings
+        # tools/validate_locales.py exits non-zero when a localeVariants value
+        # does not resolve to a canonical variant name, when a locale key is
+        # duplicated, or when an English name hides inside a locale key. Each of
+        # those makes a delve silently never fire on a localized client.
+        run: python3 tools/validate_locales.py
+
+      - name: Check colour escape codes
+        # FATAL. See the long comment in tools/ci_lint.py for why the obvious
+        # "|c followed by 9+ hex digits" pattern cannot be the gate: colour codes
+        # are followed by display text, and text starting with a-f/A-F extends
+        # the hex run, so "|cFF00BFFFDelve" reads as 10 hex digits and is
+        # perfectly valid. The tree has 60+ of those. The rule that actually
+        # separates the real bug ("|cFFAAAAAAAAWidget", fixed in 82575e2) from
+        # them is the alphabet, not the length: a mistyped code repeats its own
+        # digits, so the run is drawn from at most 2 distinct hex characters,
+        # while a code followed by a word pulls in four or five.
+        run: python3 tools/ci_lint.py colors
+
+      - name: Warn on unguarded secret values
+        # WARNING ONLY -- never fails the build. Heuristic hunt for the GitHub #8
+        # crash class: UnitName/UnitGUID/aura reads compared or table-indexed
+        # outside a pcall, which raises "attempt to compare ... (a secret string
+        # value)" for protected units. Silence a reviewed line with a
+        # "-- dg-secret-ok" marker on it or the line after it.
+        run: python3 tools/ci_lint.py secrets
