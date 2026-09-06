@@ -358,6 +358,13 @@ def main():
         old = published.get(key)
         if not old or old == fresh:
             return fresh, None
+        # Hysteresis is for boundary NOISE. A variant whose time collapsed past
+        # two or more band edges has genuinely moved, and holding it there would
+        # be self-perpetuating: the held letter is what gets published, and the
+        # next run reads that back as its baseline, so the variant never catches
+        # up with its own data. Cap a hold at a single band.
+        if abs(LETTERS.index(old) - LETTERS.index(fresh)) > 1:
+            return fresh, None
         gap = min(abs(sec - e) for e in band_edges)
         if gap < args.hysteresis:
             return old, f"held {old} (would be {fresh}, only {int(gap)}s past the line)"
@@ -368,18 +375,21 @@ def main():
         variants = sorted(by_delve[delve], key=lambda r: r["avg_sec"])
         print(f"== {delve} ==")
         for r in variants:
-            letter = suggest_letter(r["avg_sec"], global_fastest)
-            letter, held = settle(r["avg_sec"], letter, (delve, r["variant"]))
+            fresh = suggest_letter(r["avg_sec"], global_fastest)
+            letter, held = settle(r["avg_sec"], fresh, (delve, r["variant"]))
             if held:
                 held_notes.append((delve, r["variant"], held))
             skew = r["mean_sec"] - r["median_sec"]
             note = f"   [mean {mmss(r['mean_sec'])}]" if abs(skew) >= 60 else ""
             print(f"  [{letter}]  {mmss(r['avg_sec']):>8}  {r['variant']:<34}"
                   f"({r['runs']} runs / {r['submitters']} players, ~T{r['avg_tier']}){note}")
+            # A held row carries the letter it WOULD have had, so the suppression
+            # is visible in the data file itself and not only in this run's log.
+            hold_tag = f" -- HELD (would be {fresh})" if held else ""
             lua.append(
                 f'    {{ name="{delve}", zone="?", variant="{r["variant"]}", '
                 f'ranking="{letter}", mountable=false, hasBug=false, isBestRoute=false }},'
-                f'  -- {mmss(r["avg_sec"])}, {r["runs"]} runs'
+                f'  -- {mmss(r["avg_sec"])}, {r["runs"]} runs{hold_tag}'
             )
         print()
 
