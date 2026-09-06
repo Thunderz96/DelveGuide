@@ -46,7 +46,7 @@ DelveGuide.RenderSettings = function()
         end)
 
     y = y + 4
-    y = y + UI.CreateRow(cf, y, "|cFFAAAAAAAAWidget tier filter - show active variants at these rankings:|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFAAAAAAWidget tier filter - show active variants at these rankings:|r") + 6
     local allRanks = {"S","A","B","C","D","F"}
     for i, rank in ipairs(allRanks) do
         local cb = CreateFrame("CheckButton", nil, cf, "UICheckButtonTemplate")
