@@ -279,23 +279,23 @@ DelveGuide.RenderCompanion = function()
 
     -- 4. Draw XP Progress Bar
     local barW = UI.WINDOW_W - 32; local barH = 20
-    local xpBg = cf:CreateTexture(nil, "BACKGROUND")
+    local xpBg = UI.AcquireTexture("BACKGROUND")
     xpBg:SetPoint("TOPLEFT", cf, "TOPLEFT", 8, -y)
     xpBg:SetSize(barW, barH); xpBg:SetColorTexture(0.1, 0.1, 0.1, 0.8)
 
-    local xpFill = cf:CreateTexture(nil, "ARTWORK")
+    local xpFill = UI.AcquireTexture("ARTWORK")
     xpFill:SetPoint("TOPLEFT", cf, "TOPLEFT", 8, -y)
     local fillPct = math.min(1, math.max(0, compXP / compMaxXP))
     xpFill:SetSize(math.max(1, barW * fillPct), barH)
     xpFill:SetColorTexture(0.5, 0.2, 0.9, 0.8)
 
-    local xpBorder = CreateFrame("Frame", nil, cf, "BackdropTemplate")
+    local xpBorder = UI.AcquireBackdropFrame()
     xpBorder:SetPoint("TOPLEFT", cf, "TOPLEFT", 6, -(y - 2))
     xpBorder:SetSize(barW + 4, barH + 4)
     xpBorder:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12 })
     xpBorder:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
 
-    local xpText = cf:CreateFontString(nil, "OVERLAY")
+    local xpText = UI.AcquireFontString("OVERLAY")
     xpText:SetFont(ROW_FONT, rSize)
     xpText:SetPoint("CENTER", xpBg, "CENTER", 0, 0)
     

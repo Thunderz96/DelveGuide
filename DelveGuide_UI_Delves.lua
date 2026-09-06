@@ -23,21 +23,21 @@ local function CreateDelveRow(parent, y, d)
     local active = (activeVariants[d.variant] == true)
 
     if active then
-        local fill=parent:CreateTexture(nil,"BACKGROUND"); fill:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))
+        local fill=UI.AcquireTexture("BACKGROUND"); fill:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))
         fill:SetSize(rowW-4,rH+2); fill:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
         fill:SetGradient("HORIZONTAL",CreateColor(0,0.7,0.15,0.35),CreateColor(0,0.7,0.15,0))
-        local bar=parent:CreateTexture(nil,"ARTWORK"); bar:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))
+        local bar=UI.AcquireTexture("ARTWORK"); bar:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))
         bar:SetSize(3,rH+2); bar:SetColorTexture(0,1,0.2,1)
     end
 
-    local gradeFS=parent:CreateFontString(nil,"OVERLAY"); gradeFS:SetFont(ROW_FONT_FILE,rSize)
+    local gradeFS=UI.AcquireFontString("OVERLAY"); gradeFS:SetFont(ROW_FONT_FILE,rSize)
     gradeFS:SetPoint("TOPLEFT",parent,"TOPLEFT",10,-y); gradeFS:SetWidth(46); gradeFS:SetJustifyH("LEFT")
     gradeFS:SetText(string.format("[%s]", UI.GradeColor(d.ranking)))
 
     local pin = UI.FindPinByName(d.name)
-    local nameBtn=CreateFrame("Button",nil,parent); nameBtn:SetSize(160,rH)
+    local nameBtn=UI.AcquireButton(); nameBtn:SetSize(160,rH)
     nameBtn:SetPoint("TOPLEFT",parent,"TOPLEFT",56,-y+1)
-    local nameFS=nameBtn:CreateFontString(nil,"OVERLAY"); nameFS:SetFont(ROW_FONT_FILE,rSize)
+    local nameFS=UI.AcquireFontString("OVERLAY"); nameFS:SetFont(ROW_FONT_FILE,rSize)
     nameFS:SetAllPoints(nameBtn); nameFS:SetJustifyH("LEFT")
 
     local activeDelves = DelveGuide.activeDelves or {}
@@ -59,7 +59,7 @@ local function CreateDelveRow(parent, y, d)
 
     local variantText=active and "|cFF44FF44"..d.variant.."|r" or d.variant
 
-    local infoFS=parent:CreateFontString(nil,"OVERLAY"); infoFS:SetFont(ROW_FONT_FILE,rSize)
+    local infoFS=UI.AcquireFontString("OVERLAY"); infoFS:SetFont(ROW_FONT_FILE,rSize)
     infoFS:SetPoint("TOPLEFT",parent,"TOPLEFT",220,-y)
     infoFS:SetJustifyH("LEFT")
     infoFS:SetText(UI.ZoneColor(d.zone).."  "..variantText)
@@ -79,12 +79,12 @@ local function CreateDelveRow(parent, y, d)
 
     local lastAnchor = infoFS
     for _, flag in ipairs(FLAG_DEFS) do
-        local btn = CreateFrame("Button", nil, parent)
+        local btn = UI.AcquireButton()
         btn:SetSize(40, rH)
         btn:SetPoint("LEFT", lastAnchor, "RIGHT", lastAnchor == infoFS and 4 or 2, 0)
-        local fs = btn:CreateFontString(nil, "OVERLAY")
+        local fs = UI.AcquireFontString("OVERLAY")
         fs:SetFont(ROW_FONT_FILE, rSize)
-        fs:SetAllPoints(); fs:SetJustifyH("LEFT")
+        fs:SetAllPoints(btn); fs:SetJustifyH("LEFT")
         fs:SetText(flag.text)
         btn:SetWidth(math.max(fs:GetStringWidth() + 4, 30))
         btn:SetScript("OnEnter", function(self)
@@ -170,7 +170,7 @@ DelveGuide.RenderDelves = function()
     -- than on every row.
     local headerY=y
     local headerH=UI.CreateHeader(cf,headerY,"Delve Rankings -- S=Fastest | F=Slowest |cFF888888[?]|r"..note)
-    local gradeHelp=CreateFrame("Button",nil,cf)
+    local gradeHelp=UI.AcquireButton()
     gradeHelp:SetPoint("TOPLEFT",cf,"TOPLEFT",8,-headerY)
     -- Clamped so a big font scale can't slide the hover region under the
     -- "What are Delves?" button in the top-right corner.
@@ -218,12 +218,12 @@ DelveGuide.RenderDelves = function()
     y=y+8
 
     -- "What are Delves?" hover tooltip — subtle "?" near header
-    local helpBtn = CreateFrame("Button", nil, cf)
+    local helpBtn = UI.AcquireButton()
     helpBtn:SetSize(16, 16) -- size is immaterial since the FontString fills the button and handles mouse events
     helpBtn:SetPoint("TOPRIGHT", cf, "TOPRIGHT", -8, -8)
-    local helpFS = helpBtn:CreateFontString(nil, "OVERLAY")
+    local helpFS = UI.AcquireFontString("OVERLAY")
     helpFS:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 21, "OUTLINE", "BOLD")
-    helpFS:SetAllPoints(); helpFS:SetJustifyH("CENTER")
+    helpFS:SetAllPoints(helpBtn); helpFS:SetJustifyH("CENTER")
     helpFS:SetText("|cFF777777?|r")
     helpBtn:SetScript("OnEnter", function(self)
         helpFS:SetText("|cFFFFFFFF?|r")
@@ -246,7 +246,7 @@ DelveGuide.RenderDelves = function()
     helpBtn:SetScript("OnLeave", function() helpFS:SetText("|cFF777777?|r"); GameTooltip:Hide() end)
 
     -- Share to Chat button
-    local shareBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    local shareBtn = UI.AcquirePanelButton()
     shareBtn:SetSize(110, 20)
     shareBtn:SetPoint("TOPRIGHT", cf, "TOPRIGHT", -10, -(y - 2))
     shareBtn:SetText("Share to Party")

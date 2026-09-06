@@ -45,7 +45,7 @@ DelveGuide.RenderQuests = function()
         summary.fresh or 0, summary.inProgress or 0, summary.ready or 0, summary.completed or 0, summary.total or 0, autoTag)) + 6
 
     -- Reset button (manual mode only -- auto mode resets itself per character).
-    local resetBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    local resetBtn = UI.AcquirePanelButton()
     resetBtn:SetSize(170, 22)
     resetBtn:SetPoint("TOPRIGHT", cf, "TOPRIGHT", -10, -(callHeaderY - 2))
     resetBtn:SetText("Reset Manual State")
@@ -85,7 +85,7 @@ DelveGuide.RenderQuests = function()
         end
         local label = STATE_LABEL[state] or STATE_LABEL.fresh
 
-        local container = CreateFrame("Button", nil, cf)
+        local container = UI.AcquireButton()
         container:SetPoint("TOPLEFT", cf, "TOPLEFT", 14, -y)
         container:SetSize(UI.WINDOW_W - 80, rH + 4)
 
@@ -94,36 +94,36 @@ DelveGuide.RenderQuests = function()
         --   inProgress (in log, objectives pending) -> dim orange tint
         --   completed -> faint green tint
         if state == "ready" then
-            local fill = container:CreateTexture(nil, "BACKGROUND")
+            local fill = UI.AcquireTexture("BACKGROUND")
             fill:SetAllPoints(container)
             fill:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
             fill:SetGradient("HORIZONTAL", CreateColor(1, 0.85, 0, 0.22), CreateColor(1, 0.85, 0, 0))
-            local bar = container:CreateTexture(nil, "ARTWORK")
+            local bar = UI.AcquireTexture("ARTWORK")
             bar:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
             bar:SetSize(3, rH + 4); bar:SetColorTexture(1, 0.85, 0, 1)
         elseif state == "inProgress" then
-            local fill = container:CreateTexture(nil, "BACKGROUND")
+            local fill = UI.AcquireTexture("BACKGROUND")
             fill:SetAllPoints(container)
             fill:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
             fill:SetGradient("HORIZONTAL", CreateColor(1, 0.55, 0, 0.10), CreateColor(1, 0.55, 0, 0))
         elseif state == "completed" then
-            local fill = container:CreateTexture(nil, "BACKGROUND")
+            local fill = UI.AcquireTexture("BACKGROUND")
             fill:SetAllPoints(container)
             fill:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
             fill:SetGradient("HORIZONTAL", CreateColor(0.27, 1, 0.27, 0.12), CreateColor(0.27, 1, 0.27, 0))
         end
 
-        local nameFS = container:CreateFontString(nil, "OVERLAY")
+        local nameFS = UI.AcquireFontString("OVERLAY")
         nameFS:SetFont(ROW_FONT_FILE, rSize)
         nameFS:SetPoint("LEFT", container, "LEFT", 12, 0); nameFS:SetWidth(220); nameFS:SetJustifyH("LEFT")
         nameFS:SetText("|cFF00CFFF" .. delveName .. "|r")
 
-        local zoneFS = container:CreateFontString(nil, "OVERLAY")
+        local zoneFS = UI.AcquireFontString("OVERLAY")
         zoneFS:SetFont(ROW_FONT_FILE, rSize)
         zoneFS:SetPoint("LEFT", container, "LEFT", 240, 0); zoneFS:SetWidth(140); zoneFS:SetJustifyH("LEFT")
         zoneFS:SetText("|cFF888888" .. (delveZone[delveName] or "") .. "|r")
 
-        local stateFS = container:CreateFontString(nil, "OVERLAY")
+        local stateFS = UI.AcquireFontString("OVERLAY")
         stateFS:SetFont(ROW_FONT_FILE, rSize)
         stateFS:SetPoint("LEFT", container, "LEFT", 380, 0); stateFS:SetWidth(110); stateFS:SetJustifyH("LEFT")
         local autoMark = isAuto and " |cFF44FF44(auto)|r" or ""
@@ -131,7 +131,7 @@ DelveGuide.RenderQuests = function()
 
         -- Manual cycle button (only meaningful when not auto-detected).
         if not isAuto then
-            local cycleBtn = CreateFrame("Button", nil, container, "UIPanelButtonTemplate")
+            local cycleBtn = UI.AcquirePanelButton()
             cycleBtn:SetSize(96, 18)
             cycleBtn:SetPoint("LEFT", container, "LEFT", 500, 0)
             local nextLabel = (state == "fresh")      and "Mark In Log"
@@ -144,7 +144,7 @@ DelveGuide.RenderQuests = function()
                 UI.RefreshCurrentTab()
             end)
         else
-            local autoFS = container:CreateFontString(nil, "OVERLAY")
+            local autoFS = UI.AcquireFontString("OVERLAY")
             autoFS:SetFont(ROW_FONT_FILE, rSize)
             autoFS:SetPoint("LEFT", container, "LEFT", 500, 0); autoFS:SetWidth(110); autoFS:SetJustifyH("LEFT")
             autoFS:SetText("|cFF555555quest #" .. tostring(row.questID) .. "|r")
