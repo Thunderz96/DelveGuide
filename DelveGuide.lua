@@ -175,6 +175,110 @@ local function ReadVariantFromWidgetSet(setID)
     return texts
 end
 
+-- The non-text fields of a widget set. ReadVariantFromWidgetSet keeps only the
+-- text; the review's one cheap experiment for a locale-free OUTDOOR variant key
+-- is to see whether widgetTag / textureKit / orderIndex differ between two days
+-- with different variants (Plumber reads state off exactly these fields).
+-- Recorded into rawScanResults and the export; printed by /dg selftest.
+local function ReadWidgetSetMeta(setID)
+    local meta = {}
+    if not setID or setID == 0 then return meta end
+    local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(setID)
+    if not widgets then return meta end
+    for _, w in ipairs(widgets) do
+        local m = { id = w.widgetID, type = w.widgetType }
+        local info = C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo
+                     and C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo(w.widgetID)
+        if not info and C_UIWidgetManager.GetIconAndTextWidgetVisualizationInfo then
+            info = C_UIWidgetManager.GetIconAndTextWidgetVisualizationInfo(w.widgetID)
+        end
+        if info then
+            m.tag   = info.widgetTag
+            m.kit   = info.textureKit
+            m.order = info.orderIndex
+            m.anim  = info.scriptedAnimationEffectID
+        end
+        table.insert(meta, m)
+    end
+    return meta
+end
+
+-- Every widget in the objective tracker's set, with whatever text it carries.
+-- This is the capture that settles whether the HUD's lives count is a scenario
+-- criterion or a header widget (review hud-victory#7): if the lives appear
+-- here and not in the criteria, the criteria scan can never find them.
+local function DumpObjectiveTrackerWidgets()
+    local out = {}
+    local ok, setID = pcall(function()
+        return C_UIWidgetManager.GetObjectiveTrackerWidgetSetID
+               and C_UIWidgetManager.GetObjectiveTrackerWidgetSetID()
+    end)
+    if not ok or not setID then return out, nil end
+    local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(setID) or {}
+    for _, w in ipairs(widgets) do
+        local m = { id = w.widgetID, type = w.widgetType }
+        pcall(function()
+            local info = C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo
+                         and C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo(w.widgetID)
+            if not (info and info.text) and C_UIWidgetManager.GetIconAndTextWidgetVisualizationInfo then
+                info = C_UIWidgetManager.GetIconAndTextWidgetVisualizationInfo(w.widgetID)
+            end
+            if info then
+                m.text = info.text; m.tag = info.widgetTag; m.kit = info.textureKit; m.order = info.orderIndex
+            end
+        end)
+        table.insert(out, m)
+    end
+    return out, setID
+end
+
+-- type() of every Blizzard API this addon leans on, so a namespace move (as
+-- 12.1.5 did to scenario criteria) shows up as a line of output instead of
+-- failing silently inside a pcall. Shared by /dg export and /dg selftest.
+local API_PROBES = {
+    { "C_Scenario.GetInfo",                          "C_Scenario",     "GetInfo",                          true  },
+    { "C_Scenario.GetStepInfo",                      "C_Scenario",     "GetStepInfo",                      true  },
+    { "C_Scenario.IsInScenario",                     "C_Scenario",     "IsInScenario",                     true  },
+    { "C_Scenario.GetNumCriteria",                   "C_Scenario",     "GetNumCriteria",                   false }, -- gone in 12.1.5; fallback only
+    { "C_Scenario.GetCriteriaInfo",                  "C_Scenario",     "GetCriteriaInfo",                  false }, -- gone in 12.1.5; fallback only
+    { "C_ScenarioInfo.GetScenarioInfo",              "C_ScenarioInfo", "GetScenarioInfo",                  true  },
+    { "C_ScenarioInfo.GetScenarioStepInfo",          "C_ScenarioInfo", "GetScenarioStepInfo",              false },
+    { "C_ScenarioInfo.GetCriteriaInfo",              "C_ScenarioInfo", "GetCriteriaInfo",                  true  },
+    { "C_DelvesUI.GetActiveDelveTier",               "C_DelvesUI",     "GetActiveDelveTier",               false }, -- present, returns an empty struct
+    { "C_DelvesUI.GetCompanionInfoForActivePlayer",  "C_DelvesUI",     "GetCompanionInfoForActivePlayer",  true  },
+    { "C_DelvesUI.HasActiveLair",                    "C_DelvesUI",     "HasActiveLair",                    true  },
+    { "C_DelvesUI.GetRoleNodeForCompanion",          "C_DelvesUI",     "GetRoleNodeForCompanion",          false },
+    { "C_AreaPoiInfo.GetDelvesForMap",               "C_AreaPoiInfo",  "GetDelvesForMap",                  true  },
+    { "C_AreaPoiInfo.GetAreaPOIInfo",                "C_AreaPoiInfo",  "GetAreaPOIInfo",                   true  },
+    { "C_UIWidgetManager.GetAllWidgetsBySetID",      "C_UIWidgetManager", "GetAllWidgetsBySetID",          true  },
+    { "C_Reputation.GetFactionDataByID",             "C_Reputation",   "GetFactionDataByID",               true  },
+    { "C_Reputation.GetFactionDataByIndex",          "C_Reputation",   "GetFactionDataByIndex",            false },
+    { "C_Reputation.GetNumFactions",                 "C_Reputation",   "GetNumFactions",                   false },
+    { "C_Reputation.ExpandFactionHeader",            "C_Reputation",   "ExpandFactionHeader",              false },
+    { "C_MajorFactions.GetMajorFactionIDs",          "C_MajorFactions","GetMajorFactionIDs",               false },
+    { "C_CurrencyInfo.GetCurrencyInfo",              "C_CurrencyInfo", "GetCurrencyInfo",                  true  },
+    { "C_WeeklyRewards.GetActivities",               "C_WeeklyRewards","GetActivities",                    true  },
+    { "C_TaxiMap.GetAllTaxiNodes",                   "C_TaxiMap",      "GetAllTaxiNodes",                  false },
+    { "C_Map.SetUserWaypoint",                       "C_Map",          "SetUserWaypoint",                  true  },
+    { "C_SuperTrack.SetSuperTrackedUserWaypoint",    "C_SuperTrack",   "SetSuperTrackedUserWaypoint",      false },
+}
+-- Returns { [label] = "function"|"nil"|... } and a list of REQUIRED labels that
+-- came back nil -- those are the ones that would silently break the addon.
+local function ProbeAPIs()
+    local result, missing = {}, {}
+    for _, pr in ipairs(API_PROBES) do
+        local label, ns, key, required = pr[1], pr[2], pr[3], pr[4]
+        local ok, v = pcall(function() local t = _G[ns]; return t and t[key] end)
+        local ty = ok and type(v) or "err"
+        result[label] = ty
+        if required and ty ~= "function" then table.insert(missing, label) end
+    end
+    result["GetTaxiMapID (global)"] = type(GetTaxiMapID)
+    result["NumTaxiNodes (global)"] = type(NumTaxiNodes)
+    result["GetInstanceInfo (global)"] = type(GetInstanceInfo)
+    return result, missing
+end
+
 -- Seed the localized-name map from the persisted cache so it survives reloads
 -- and logins that happen inside a delve (where no POI scan runs).
 local function SeedLocalizedNames()
@@ -225,6 +329,7 @@ local function ScanActiveVariants()
                 if info then
                     local delveName=info.name or ""; local widgetSetID=info.tooltipWidgetSet or 0
                     local widgetTexts=ReadVariantFromWidgetSet(widgetSetID)
+                    local widgetMeta=ReadWidgetSetMeta(widgetSetID)
                     local atlasName = info.atlasName or ""
                     local variantName,isBountiful,hasNemesis=nil,false,false
                     if atlasName:find("bountiful",1,true) then isBountiful=true end
@@ -366,7 +471,7 @@ local function ScanActiveVariants()
 
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name=delveName,widgetSetID=tostring(widgetSetID),
-                        atlasName=atlasName,widgetTexts=widgetTexts,variantName=variantName or (isNemesisDelve and "(nemesis)" or (isLabyrinth and "(labyrinth)") or "(not found)")})
+                        atlasName=atlasName,widgetTexts=widgetTexts,widgetMeta=widgetMeta,variantName=variantName or (isNemesisDelve and "(nemesis)" or (isLabyrinth and "(labyrinth)") or "(not found)")})
                     if variantName and variantName~="" then activeVariants[variantName]=true end
                 else
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
@@ -1356,35 +1461,12 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
                 end
             end
         end)
-        -- API presence probe. Records type() for every call this addon depends
-        -- on, so a Blizzard namespace move (as 12.1.5 did to scenario criteria)
-        -- shows up in the export instead of failing silently inside a pcall.
-        pcall(function()
-            snap.api = {}
-            local function probe(label, tbl, key)
-                local ok, v = pcall(function() return tbl and tbl[key] end)
-                snap.api[label] = ok and type(v) or "err"
-            end
-            probe("C_Scenario.GetInfo",                     C_Scenario,     "GetInfo")
-            probe("C_Scenario.GetStepInfo",                 C_Scenario,     "GetStepInfo")
-            probe("C_Scenario.IsInScenario",                C_Scenario,     "IsInScenario")
-            probe("C_Scenario.GetNumCriteria",              C_Scenario,     "GetNumCriteria")
-            probe("C_Scenario.GetCriteriaInfo",             C_Scenario,     "GetCriteriaInfo")
-            probe("C_ScenarioInfo.GetScenarioInfo",         C_ScenarioInfo, "GetScenarioInfo")
-            probe("C_ScenarioInfo.GetScenarioStepInfo",     C_ScenarioInfo, "GetScenarioStepInfo")
-            probe("C_ScenarioInfo.GetCriteriaInfo",         C_ScenarioInfo, "GetCriteriaInfo")
-            probe("C_DelvesUI.GetActiveDelveTier",          C_DelvesUI,     "GetActiveDelveTier")
-            probe("C_DelvesUI.GetCompanionInfoForActivePlayer", C_DelvesUI, "GetCompanionInfoForActivePlayer")
-            probe("C_DelvesUI.HasActiveLair",               C_DelvesUI,     "HasActiveLair")
-            probe("C_AreaPoiInfo.GetDelvesForMap",          C_AreaPoiInfo,  "GetDelvesForMap")
-            probe("C_Reputation.GetFactionDataByIndex",     C_Reputation,   "GetFactionDataByIndex")
-            probe("C_Reputation.GetNumFactions",            C_Reputation,   "GetNumFactions")
-            probe("C_Reputation.ExpandFactionHeader",       C_Reputation,   "ExpandFactionHeader")
-            probe("C_MajorFactions.GetMajorFactionIDs",     C_MajorFactions,"GetMajorFactionIDs")
-            probe("C_TaxiMap.GetAllTaxiNodes",              C_TaxiMap,      "GetAllTaxiNodes")
-            snap.api["GetTaxiMapID (global)"] = type(GetTaxiMapID)
-            snap.api["NumTaxiNodes (global)"] = type(NumTaxiNodes)
-        end)
+        -- API presence probe, shared with /dg selftest (see ProbeAPIs).
+        pcall(function() snap.api, snap.apiMissing = ProbeAPIs() end)
+
+        -- Objective-tracker widget set: settles whether lives are a criterion
+        -- or a header widget (see DumpObjectiveTrackerWidgets).
+        pcall(function() snap.trackerWidgets, snap.trackerWidgetSetID = DumpObjectiveTrackerWidgets() end)
 
         -- Scenario criteria, through the 12.1.5-safe helpers.
         pcall(function()
@@ -1459,6 +1541,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
                 table.insert(snap.rawScan, {
                     mapID = r.mapID, poiID = r.poiID, name = r.name,
                     atlas = r.atlasName, set = r.widgetSetID, texts = r.widgetTexts,
+                    meta = r.widgetMeta,
                 })
             end
         end)
@@ -1620,6 +1703,106 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         table.insert(DelveGuideDB.ptrExports, snap)
         print(string.format("|cFF00BFFF[DelveGuide]|r Export snapshot |cFF44FF44#%d|r captured (%s). |cFFFFD700/reload|r or logout to write to disk.",
             #DelveGuideDB.ptrExports, snap.zone or "?"))
+    elseif msg=="selftest" then
+        -- One command that turns "does this still work on the new patch" into
+        -- a pasteable pass/fail block: every tab rendered under pcall, every
+        -- API the addon leans on probed, the data file's invariants checked,
+        -- and the two widget dumps that settle open questions. Also written to
+        -- DelveGuideDB.lastSelftest so it can be read off disk after /reload.
+        local P = "|cFF00BFFF[DelveGuide]|r "
+        local PASS, FAIL, INFO = "|cFF00FF44PASS|r", "|cFFFF4444FAIL|r", "|cFF888888info|r"
+        local report = { at = date("%Y-%m-%d %H:%M:%S"), build = {GetBuildInfo()}, fails = 0 }
+        local function line(status, text) print(P..status.."  "..text) end
+        local function fail(text) report.fails = report.fails + 1; line(FAIL, text) end
+        print(P.."=== SELF-TEST  "..ADDON_VERSION.."  build "..tostring(report.build[2]).."  iface "..tostring(report.build[4]).." ===")
+
+        -- 1. APIs
+        local api, missing = ProbeAPIs()
+        report.api, report.apiMissing = api, missing
+        if #missing == 0 then line(PASS, "all required APIs present") end
+        for _, m in ipairs(missing) do fail("required API missing: "..m) end
+        for _, pr in ipairs(API_PROBES) do
+            if not pr[4] and api[pr[1]] ~= "function" then line(INFO, pr[1].." = "..tostring(api[pr[1]]).." (optional)") end
+        end
+
+        -- 2. Data invariants
+        report.data = {}
+        do
+            local badGrade, badZone, dupVariant, seen = {}, {}, {}, {}
+            for _, d in ipairs(DelveGuideData.delves or {}) do
+                if d.ranking ~= "?" and not DelveGuideData.gradeColors[d.ranking] then table.insert(badGrade, d.name..":"..tostring(d.ranking)) end
+                if not zoneColors[d.zone] then badZone[d.zone or "?"] = true end
+                if seen[d.variant] then table.insert(dupVariant, d.variant) end
+                seen[d.variant] = true
+            end
+            if #badGrade == 0 then line(PASS, "every ranking has a colour") else fail("rankings with no colour: "..table.concat(badGrade, ", ")) end
+            local bz = {}; for z in pairs(badZone) do table.insert(bz, z) end
+            if #bz == 0 then line(PASS, "every zone has a colour") else fail("zones with no colour: "..table.concat(bz, ", ")) end
+            if #dupVariant == 0 then line(PASS, "variant names unique") else fail("duplicate variants: "..table.concat(dupVariant, ", ")) end
+            local tr = DelveGuideData.tierRewards or {}
+            local okTier = tr[8] and tr[8].coffer == 295 and tr[8].vault == 302 and tr[11] and tr[11].vault == 305
+            if okTier then line(PASS, "tierRewards: T8 coffer 295 / vault 302, T11 vault 305") else fail("tierRewards no longer match the 295/302/305 the UI text claims") end
+            local badSet = {}
+            for setID, name in pairs(DelveGuideData.widgetSetDelves or {}) do
+                local found = false
+                for _, d in ipairs(DelveGuideData.delves or {}) do if d.name == name then found = true; break end end
+                if not found then table.insert(badSet, setID..":"..name) end
+            end
+            if #badSet == 0 then line(PASS, "every widgetSetDelves entry names a catalogued delve") else fail("widgetSetDelves -> unknown delve: "..table.concat(badSet, ", ")) end
+            local badMap = {}
+            for _, mapID in ipairs(DelveGuideData.zoneMapIDs or {}) do if not (DelveGuideData.zoneNames or {})[mapID] then table.insert(badMap, tostring(mapID)) end end
+            if #badMap == 0 then line(PASS, "every zoneMapID has a zoneName") else fail("zoneMapIDs with no zoneName: "..table.concat(badMap, ", ")) end
+            report.data = { badGrade = badGrade, badZone = bz, dupVariant = dupVariant, tierOK = okTier and true or false, badSet = badSet, badMap = badMap }
+        end
+
+        -- 3. Every tab renders
+        report.tabs = {}
+        do
+            if not mainFrame then CreateMainWindow() end
+            local wasShown, origTab = mainFrame:IsShown(), currentTabKey
+            for _, td in ipairs(TABS) do
+                local ok, err = pcall(SwitchTab, td.key)
+                report.tabs[td.key] = ok and "ok" or tostring(err)
+                if ok then line(PASS, "tab renders: "..td.label) else fail("tab "..td.label..": "..tostring(err)) end
+            end
+            pcall(SwitchTab, origTab or "delves")   -- never leave the window parked on Debug
+            if not wasShown then mainFrame:Hide() end
+        end
+
+        -- 4. Widget-set metadata for every scanned POI (non-text fields; the
+        --    outdoor variant-key experiment). Needs a scan this session.
+        report.poiMeta = {}
+        if #rawScanResults == 0 then
+            line(INFO, "no POI scan this session -- run /dg scan first for widget metadata")
+        else
+            for _, r in ipairs(rawScanResults) do
+                if r.widgetMeta and #r.widgetMeta > 0 then
+                    local parts = {}
+                    for _, m in ipairs(r.widgetMeta) do
+                        table.insert(parts, string.format("id=%s t=%s tag=%s kit=%s ord=%s", tostring(m.id), tostring(m.type), tostring(m.tag), tostring(m.kit), tostring(m.order)))
+                    end
+                    line(INFO, string.format("%s set=%s  %s", tostring(r.name), tostring(r.widgetSetID), table.concat(parts, " | ")))
+                    report.poiMeta[tostring(r.name)] = r.widgetMeta
+                end
+            end
+        end
+
+        -- 5. Objective-tracker widgets (lives: criterion or widget?)
+        do
+            local widgets, setID = DumpObjectiveTrackerWidgets()
+            report.trackerWidgets, report.trackerWidgetSetID = widgets, setID
+            if not setID then
+                line(INFO, "objective tracker widget set: none (not in a scenario?)")
+            else
+                line(INFO, "objective tracker widget set "..tostring(setID)..": "..#widgets.." widget(s)")
+                for _, m in ipairs(widgets) do
+                    line(INFO, string.format("  id=%s type=%s text=[%s] tag=%s kit=%s", tostring(m.id), tostring(m.type), tostring(m.text), tostring(m.tag), tostring(m.kit)))
+                end
+            end
+        end
+
+        print(P.."=== "..(report.fails == 0 and "|cFF00FF44ALL PASS|r" or ("|cFFFF4444"..report.fails.." FAIL|r")).."  (also saved to DelveGuideDB.lastSelftest) ===")
+        DelveGuideDB.lastSelftest = report
     elseif msg=="exportclear" then
         DelveGuideDB.ptrExports = nil
         print("|cFF00BFFF[DelveGuide]|r Export snapshots cleared.")
