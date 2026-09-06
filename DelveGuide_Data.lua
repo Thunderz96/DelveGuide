@@ -103,10 +103,14 @@ DelveGuideData.delves = {
     { name="Twilight Crypts",     zone="Zul'Aman",    variant="Why Did it Have to Be Snakes?", ranking="?", mountable=false, hasBug=false, isBestRoute=false },
     -- Reference IDs -- Coiled Isle uiMapID 2512 / overview 2537 (live, build 69299).
     -- Ring of Glory: widgetSet 2047.  Gnarldor Isle: widgetSet 2044.
-    -- Do NOT key anything on poiID: it changes with Bountiful state (The Darkway
-    -- was 8439 regular / 8440 bountiful on consecutive days) and differs per map
-    -- (Gnarldor Isle is 8760 on 2512 but 8759 on 2537). widgetSetID is the stable
-    -- identifier and is what widgetSetDelves uses.
+    -- Do NOT key anything on a SINGLE poiID -- key on the poiID SET. AreaPOI.db2
+    -- holds one stable row per (delve, bountiful state, map), so a delve owns a
+    -- small fixed set of IDs rather than one: The Darkway is 8439 regular / 8440
+    -- bountiful, and Gnarldor Isle is 8760 on map 2512 / 8759 on 2537. Those
+    -- pairs are that fixed layout, not IDs churning between sessions. Any single
+    -- one of them is still the wrong key, because which member of the set you see
+    -- depends on bountiful state and which map you are looking at. widgetSetID is
+    -- the one-per-delve identifier and is what widgetSetDelves uses.
     -- Venomfall Deeps (S2 Nemesis): instanceID 3079 (PTR; verify inside) -- /way #2512 51.2 30.3.
     -- Torment's Rise (S1 Nemesis, legacy, still enterable): instanceID 2966 (PTR; verify inside).
     -- ============================================================
@@ -907,7 +911,7 @@ DelveGuideData.changelog = {
     },
     {
         version = "1.5.1",
-        date    = "2026-03-24",
+        date    = "2026-03-23",
         entries = {
             "Hotfix: Resolved a Lua error that triggered when hovering over protected UI elements with map tooltips enabled."
         }
@@ -1110,6 +1114,27 @@ DelveGuideData.changelog = {
         },
     },
     {
+        version = "1.0.4",
+        date    = "2026-03-14",
+        entries = {
+            "Fixed a crash when dragging the minimap button",
+        },
+    },
+    {
+        version = "1.0.2",
+        date    = "2026-03-14",
+        entries = {
+            "Fixed the minimap button drifting to the wrong spot while you dragged it",
+        },
+    },
+    {
+        version = "1.0.1",
+        date    = "2026-03-13",
+        entries = {
+            "The minimap button now moves with a left-click drag",
+        },
+    },
+    {
         version = "1.0.0",
         date    = "2026-03-01",
         entries = {
@@ -1141,7 +1166,10 @@ DelveGuideData.widgetSetDelves = {
     [2044] = "Gnarldor Isle",       -- 12.1, The Coiled Isle
     [2047] = "The Ring of Glory",   -- 12.1, The Coiled Isle
     -- Note: Torment's Rise (set=0) is the Nullaeus Nemesis delve, not a rotational delve.
-    -- Venomfall Deeps (S2 Nemesis) has no world-map delve POI -- detect by instanceID 3079.
+    -- Venomfall Deeps (S2 Nemesis) is likewise widget set 0 -- stated outright rather
+    -- than left implied by its absence here, because set 0 + no widget text is the
+    -- test the scanner uses to recognise a Nemesis delve on non-English clients.
+    -- It also has no world-map delve POI -- detect by instanceID 3079.
 }
 
 

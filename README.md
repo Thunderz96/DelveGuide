@@ -43,8 +43,9 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 ### ✅ Pre-Entry Checklist
 
 - Triggers automatically when you **target a Delve entrance**
-- Verifies: Coffer Key Shards · Restored Coffer Keys · Bountiful Delve token · Beacon of Hope · **Voidforge weekly progress**
-- Catches you before you waste a Bountiful run with missing keys or unfilled Voidforge shards
+- Verifies: **Coffer Key** (shard count + Restored Coffer Keys) · **Trovehunter's Bounty** (active / in bags but not activated / already used this week) · **Valeera** and her selected role
+- Also flags a **Scalebound Herald's Flute** in your bags, and tells you whether using it will still earn this week's Bounty map
+- Catches you before you waste a Bountiful run with no key, or enter with your Bounty still sitting unactivated in your bags
 
 ### 📦 Compact Widget
 
@@ -126,6 +127,13 @@ Roadmap for upcoming features and planned data additions, kept in-game so you ca
 
 ---
 
+## 🚫 What DelveGuide does not do
+
+- It does **not** show treasure or curiosity locations inside a Delve — there are no in-Delve maps, routes, or object pins.
+- It tells you which Delve to run and what to bring; once you're inside, you're on your own.
+
+---
+
 ## ⌨️ Slash Commands
 
 | Command | Description |
@@ -143,12 +151,25 @@ Roadmap for upcoming features and planned data additions, kept in-game so you ca
 | `/dg companionscan` | Re-scan for the companion reputation faction |
 | `/dg companionfaction <id>` | Manually pin the companion faction ID |
 | `/dg share [channel]` | Share active variants to chat (party/guild/say/raid) |
+| `/dg submit` | Copy your run times to submit for the community rankings |
 | `/dg tier <1-11>` | Manually set the current Delve tier in the HUD |
 | `/dg font <0.6-2.0>` | Main UI font scale |
 | `/dg widgetfont <0.6-2.0>` | Widget-only font scale (independent from main) |
 | `/dg help` | Show all available commands |
 
 > Debug commands available for bug reports and localization fixes: `dump`, `chatdump`, `huddump`, `tierdebug`, `checkdebug`, `specinfo`, `findplaza`.
+
+---
+
+## 🏆 Help rank the delves
+
+The S–F rankings aren't guesswork — they're built from players' own timed runs, and yours can go in too.
+
+1. Run some Delves. DelveGuide times every run automatically.
+2. Type `/dg submit`. It hands you a code, pre-selected — just press Ctrl+C.
+3. Paste the code into the form: **<https://forms.gle/BwrGBZkRmbQdwufN8>**
+
+Only clear times are included — no character or account data. Submitted times are pooled, reduced to a median per variant, and shipped back as the rankings you see in-game. Contributors are credited on the Settings tab.
 
 ---
 

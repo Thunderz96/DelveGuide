@@ -46,7 +46,7 @@ DelveGuide.RenderSettings = function()
         end)
 
     y = y + 4
-    y = y + UI.CreateRow(cf, y, "|cFFAAAAAAAAWidget tier filter - show active variants at these rankings:|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFAAAAAAWidget tier filter - show active variants at these rankings:|r") + 6
     local allRanks = {"S","A","B","C","D","F"}
     for i, rank in ipairs(allRanks) do
         local cb = CreateFrame("CheckButton", nil, cf, "UICheckButtonTemplate")
@@ -176,7 +176,7 @@ DelveGuide.RenderSettings = function()
     local rs = DelveGuideData.rankingStats
     if rs then
         y = y + UI.CreateRow(cf, y, string.format(
-            "|cFFCCCCCCDelve rankings come from |cFF00FF88%d|r|cFFCCCCCC player submissions -- |cFF00FF88%d|r|cFFCCCCCC variants ranked by average Tier 8+ clear time.|r  |cFF888888(updated %s)|r",
+            "|cFFCCCCCCDelve rankings come from |cFF00FF88%d|r|cFFCCCCCC player submissions -- |cFF00FF88%d|r|cFFCCCCCC variants ranked by median Tier 8+ clear time.|r  |cFF888888(updated %s)|r",
             rs.submissions or 0, rs.variants or 0, rs.updated or "?")) + 4
     end
 

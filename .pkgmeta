@@ -5,12 +5,12 @@ ignore:
   - .gitignore
   - .pkgmeta
   - .claude
+  - .gitattributes
   - CHANGELOG.md
-  - LICENSE
   - README.md
   - tools
 
-# Libraries are committed under Libs/ and packaged as-is. No externals
+# Libraries are committed under libs/ and packaged as-is. No externals
 # fetched at build time -- the previous URLs (CurseForge git mirrors and
 # Stanzilla/LibStub) all 404, and the repo already contains working copies
 # of LibStub, CallbackHandler-1.0, LibDataBroker-1.1, and LibDBIcon-1.0.
