@@ -415,24 +415,54 @@ DelveGuideData.poisons = {
 
 -- ============================================================
 -- SECTION 4: NOTABLE LOOT
+-- ------------------------------------------------------------
+-- Field convention, added in the 2026-09-06 Season 2 audit so the NEXT audit
+-- is a diff rather than a re-read:
+--   season   = the season the item was introduced in (1 = 12.0, 2 = 12.1).
+--              NOT "retired in": the Season 1 trinkets and weapons below still
+--              drop from the delves that carried over into Season 2.
+--   source   = where it comes from, in as few words as are actually known.
+--   verified = false marks a row taken from a web source and never seen on a
+--              live client. Absent means the row predates this convention.
+--
+-- Audit note (2026-09-06): no public source lists a Season 2 delve-exclusive
+-- TRINKET or WEAPON -- Season 2 delve gear appears to be the generic seasonal
+-- track, not named pieces like Season 1's. The named Season 2 delve rewards
+-- are all cosmetic, and are listed below with slot="Cosmetic". Nothing renders
+-- them yet: DelveGuide_UI_Loot.lua only draws the "Trinket" and "Weapon"
+-- groups, so surfacing them needs a Cosmetic section added there.
+-- Cosmetic item IDs from https://conquestcapped.com/guides/wow/midnight-delves-rewards/
 -- ============================================================
 DelveGuideData.loot = {
-    { name="Withered Saptor's Paw",        id=251782, slot="Trinket", notes="Crits grant Agility / main stat" },
-    { name="Desecrated Chalice",           id=251790, slot="Trinket", notes="Tank: on-damage versatility + damage" },
-    { name="Ever-Collapsing Void Fissure", id=251786, slot="Trinket", notes="On-use ramping haste" },
-    { name="Glorious Crusader's Keepsake", id=251792, slot="Trinket", notes="RNG incarnate idol" },
-    { name="Holy Retributor's Order",      id=251791, slot="Trinket", notes="On-hit damage + heal" },
-    { name="Lost Idol of the Hash'ey",     id=251783, slot="Trinket", notes="On-hit summons a companion" },
-    { name="Sealed Chaos Urn",             id=251787, slot="Trinket", notes="On-use all-stat buff" },
-    { name="Sylvan Wakrapuku",             id=251784, slot="Trinket", notes="On-hit physical proc" },
-    { name="Void-Reaper's Libram",         id=251785, slot="Trinket", notes="Damage proc + crit buff" },
-    { name="Ultradon Cuirass",             id=264694, slot="Trinket", notes="Tank on-use absorb" },
-    { name="Gift of Light",                id=251788, slot="Trinket", notes="Healer: on-hit ally stat buff" },
-    { name="Cosmic Bell",                  id=264701, slot="Trinket", notes="Healer on-use" },
-    { name="Consecrated Chalice",          id=251789, slot="Trinket", notes="Healer on-use absorb" },
-    { name="Lightgrasp Worldroot",         id=251935, slot="Weapon",  notes="Staff with a delve-only banish ability" },
-    { name="Radiant Foil",                 id=251885, slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
-    { name="Abyss Sabre",                  id=251884, slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
+    -- ── Season 1 (12.0) ───────────────────────────────────
+    { name="Withered Saptor's Paw",        id=251782, slot="Trinket", season=1, source="delve", notes="Crits grant Agility / main stat" },
+    { name="Desecrated Chalice",           id=251790, slot="Trinket", season=1, source="delve", notes="Tank: on-damage versatility + damage" },
+    { name="Ever-Collapsing Void Fissure", id=251786, slot="Trinket", season=1, source="delve", notes="On-use ramping haste" },
+    { name="Glorious Crusader's Keepsake", id=251792, slot="Trinket", season=1, source="delve", notes="RNG incarnate idol" },
+    { name="Holy Retributor's Order",      id=251791, slot="Trinket", season=1, source="delve", notes="On-hit damage + heal" },
+    { name="Lost Idol of the Hash'ey",     id=251783, slot="Trinket", season=1, source="delve", notes="On-hit summons a companion" },
+    { name="Sealed Chaos Urn",             id=251787, slot="Trinket", season=1, source="delve", notes="On-use all-stat buff" },
+    { name="Sylvan Wakrapuku",             id=251784, slot="Trinket", season=1, source="delve", notes="On-hit physical proc" },
+    { name="Void-Reaper's Libram",         id=251785, slot="Trinket", season=1, source="delve", notes="Damage proc + crit buff" },
+    { name="Ultradon Cuirass",             id=264694, slot="Trinket", season=1, source="delve", notes="Tank on-use absorb" },
+    { name="Gift of Light",                id=251788, slot="Trinket", season=1, source="delve", notes="Healer: on-hit ally stat buff" },
+    { name="Cosmic Bell",                  id=264701, slot="Trinket", season=1, source="delve", notes="Healer on-use" },
+    { name="Consecrated Chalice",          id=251789, slot="Trinket", season=1, source="delve", notes="Healer on-use absorb" },
+    { name="Lightgrasp Worldroot",         id=251935, slot="Weapon",  season=1, source="delve", notes="Staff with a delve-only banish ability" },
+    { name="Radiant Foil",                 id=251885, slot="Weapon",  season=1, source="delve", notes="2-set 1h sword with on-hit proc" },
+    { name="Abyss Sabre",                  id=251884, slot="Weapon",  season=1, source="delve", notes="2-set 1h sword with on-hit proc" },
+
+    -- ── Season 2 (12.1, The Coiled Isle) ──────────────────
+    -- Every row here is verified=false: sourced from the web, never seen in game.
+    { name="Apophic Soul Crusher",         id=275657, slot="Cosmetic", season=2, verified=false, source="Azta'rec, solo Tier ??",           notes="Mount" },
+    { name="Corroded Soul Crusher",        id=276162, slot="Cosmetic", season=2, verified=false, source="Delver's Journey rank 5",          notes="Mount -- 10 Voidlight Marl" },
+    { name="Delver's Arcane Golem",        id=262496, slot="Cosmetic", season=2, verified=false, source="Sturdy Chest, Gnarldor Isle",      notes="Mount" },
+    { name="Giganto Manis",                id=257199, slot="Cosmetic", season=2, verified=false, source="Glory of the Midnight Delver",     notes="Mount -- meta achievement" },
+    { name="Apophic Patagia",              id=276163, slot="Cosmetic", season=2, verified=false, source="Azta'rec, any difficulty",         notes="Back" },
+    { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Back" },
+    { name="Corroded Patagia",             id=276164, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Back" },
+    { name="Corrosive Victory",            id=275988, slot="Cosmetic", season=2, verified=false, source="Season 2 Nemesis intro questline", notes="Toy" },
+    { name="Effigy of Dundun",             id=276189, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Toy" },
 }
 
 
