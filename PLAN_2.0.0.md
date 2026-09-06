@@ -243,3 +243,14 @@ Full report: `API_12.1.5_Research.md`. What it changes here:
 
 Confidence limit carried over from the report: most "unchanged" verdicts rest on the
 aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's doc file.
+
+---
+
+## 9. Progress log
+
+| Date | Done | Notes |
+|---|---|---|
+| 2026-09-05 | **1.11.1** staged on `main` (untagged) | criteria API hotfix for live |
+| 2026-09-05 | **A1, A2, A3, A4, A5** | Track A complete; A2/A3 await PTR check |
+| 2026-09-05 | **E2** native waypoint, **E5** Victory comparison row, **D3** Labyrinth observation log | E5 hides its row below tier 8 or with no median |
+| 2026-09-05 | **Phase 0** merged (branch `phase0`, 9 commits) | review's "~15 missing changelog versions" was 3; 0.12 found no fifth Atal'Aman variant; `.pkgmeta` `manual-changelog` decision still Nick's |
