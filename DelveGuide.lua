@@ -72,6 +72,7 @@ local function InitSavedVars()
     if DelveGuideDB.widgetAutoHide == nil then DelveGuideDB.widgetAutoHide = false end
     if DelveGuideDB.checklistEnabled == nil then DelveGuideDB.checklistEnabled = true end
     if DelveGuideDB.showChangelog == nil then DelveGuideDB.showChangelog = true end
+    if DelveGuideDB.showDebugTab  == nil then DelveGuideDB.showDebugTab  = false end
     if DelveGuideDB.mapTooltips == nil then DelveGuideDB.mapTooltips = true end
     -- checklistDismissed is session-only; reset on every load
     DelveGuideDB.checklistDismissed = false
@@ -1225,6 +1226,10 @@ local function CreateMainWindow()
         btn.Underline:SetPoint("BOTTOM",btn,"BOTTOM",0,2); btn.Underline:SetSize(btn.Text:GetStringWidth()+16,2); btn.Underline:Hide()
         local k=td.key; btn:SetScript("OnClick",function() SwitchTab(k) end); tabButtons[k]=btn
     end
+    -- The Debug tab is for bug reports and localisation work, not daily use.
+    -- Hidden unless the Settings checkbox turns it on. It is the LAST tab, so
+    -- hiding its button leaves trailing space rather than a gap in the row.
+    if tabButtons.debug and not (DelveGuideDB and DelveGuideDB.showDebugTab) then tabButtons.debug:Hide() end
     
     -- Dynamically scale tabs and the UI layout variable when dragged!
     f:HookScript("OnSizeChanged", function(self, width, height)
@@ -1247,6 +1252,17 @@ end
 function DelveGuide.Toggle()
     if not mainFrame then CreateMainWindow() end
     if mainFrame:IsShown() then mainFrame:Hide() else mainFrame:Show() end
+end
+
+-- Settings checkbox target. Hiding the tab while it is the one being viewed
+-- switches to Delves so the window never shows a tab it has no button for.
+DelveGuide.SetDebugTabShown = function(shown)
+    local btn = tabButtons.debug
+    if not btn then return end
+    if shown then btn:Show() else
+        btn:Hide()
+        if currentTabKey == "debug" then SwitchTab("delves") end
+    end
 end
 
 

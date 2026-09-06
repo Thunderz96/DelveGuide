@@ -170,6 +170,12 @@ DelveGuide.RenderSettings = function()
     y = y + MakeSettingCheckbox(cf, y, "Show What's New popup on version update",
         function() return DelveGuideDB.showChangelog end,
         function(checked) DelveGuideDB.showChangelog = checked end) + 4
+    y = y + MakeSettingCheckbox(cf, y, "Show the Debug tab |cFF888888(for bug reports and translations)|r",
+        function() return DelveGuideDB.showDebugTab end,
+        function(checked)
+            DelveGuideDB.showDebugTab = checked
+            if DelveGuide.SetDebugTabShown then DelveGuide.SetDebugTabShown(checked) end
+        end) + 4
         
     local clBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
     clBtn:SetSize(160, 26); clBtn:SetText("View Changelog")
