@@ -92,7 +92,7 @@ DelveGuide.RenderDebug = function()
                 entry.locale or "?", entry.text or "?", entry.delve or "?", entry.firstSeen or "?"))
         end
         y = y + 4
-        local clearBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+        local clearBtn = UI.AcquirePanelButton()
         clearBtn:SetSize(160, 20)
         clearBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
         clearBtn:SetText("Clear Missing Log")

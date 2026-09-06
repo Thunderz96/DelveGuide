@@ -10,10 +10,10 @@ BINDING_NAME_DELVEGUIDE_TOGGLE_WIDGET = "Toggle compact widget"
 local function MakeSettingCheckbox(parent, y, labelText, getValue, onToggle)
     UI.EnsureFontFiles(); local _, rSize = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
-    local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
+    local cb = UI.AcquireCheckButton()
     cb:SetSize(24, 24); cb:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -y)
     cb:SetChecked(getValue())
-    local lbl = parent:CreateFontString(nil, "OVERLAY")
+    local lbl = UI.AcquireFontString("OVERLAY")
     lbl:SetFont(ROW_FONT_FILE, rSize)
     lbl:SetPoint("LEFT", cb, "RIGHT", 6, 0)
     lbl:SetText(labelText)
@@ -56,10 +56,10 @@ DelveGuide.RenderSettings = function()
     y = y + UI.CreateRow(cf, y, "|cFFAAAAAAWidget tier filter - show active variants at these rankings:|r") + 6
     local allRanks = {"S","A","B","C","D","F"}
     for i, rank in ipairs(allRanks) do
-        local cb = CreateFrame("CheckButton", nil, cf, "UICheckButtonTemplate")
+        local cb = UI.AcquireCheckButton()
         cb:SetSize(22, 22); cb:SetPoint("TOPLEFT", cf, "TOPLEFT", 10 + (i-1)*80, -y)
         cb:SetChecked(DelveGuideDB.widgetTiers[rank])
-        local lbl = cf:CreateFontString(nil, "OVERLAY")
+        local lbl = UI.AcquireFontString("OVERLAY")
         lbl:SetFont(ROW_FONT_FILE, 11)
         lbl:SetPoint("LEFT", cb, "RIGHT", 2, 0)
         lbl:SetText((UI.RANK_COLORS[rank] or "|cFFFFFFFF")..rank.."|r")
@@ -81,7 +81,7 @@ DelveGuide.RenderSettings = function()
         function(checked) DelveGuideDB.hudEnabled = checked; if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end end) + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Font Scale|r") + 6
-    local fsDesc = cf:CreateFontString(nil, "OVERLAY")
+    local fsDesc = UI.AcquireFontString("OVERLAY")
     fsDesc:SetFont(ROW_FONT_FILE, rSize)
     fsDesc:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
     fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.fontScale))
@@ -99,7 +99,7 @@ DelveGuide.RenderSettings = function()
         function() return DelveGuideDB.victoryUnlocked end,
         function(checked) DelveGuideDB.victoryUnlocked = checked end) + 4
         
-    local testVicBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    local testVicBtn = UI.AcquirePanelButton()
     testVicBtn:SetSize(160, 22); testVicBtn:SetText("Test / Move Popup")
     testVicBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 14, -y)
     testVicBtn:SetScript("OnClick", function()
@@ -110,7 +110,7 @@ DelveGuide.RenderSettings = function()
     y = y + 22 + 12 -- Add height for the button and padding
 
     local function MakeFontScaleBtn(label, xOff, delta)
-        local b = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+        local b = UI.AcquirePanelButton()
         b:SetSize(36, 22); b:SetText(label); b:SetPoint("TOPLEFT", cf, "TOPLEFT", xOff, -y)
         b:SetScript("OnClick", function()
             DelveGuideDB.fontScale = math.max(0.6, math.min(2.0, DelveGuideDB.fontScale + delta))
@@ -120,7 +120,7 @@ DelveGuide.RenderSettings = function()
     end
     MakeFontScaleBtn("A-", 10, -0.1); MakeFontScaleBtn("A+", 52, 0.1)
 
-    local resetBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    local resetBtn = UI.AcquirePanelButton()
     resetBtn:SetSize(60, 22); resetBtn:SetText("Reset"); resetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
     resetBtn:SetScript("OnClick", function()
         DelveGuideDB.fontScale = 1.0
@@ -131,14 +131,14 @@ DelveGuide.RenderSettings = function()
 
     -- Widget Font Scale (independent of main font scale)
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Widget Font Scale|r  |cFF888888(independent from main font)|r") + 6
-    local wfsDesc = cf:CreateFontString(nil, "OVERLAY")
+    local wfsDesc = UI.AcquireFontString("OVERLAY")
     wfsDesc:SetFont(ROW_FONT_FILE, rSize)
     wfsDesc:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
     wfsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.widgetFontScale or 1.0))
     y = y + rH + 4
 
     local function MakeWidgetFontBtn(label, xOff, delta)
-        local b = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+        local b = UI.AcquirePanelButton()
         b:SetSize(36, 22); b:SetText(label); b:SetPoint("TOPLEFT", cf, "TOPLEFT", xOff, -y)
         b:SetScript("OnClick", function()
             DelveGuideDB.widgetFontScale = math.max(0.6, math.min(2.0, (DelveGuideDB.widgetFontScale or 1.0) + delta))
@@ -148,7 +148,7 @@ DelveGuide.RenderSettings = function()
     end
     MakeWidgetFontBtn("A-", 10, -0.1); MakeWidgetFontBtn("A+", 52, 0.1)
 
-    local wResetBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    local wResetBtn = UI.AcquirePanelButton()
     wResetBtn:SetSize(60, 22); wResetBtn:SetText("Reset"); wResetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
     wResetBtn:SetScript("OnClick", function()
         DelveGuideDB.widgetFontScale = 1.0
@@ -177,7 +177,7 @@ DelveGuide.RenderSettings = function()
             if DelveGuide.SetDebugTabShown then DelveGuide.SetDebugTabShown(checked) end
         end) + 4
         
-    local clBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    local clBtn = UI.AcquirePanelButton()
     clBtn:SetSize(160, 26); clBtn:SetText("View Changelog")
     clBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
     clBtn:SetScript("OnClick", UI.ShowChangelogPopup)
@@ -193,7 +193,7 @@ DelveGuide.RenderSettings = function()
             rs.submissions or 0, rs.variants or 0, rs.updated or "?")) + 4
     end
 
-    local subBtn = CreateFrame("Button", nil, cf, "UIPanelButtonTemplate")
+    local subBtn = UI.AcquirePanelButton()
     subBtn:SetSize(200, 26); subBtn:SetText("Contribute Your Times")
     subBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
     subBtn:SetScript("OnEnter", function(self)
@@ -242,13 +242,13 @@ DelveGuide.RenderSettings = function()
     -- (Ctrl+C), the same trick the /dg submit popup uses. Typing in one just
     -- puts the link back.
     local function MakeLinkRow(label, url)
-        local lbl = cf:CreateFontString(nil, "OVERLAY")
+        local lbl = UI.AcquireFontString("OVERLAY")
         lbl:SetFont(ROW_FONT_FILE, rSize)
         lbl:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -(y + 4))
         lbl:SetWidth(110); lbl:SetJustifyH("LEFT")
         lbl:SetText("|cFFAAAAAA" .. label .. "|r")
 
-        local eb = CreateFrame("EditBox", nil, cf, "InputBoxTemplate")
+        local eb = UI.AcquireEditBox()
         eb:SetSize(330, 20)
         eb:SetPoint("TOPLEFT", cf, "TOPLEFT", 126, -y)
         eb:SetAutoFocus(false)

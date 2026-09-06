@@ -107,10 +107,10 @@ DelveGuide.RenderVoidforge = function()
 
         local tier2Rank = 0
         for _, row in ipairs(slotData) do
-            local btn = CreateFrame("Button", nil, cf)
+            local btn = UI.AcquireButton()
             btn:SetPoint("TOPLEFT", cf, "TOPLEFT", 16, -y)
             btn:SetSize(UI.WINDOW_W - 80, rH)
-            local fs = btn:CreateFontString(nil, "OVERLAY")
+            local fs = UI.AcquireFontString("OVERLAY")
             fs:SetFont(ROW_FONT_FILE, rSize); fs:SetAllPoints(btn); fs:SetJustifyH("LEFT")
 
             local prefix

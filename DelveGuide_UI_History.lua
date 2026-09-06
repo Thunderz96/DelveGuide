@@ -95,7 +95,7 @@ DelveGuide.RenderHistory = function()
         end
     end
 
-    local clearBtn=CreateFrame("Button",nil,cf,"UIPanelButtonTemplate")
+    local clearBtn=UI.AcquirePanelButton()
     clearBtn:SetSize(110,22); clearBtn:SetPoint("TOPRIGHT",cf,"TOPRIGHT",-10,-8)
     clearBtn:SetText("Clear History")
     clearBtn:SetScript("OnClick",function() StaticPopup_Show("DELVEGUIDE_CONFIRM_CLEAR_HISTORY") end)

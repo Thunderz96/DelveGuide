@@ -22,7 +22,7 @@ DelveGuide.RenderRoster = function()
     local COL = { name=8, spec=160, ilvl=278, shards=322, bounty=385, delves=438, vault=480, seen=530, del=626 }
 
     local function MakeHeaderCol(x, w, text)
-        local fs = cf:CreateFontString(nil, "OVERLAY")
+        local fs = UI.AcquireFontString("OVERLAY")
         fs:SetFont(ROW_FONT_FILE, rSize); fs:SetPoint("TOPLEFT", cf, "TOPLEFT", x, -y)
         fs:SetWidth(w); fs:SetJustifyH("LEFT")
         fs:SetTextColor(0.67, 0.67, 0.67, 1); fs:SetText(text)
@@ -33,7 +33,7 @@ DelveGuide.RenderRoster = function()
     MakeHeaderCol(COL.vault, 45, "Vault"); MakeHeaderCol(COL.seen, 100, "Last Seen")
     y = y + rH
 
-    local sep = cf:CreateTexture(nil, "OVERLAY")
+    local sep = UI.AcquireTexture("OVERLAY")
     sep:SetPoint("TOPLEFT", cf, "TOPLEFT", 4, -y)
     sep:SetSize(UI.WINDOW_W - 60, 1); sep:SetColorTexture(0.3, 0.3, 0.3, 0.6)
     y = y + 6
@@ -56,20 +56,20 @@ DelveGuide.RenderRoster = function()
             local alpha = isStale and 0.45 or 1.0
 
             if isCurrent then
-                local fill = cf:CreateTexture(nil, "BACKGROUND")
+                local fill = UI.AcquireTexture("BACKGROUND")
                 fill:SetPoint("TOPLEFT", cf, "TOPLEFT", 2, -(y - 1))
                 fill:SetSize(UI.WINDOW_W - 56, rH + 2)
                 fill:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
                 fill:SetGradient("HORIZONTAL", CreateColor(0, 0.4, 1, 0.18), CreateColor(0, 0.4, 1, 0))
-                local bar = cf:CreateTexture(nil, "ARTWORK")
+                local bar = UI.AcquireTexture("ARTWORK")
                 bar:SetPoint("TOPLEFT", cf, "TOPLEFT", 2, -(y - 1))
                 bar:SetSize(3, rH + 2); bar:SetColorTexture(0, 0.6, 1, 1)
             end
 
             local function MakeCol(x, w, text, justify, tooltipData)
-                local btn = CreateFrame("Button", nil, cf)
+                local btn = UI.AcquireButton()
                 btn:SetPoint("TOPLEFT", cf, "TOPLEFT", x, -y); btn:SetSize(w, rH)
-                local fs = btn:CreateFontString(nil, "OVERLAY")
+                local fs = UI.AcquireFontString("OVERLAY")
                 fs:SetFont(ROW_FONT_FILE, rSize); fs:SetAllPoints(btn)
                 fs:SetJustifyH(justify or "LEFT"); fs:SetAlpha(alpha); fs:SetText(text)
                 
@@ -91,7 +91,7 @@ DelveGuide.RenderRoster = function()
             -- Spec Icon!
             local specBtn, specFs = MakeCol(COL.spec, 114, c.specName or "?")
             if c.specIcon then
-                local icon = specBtn:CreateTexture(nil, "ARTWORK")
+                local icon = UI.AcquireTexture("ARTWORK")
                 icon:SetSize(rH-2, rH-2); icon:SetPoint("LEFT", specBtn, "LEFT", 0, 0)
                 icon:SetTexture(c.specIcon); icon:SetAlpha(alpha)
                 
@@ -153,10 +153,10 @@ DelveGuide.RenderRoster = function()
 
             if not isCurrent then
                 local capK, capName = k, c.name
-                local delBtn = CreateFrame("Button", nil, cf)
+                local delBtn = UI.AcquireButton()
                 delBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", COL.del, -y); delBtn:SetSize(18, rH)
-                local delLabel = delBtn:CreateFontString(nil, "OVERLAY")
-                delLabel:SetFont(ROW_FONT_FILE, rSize); delLabel:SetPoint("CENTER"); delLabel:SetText("|cFFFF4444x|r")
+                local delLabel = UI.AcquireFontString("OVERLAY")
+                delLabel:SetFont(ROW_FONT_FILE, rSize); delLabel:SetPoint("CENTER", delBtn, "CENTER", 0, 0); delLabel:SetText("|cFFFF4444x|r")
                 delBtn:SetScript("OnEnter", function(self)
                     GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText("Remove " .. capName .. " from roster", 1, 1, 1, 1, true); GameTooltip:Show()
                 end)

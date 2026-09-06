@@ -8,12 +8,12 @@ local function CreateLootRow(parent, y, item)
     local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
 
-    local btn = CreateFrame("Button", nil, parent)
+    local btn = UI.AcquireButton()
     btn:SetSize(220, rH)
     btn:SetPoint("TOPLEFT", parent, "TOPLEFT", 8, -y + 1)
     
     -- Fetch and display the Item Icon!
-    local iconTex = btn:CreateTexture(nil, "ARTWORK")
+    local iconTex = UI.AcquireTexture("ARTWORK")
     iconTex:SetSize(rH + 2, rH + 2)
     iconTex:SetPoint("LEFT", btn, "LEFT", 0, 0)
     if item.id then
@@ -30,7 +30,7 @@ local function CreateLootRow(parent, y, item)
         iconTex:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
     end
     
-    local nameFS = btn:CreateFontString(nil, "OVERLAY")
+    local nameFS = UI.AcquireFontString("OVERLAY")
     nameFS:SetFont(ROW_FONT_FILE, rSize)
     -- Shift the text to the right to make room for the icon
     nameFS:SetPoint("LEFT", iconTex, "RIGHT", 6, 0) 
@@ -49,7 +49,7 @@ local function CreateLootRow(parent, y, item)
         nameFS:SetText(item.name)
     end
     
-    local notesFS = parent:CreateFontString(nil, "OVERLAY")
+    local notesFS = UI.AcquireFontString("OVERLAY")
     notesFS:SetFont(ROW_FONT_FILE, rSize)
     notesFS:SetPoint("TOPLEFT", parent, "TOPLEFT", 236, -y)
     notesFS:SetWidth(parent:GetWidth() - 244)
@@ -82,13 +82,13 @@ DelveGuide.RenderLoot = function()
         y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. slot .. "s|r")
         
         -- Custom perfectly-aligned header row
-        local hName = cf:CreateFontString(nil, "OVERLAY")
+        local hName = UI.AcquireFontString("OVERLAY")
         hName:SetFont(ROW_FONT_FILE, rSize)
         hName:SetPoint("TOPLEFT", cf, "TOPLEFT", rH + 16, -y) -- perfectly aligns with item name
         hName:SetText("|cFF888888Item Name|r")
         hName:SetJustifyH("LEFT")
         
-        local hNotes = cf:CreateFontString(nil, "OVERLAY")
+        local hNotes = UI.AcquireFontString("OVERLAY")
         hNotes:SetFont(ROW_FONT_FILE, rSize)
         hNotes:SetPoint("TOPLEFT", cf, "TOPLEFT", 236, -y) -- perfectly aligns with item notes
         hNotes:SetText("|cFF888888Effect / Notes|r")
@@ -110,7 +110,7 @@ DelveGuide.RenderLoot = function()
     
     -- Helper function to draw text at exact X positions for perfect columns
     local function MakeScalingCol(x, text)
-        local fs = cf:CreateFontString(nil, "OVERLAY")
+        local fs = UI.AcquireFontString("OVERLAY")
         fs:SetFont(ROW_FONT_FILE, rSize)
         fs:SetPoint("TOPLEFT", cf, "TOPLEFT", x, -y)
         fs:SetJustifyH("LEFT")

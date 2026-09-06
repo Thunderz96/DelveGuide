@@ -950,16 +950,119 @@ local function FindPinByName(name)
 end
 
 local scrollFrame,currentContent=nil,nil
-local function NewContentFrame()
-    if currentContent then currentContent:Hide(); currentContent:SetParent(nil) end
-    local cf=CreateFrame("Frame",nil,scrollFrame)
-    local w=scrollFrame:GetWidth(); if not w or w==0 then w=WINDOW_W-32 end
-    cf:SetWidth(w); cf:SetHeight(2000); scrollFrame:SetScrollChild(cf); currentContent=cf; return cf
+
+-- ============================================================
+-- CONTENT FRAME + WIDGET POOLS
+-- ============================================================
+-- The content frame used to be thrown away and rebuilt on every render
+-- (Hide() + SetParent(nil)), which frees nothing: the orphan keeps every child
+-- frame, FontString and closure alive until logout. A session of tab-switching
+-- and window resizing therefore leaked hundreds of frames and steadily ate FPS.
+--
+-- One content frame now lives for the window's life and every widget drawn into
+-- it comes from a pool that is released at the top of each render. This is the
+-- same "build once, then Show/Hide/SetText" idiom the compact widget (f.varLines)
+-- and the HUD (MakeRow) already use, applied to the tab renderers.
+--
+-- IMPORTANT for renderers: never call cf:CreateFontString / cf:CreateTexture /
+-- CreateFrame(..., cf) at render time any more. The frame is permanent, so
+-- anything created that way survives every render and stacks up on screen.
+-- Use the UI.Acquire* helpers, or cache widgets per index and register a reset
+-- with UI.AddCacheReset.
+local pools = nil
+local cacheResets = {}
+
+local function ResetPooledFontString(_, fs)
+    fs:Hide(); fs:ClearAllPoints()
+    fs:SetDrawLayer("OVERLAY")
+    fs:SetText("")
+    fs:SetWidth(0)
+    fs:SetJustifyH("LEFT")
+    fs:SetTextColor(1,1,1,1); fs:SetAlpha(1)
 end
+
+local function ResetPooledTexture(_, tex)
+    tex:Hide(); tex:ClearAllPoints()
+    tex:SetDrawLayer("ARTWORK")
+    tex:SetTexture(nil)
+    -- There is no ClearGradient; a white-to-white gradient is the neutral one,
+    -- otherwise a released row highlight would tint whatever reused it.
+    pcall(tex.SetGradient, tex, "HORIZONTAL", CreateColor(1,1,1,1), CreateColor(1,1,1,1))
+    tex:SetVertexColor(1,1,1,1); tex:SetAlpha(1)
+end
+
+local POOLED_SCRIPTS = {
+    "OnEnter","OnLeave","OnClick","OnMouseDown","OnMouseUp","OnShow","OnHide",
+    "OnUpdate","OnEditFocusGained","OnEscapePressed","OnEnterPressed","OnTextChanged",
+}
+local function ResetPooledFrame(_, f)
+    f:Hide(); f:ClearAllPoints()
+    for i = 1, #POOLED_SCRIPTS do
+        local s = POOLED_SCRIPTS[i]
+        if f:HasScript(s) then f:SetScript(s, nil) end
+    end
+    f:SetAlpha(1)
+    if f.RegisterForClicks then f:RegisterForClicks("LeftButtonUp") end
+    if f.GetFontString and f:GetFontString() then f:SetText("") end
+    if f.SetChecked then f:SetChecked(false) end
+    if f.ClearFocus then f:ClearFocus() end
+    if f.SetBackdrop then f:SetBackdrop(nil) end
+end
+
+local function EnsurePools(cf)
+    if pools then return end
+    pools = {
+        fontString  = CreateFontStringPool(cf, "OVERLAY", nil, nil, ResetPooledFontString),
+        texture     = CreateTexturePool(cf, "ARTWORK", nil, nil, ResetPooledTexture),
+        button      = CreateFramePool("Button", cf, nil, ResetPooledFrame),
+        panelButton = CreateFramePool("Button", cf, "UIPanelButtonTemplate", ResetPooledFrame),
+        checkButton = CreateFramePool("CheckButton", cf, "UICheckButtonTemplate", ResetPooledFrame),
+        editBox     = CreateFramePool("EditBox", cf, "InputBoxTemplate", ResetPooledFrame),
+        backdrop    = CreateFramePool("Frame", cf, "BackdropTemplate", ResetPooledFrame),
+    }
+end
+
+local function NewContentFrame()
+    if not currentContent then
+        currentContent = CreateFrame("Frame",nil,scrollFrame)
+        scrollFrame:SetScrollChild(currentContent)
+        EnsurePools(currentContent)
+    end
+    local cf = currentContent
+    for _, pool in pairs(pools) do pool:ReleaseAll() end
+    for i = 1, #cacheResets do cacheResets[i]() end
+    local w=scrollFrame:GetWidth(); if not w or w==0 then w=WINDOW_W-32 end
+    cf:SetWidth(w); cf:SetHeight(2000); cf:Show(); return cf
+end
+
+-- Renderers that keep their own per-index widget cache register a hide-all here
+-- so NewContentFrame can blank them the same way it releases the pools.
+local function AddCacheReset(fn) cacheResets[#cacheResets+1] = fn end
+
+-- Pooled objects all hang off the content frame; callers anchor them wherever
+-- they like (anchoring across frames is fine) rather than reparenting, which
+-- would mean putting the parent back on release.
+local function AcquireFontString(layer, subLayer)
+    local fs = pools.fontString:Acquire()
+    if layer then fs:SetDrawLayer(layer, subLayer) end
+    fs:Show(); return fs
+end
+local function AcquireTexture(layer, subLayer)
+    local tex = pools.texture:Acquire()
+    if layer then tex:SetDrawLayer(layer, subLayer) end
+    tex:Show(); return tex
+end
+local function AcquireButton()        local b = pools.button:Acquire();      b:Show(); return b end
+local function AcquirePanelButton()   local b = pools.panelButton:Acquire(); b:Show(); return b end
+local function AcquireCheckButton()   local b = pools.checkButton:Acquire(); b:Show(); return b end
+local function AcquireEditBox()       local b = pools.editBox:Acquire();     b:Show(); return b end
+local function AcquireBackdropFrame() local f = pools.backdrop:Acquire();    f:Show(); return f end
 
 local function CreateHeader(parent,y,text)
     EnsureFontFiles(); local hSize=GetScaledSizes()
-    local fs=parent:CreateFontString(nil,"OVERLAY"); fs:SetFont(HEADER_FONT_FILE,hSize,"OUTLINE")
+    -- Pooled, so the font has to be re-applied on every acquire: the string may
+    -- have last been used at a different font scale (A- / A+ / Reset).
+    local fs=AcquireFontString("OVERLAY"); fs:SetFont(HEADER_FONT_FILE,hSize,"OUTLINE")
     fs:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-y); fs:SetWidth(parent:GetWidth()-16)
     fs:SetJustifyH("LEFT"); fs:SetTextColor(1,0.82,0,1); fs:SetText(text)
     
@@ -969,7 +1072,7 @@ end
 
 local function CreateRow(parent,y,text)
     EnsureFontFiles(); local _,rSize,rH=GetScaledSizes()
-    local fs=parent:CreateFontString(nil,"OVERLAY"); fs:SetFont(ROW_FONT_FILE,rSize)
+    local fs=AcquireFontString("OVERLAY"); fs:SetFont(ROW_FONT_FILE,rSize)
     fs:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-y); fs:SetWidth(parent:GetWidth()-16)
     fs:SetJustifyH("LEFT"); fs:SetText(text)
     local actualHeight = fs:GetStringHeight()
@@ -1321,6 +1424,14 @@ DelveGuide.UI = {
     CreateRow       = CreateRow,
     GetScaledSizes  = GetScaledSizes,
     EnsureFontFiles = EnsureFontFiles,
+    AddCacheReset        = AddCacheReset,
+    AcquireFontString    = AcquireFontString,
+    AcquireTexture       = AcquireTexture,
+    AcquireButton        = AcquireButton,
+    AcquirePanelButton   = AcquirePanelButton,
+    AcquireCheckButton   = AcquireCheckButton,
+    AcquireEditBox       = AcquireEditBox,
+    AcquireBackdropFrame = AcquireBackdropFrame,
     WINDOW_W        = WINDOW_W,
     GradeColor      = GradeColor,
     ZoneColor       = ZoneColor,
