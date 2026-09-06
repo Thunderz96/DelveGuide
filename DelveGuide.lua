@@ -2216,7 +2216,13 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             if not mainFrame then CreateMainWindow() end
             local wasShown, origTab = mainFrame:IsShown(), currentTabKey
             for _, td in ipairs(TABS) do
+                -- SwitchTab now contains renderer errors (2.7) and paints a
+                -- "failed to render" row, so pcall alone would call a broken
+                -- tab a pass. It records the error; read it back.
+                DelveGuide.lastRenderError = nil
                 local ok, err = pcall(SwitchTab, td.key)
+                local rec = DelveGuide.lastRenderError
+                if ok and rec and rec.key == td.key then ok, err = false, rec.err end
                 report.tabs[td.key] = ok and "ok" or tostring(err)
                 if ok then line(PASS, "tab renders: "..td.label) else fail("tab "..td.label..": "..tostring(err)) end
             end
