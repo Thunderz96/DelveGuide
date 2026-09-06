@@ -184,10 +184,10 @@ DelveGuide.ShowChecklist = function(force)
 
         local closeBtn = CreateFrame("Button", nil, f, "UIPanelCloseButton")
         closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
-        closeBtn:SetScript("OnClick", function()
-            DelveGuideDB.checklistDismissed = true
-            f:Hide()
-        end)
+        -- X only closes. It used to set checklistDismissed too, which made it a
+        -- silent session-long suppress: walk away and back and nothing showed.
+        -- The "Don't show again this session" box is the suppress.
+        closeBtn:SetScript("OnClick", function() f:Hide() end)
 
         f.rows = {}
         for i = 1, 6 do
@@ -253,6 +253,12 @@ DelveGuide.ShowChecklist = function(force)
     end
 
     checklistFrame:Show()
+end
+
+-- Called when the entrance dialog closes (walked away, entered, cancelled).
+-- Frames cannot be destroyed in WoW; hidden is what the player sees.
+DelveGuide.HideChecklist = function()
+    if checklistFrame and checklistFrame:IsShown() then checklistFrame:Hide() end
 end
 
 DelveGuide.OnTargetChanged = function()

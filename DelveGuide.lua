@@ -2649,12 +2649,28 @@ StaticPopupDialogs["DELVEGUIDE_CONFIRM_REMOVE_CHAR"] = {
     preferredIndex = 3,
 }
 
+-- Is this PLAYER_INTERACTION_MANAGER_FRAME_SHOW/HIDE type the delve entrance
+-- dialog? 79 on build 69594 at a delve entrance and at the Labyrinth's alike
+-- (both recorded by /dg export). Enum.PlayerInteractionType has no
+-- DelvesDifficultyPicker member there, so the enum is searched for any
+-- Delve-named key before falling back to the observed value.
+local function IsEntranceDialogType(t)
+    local pickerType
+    if Enum and Enum.PlayerInteractionType then
+        for k, v in pairs(Enum.PlayerInteractionType) do
+            if type(k) == "string" and k:lower():find("delve", 1, true) then pickerType = v; break end
+        end
+    end
+    return t == (pickerType or 79)
+end
+
 local loadFrame=CreateFrame("Frame")
 loadFrame:RegisterEvent("ADDON_LOADED"); loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 loadFrame:RegisterEvent("AREA_POIS_UPDATED"); loadFrame:RegisterEvent("SCENARIO_COMPLETED")
 loadFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED"); loadFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 loadFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 loadFrame:RegisterEvent("ENCOUNTER_END")
+loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
 loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
@@ -2723,6 +2739,10 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
             end
             if DelveGuide.TrackLabyrinthPresence then DelveGuide.TrackLabyrinthPresence() end
         end)
+    elseif event=="PLAYER_INTERACTION_MANAGER_FRAME_HIDE" then
+        -- The entrance dialog closed (walked away, entered, cancelled): take
+        -- the checklist with it rather than leave it hanging on screen.
+        if IsEntranceDialogType(arg1) and DelveGuide.HideChecklist then DelveGuide.HideChecklist() end
     elseif event=="PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
         -- The delve entrance dialog (the tier picker) opens through this event.
         -- It is the real pre-entry moment: a delve entrance is a game object,
@@ -2733,18 +2753,9 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
         -- code has always used kept as a fallback; the value seen is recorded
         -- so /dg export shows which one the client actually sends.
         DelveGuide.lastInteractionType = arg1
-        -- 79 on build 69594, at a delve entrance and at the Labyrinth's alike
-        -- (both recorded by /dg export). Enum.PlayerInteractionType has no
-        -- DelvesDifficultyPicker member there, so the enum is searched for any
-        -- Delve-named key before falling back to the observed value. The old
-        -- literal 3 was the trainer type; it never fired for an entrance.
-        local pickerType
-        if Enum and Enum.PlayerInteractionType then
-            for k, v in pairs(Enum.PlayerInteractionType) do
-                if type(k) == "string" and k:lower():find("delve", 1, true) then pickerType = v; break end
-            end
-        end
-        if arg1 == (pickerType or 79) then
+        -- See IsEntranceDialogType. The old literal 3 was the trainer type; it
+        -- never fired for an entrance.
+        if IsEntranceDialogType(arg1) then
             -- Refresh HUD when player is at the entrance (outside the instance)
             if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
             if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(false) end
