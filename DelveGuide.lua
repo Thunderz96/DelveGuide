@@ -1479,6 +1479,10 @@ local mainFrame,tabButtons,currentTabKey=nil,{},nil
 local tabDirty = false
 
 local function SwitchTab(key)
+    -- Only a real tab change jumps back to the top. SwitchTab is also the
+    -- redraw path (RefreshCurrentTab, the OnShow dirty repaint), and those
+    -- used to yank the list to the top on every POI/font/currency update.
+    local prevKey = currentTabKey
     currentTabKey = key
     tabDirty = false
 
@@ -1515,13 +1519,20 @@ local function SwitchTab(key)
             y = y + CreateRow(cf, y, "|cFFFF4444The " .. key .. " tab failed to render.|r") + 4
             CreateRow(cf, y, "|cFF888888Try /reload. If it keeps happening, report it with the version from /dg help.|r")
         end
-        scrollFrame:SetVerticalScroll(0)
+        if key ~= prevKey then
+            scrollFrame:SetVerticalScroll(0)
+        end
     end
 end
 
 RefreshCurrentTab = function()
     if currentTabKey and mainFrame and mainFrame:IsShown() then
+        -- A refresh is not a tab change: put the player back where they were.
+        local prev = scrollFrame and scrollFrame:GetVerticalScroll() or 0
         SwitchTab(currentTabKey)
+        if scrollFrame then
+            scrollFrame:SetVerticalScroll(math.min(prev, scrollFrame:GetVerticalScrollRange()))
+        end
     else
         tabDirty = true
     end
