@@ -258,3 +258,5 @@ aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's
 | 2026-09-05 | **Phase 1a** merged (branch `phase1a`, 8 commits, 23 tests) | ⚠️ 4 grade moves NOT applied — Nick's call; below-floor rows kept verbatim (agent's non-destructive reading of RANKING.md step 5) — Nick's call |
 | 2026-09-05 | **E6** `/dg selftest`; export gains tracker-widget dump + POI widget metadata | Debug-tab Settings gate waits for `e3-parity` to merge |
 | 2026-09-05 | **E1** listing text at `tools/CURSEFORGE_LISTING.md` | Nick pastes; 4 screenshots still needed (HUD, Voidforge, History, Victory); fill «N»/«V» from `rankingStats` |
+| 2026-09-05 | **D6** Labyrinth HUD view | chamber / step / objective (both criteria shapes) / cleared / time; tier shown as not readable |
+| 2026-09-05 | **E3** merged (branch `e3-parity`, 6 commits) | grades tooltip, ESC>Options signpost, 3 keybinds, compartment, rotation countdown, About block; ⚠️ glance at widget countdown fit at font scale 0.6 |
