@@ -1,6 +1,19 @@
 local UI = DelveGuide.UI
 local RANK_ORDER = {S=1, A=2, B=3, C=4, D=5, F=6}
 
+-- Variants rotate at the daily reset -- the single most-asked question about
+-- the "active today" list. Read at render time only; the tab redraws on its
+-- own events, so it needs no ticker.
+local function RotationCountdown()
+    if not (C_DateAndTime and C_DateAndTime.GetSecondsUntilDailyReset) then return nil end
+    local ok, secs = pcall(C_DateAndTime.GetSecondsUntilDailyReset)
+    if not ok or type(secs) ~= "number" or secs <= 0 then return nil end
+    local h = math.floor(secs / 3600)
+    local m = math.floor((secs % 3600) / 60)
+    if h > 0 then return string.format("Rotates in %dh %dm", h, m) end
+    return string.format("Rotates in %dm", m)
+end
+
 local function CreateDelveRow(parent, y, d)
     UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
@@ -150,6 +163,8 @@ DelveGuide.RenderDelves = function()
     table.sort(activeData, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
     
     local note=vc>0 and "  |cFF44FF44("..vc.." active today)|r" or "  |cFFAAAAAA(use /dg scan)|r"
+    local rotate=RotationCountdown()
+    if rotate then note=note.."  |cFF888888"..rotate.."|r" end
     -- Hover target over the ranking header. Three CurseForge threads asked what
     -- S-F actually measures, so the answer lives on the header itself rather
     -- than on every row.

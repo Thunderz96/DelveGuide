@@ -30,12 +30,29 @@ local function GetWidgetW()
     return math.floor(W_BASE_W * GetWidgetScale() + 0.5)
 end
 
+-- Variants rotate at the daily reset. Read at render time only -- the widget
+-- redraws on AREA_POIS_UPDATED, so it needs no ticker of its own.
+local function RotationCountdown()
+    if not (C_DateAndTime and C_DateAndTime.GetSecondsUntilDailyReset) then return nil end
+    local ok, secs = pcall(C_DateAndTime.GetSecondsUntilDailyReset)
+    if not ok or type(secs) ~= "number" or secs <= 0 then return nil end
+    local h = math.floor(secs / 3600)
+    local m = math.floor((secs % 3600) / 60)
+    if h > 0 then return string.format("Rotates in %dh %dm", h, m) end
+    return string.format("Rotates in %dm", m)
+end
+
 DelveGuide.compactWidget = nil
 
 DelveGuide.UpdateCompactWidget = function()
     local cw = DelveGuide.compactWidget
     if not cw or not cw:IsShown() then return end
     
+    if cw.rotateFS then
+        local rotate = RotationCountdown()
+        cw.rotateFS:SetText(rotate and ("|cFF888888"..rotate.."|r") or "")
+    end
+
     local activeVariants = DelveGuide.activeVariants or {}
     local activeDelves   = DelveGuide.activeDelves or {}
     local tiers = DelveGuideDB.widgetTiers or {}
@@ -350,6 +367,16 @@ DelveGuide.CreateCompactWidget = function()
     lockBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     RefreshLock()
 
+    -- Rotation countdown, tucked into the header between the title and the
+    -- buttons. Anchored on both sides so it truncates instead of overlapping
+    -- them at large font scales. Text is filled in by UpdateCompactWidget.
+    local rotateFS = f:CreateFontString(nil, "OVERLAY")
+    rotateFS:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", math.max(8, rSizeInit - 1))
+    rotateFS:SetPoint("LEFT", titleFS, "RIGHT", 6, 0)
+    rotateFS:SetPoint("RIGHT", bountyBtn, "LEFT", -4, 0)
+    rotateFS:SetJustifyH("RIGHT")
+    f.rotateFS = rotateFS
+
     local innerW = widgetW - 16
     local div = f:CreateTexture(nil, "ARTWORK")
     div:SetColorTexture(0.15, 0.5, 1, 0.35); div:SetSize(innerW, 1)
@@ -414,6 +441,7 @@ DelveGuide.RefreshCompactWidgetFonts = function()
     cw:SetWidth(widgetW)
     if cw.titleFS then cw.titleFS:SetFont(titleFont, rSize + 1, "OUTLINE") end
     if cw.divider then cw.divider:SetSize(innerW, 1) end
+    if cw.rotateFS then cw.rotateFS:SetFont(sf, math.max(8, rSize - 1)) end
     if cw.keysLine then cw.keysLine:SetFont(sf, rSize); cw.keysLine:SetWidth(innerW) end
     if cw.voidforgeLine then cw.voidforgeLine:SetFont(sf, rSize); cw.voidforgeLine:SetWidth(innerW) end
     if cw.varLines then
