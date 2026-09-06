@@ -58,7 +58,7 @@ Everything not listed here proceeds exactly as the Review Plan wrote it.
 | **Phase 1.10 / H5** — companion faction by ID (2744) | **Corroborated.** Faction 2744 present in the 12.1.5 sweep; `companionID = 12` resolved inside both content types. Proceed | Findings §5 |
 | **Phase 0.10** — soften the "do NOT key on poiID" comment | **Corroborated, and now urgent for a different reason** — see A3 below. widgetSetID is stable across three maps; poiID varies per map | Findings §2 |
 | **Phase 4 item 6** — `/dg selftest` | **~60% already built** as the `/dg export` expansion: API presence probe, criteria dump, both scenario structs, the tier struct, taxi, factions. Selftest = export + render-every-tab `xpcall` + data invariants + the objective-tracker widget dump | this branch, commits 4552f33…d8948bd |
-| **Phase 5 `hud-victory#7`** — lives are probably a header widget | **Still blocked on data,** and the Labyrinth cannot answer it (single objective, no lives criterion). Needs one Tier 4+ Delve export mid-run | §5 G3 |
+| **Phase 5 `hud-victory#7`** — lives are probably a header widget | **Confirmed 2026-09-06 (G3):** a T8 delve's criteria mid-run held no lives entry. Lives are a widget; expected in the header widget's tables — next capture shows which | Findings §3.1 |
 | **Phase 5 `hud-victory#17`** — extract `ReadLivesText()` | **Pull forward into Track A.** Both duplicate sites were just edited for the namespace fix; extracting now is a few lines while the code is warm | `DelveGuide_HUD.lua:456`, `:549` |
 | **Phase 4 item 4** — reload-safe run record | **Add a Labyrinth clause.** `SCENARIO_COMPLETED` fires per chamber, so the record must know it is inside a multi-scenario run or it dedupes wrongly | Findings §1, §5.2a |
 | **§7.4** — "no locale-free variant ID outdoors" | **Confirmed, and worse for Labyrinths:** widget set 2316 yields no usable text at all, so the outdoor scan quarantines Kindo'jan as `[Missing Translation] Unknown Variant Text` | Findings §4.2 |
@@ -113,7 +113,7 @@ into 0.x and the H5 corroboration.
 | 3.5 CI gate on **Lua 5.1 / LuaJIT** | as written; the local `luac` is 5.4.6 and passed every change on this branch, which is exactly the blind spot |
 | 3.1 scenarioID identity — **Delves only** | gated on G1 and G2. Design addition: `GetDelveByScenarioID` must return nil for any scenarioID observed inside a `labyrinthInstances` instance, so a chamber scenario can never resolve to a delve |
 | 3.2 learn `scenarioID -> variant` | as written; same Labyrinth exclusion |
-| ~~3.3 tier API~~ | **dropped** — keep the probe in `/dg export` so a later build populating the struct is noticed |
+| 3.3 tier API — **revived via a different API** | `GetActiveDelveTier` stays dead, but the delve header widget's `tierText` is the tier as data (Findings §3.1). Wired as Method 0 (commit on 2026-09-06). Retire the scrape after a second tier + the Labyrinth confirm |
 | 3.4, 3.6–3.10 | as written, independent |
 
 ### Track D — Labyrinths: aware now, guided shell now, content as it stabilises
@@ -170,7 +170,7 @@ Every unproven assumption that gates code, with the single cheapest capture that
 |---|---|---|---|---|
 | G1 | scenarioID invariant across tier and bountiful for **one Delve** (protocol row 13) | 3.1, 3.2 | `/dg export` in the same delve at two tiers + once bountiful, read `scenarioInfo.scenarioID` off disk | identical all three times. **If it moves, 3.1's design is wrong** |
 | G2 | scenarioID readable inside the `SCENARIO_COMPLETED` handler (row 14) | 3.1 capture design | — | **✅ answered for Labyrinth chambers 2026-09-06 (D3 log):** name + scenarioID readable; step and criteria torn down. Capture the ID at completion, step-level data earlier. Delve confirmation still cheap: one completed delve with D3-style logging |
-| G3 | lives criterion shape in a Tier 4+ Delve mid-run | `hud-victory#7`, A5 | `/dg export` inside a T4+ delve after the first pull, read `criteria[]` | a criterion whose `desc`/`qtyStr` matches the lives regex — or none, which means it *is* a widget |
+| G3 | lives criterion shape in a Tier 4+ Delve mid-run | `hud-victory#7`, A5 | — | **✅ answered 2026-09-06: none.** Lives are a widget (header widget, type 29). The criteria scan is dead code for lives; replace with the widget read once the field is identified |
 | G4 | live 12.1.0 still has the old criteria API | **A1's urgency** | — | **✅ answered 2026-09-05: `nil function` on retail.** Live 1.11.0's lives counter is silently broken today. A1 ships as hotfix **1.11.1** from `main` (cherry-picked `41e5336` + `e2f3800`), ahead of 2.0.0 |
 | G5 | Nemesis lair scenarioID (row 13 tail; expect 3395) | 3.1 | `/dg export` inside Venomfall Deeps | 3395 |
 | G6 | bountiful delve POI atlas name | A3's atlas option | `/dg export` on a day with a bountiful delve up, read `delvePOIs[].atlas` | starts with `delves-` |
@@ -264,3 +264,4 @@ aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's
 | 2026-09-06 | **PTR verification** (Nick): A3 ✅ 12/12 no quarantine · E2 ✅ · E3 tooltip + keybinds ✅ · E6 gate ✅ · all invariants ✅ · **selftest caught a real 12.1.5 break** (Loot tab: global `GetItemInfoInstant` deleted) → fixed | Widget-meta experiment closed negative (Findings §5.1b); tracker-widget dump still needed *inside* a T4+ delve for the lives question |
 | 2026-09-06 | **D6 verified live** (chamber, step, both criteria shapes, cleared count); **D2 corrected** — vault credit every 3 chambers (Nick), not a boss kill; record now created at chamber 3, tallies sum credits | Kindo'jan T8+ kill = Soul Fragment, separate, not modelled |
 | 2026-09-06 | Selftest ALL PASS after Loot fix; **G2 answered** (ID survives to SCENARIO_COMPLETED, step/criteria do not); bug mechanism captured to the second (Findings 5.5 Case C); export/selftest now dump the **step widget set (842)** | Next capture: step widgets inside a delve and the Labyrinth — may expose tier/lives as fields |
+| 2026-09-06 | **Tier source found** — header widget `tierText` (type 29, step widget set 842); wired as HUD Method 0 with fallbacks intact; **G3 answered**: lives are a widget, not a criterion | Confirm at a 2nd tier and in the Labyrinth, then retire the scrape; identify the lives field from the deeper dump |

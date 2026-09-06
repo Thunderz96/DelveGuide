@@ -125,7 +125,7 @@ poiID is stable per (delve, map, bountiful state).
 | 1 | scenarioID stable across tiers / bountiful | **not yet tested** — needs 2 tiers + 1 bountiful |
 | 2 | Nemesis lair scenarioID (expect 3395) | **not yet tested** |
 | 3 | scenario readable at `SCENARIO_COMPLETED` | **answered for Labyrinth chambers (2026-09-06):** `GetInfo()` still returns name + scenarioID; `GetStepInfo()` and criteria are already torn down. Capture the ID at completion; anything step-level earlier |
-| 4 | `C_DelvesUI.GetActiveDelveTier()` returns a tier | **no** — returns an empty struct in Delves *and* Labyrinths |
+| 4 | `C_DelvesUI.GetActiveDelveTier()` returns a tier | **no** — empty struct in both. **But the tier IS available as data elsewhere:** see §3.1 |
 | 5 | Labyrinth scenario type / scenario ID / instance ID | **answered** — 8 / 3580 / 3043 |
 
 ### §5 item 4 correction — the tracker scrape cannot be retired
@@ -143,8 +143,30 @@ Verified inside **Atal'Aman, a regular Delve, at tier 8** — while the addon's 
 scrape correctly reported `tierNum = 8` in the same snapshot. So this is not a Labyrinth
 quirk: the API is empty for Delves too.
 
-**The whole-frame-tree walk that runs every two seconds has to stay.** The plan hoped to
-remove it; that is off the table until Blizzard populates this struct.
+**The whole-frame-tree walk was the wrong fix for the right idea.** `GetActiveDelveTier` is
+empty, but the tier is exposed as data by a different API — §3.1 below — so the scrape can
+be retired after all, once that source is confirmed at a second tier and in a Labyrinth.
+
+### §3.1 The tier source: the delve header widget (2026-09-06)
+
+The scenario step's widget set (12th return of `C_Scenario.GetStepInfo`, **842** in every
+delve and Labyrinth snapshot) holds a **`ScenarioHeaderDelves` widget, type 29**. Its
+visualization info via `C_UIWidgetManager.GetScenarioHeaderDelvesWidgetVisualizationInfo`
+carries, verified in Twilight Crypts at Tier 8 across three snapshots:
+
+```
+tierText = "8"   headerText = "Twilight Crypts"   frameTextureKit = "delves-scenario"
+tierTooltipSpellID = 1260965   currencies = {...}   spells = {...}   rewardInfo = {...}
+```
+
+`tierText` is the tier exactly as the objective tracker renders it — the very text the
+frame-tree scrape has been reading off FontStrings since 12.0. Read as data it is one API
+call. `DelveGuide.ReadDelveHeaderWidget` does so and the HUD uses it as Method 0 with every
+older method still behind it.
+
+⚠️ Confirmed at one tier in one delve. Before retiring the scrape: a second tier, and the
+Labyrinth — whose tracker badge visibly shows a tier that `GetActiveDelveTier` and the scrape
+both failed to read (5.8). If the Labyrinth's header widget carries `tierText`, 5.8 reverses.
 
 Related: the addon's tier detection works in Delves (`tierNum = 8`) but returns nil in
 Labyrinths (5.8), so the scrape is Delve-shaped and does not generalise.
