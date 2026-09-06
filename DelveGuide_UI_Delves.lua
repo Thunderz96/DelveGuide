@@ -14,59 +14,143 @@ local function RotationCountdown()
     return string.format("Rotates in %dm", m)
 end
 
-local function CreateDelveRow(parent, y, d)
+-- ---- Per-index row cache -------------------------------------------------
+-- 44 delves x (5-16 widgets + 3-5 closures) was ~100 child frames and ~300
+-- objects created on every RenderDelves, and the flag badges were most of it.
+-- Each row's widgets are now built once and only re-anchored/re-texted, with
+-- OnEnter/OnLeave/OnClick wired at creation reading whatever the render put on
+-- the widget (self.pin, self.flagTip) -- the compact widget's self.pin idiom.
+local delveRows = {}
+
+local function HideDelveRow(row)
+    row.fill:Hide(); row.bar:Hide()
+    row.gradeFS:Hide(); row.nameBtn:Hide(); row.infoFS:Hide()
+    for j = 1, #row.badges do row.badges[j].btn:Hide() end
+end
+
+UI.AddCacheReset(function()
+    for i = 1, #delveRows do HideDelveRow(delveRows[i]) end
+end)
+
+local function GetDelveRow(parent, i)
+    local row = delveRows[i]
+    if row then return row end
+
+    row = { badges = {} }
+    row.fill = parent:CreateTexture(nil, "BACKGROUND")
+    row.fill:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+    row.bar = parent:CreateTexture(nil, "ARTWORK")
+    row.bar:SetColorTexture(0, 1, 0.2, 1)
+
+    row.gradeFS = parent:CreateFontString(nil, "OVERLAY")
+    row.gradeFS:SetWidth(46); row.gradeFS:SetJustifyH("LEFT")
+
+    row.nameBtn = CreateFrame("Button", nil, parent)
+    row.nameFS = row.nameBtn:CreateFontString(nil, "OVERLAY")
+    row.nameFS:SetAllPoints(row.nameBtn); row.nameFS:SetJustifyH("LEFT")
+
+    row.infoFS = parent:CreateFontString(nil, "OVERLAY")
+    row.infoFS:SetJustifyH("LEFT")
+
+    -- No pin means the row was inert before this change (the old code simply
+    -- never attached scripts), so every handler bails when self.pin is nil.
+    row.nameBtn:SetScript("OnEnter", function(self)
+        if not self.pin then return end
+        row.nameFS:SetText("|cFFFFFFFF"..self.delveName.."|r")
+        GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:AddLine("|cFFFFD700"..self.delveName.."|r")
+        GameTooltip:AddLine("|cFFCCCCCC"..self.delveZone.."|r"); GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("|cFF00FF88Click to open map & set waypoint|r"); GameTooltip:Show()
+    end)
+    row.nameBtn:SetScript("OnLeave", function(self)
+        if not self.pin then return end
+        row.nameFS:SetText(self.nameText); GameTooltip:Hide()
+    end)
+    row.nameBtn:SetScript("OnClick", function(self)
+        if self.pin then UI.SetDelveWaypoint(self.pin) end
+    end)
+
+    delveRows[i] = row
+    return row
+end
+
+local function GetDelveBadge(parent, row, j)
+    local badge = row.badges[j]
+    if badge then return badge end
+
+    badge = {}
+    badge.btn = CreateFrame("Button", nil, parent)
+    badge.fs = badge.btn:CreateFontString(nil, "OVERLAY")
+    badge.fs:SetAllPoints(badge.btn); badge.fs:SetJustifyH("LEFT")
+    badge.btn:SetScript("OnEnter", function(self)
+        if not self.flagTip then return end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("|cFFFFD700" .. self.flagTip .. "|r")
+        GameTooltip:AddLine(self.flagDesc, 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    badge.btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row.badges[j] = badge
+    return badge
+end
+
+local function CreateDelveRow(parent, y, d, index)
     UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
     local rowW = UI.WINDOW_W - 52
-    
+    local row = GetDelveRow(parent, index)
+
     local activeVariants = DelveGuide.activeVariants or {}
     local active = (activeVariants[d.variant] == true)
 
     if active then
-        local fill=UI.AcquireTexture("BACKGROUND"); fill:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))
-        fill:SetSize(rowW-4,rH+2); fill:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
-        fill:SetGradient("HORIZONTAL",CreateColor(0,0.7,0.15,0.35),CreateColor(0,0.7,0.15,0))
-        local bar=UI.AcquireTexture("ARTWORK"); bar:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))
-        bar:SetSize(3,rH+2); bar:SetColorTexture(0,1,0.2,1)
+        row.fill:ClearAllPoints(); row.fill:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))
+        row.fill:SetSize(rowW-4,rH+2)
+        row.fill:SetGradient("HORIZONTAL",CreateColor(0,0.7,0.15,0.35),CreateColor(0,0.7,0.15,0))
+        row.fill:Show()
+        row.bar:ClearAllPoints(); row.bar:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))
+        row.bar:SetSize(3,rH+2); row.bar:Show()
+    else
+        row.fill:Hide(); row.bar:Hide()
     end
 
-    local gradeFS=UI.AcquireFontString("OVERLAY"); gradeFS:SetFont(ROW_FONT_FILE,rSize)
-    gradeFS:SetPoint("TOPLEFT",parent,"TOPLEFT",10,-y); gradeFS:SetWidth(46); gradeFS:SetJustifyH("LEFT")
-    gradeFS:SetText(string.format("[%s]", UI.GradeColor(d.ranking)))
+    row.gradeFS:SetFont(ROW_FONT_FILE,rSize)
+    row.gradeFS:ClearAllPoints(); row.gradeFS:SetPoint("TOPLEFT",parent,"TOPLEFT",10,-y)
+    row.gradeFS:SetText(string.format("[%s]", UI.GradeColor(d.ranking)))
+    row.gradeFS:Show()
 
     local pin = UI.FindPinByName(d.name)
-    local nameBtn=UI.AcquireButton(); nameBtn:SetSize(160,rH)
-    nameBtn:SetPoint("TOPLEFT",parent,"TOPLEFT",56,-y+1)
-    local nameFS=UI.AcquireFontString("OVERLAY"); nameFS:SetFont(ROW_FONT_FILE,rSize)
-    nameFS:SetAllPoints(nameBtn); nameFS:SetJustifyH("LEFT")
+    row.nameBtn:SetSize(160,rH)
+    row.nameBtn:ClearAllPoints(); row.nameBtn:SetPoint("TOPLEFT",parent,"TOPLEFT",56,-y+1)
+    row.nameFS:SetFont(ROW_FONT_FILE,rSize)
 
     local activeDelves = DelveGuide.activeDelves or {}
     local delveStatus = activeDelves[d.name]
     local isBountiful = type(delveStatus)=="table" and delveStatus.bountiful
     local nameColor = isBountiful and "|cFFFFD700" or "|cFF00CFFF"
 
-    if pin then
-        nameFS:SetText(nameColor..d.name.."|r")
-        nameBtn:SetScript("OnEnter",function(self)
-            nameFS:SetText("|cFFFFFFFF"..d.name.."|r")
-            GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:AddLine("|cFFFFD700"..d.name.."|r")
-            GameTooltip:AddLine("|cFFCCCCCC"..d.zone.."|r"); GameTooltip:AddLine(" ")
-            GameTooltip:AddLine("|cFF00FF88Click to open map & set waypoint|r"); GameTooltip:Show()
-        end)
-        nameBtn:SetScript("OnLeave",function() nameFS:SetText(nameColor..d.name.."|r") GameTooltip:Hide() end)
-        nameBtn:SetScript("OnClick",function() UI.SetDelveWaypoint(pin) end)
-    else nameFS:SetText(isBountiful and ("|cFFFFD700"..d.name.."|r") or d.name) end
+    local nameText
+    if pin then nameText = nameColor..d.name.."|r"
+    else nameText = isBountiful and ("|cFFFFD700"..d.name.."|r") or d.name end
+    row.nameBtn.pin       = pin
+    row.nameBtn.delveName = d.name
+    row.nameBtn.delveZone = d.zone
+    row.nameBtn.nameText  = nameText
+    row.nameFS:SetText(nameText)
+    row.nameBtn:Show()
 
     local variantText=active and "|cFF44FF44"..d.variant.."|r" or d.variant
 
-    local infoFS=UI.AcquireFontString("OVERLAY"); infoFS:SetFont(ROW_FONT_FILE,rSize)
-    infoFS:SetPoint("TOPLEFT",parent,"TOPLEFT",220,-y)
-    infoFS:SetJustifyH("LEFT")
-    infoFS:SetText(UI.ZoneColor(d.zone).."  "..variantText)
+    row.infoFS:SetFont(ROW_FONT_FILE,rSize)
+    row.infoFS:ClearAllPoints(); row.infoFS:SetPoint("TOPLEFT",parent,"TOPLEFT",220,-y)
+    -- Drop last render's fixed width first, or GetStringWidth below measures
+    -- the old box instead of this row's text.
+    row.infoFS:SetWidth(0)
+    row.infoFS:SetText(UI.ZoneColor(d.zone).."  "..variantText)
     -- Let the FontString auto-size to its text content (no fixed width)
     -- so flag buttons chain correctly after the actual text
-    local infoTextW = infoFS:GetStringWidth()
-    infoFS:SetWidth(math.max(infoTextW + 4, 100))
+    local infoTextW = row.infoFS:GetStringWidth()
+    row.infoFS:SetWidth(math.max(infoTextW + 4, 100))
+    row.infoFS:Show()
 
     -- Interactive flag badges with hover tooltips — all tags flow in one chain
     local FLAG_DEFS = {}
@@ -77,30 +161,28 @@ local function CreateDelveRow(parent, y, d)
     if isBountiful then table.insert(FLAG_DEFS, {text="|cFFFFD700[Bountiful]|r", tip="Bountiful Delve", desc="This delve is Bountiful today. Use a Coffer Key to open the Bountiful Coffer for bonus loot."}) end
     if active then table.insert(FLAG_DEFS, {text="|cFF00FF44* TODAY|r", tip="Active Today", desc="This variant is the one currently available for this delve."}) end
 
-    local lastAnchor = infoFS
-    for _, flag in ipairs(FLAG_DEFS) do
-        local btn = UI.AcquireButton()
-        btn:SetSize(40, rH)
-        btn:SetPoint("LEFT", lastAnchor, "RIGHT", lastAnchor == infoFS and 4 or 2, 0)
-        local fs = UI.AcquireFontString("OVERLAY")
-        fs:SetFont(ROW_FONT_FILE, rSize)
-        fs:SetAllPoints(btn); fs:SetJustifyH("LEFT")
-        fs:SetText(flag.text)
-        btn:SetWidth(math.max(fs:GetStringWidth() + 4, 30))
-        btn:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:AddLine("|cFFFFD700" .. flag.tip .. "|r")
-            GameTooltip:AddLine(flag.desc, 1, 1, 1, true)
-            GameTooltip:Show()
-        end)
-        btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        lastAnchor = btn
+    local lastAnchor = row.infoFS
+    for j = 1, #FLAG_DEFS do
+        local flag = FLAG_DEFS[j]
+        local badge = GetDelveBadge(parent, row, j)
+        badge.fs:SetFont(ROW_FONT_FILE, rSize)
+        badge.fs:SetText(flag.text)
+        badge.btn:SetSize(40, rH)
+        badge.btn:ClearAllPoints()
+        badge.btn:SetPoint("LEFT", lastAnchor, "RIGHT", lastAnchor == row.infoFS and 4 or 2, 0)
+        badge.btn:SetWidth(math.max(badge.fs:GetStringWidth() + 4, 30))
+        badge.btn.flagTip  = flag.tip
+        badge.btn.flagDesc = flag.desc
+        badge.btn:Show()
+        lastAnchor = badge.btn
     end
+    for j = #FLAG_DEFS + 1, #row.badges do row.badges[j].btn:Hide() end
+
     return rH
 end
 
 DelveGuide.RenderDelves = function()
-    local cf=UI.NewContentFrame(); local y=10
+    local cf=UI.NewContentFrame(); local y=10; local rowIndex=0
     local activeVariants = DelveGuide.activeVariants or {}
     local vc=0; for _ in pairs(activeVariants) do vc=vc+1 end
     
@@ -290,13 +372,13 @@ DelveGuide.RenderDelves = function()
     y=y+UI.CreateRow(cf,y,"|cFF555555"..string.rep("-",90).."|r")+2
     if vc>0 then
         y=y+4; y=y+UI.CreateRow(cf,y,"|cFF00FF44-- * ACTIVE TODAY --|r")
-        for _,d in ipairs(activeData) do y=y+CreateDelveRow(cf,y,d) end
+        for _,d in ipairs(activeData) do rowIndex=rowIndex+1; y=y+CreateDelveRow(cf,y,d,rowIndex) end
         y=y+12; y=y+UI.CreateRow(cf,y,"|cFF888888-- ALL VARIANTS (INACTIVE) --|r")
     end
     local lastZone=""
     for _,d in ipairs(inactiveData) do
         if d.zone~=lastZone then y=y+4; y=y+UI.CreateRow(cf,y,"|cFF666666-- "..d.zone.." --|r"); lastZone=d.zone end
-        y=y+CreateDelveRow(cf,y,d)
+        rowIndex=rowIndex+1; y=y+CreateDelveRow(cf,y,d,rowIndex)
     end
     cf:SetHeight(y+20)
 end
