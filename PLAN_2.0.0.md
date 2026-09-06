@@ -261,3 +261,4 @@ aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's
 | 2026-09-05 | **D6** Labyrinth HUD view | chamber / step / objective (both criteria shapes) / cleared / time; tier shown as not readable |
 | 2026-09-05 | **E3** merged (branch `e3-parity`, 6 commits) | grades tooltip, ESC>Options signpost, 3 keybinds, compartment, rotation countdown, About block; ⚠️ glance at widget countdown fit at font scale 0.6 |
 | 2026-09-05 | **E6 complete** — Debug tab gated behind a Settings checkbox (default hidden) | **Track E items 1–6 all done** |
+| 2026-09-06 | **PTR verification** (Nick): A3 ✅ 12/12 no quarantine · E2 ✅ · E3 tooltip + keybinds ✅ · E6 gate ✅ · all invariants ✅ · **selftest caught a real 12.1.5 break** (Loot tab: global `GetItemInfoInstant` deleted) → fixed | Widget-meta experiment closed negative (Findings §5.1b); tracker-widget dump still needed *inside* a T4+ delve for the lives question |

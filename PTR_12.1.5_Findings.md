@@ -198,6 +198,16 @@ on 69594 inside Kindo'jan: `count: 1`, `crit[1] desc=[Defeat Hexbound Defenders]
 **Surviving `C_Scenario` functions** (confirmed on 69594): `GetInfo`, `GetStepInfo`,
 `IsInScenario`.
 
+**4.7 A second removal: the global `GetItemInfoInstant`.** Found 2026-09-06 by `/dg selftest`
+on its first PTR run: the Loot tab errored on every render (`UI_Loot.lua:20: attempt to call
+a nil value`). 12.1.5 deleted the deprecated global shims; the addon had migrated
+`GetItemCount` and `GetDetailedItemLevelInfo` to `C_Item` but not this one, and the API
+research (`API_12.1.5_Research.md`) swept only `C_*` calls plus a fixed list of globals, so
+it was invisible there too. Fixed with `C_Item.GetItemInfoInstant` (identical returns) and
+the global kept as a 12.1.0 fallback. A sweep of every other deprecated global the 12.x line
+has been deleting found no further bare uses. **Lesson:** rendering every tab under `pcall`
+catches what static sweeps miss; the selftest earned its place on day one.
+
 **Chamber progress source.** Criteria give quantified, locale-free progress (5/6), which is
 a better source than the subzone approach in 5.1 — it measures completion rather than
 position and needs no string matching. Chambers are sequentially gated (the door to
@@ -274,6 +284,15 @@ matching the advertised nine chambers.
 
 ⚠️ Node names are therefore **not unique keys**, and they are localized. Key on node ID, and
 curate an ID -> chamber mapping rather than counting names.
+
+### 5.1b The outdoor variant-key experiment: closed, negative
+
+The review (§7.4, speculative) proposed that `widgetTag` / `textureKit` / `orderIndex` on
+a delve's widget set might carry a locale-free variant key. `/dg selftest` on 2026-09-06
+printed those fields for all twelve rotational delves plus the Labyrinth: **`widgetTag` is
+the empty string and `textureKit` is `nil` on every one**; `orderIndex` only distinguishes
+the two widgets a bountiful set carries (coffer blurb, variant). There is nothing to compare
+across days. The honest limit stands: outdoors, the variant reaches the client only as text.
 
 ### 5.2a Chambers are separate scenarios, and the content is unfinished
 
