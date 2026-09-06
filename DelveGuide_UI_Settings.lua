@@ -219,3 +219,33 @@ DelveGuide.RenderSettings = function()
 
     cf:SetHeight(y + 20)
 end
+
+-- ESC > Options > AddOns signpost. Players look for addon settings there first
+-- and concluded DelveGuide had none; this is a pointer to the real window, not
+-- a second copy of the Settings tab.
+if Settings and Settings.RegisterCanvasLayoutCategory then
+    local panel = CreateFrame("Frame", "DelveGuideOptionsPanel", UIParent)
+    panel.name = "DelveGuide"
+
+    local desc = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    desc:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
+    desc:SetText("DelveGuide's settings live in its own window.")
+
+    local openBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    openBtn:SetSize(180, 24); openBtn:SetText("Open DelveGuide")
+    openBtn:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -12)
+    openBtn:SetScript("OnClick", function()
+        -- The options panel sits on top of everything, so close it or the
+        -- window we just opened is invisible behind it.
+        if SettingsPanel and SettingsPanel:IsShown() then HideUIPanel(SettingsPanel) end
+        DelveGuide.Toggle()
+    end)
+
+    -- The canvas layout calls these on Okay/Defaults/open; no-ops keep it happy.
+    panel.OnCommit  = function() end
+    panel.OnDefault = function() end
+    panel.OnRefresh = function() end
+
+    local category = Settings.RegisterCanvasLayoutCategory(panel, "DelveGuide")
+    Settings.RegisterAddOnCategory(category)
+end
