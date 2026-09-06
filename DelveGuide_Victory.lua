@@ -101,7 +101,7 @@ DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, 
     if DelveGuideDB and DelveGuideDB.history then
         for _, run in ipairs(DelveGuideDB.history) do
             if run.char == charName and run.resetKey == currentResetKey then
-                trueDelveCount = trueDelveCount + 1
+                trueDelveCount = trueDelveCount + (run.vaultCredits or 1)   -- a Labyrinth row can be worth up to 3
             end
         end
     end

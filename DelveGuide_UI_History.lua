@@ -117,7 +117,7 @@ DelveGuide.RenderHistory = function()
             local ckey=(run.char or "Unknown")..(run.realm and ("-"..run.realm) or "")
             if not wk.chars[ckey] then wk.chars[ckey]={}; table.insert(wk.order,ckey) end
             table.insert(wk.chars[ckey],run)
-            wk.count=wk.count+1
+            wk.count=wk.count+(run.vaultCredits or 1)
         end
         table.sort(weekOrder,function(a,b)
             if a==0 then return false end; if b==0 then return true end; return a>b
@@ -145,7 +145,10 @@ DelveGuide.RenderHistory = function()
 
             for _,ckey in ipairs(wk.order) do
                 local runs=wk.chars[ckey]
-                local count=#runs
+                -- Vault progress counts credits, not rows: a Labyrinth row is
+                -- worth one per three chambers cleared.
+                local count=0
+                for _,run in ipairs(runs) do count=count+(run.vaultCredits or 1) end
 
                 -- Voidcore eligibility needs a BOUNTIFUL run at T8+, not just
                 -- any T8+ run. Runs logged before we recorded that flag are
@@ -172,7 +175,8 @@ DelveGuide.RenderHistory = function()
                     local vaultStr=run.vaultIlvl and ("  |cFFFFD700"..run.vaultIlvl.." ilvl|r") or ""
                     local timeStr=run.elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(run.elapsed/60),math.floor(run.elapsed%60)) or ""
                     local varStr=run.variant and ("  |cFFCCAAFF("..run.variant..")|r")
-                        or (run.kind=="labyrinth" and ("  |cFFCCAAFF(Labyrinth"..(run.chambers and (", "..run.chambers.." chambers") or "")..")|r"))
+                        or (run.kind=="labyrinth" and string.format("  |cFFCCAAFF(Labyrinth, %d chambers, %d vault credit%s)|r",
+                            run.chambers or 0, run.vaultCredits or 0, (run.vaultCredits or 0)==1 and "" or "s"))
                         or ""
                     local bountyStr=run.bountiful and "  |cFFFFD700[B]|r" or ""
                     -- Show the player's own language when we captured it; `name`

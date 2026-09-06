@@ -285,12 +285,11 @@ DelveGuideData.trove = {
 -- "[Missing Translation] Unknown Variant Text" row. See PTR_12.1.5_Findings.md.
 -- verifiedBuild is the PTR build the IDs were read from. Content there was
 -- still placeholder ("[PH]" scenario names), so re-check on the launch build.
--- finalEncounterID: the boss whose ENCOUNTER_END (success) means the run
--- granted vault credit. Unknown on placeholder content; while it is nil no
--- Labyrinth run is written to history (see DelveGuide.LogLabyrinthRun). Fill
--- it from DelveGuideDB.labyrinthLog once a non-[PH] build exists.
+-- Vault credit is granted every three chambers cleared (3 / 6 / 9), at any
+-- tier -- see DelveGuide.LogLabyrinthRun. The Kindo'jan kill at Tier 8+ is a
+-- separate reward (Heroic Soul Fragment, once per week) and is not modelled.
 DelveGuideData.labyrinths = {
-    { name = "The Labyrinth of Kindo'jan", instanceID = 3043, widgetSetID = 2316, verifiedBuild = 69594, finalEncounterID = nil },
+    { name = "The Labyrinth of Kindo'jan", instanceID = 3043, widgetSetID = 2316, verifiedBuild = 69594 },
 }
 -- Derived lookups; the table above is the single source of truth.
 DelveGuideData.labyrinthInstances  = {}   -- instanceID  -> name

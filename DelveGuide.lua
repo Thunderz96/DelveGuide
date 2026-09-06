@@ -593,12 +593,42 @@ DelveGuide.TrackLabyrinthPresence = function()
     if was then
         local ran = DelveGuide.labyrinthEnteredAt and (GetTime() - DelveGuide.labyrinthEnteredAt) or nil
         DelveGuide.LogLabyrinth({ kind = "leave", labyrinth = was, elapsed = ran })
-        if DelveGuide.LogLabyrinthRun then DelveGuide.LogLabyrinthRun(was, ran) end
+        -- Settle the run record's elapsed time; it was created mid-run.
+        if DelveGuide.LogLabyrinthRun then DelveGuide.LogLabyrinthRun(was) end
+        DelveGuide.currentLabyrinthRow      = nil
+        DelveGuide.labyrinthCreditsAnnounced = nil
     end
     if now then
-        DelveGuide.labyrinthEnteredAt    = GetTime()
+        -- A /reload inside a Labyrinth arrives here with no "was". If the log's
+        -- last entry for this Labyrinth is not a "leave", this is the same visit:
+        -- keep counting chambers from its "enter" and restore the clock from the
+        -- wall time stored on it (the same trick DelveGuideDB.activeRun uses for
+        -- delves). GetTime() is session uptime and would otherwise restart at 0.
+        local resumed = false
+        local log = DelveGuideDB and DelveGuideDB.labyrinthLog or {}
+        for i = #log, 1, -1 do
+            local e = log[i]
+            if e.labyrinth == now then
+                if e.kind == "leave" then break end
+                if e.kind == "enter" then
+                    -- Same visit if the entry is recent. An entry written before
+                    -- the epoch field existed still resumes the chamber count,
+                    -- just with a fresh clock; one older than three hours is a
+                    -- visit that never logged its leave, and is not resumed.
+                    local age = e.epoch and (time() - e.epoch) or nil
+                    if age == nil or (age >= 0 and age < 3 * 60 * 60) then
+                        resumed = true
+                        DelveGuide.labyrinthEnteredAt = age and (GetTime() - age) or GetTime()
+                    end
+                    break
+                end
+            end
+        end
+        if not resumed then
+            DelveGuide.labyrinthEnteredAt = GetTime()
+            DelveGuide.LogLabyrinth({ kind = "enter", labyrinth = now, epoch = time() })
+        end
         DelveGuide.labyrinthChamberStart = GetTime()
-        DelveGuide.LogLabyrinth({ kind = "enter", labyrinth = now })
     else
         DelveGuide.labyrinthEnteredAt    = nil
         DelveGuide.labyrinthChamberStart = nil
@@ -798,31 +828,34 @@ local function GetWeeklyVaultData()
     return delveCount, slots, maxThreshold, acts
 end
 
--- D2: the Labyrinth run record. Called from TrackLabyrinthPresence on leave.
--- A Labyrinth grants delve vault credit only when its final boss dies, and
--- that boss's encounterID is not known on placeholder content
--- (DelveGuideData.labyrinths[].finalEncounterID is nil today), so this writes
--- nothing until the ID is filled in -- the D3 log still captures every run.
--- Once it fires, a completed run lands in history as kind="labyrinth": no
--- variant, so rankings and /dg submit skip it; counted by the weekly vault
--- tallies (Roster, Victory) exactly like a delve, because for the vault that
--- is what it is. Defined here, after GetWeeklyVaultData, so it can use it.
-DelveGuide.LogLabyrinthRun = function(name, elapsed)
-    if not (DelveGuideDB and DelveGuideDB.labyrinthLog and DelveGuideData and DelveGuideData.labyrinths) then return end
-    local def
-    for _, L in ipairs(DelveGuideData.labyrinths) do if L.name == name then def = L; break end end
-    if not def or not def.finalEncounterID then return end
-    -- Walk the log back to this run's "enter": count chambers, find the boss.
-    local chambers, completed = 0, false
+-- D2: the Labyrinth run record. A Labyrinth grants Great Vault credit every
+-- three chambers cleared (3 / 6 / 9), at any tier -- not on a boss kill. (The
+-- Kindo'jan kill at Tier 8+ is a separate reward, the Heroic Soul Fragment,
+-- and is not modelled here.) So the row is created the moment the third
+-- chamber completes and updated at the sixth and ninth, with
+-- vaultCredits = floor(chambers / 3). Called after every chamber completion
+-- and once more on leave to settle the elapsed time.
+-- kind="labyrinth" and no variant: rankings and /dg submit skip it. The weekly
+-- vault tallies (Roster, Victory, History) sum vaultCredits, so one run can
+-- count as up to three delves -- which for the vault it is.
+DelveGuide.LogLabyrinthRun = function(name)
+    if not (DelveGuideDB and DelveGuideDB.history and DelveGuideDB.labyrinthLog) then return end
+    local chambers = 0
     for i = #DelveGuideDB.labyrinthLog, 1, -1 do
         local e = DelveGuideDB.labyrinthLog[i]
         if e.kind == "enter" and e.labyrinth == name then break end
         if e.kind == "chamber" then chambers = chambers + 1 end
-        if e.kind == "encounter" and e.encounterID == def.finalEncounterID and e.success then completed = true end
     end
-    if not completed then return end
+    local credits = math.floor(chambers / 3)
+    local row = DelveGuide.currentLabyrinthRow
+    if credits < 1 and not row then return end
+
     local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
     local resetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
+    local charName, charRealm = "Unknown", nil
+    pcall(function() charName = UnitName("player") or "Unknown" end)
+    pcall(function() charRealm = GetRealmName() end)
+    local elapsed = DelveGuide.labyrinthEnteredAt and (GetTime() - DelveGuide.labyrinthEnteredAt) or nil
     local vaultIlvl
     pcall(function()
         local _, _, _, acts = GetWeeklyVaultData()
@@ -830,13 +863,39 @@ DelveGuide.LogLabyrinthRun = function(name, elapsed)
             if a.progress >= a.threshold and a.rewardIlvl and (not vaultIlvl or a.rewardIlvl > vaultIlvl) then vaultIlvl = a.rewardIlvl end
         end
     end)
-    local charName, charRealm = "Unknown", nil
-    pcall(function() charName = UnitName("player") or "Unknown" end)
-    pcall(function() charRealm = GetRealmName() end)
-    table.insert(DelveGuideDB.history, 1, { kind = "labyrinth", name = name, date = date("%Y-%m-%d %H:%M"), resetKey = resetKey,
-        tier = "?", tierNum = nil, vaultIlvl = vaultIlvl, char = charName, realm = charRealm, elapsed = elapsed, chambers = chambers })
-    if #DelveGuideDB.history > 200 then table.remove(DelveGuideDB.history) end
-    print("|cFF00BFFF[DelveGuide]|r Logged Labyrinth: |cFF00FF44" .. name .. "|r  |cFF888888(" .. chambers .. " chambers)|r")
+
+    if not row then
+        -- After a /reload the in-memory reference is gone. If history[1] is this
+        -- visit's row (same Labyrinth, character and week, started within the
+        -- last three hours), reattach rather than open a second row.
+        local h1 = DelveGuideDB.history[1]
+        if h1 and h1.kind == "labyrinth" and h1.name == name and h1.char == charName
+           and h1.resetKey == resetKey and h1.startedEpoch and (time() - h1.startedEpoch) < 3 * 60 * 60 then
+            row = h1
+            DelveGuide.labyrinthCreditsAnnounced = row.vaultCredits or 0
+        else
+            row = { kind = "labyrinth", name = name, date = date("%Y-%m-%d %H:%M"), resetKey = resetKey,
+                    startedEpoch = time() - math.floor(elapsed or 0), tier = "?", tierNum = nil,
+                    char = charName, realm = charRealm, chambers = 0, vaultCredits = 0 }
+            table.insert(DelveGuideDB.history, 1, row)
+            if #DelveGuideDB.history > 200 then table.remove(DelveGuideDB.history) end
+        end
+        DelveGuide.currentLabyrinthRow = row
+    end
+
+    row.chambers     = math.max(row.chambers or 0, chambers)
+    row.vaultCredits = math.max(row.vaultCredits or 0, credits)
+    if elapsed then row.elapsed = elapsed end
+    if vaultIlvl and (not row.vaultIlvl or vaultIlvl > row.vaultIlvl) then row.vaultIlvl = vaultIlvl end
+
+    if row.vaultCredits > (DelveGuide.labyrinthCreditsAnnounced or 0) then
+        DelveGuide.labyrinthCreditsAnnounced = row.vaultCredits
+        print(string.format("|cFF00BFFF[DelveGuide]|r Logged Labyrinth: |cFF00FF44%s|r  |cFF888888(%d chambers, %d vault credit%s)|r",
+            name, row.chambers, row.vaultCredits, row.vaultCredits == 1 and "" or "s"))
+        -- mainFrame / currentTabKey are declared further down the file, so from
+        -- here they would resolve as globals; go through the exported UI table.
+        if DelveGuide.UI and DelveGuide.UI.RefreshCurrentTab then DelveGuide.UI.RefreshCurrentTab() end
+    end
 end
 
 -- Snapshot the current character's state into SavedVariables.
@@ -886,7 +945,9 @@ local function CacheCurrentChar()
     if resetKey and DelveGuideDB.history then
         for _, h in ipairs(DelveGuideDB.history) do
             if h.resetKey == resetKey and h.char == name then
-                delveCount = delveCount + 1
+                -- A Labyrinth row carries the vault credits it earned (one per
+                -- three chambers); a delve row counts as one.
+                delveCount = delveCount + (h.vaultCredits or 1)
                 table.insert(weeklyRuns, h)
             end
         end
@@ -2517,6 +2578,8 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
                 DelveGuide.labyrinthChamberStart = GetTime()
                 DelveGuide.LogLabyrinth(e)
             end)
+            -- D2: vault credit lands every third chamber; upsert the run record.
+            if DelveGuide.LogLabyrinthRun then DelveGuide.LogLabyrinthRun(labName) end
             return
         end
         -- Deciding "was that a delve?" USED to be `scenarioName == "Delves"` plus a

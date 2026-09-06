@@ -451,8 +451,12 @@ local function UpdateLabyrinthHUD(name)
     end)
     rows.tier:SetText(#parts > 0 and table.concat(parts, "  |cFF555555\194\183|r  ") or "|cFF888888--|r")
 
-    rows.curio:SetText("|cFF00FF44" .. CountChambersThisRun() .. "|r |cFF888888this run|r")
-    rows.nemesis:SetText("|cFF888888Delve vault credit at Tier 8+ (final boss)|r")
+    local cleared = CountChambersThisRun()
+    local credits = math.floor(cleared / 3)
+    rows.curio:SetText(string.format("|cFF00FF44%d|r |cFF888888this run|r  %s", cleared,
+        credits > 0 and string.format("|cFFFFD700%d vault credit%s|r", credits, credits == 1 and "" or "s")
+                     or "|cFF888888(3 for vault credit)|r"))
+    rows.nemesis:SetText("|cFF888888Vault credit every 3 chambers (3 / 6 / 9)|r")
     rows.bountiful:SetText("|cFF888888not readable in Labyrinths|r")
     rows.lives:SetText(ReadLivesText() or "|cFF888888--|r")
     if DelveGuide.labyrinthEnteredAt then
