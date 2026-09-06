@@ -53,6 +53,7 @@ used for the contributor credits on the Settings tab.
 | Player floor | Variant needs **≥4 different submitters** (`--min-submitters`) | Stops one person grading a variant alone, and caps anyone at 1/4 of a grade |
 | Aggregate | **Median** clear time, **one vote per player** (`--stat median --weight players`) | See below |
 | Grade | Ratio to the **median** variant across all delves | S = clears in ~4/5 the time of a typical variant |
+| Hysteresis | A published grade only moves if the new time clears the band edge by **30s** (`--hysteresis`), and never holds across more than one band | Edges land ~1.5min apart in a 9-minute spread; without it, near-edge variants flip letter every refresh |
 
 Grade thresholds live in `SUGGEST` at the top of the script: ≤0.82× the median
 variant is S, ≤0.93× A, ≤1.08× B, ≤1.19× C, ≤1.37× D, slower is F.
@@ -155,6 +156,54 @@ Cost of each floor on the 2026-08-22 data:
 | 6 | 25 | 17% |
 
 Raise it as submissions grow. 5 is the natural next step.
+
+## Grade hysteresis
+
+**On by default at 30 seconds** (`--hysteresis 30`; `0` disables it, and
+`--published` names the data file the current grades are read back from).
+
+**Why it exists.** The whole grade distribution is squeezed into roughly nine
+minutes — about 12m to 21m — with five band edges inside it, so the edges land
+roughly a minute and a half apart while normal movement between data pulls is
+tens of seconds. **21 of 37 variants sat within 30s of an edge.** Grades were
+not drifting because the samples were thin; they were flipping because the
+boundaries slice straight through a dense cluster.
+
+This is **not** a sample-size problem, and no player floor fixes it. *Faculty of
+Fear* was about to change letter on a **3-second** move with **20 players**
+behind it. *Calamitous* took three different grades in three releases and its
+last two swings were boundary noise inside **22 seconds**. A letter that changes
+every release teaches players to ignore the letter.
+
+**The rule**, applied per variant after the fresh grade is computed:
+
+1. Look up the currently published grade for that **(delve, variant)** in
+   `DelveGuide_Data.lua`. Keyed on both: variant names are unique within a delve
+   but nothing makes them unique across the table, and a collision would hand
+   one delve's grade to another delve's row.
+2. No published grade, or the fresh grade already matches it — nothing to do.
+3. **Fresh grade two or more bands away from the published one — it moves, full
+   stop.** This is the cap. Hysteresis exists for boundary noise, and a variant
+   that has collapsed past several edges has genuinely changed. Holding it would
+   also be self-perpetuating: the held letter is what gets written back into the
+   data file, and the next run reads that as its baseline, so the row would
+   never catch up with its own data.
+4. Otherwise measure the new time's distance to the **nearest band edge**. Under
+   `--hysteresis` seconds, keep the published letter. That is the hold.
+5. Over it, the grade moves.
+
+**Held grades are never silent.** Every run prints them with the distance
+involved, and the row written into `DelveGuide_Data.lua` carries a trailing
+`-- HELD (would be A)` naming the letter it would otherwise have had. A held
+letter is being *held*, not measured, and both the log and the data file say so.
+
+**Measured on the batch it was introduced for: 8 grade changes became 4.** Held
+were *Faculty of Fear* (3s past the line), *Eggsplosive Growth* (5s), *March of
+the Arcane Brigade* (17s) and *Calamitous* (22s). What still moved was clear of
+the edge — *Totem Annihilation* by a full minute, *Adopt-a-thon* by 30s,
+*Caustic Crush* by 38s. Nothing that had actually shifted was suppressed.
+
+Re-run with `--hysteresis 0` to see what the raw data says with nothing held.
 
 ## Known gap: the per-player average
 
