@@ -673,6 +673,18 @@ end
 -- Called both from zone events (immediate response) and from a watchdog ticker
 -- (recovery), so a mistimed single read can never strand the HUD or the timer.
 local function EvaluateDelveState()
+    -- Standing in the open world with nothing left over from a run is the common
+    -- case, and there is nothing here to do -- but the else-branch below owns the
+    -- "left the delve" cleanup, so this must not skip that first pass after
+    -- leaving. Only bail when there is no leftover run state, no HUD on screen
+    -- and no Labyrinth to drive; after the one cleanup pass all of those are
+    -- false and the 2s ticker costs a handful of comparisons.
+    if not IsInInstance() and not DelveGuide.inDelveInstance
+       and not (DelveGuide.runStartTime or DelveGuide.runCompleted or DelveGuide.currentDelveTierNum)
+       and not (hudFrame and hudFrame:IsShown())
+       and not (DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName()) then
+        return
+    end
     if not hudFrame then BuildHUD() end
     -- Time any delve scenario, even one we can't name; only the HUD's *display*
     -- needs a recognised name (UpdateHUD hides itself when it has none).
