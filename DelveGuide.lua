@@ -292,6 +292,16 @@ local function ScanActiveVariants()
                     local isNemesisDelve = NEMESIS_DELVES[delveName]
                         or NEMESIS_DELVES[engZoneName]
                         or (widgetSetID == 0 and #widgetTexts == 0)
+                    -- Labyrinths (12.1.5) come back from GetDelvesForMap like a
+                    -- delve, on a different atlas, with a widget set whose text
+                    -- yields no variant line. They are not rotational: keep them
+                    -- out of activeDelves AND out of the missing-translation
+                    -- quarantine, or the Delves tab shows a junk row. Keyed on
+                    -- widget set, the same stable id widgetSetDelves uses. An
+                    -- atlas test would be more generic but could misfile a real
+                    -- bountiful delve, which is the worse failure.
+                    local isLabyrinth = DelveGuideData.labyrinthWidgetSets
+                        and DelveGuideData.labyrinthWidgetSets[widgetSetID] or false
 
                     -- Nemesis delves are NOT rotational, so they must never enter
                     -- activeDelves: the Delves tab and the compact widget both fall
@@ -300,7 +310,7 @@ local function ScanActiveVariants()
                     -- so it only suppressed the missing-translation record and the
                     -- delve still showed up -- as "New variant" instead of "Unknown
                     -- Variant Text", which looked fixed but was not.
-                    if engZoneName~="" and not isNemesisDelve then
+                    if engZoneName~="" and not isNemesisDelve and not isLabyrinth then
                         activeDelves[engZoneName]={bountiful=isBountiful,nemesis=hasNemesis}
                         if delveName~=engZoneName then
                             localizedToEnglish[delveName]=engZoneName
@@ -313,7 +323,7 @@ local function ScanActiveVariants()
 
 
                     -- If we don't know the translation, quarantine the text safely
-                    if (not variantName or variantName == "") and not isNemesisDelve then
+                    if (not variantName or variantName == "") and not isNemesisDelve and not isLabyrinth then
                         -- Find a line that plausibly IS the variant name: single
                         -- line and short. Bountiful delves prepend a multi-line
                         -- coffer blurb, so widgetTexts[1] is that blurb and the
@@ -355,7 +365,7 @@ local function ScanActiveVariants()
 
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
                         poiID=poiID,name=delveName,widgetSetID=tostring(widgetSetID),
-                        atlasName=atlasName,widgetTexts=widgetTexts,variantName=variantName or (isNemesisDelve and "(nemesis)" or "(not found)")})
+                        atlasName=atlasName,widgetTexts=widgetTexts,variantName=variantName or (isNemesisDelve and "(nemesis)" or (isLabyrinth and "(labyrinth)") or "(not found)")})
                     if variantName and variantName~="" then activeVariants[variantName]=true end
                 else
                     table.insert(rawScanResults,{mapID=mapID,zoneName=ZONE_NAMES[mapID] or ("mapID "..mapID),
@@ -429,6 +439,22 @@ DelveGuide.GetCriteria = function(i)
         return C_ScenarioInfo.GetCriteriaInfo(i)
     end
     return C_Scenario.GetCriteriaInfo and C_Scenario.GetCriteriaInfo(i)
+end
+
+-- Labyrinth detection (12.1.5). Inside a Labyrinth every cheap signal reads
+-- as a delve -- scenario type 8, diffID 208, diffName "Delves" -- so the ONLY
+-- reliable test is the instanceID against DelveGuideData.labyrinths. Returns
+-- the Labyrinth's name, or nil. The HUD uses it to withhold the delve timer
+-- and tier; the completion handler uses it to withhold the delve-shaped
+-- history row. Verified on PTR build 69594: 3043 across tiers 11, 1 and 8.
+DelveGuide.GetLabyrinthName = function()
+    local name
+    pcall(function()
+        local _,_,_,_,_,_,_, instanceID = GetInstanceInfo()
+        local lookup = DelveGuideData and DelveGuideData.labyrinthInstances
+        name = instanceID and lookup and lookup[instanceID] or nil
+    end)
+    return name
 end
 
 -- Trovehunter's Bounty state, shared by the Delves tab, the pre-entry
@@ -2136,6 +2162,14 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
     elseif event=="SCENARIO_COMPLETED" then
         local scenarioName=C_Scenario.GetInfo()
         if not scenarioName then return end
+        -- Labyrinth chambers are type-8 scenarios, so every test below says
+        -- "delve", and a cleared chamber logged a delve row with no variant and
+        -- tier "?" -- one per chamber, since each chamber is its own scenario
+        -- (PTR, 2026-09-05). Withhold the delve row here; the Labyrinth run
+        -- record is a separate shape. Returning early also stops
+        -- localeScenarioName below learning "Soul King" as this client's word
+        -- for Delves, which would have broken test (d) for real delves.
+        if DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName() then return end
         -- Deciding "was that a delve?" USED to be `scenarioName == "Delves"` plus a
         -- match against English delve names. C_Scenario.GetInfo() returns a
         -- LOCALIZED string, so on a non-English client both tests failed and this

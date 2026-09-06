@@ -271,6 +271,27 @@ DelveGuideData.trove = {
 }
 
 
+-- ── Labyrinths (Patch 12.1.5) ──────────────────────────────
+-- Not delves, and never treated as one. Inside a Labyrinth, scenario type 8,
+-- diffID 208 and diffName "Delves" are all IDENTICAL to a real delve, so every
+-- cheap test says "delve". instanceID is the only stable discriminator: 3043
+-- held across tiers 11, 1 and 8 on PTR build 69594. Outdoors the Labyrinth POI
+-- comes back from GetDelvesForMap like any delve and is keyed by its widget
+-- set; without that set listed here it rendered as a quarantined
+-- "[Missing Translation] Unknown Variant Text" row. See PTR_12.1.5_Findings.md.
+-- verifiedBuild is the PTR build the IDs were read from. Content there was
+-- still placeholder ("[PH]" scenario names), so re-check on the launch build.
+DelveGuideData.labyrinths = {
+    { name = "The Labyrinth of Kindo'jan", instanceID = 3043, widgetSetID = 2316, verifiedBuild = 69594 },
+}
+-- Derived lookups; the table above is the single source of truth.
+DelveGuideData.labyrinthInstances  = {}   -- instanceID  -> name
+DelveGuideData.labyrinthWidgetSets = {}   -- widgetSetID -> name
+for _, L in ipairs(DelveGuideData.labyrinths) do
+    DelveGuideData.labyrinthInstances[L.instanceID]   = L.name
+    DelveGuideData.labyrinthWidgetSets[L.widgetSetID] = L.name
+end
+
 -- ============================================================
 -- SECTION 2: DELVE MAP PINS
 -- ------------------------------------------------------------

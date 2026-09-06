@@ -35,6 +35,10 @@ local function IsInDelveScenario()
     local inScenario = false
     pcall(function() inScenario = C_Scenario.IsInScenario() end)
     if not inScenario then return false end
+    -- A Labyrinth (12.1.5) is a type-8 scenario named "Delves" in its hub, so
+    -- every test below would say yes. It is not a delve run: no timer, no tier,
+    -- no history row. Gating here switches all of those off from one place.
+    if DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName() then return false end
     if GetCurrentDelveName() then return true end          -- recognised by name
     local sName = ""
     pcall(function() sName = C_Scenario.GetInfo() or "" end)
@@ -55,6 +59,35 @@ local function IsInsideDelve()
     pcall(function() inScenario = C_Scenario.IsInScenario() end)
     if not inScenario then return false end
     return GetCurrentDelveName() ~= nil
+end
+
+-- One reader for the lives row. The same criteria scan used to be duplicated
+-- verbatim at both call sites (UpdateHUD and the SCENARIO_CRITERIA_UPDATE fast
+-- path). Returns the coloured lives string, or nil when no criterion looks like
+-- a lives/deaths counter -- callers decide what to show for nil.
+local function ReadLivesText()
+    local livesText
+    pcall(function()
+        local numCrit = DelveGuide.GetCriteriaCount()
+        for i = 1, (numCrit or 0) do
+            local crit = DelveGuide.GetCriteria(i)
+            if crit then
+                local desc  = crit.description  and crit.description:lower()  or ""
+                local qStr  = crit.quantityString and crit.quantityString:lower() or ""
+                local searchText = desc .. " " .. qStr
+                -- EN: lives/life, death, charge  |  DE: leben  |  FR: vie  |  IT: vita/vite  |  ES: vida
+                -- PT: vida  |  KO: 생명/목숨  |  ZH: 生命/命
+                if searchText:find("li[fv]") or searchText:find("death") or searchText:find("charge")
+                    or searchText:find("leben") or searchText:find("vie") or searchText:find("vit[ae]")
+                    or searchText:find("vida") or searchText:find("생명") or searchText:find("목숨")
+                    or searchText:find("生命") or searchText:find("命") then
+                    livesText = "|cFF00FF88" .. (crit.quantityString or "?") .. "|r"
+                    return
+                end
+            end
+        end
+    end)
+    return livesText
 end
 
 -- ── build ────────────────────────────────────────────────────
@@ -449,30 +482,8 @@ local function UpdateHUD()
         (info and info.bountiful) and "|cFFFFD700Yes|r" or "|cFF888888No|r"
     )
 
-    -- Lives: scan scenario criteria for a deaths/lives entry
-    -- Check both description and quantityString, with locale-independent fallbacks
-    local livesText = "|cFF888888--|r"
-    pcall(function()
-        local numCrit = DelveGuide.GetCriteriaCount()
-        for i = 1, (numCrit or 0) do
-            local crit = DelveGuide.GetCriteria(i)
-            if crit then
-                local desc  = crit.description  and crit.description:lower()  or ""
-                local qStr  = crit.quantityString and crit.quantityString:lower() or ""
-                local searchText = desc .. " " .. qStr
-                -- EN: lives/life, death, charge  |  DE: leben  |  FR: vie  |  IT: vita/vite  |  ES: vida
-                -- PT: vida  |  KO: 생명/목숨  |  ZH: 生命/命
-                if searchText:find("li[fv]") or searchText:find("death") or searchText:find("charge")
-                    or searchText:find("leben") or searchText:find("vie") or searchText:find("vit[ae]")
-                    or searchText:find("vida") or searchText:find("생명") or searchText:find("목숨")
-                    or searchText:find("生命") or searchText:find("命") then
-                    livesText = "|cFF00FF88" .. (crit.quantityString or "?") .. "|r"
-                    break
-                end
-            end
-        end
-    end)
-    rows.lives:SetText(livesText)
+    -- Lives row: one shared reader (see ReadLivesText).
+    rows.lives:SetText(ReadLivesText() or "|cFF888888--|r")
 
     -- Timer: show elapsed time since entering delve
     if DelveGuide.runStartTime then
@@ -545,24 +556,8 @@ hudEvents:SetScript("OnEvent", function(_, event)
     if event == "SCENARIO_CRITERIA_UPDATE" then
         -- Fast path: refresh lives row if HUD is visible
         if hudFrame and hudFrame:IsShown() and hudFrame.rows then
-            pcall(function()
-                local numCrit = DelveGuide.GetCriteriaCount()
-                for i = 1, (numCrit or 0) do
-                    local crit = DelveGuide.GetCriteria(i)
-                    if crit then
-                        local desc  = crit.description  and crit.description:lower()  or ""
-                        local qStr  = crit.quantityString and crit.quantityString:lower() or ""
-                        local searchText = desc .. " " .. qStr
-                        if searchText:find("li[fv]") or searchText:find("death") or searchText:find("charge")
-                            or searchText:find("leben") or searchText:find("vie") or searchText:find("vit[ae]")
-                            or searchText:find("vida") or searchText:find("생명") or searchText:find("목숨")
-                            or searchText:find("生命") or searchText:find("命") then
-                            hudFrame.rows.lives:SetText("|cFF00FF88" .. (crit.quantityString or "?") .. "|r")
-                            break
-                        end
-                    end
-                end
-            end)
+            local t = ReadLivesText()
+            if t then hudFrame.rows.lives:SetText(t) end
         end
         return
     end
