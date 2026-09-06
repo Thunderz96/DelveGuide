@@ -53,46 +53,74 @@ end
 -- matched by the set-0 rule in the scanner on every locale, so these name
 -- entries are only a belt-and-braces for English clients.
 
-local function InitSavedVars()
-    if not DelveGuideDB then
-        DelveGuideDB = { minimapAngle=225, windowX=nil, windowY=nil, fontScale=1.0, history={}, minimapHidden=false, widgetHidden=false, widgetX=nil, widgetY=nil, widgetClickOpens=false }
-    end
-    if not DelveGuideDB.minimap then DelveGuideDB.minimap = { hide = false } end
-    if not DelveGuideDB.fontScale then DelveGuideDB.fontScale = 1.0 end
-    if not DelveGuideDB.widgetFontScale then DelveGuideDB.widgetFontScale = 1.0 end
-    if not DelveGuideDB.history then DelveGuideDB.history = {} end
-    if DelveGuideDB.minimapHidden == nil then DelveGuideDB.minimapHidden = false end
-    if DelveGuideDB.widgetHidden == nil then DelveGuideDB.widgetHidden = false end
-    if DelveGuideDB.widgetClickOpens == nil then DelveGuideDB.widgetClickOpens = false end
-    if not DelveGuideDB.widgetTiers then DelveGuideDB.widgetTiers = {S=true,A=true,B=true,C=true,D=true,F=true} end
-    if DelveGuideDB.widgetBountifulOnly == nil then DelveGuideDB.widgetBountifulOnly = false end
-    if DelveGuideDB.widgetLocked == nil then DelveGuideDB.widgetLocked = false end
-    if DelveGuideDB.hudLocked      == nil then DelveGuideDB.hudLocked      = false end
-    if DelveGuideDB.hudEnabled     == nil then DelveGuideDB.hudEnabled     = true  end
-    if DelveGuideDB.widgetAutoHide == nil then DelveGuideDB.widgetAutoHide = false end
-    if DelveGuideDB.checklistEnabled == nil then DelveGuideDB.checklistEnabled = true end
-    if DelveGuideDB.showChangelog == nil then DelveGuideDB.showChangelog = true end
-    if DelveGuideDB.showDebugTab  == nil then DelveGuideDB.showDebugTab  = false end
-    if DelveGuideDB.mapTooltips == nil then DelveGuideDB.mapTooltips = true end
-    -- checklistDismissed is session-only; reset on every load
-    DelveGuideDB.checklistDismissed = false
-    if not DelveGuideDB.roster then DelveGuideDB.roster = {} end
-    if not DelveGuideDB.labyrinthLog then DelveGuideDB.labyrinthLog = {} end
-    if not DelveGuideDB.missingTranslations then DelveGuideDB.missingTranslations = {} end
-    -- Purge entries that are no longer actually missing:
+-- ============================================================
+-- SAVEDVARIABLES SCHEMA
+-- ------------------------------------------------------------
+-- Every field that has a default lives in DEFAULTS and is applied by the one
+-- loop in InitSavedVars. MIGRATIONS holds one-shot upgrades: [n] takes a DB at
+-- version n-1 to version n, and DelveGuideDB.dbVersion records how far a given
+-- user's DB has been taken. Work that used to run on EVERY login now runs once.
+-- lastSeenVersion deliberately has no default -- nil means the "what's new"
+-- popup has never been shown. windowX/windowY/widgetX/widgetY likewise: nil is
+-- "never moved", and the frames fall back to their own placement.
+-- ============================================================
+local DB_VERSION = 3
+
+local DEFAULTS = {
+    minimapAngle        = 225,
+    minimap             = { hide = false },
+    fontScale           = 1.0,
+    widgetFontScale     = 1.0,
+    history             = {},
+    roster              = {},
+    labyrinthLog        = {},
+    missingTranslations = {},
+    -- Learned localized delve name -> English name. Persisted because the POI
+    -- scan that discovers it only runs OUTDOORS; without this, a non-EN player
+    -- who reloads or logs in inside a delve can't resolve the zone, so the HUD
+    -- (and its run timer) never appear for that run.
+    localeDelveNames    = {},
+    minimapHidden       = false,
+    widgetHidden        = false,
+    widgetClickOpens    = false,
+    widgetTiers         = { S=true, A=true, B=true, C=true, D=true, F=true },
+    widgetBountifulOnly = false,
+    widgetLocked        = false,
+    widgetAutoHide      = false,
+    hudLocked           = false,
+    hudEnabled          = true,
+    checklistEnabled    = true,
+    showChangelog       = true,
+    showDebugTab        = false,
+    mapTooltips         = true,
+}
+
+-- Table defaults have to be copied in, or every field would alias the single
+-- table held in DEFAULTS and one player's edits would rewrite the default.
+local function CopyDefault(v)
+    if type(v) ~= "table" then return v end
+    local copy = {}
+    for k, sub in pairs(v) do copy[k] = sub end
+    return copy
+end
+
+local MIGRATIONS = {
+    -- 2: purge missingTranslations entries that are no longer actually missing.
+    -- This swept the whole table on every single login; the entries it removes
+    -- can only be created by versions before this one, so once is enough.
     --   * Nemesis delves (no rotational variant, so their widget text is empty)
     --   * variants that have since been added to the data table -- every Season 2
     --     variant was logged as "missing" during the window before it was
     --     catalogued, and nothing ever cleared those records afterwards, so the
     --     Debug tab kept reporting translations that had long since been added.
-    do
+    [2] = function(db)
         local knownVariants = {}
         if DelveGuideData and DelveGuideData.delves then
             for _, d in ipairs(DelveGuideData.delves) do
                 if d.variant then knownVariants[d.variant] = true end
             end
         end
-        for key, entry in pairs(DelveGuideDB.missingTranslations) do
+        for key, entry in pairs(db.missingTranslations) do
             local stale = false
             if entry and (entry.delve == "Torment's Rise" or entry.delve == "Venomfall Deeps") then
                 stale = true
@@ -128,7 +156,7 @@ local function InitSavedVars()
                     stale = true
                 end
             end
-            if stale then DelveGuideDB.missingTranslations[key] = nil end
+            if stale then db.missingTranslations[key] = nil end
         end
 
         -- Hard cap regardless of cause. Unidentified variants are a handful per
@@ -136,24 +164,57 @@ local function InitSavedVars()
         -- that junk is a submission code nobody can paste. Keep the newest.
         local MAX_MISSING = 40
         local keys = {}
-        for k in pairs(DelveGuideDB.missingTranslations) do table.insert(keys, k) end
+        for k in pairs(db.missingTranslations) do table.insert(keys, k) end
         if #keys > MAX_MISSING then
             table.sort(keys, function(a, b)
-                local ea, eb = DelveGuideDB.missingTranslations[a], DelveGuideDB.missingTranslations[b]
+                local ea, eb = db.missingTranslations[a], db.missingTranslations[b]
                 return (ea and ea.firstSeen or "") > (eb and eb.firstSeen or "")
             end)
             for i = MAX_MISSING + 1, #keys do
-                DelveGuideDB.missingTranslations[keys[i]] = nil
+                db.missingTranslations[keys[i]] = nil
             end
         end
+    end,
+
+    -- 3: history rows logged in a Labyrinth before kind="labyrinth" existed
+    -- (12.1.5 PTR) look like delve runs with no variant. Tag rather than delete:
+    -- the row is a real run the player did, it just can't be a ranking entry.
+    [3] = function(db)
+        local labNames = {}
+        for _, L in ipairs((DelveGuideData and DelveGuideData.labyrinths) or {}) do
+            labNames[L.name] = true
+        end
+        for _, run in ipairs(db.history) do
+            if run.name and labNames[run.name] and not run.variant and not run.kind then
+                run.kind = "labyrinth-legacy"
+            end
+        end
+    end,
+}
+
+local function InitSavedVars()
+    local freshInstall = (DelveGuideDB == nil)
+    DelveGuideDB = DelveGuideDB or {}
+
+    for key, value in pairs(DEFAULTS) do
+        if DelveGuideDB[key] == nil then DelveGuideDB[key] = CopyDefault(value) end
     end
-    -- lastSeenVersion drives the "what's new" popup (nil = never shown)
-    if DelveGuideDB.lastSeenVersion == nil then DelveGuideDB.lastSeenVersion = nil end
-    -- Learned localized delve name → English name. Persisted because the POI
-    -- scan that discovers it only runs OUTDOORS; without this, a non-EN player
-    -- who reloads or logs in inside a delve can't resolve the zone, so the HUD
-    -- (and its run timer) never appear for that run.
-    if DelveGuideDB.localeDelveNames == nil then DelveGuideDB.localeDelveNames = {} end
+
+    -- Schema upgrades. A brand-new DB is already current and only needs the
+    -- stamp; an existing DB without one predates versioning, so it is v1.
+    if freshInstall then
+        DelveGuideDB.dbVersion = DB_VERSION
+    else
+        for v = (DelveGuideDB.dbVersion or 1) + 1, DB_VERSION do
+            local migrate = MIGRATIONS[v]
+            if migrate then migrate(DelveGuideDB) end
+        end
+        DelveGuideDB.dbVersion = DB_VERSION
+    end
+
+    -- checklistDismissed is session-only; reset on every load. Deliberately not
+    -- a default -- it must be forced back to false even when it is already set.
+    DelveGuideDB.checklistDismissed = false
 end
 
 local activeDelves, activeVariants, rawScanResults = {}, {}, {}
