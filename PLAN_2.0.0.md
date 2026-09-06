@@ -116,26 +116,40 @@ into 0.x and the H5 corroboration.
 | ~~3.3 tier API~~ | **dropped** — keep the probe in `/dg export` so a later build populating the struct is noticed |
 | 3.4, 3.6–3.10 | as written, independent |
 
-### Track D — Labyrinth-*aware*, not Labyrinth-*guided* (2.0 Plan Stage 2, re-scoped)
+### Track D — Labyrinths: aware now, guided shell now, content as it stabilises
 
-The sequencing plan's Stage 2 was "detection first, guide second, a Labyrinth tab once
-pooling exists." Detection is A2. The guide and the tab are **deferred out of 2.0.0** — not
-because pooling isn't ready but because the content is `[PH]`. Building a chamber guide
-against placeholder scenarios means rewriting it on the next build.
+**Decision (Nick, 2026-09-05):** both aware and guided are wanted. Labyrinths are not Delves
+and are not treated as equals — but they grant delve vault credit and broadly the same
+rewards, so the addon should help where it can: easiest rooms, tips, progression. Much is
+unknown; the structure ships in 2.0.0 and the content fills in as the PTR matures.
 
-What 2.0.0 *does* ship for Labyrinths:
+**The structural insight that makes this tractable.** Chamber content is drawn from a pool
+and re-rolled per run, and each content has its own scenarioID when instantiated ("Soul King"
+appeared at two nodes; Chamber of Rites hosted two different contents on two runs). So a
+chamber's *content* recurs across runs and is the rankable unit — exactly as a variant is
+for a Delve. "Easiest rooms" is the existing community-timing pipeline (`/dg submit` ->
+aggregator -> grade letters) pointed at chamber content instead of variants.
 
-| # | Item | Effort | Why now |
+| # | Item | Effort | Ships in 2.0.0 as |
 |---|---|---|---|
-| D1 | Detection by instanceID allowlist (= A2) | S | data integrity |
-| D2 | **Chamber observation log** into `DelveGuideDB.labyrinthRuns`: per chamber `{ instanceID, scenarioID, scenarioName, stepTitle, criteria = {desc, qty, total, ctype, assetID}, encounterIDs, at }`, appended on each `SCENARIO_COMPLETED` inside a Labyrinth and on `ENCOUNTER_END`. Bounded to the last 20 runs. This is the data the eventual guide is built from, and every field is already captured by `/dg export` — it is the export's Labyrinth block on an event instead of a slash command | M | so the *next* PTR build's data collects itself |
-| D3 | Future tab corrections from evidence (§2 table, last-but-one row) | S | the tab currently asserts things the PTR contradicts |
-| D4 | `/dg export` keeps every Labyrinth probe it gained this session | done | — |
+| D1 | **Detection** by `labyrinthInstances` allowlist (3043 verified across tiers 11/1/8) | S | code |
+| D2 | **Labyrinth run record** — its own shape, not a delve row: `{ instanceID, name, date, resetKey, char, realm, tierNum (nil until readable), vaultIlvl, chambersCleared, chambers = {...}, completed, elapsed }`. Written on leaving the instance or on the final completion, **not** per chamber. **Counts toward the Roster's weekly vault tally** — a T8+ Labyrinth is a delve vault slot. `vaultIlvl` via the existing `GetWeeklyVaultData` fallback, which read 305 correctly last night | M | code |
+| D3 | **Chamber observation log** per `SCENARIO_COMPLETED` inside a Labyrinth: `{ scenarioID, scenarioName, stepTitle, criteria, encounterIDs, subzone, taxiNodeID, elapsed }`, bounded. Feeds D2's `chambers[]` and is the raw material for chamber timings | M | code |
+| D4 | **Labyrinth tab shell**, built pooled from day one — a *new* tab is where the pooling pattern (Track C 2.2–2.4) gets established rather than retrofitted. Sections: this week's status (cleared / vault credit), chamber list keyed on content with grade + median time (empty until data), tips per chamber (empty until written), progression (taxi nodes unlocked, from D3). Every content row carries `source` and `verifiedBuild` so `[PH]`-era entries are visibly provisional | M–L | code, mostly empty |
+| D5 | **Chamber timings in `/dg submit`** — a `|LAB;` section carrying `(contentScenarioID, chamberName, elapsed, tier)` per cleared chamber, aggregated alongside variants | M | code |
+| D6 | **HUD Labyrinth state**: chamber name + objective progress (both criteria shapes: count and percentage) instead of a delve tier it cannot read | S | code |
+| D7 | Future tab corrections from evidence | S | content |
+| D8 | Chamber tips, easiest-room guidance, reputation and Corrosive Coin tracking | — | **content, added as PTR builds stabilise**; blocked today on `[PH]` names, unimplemented faction, unknown currency ID |
 
-Explicitly **not** in 2.0.0: a Labyrinth tab, chamber/boss content, Kindo'jan reputation
-tracking (the faction has no client-side entry yet — Findings §5.10), Corrosive Coin (ID
-unknown), tier display inside a Labyrinth (no API and the scrape reads nil — Findings §5.8).
-Each re-enters when a PTR build ships without `[PH]` in the scenario names.
+**What is known well enough to build against now:** instanceID; the per-chamber scenario
+structure; two criteria shapes; taxi node IDs as progression; encounter events on boss
+chambers; that completion grants vault credit. **What is not:** any chamber's final name or
+ID, tier readability, the faction, the currency, group play. D1–D7 depend only on the first
+list. D8 depends on the second and waits.
+
+**Rewrite risk, stated plainly:** chamber content IDs observed on 69594 may change. D4's
+content rows are keyed on them, so a later build may orphan early entries. `verifiedBuild`
+on each row makes that visible rather than silent, and the log (D3) re-collects for free.
 
 ### Track E — Features (Review Phase 4)
 
@@ -197,8 +211,8 @@ On the sequencing plan's §6 naming question: unchanged. Middle option — keep 
 1. **Is 2.0.0 one release or a train?** Partly decided by G4: A1 goes out as 1.11.1 now
    regardless. The open half is whether A2/A3 (Labyrinth guard + POI filter) wait for 2.0.0
    or ship as 1.12.0 if 12.1.5 lands first.
-2. **Track D scope.** "Labyrinth-aware, not guided" is a recommendation. Building a chamber
-   guide against `[PH]` content is possible; it just gets rewritten.
+2. ~~**Track D scope.**~~ **Decided:** aware + guided shell in 2.0.0, content as builds
+   stabilise. See Track D.
 3. **Track E cut line.** Items 1–6 vs all ten.
 4. **Move the two source documents into `docs/`.** Keeps the plan's references stable; puts a
    120 KB internal review in a public repo.
