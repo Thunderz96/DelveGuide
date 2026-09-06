@@ -17,7 +17,16 @@ local function CreateLootRow(parent, y, item)
     iconTex:SetSize(rH + 2, rH + 2)
     iconTex:SetPoint("LEFT", btn, "LEFT", 0, 0)
     if item.id then
-        local _, _, _, _, icon = GetItemInfoInstant(item.id)
+        -- 12.1.5 deleted the deprecated global GetItemInfoInstant; the tab errored
+        -- on every render (found by /dg selftest). C_Item's form has the same
+        -- returns. Kept as an if, not `f and f()`, because `and` truncates a call
+        -- to its first return and the icon is the fifth.
+        local icon
+        local getInstant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
+        if getInstant then
+            local _, _, _, _, ic = getInstant(item.id)
+            icon = ic
+        end
         iconTex:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
     end
     
