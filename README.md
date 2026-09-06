@@ -127,6 +127,13 @@ Roadmap for upcoming features and planned data additions, kept in-game so you ca
 
 ---
 
+## 🚫 What DelveGuide does not do
+
+- It does **not** show treasure or curiosity locations inside a Delve — there are no in-Delve maps, routes, or object pins.
+- It tells you which Delve to run and what to bring; once you're inside, you're on your own.
+
+---
+
 ## ⌨️ Slash Commands
 
 | Command | Description |
