@@ -71,6 +71,17 @@ end
 -- path). Returns the coloured lives string, or nil when no criterion looks like
 -- a lives/deaths counter -- callers decide what to show for nil.
 local function ReadLivesText()
+    -- Primary: the header widget's lives entry (DelveGuide.ReadDelveLives).
+    -- Lives were never a scenario criterion, so the scan below only stays as
+    -- a fallback for a client whose header widget is not readable.
+    do
+        local lives, deaths = DelveGuide.ReadDelveLives and DelveGuide.ReadDelveLives()
+        if lives then
+            local t = "|cFF00FF88" .. lives .. "|r"
+            if deaths and deaths > 0 then t = t .. "  |cFF888888(" .. deaths .. " death" .. (deaths == 1 and "" or "s") .. ")|r" end
+            return t
+        end
+    end
     local livesText
     pcall(function()
         local numCrit = DelveGuide.GetCriteriaCount()
@@ -469,7 +480,15 @@ local function UpdateLabyrinthHUD(name)
         credits > 0 and string.format("|cFFFFD700%d vault credit%s|r", credits, credits == 1 and "" or "s")
                      or "|cFF888888(3 for vault credit)|r"))
     rows.nemesis:SetText("|cFF888888Vault credit every 3 chambers (3 / 6 / 9)|r")
-    rows.bountiful:SetText("|cFF888888not readable in Labyrinths|r")
+    -- The Labyrinth's tier IS readable: the same header widget carried
+    -- tierText = "11" inside Kindo'jan on 69594. Read it directly here since
+    -- the delve tier machinery is bypassed in a Labyrinth (A2).
+    do
+        local info = DelveGuide.ReadDelveHeaderWidget and DelveGuide.ReadDelveHeaderWidget()
+        local t = info and info.tierText and tonumber((tostring(info.tierText):match("(%d+)")))
+        rows.bountiful:SetText(t and ("|cFF00FF44" .. t .. "|r") or "|cFF888888--|r")
+        DelveGuide.labyrinthTierNum = t
+    end
     rows.lives:SetText(ReadLivesText() or "|cFF888888--|r")
     if DelveGuide.labyrinthEnteredAt then
         local elapsed = GetTime() - DelveGuide.labyrinthEnteredAt

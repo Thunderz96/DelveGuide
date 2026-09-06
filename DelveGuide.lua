@@ -339,6 +339,31 @@ DelveGuide.ReadDelveHeaderWidget = function()
     return info
 end
 
+-- Lives, from the same header widget. Its `currencies` list carries one entry
+-- whose tooltip is the lives spell link -- "|Hspell:458103|h|nTotal deaths: N"
+-- on 69594, icon 6013778 -- and whose text is the lives count. Matched on the
+-- spell link or the icon, never on wording, so it holds on every locale.
+-- Returns lives (number), deaths (number or nil). Lives were never a scenario
+-- criterion; the HUD's criteria scan for them could not succeed.
+local LIVES_SPELL_ID, LIVES_ICON_FILE = 458103, 6013778
+DelveGuide.ReadDelveLives = function()
+    local lives, deaths
+    pcall(function()
+        local info = DelveGuide.ReadDelveHeaderWidget()
+        for _, c in ipairs((info and info.currencies) or {}) do
+            local tip = tostring(c.tooltip or "")
+            if tip:find("spell:" .. LIVES_SPELL_ID, 1, true) or c.iconFileID == LIVES_ICON_FILE then
+                lives = tonumber(tostring(c.text or ""):match("(%d+)"))
+                -- "Total deaths: N" is localized, but the number is the last one
+                -- in the tooltip on every locale seen so far.
+                deaths = tonumber(tip:match("(%d+)%s*$"))
+                break
+            end
+        end
+    end)
+    return lives, deaths
+end
+
 -- type() of every Blizzard API this addon leans on, so a namespace move (as
 -- 12.1.5 did to scenario criteria) shows up as a line of output instead of
 -- failing silently inside a pcall. Shared by /dg export and /dg selftest.
@@ -991,6 +1016,12 @@ DelveGuide.LogLabyrinthRun = function(name)
 
     row.chambers     = math.max(row.chambers or 0, chambers)
     row.vaultCredits = math.max(row.vaultCredits or 0, credits)
+    -- Tier from the header widget (read by the HUD's Labyrinth view). Kept as
+    -- both tierNum and the display string the History tab expects.
+    if DelveGuide.labyrinthTierNum then
+        row.tierNum = DelveGuide.labyrinthTierNum
+        row.tier    = "Tier " .. DelveGuide.labyrinthTierNum
+    end
     if elapsed then row.elapsed = elapsed end
     if vaultIlvl and (not row.vaultIlvl or vaultIlvl > row.vaultIlvl) then row.vaultIlvl = vaultIlvl end
 
@@ -2702,8 +2733,18 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
         -- code has always used kept as a fallback; the value seen is recorded
         -- so /dg export shows which one the client actually sends.
         DelveGuide.lastInteractionType = arg1
-        local pickerType = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.DelvesDifficultyPicker
-        if (pickerType and arg1 == pickerType) or arg1 == 3 then
+        -- 79 on build 69594, at a delve entrance and at the Labyrinth's alike
+        -- (both recorded by /dg export). Enum.PlayerInteractionType has no
+        -- DelvesDifficultyPicker member there, so the enum is searched for any
+        -- Delve-named key before falling back to the observed value. The old
+        -- literal 3 was the trainer type; it never fired for an entrance.
+        local pickerType
+        if Enum and Enum.PlayerInteractionType then
+            for k, v in pairs(Enum.PlayerInteractionType) do
+                if type(k) == "string" and k:lower():find("delve", 1, true) then pickerType = v; break end
+            end
+        end
+        if arg1 == (pickerType or 79) then
             -- Refresh HUD when player is at the entrance (outside the instance)
             if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
             if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(false) end
