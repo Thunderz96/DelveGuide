@@ -89,8 +89,13 @@ def parse_missing(code):
 RUN_SEG = re.compile(r"[^~;|]+~[^~;|]+~\d+~\d+~\d+")
 
 
-def find_codes(csv_path, salvaged=None):
-    """Yield every DG1 code found in any cell of the CSV (robust to column order).
+def find_codes(csv_path, salvaged=None, handle_col=2):
+    """Yield (code, handle) for every DG1 code found in any cell of the CSV.
+
+    Cells are scanned in any order so a reshuffled form still parses, but the
+    HANDLE is pinned to a column (the same one screen_handles.py uses): guessing
+    it by shape pulls in free-text feedback. The handle is what identifies a
+    resubmission, so a wrong column silently un-deduplicates the data.
 
     Also salvages codes whose "DG1;" prefix was lost -- players sometimes paste a
     partial selection, and silently dropping the whole submission hides real data
@@ -98,15 +103,18 @@ def find_codes(csv_path, salvaged=None):
     """
     with open(csv_path, newline="", encoding="utf-8-sig") as fh:
         for row in csv.reader(fh):
+            handle = row[handle_col].strip() if len(row) > handle_col else ""
+            if "DG1;" in handle or RUN_SEG.search(handle):
+                handle = ""   # columns shifted; that is a code, not a name
             for cell in row:
                 if not cell:
                     continue
                 if "DG1;" in cell:
-                    yield cell[cell.index("DG1;"):]
+                    yield cell[cell.index("DG1;"):], handle
                 elif RUN_SEG.search(cell):
                     if salvaged is not None:
                         salvaged.append(cell.strip()[:70])
-                    yield "DG1;" + cell.strip()
+                    yield "DG1;" + cell.strip(), handle
 
 
 def suggest_letter(sec, fastest):
@@ -127,6 +135,10 @@ def main():
     ap.add_argument("csv", help="CSV export of the Google Form responses")
     ap.add_argument("--min-runs", type=int, default=3)
     ap.add_argument("--min-tier", type=int, default=0)
+    ap.add_argument("--handle-col", type=int, default=2, metavar="N",
+                    help="0-based CSV column holding the contributor handle (default 2, "
+                         "matching screen_handles.py). Resubmissions are detected by handle, "
+                         "so pointing this at the wrong column silently stops deduplicating.")
     ap.add_argument("--min-submitters", type=int, default=4,
                     help="require this many DIFFERENT players before grading a variant. "
                          "Also caps any one player's influence at 1/N of the grade.")
@@ -162,30 +174,59 @@ def main():
     unidentified = defaultdict(lambda: {"count": 0, "locales": set()})
 
     salvaged = []
-    all_codes = list(find_codes(args.csv, salvaged))
+    all_codes = list(find_codes(args.csv, salvaged, args.handle_col))
 
     # Drop superseded resubmissions. Each /dg submit code is a COMPLETE snapshot
     # of that player's history (GetVariantRunStats walks all of it), not an
     # increment -- so a player who submits again would otherwise have every run
     # counted twice, inflating run totals and the >=7-run confidence threshold.
-    # A later code that repeats >=70% of an earlier one's exact entries is
-    # treated as that player resubmitting.
+    #
+    # Deduplicate on IDENTITY (the handle), not on the data. Keeping only the
+    # last code per non-empty handle is exact. The old rule -- "a later code
+    # repeating >=70% of an earlier one's EXACT entries supersedes it" -- keyed
+    # on avg_sec, which is a per-player average that MOVES every time that
+    # player re-runs a variant. Once someone had re-run more than ~30% of their
+    # variants the two codes no longer overlapped enough, both survived, and one
+    # human counted as two players -- which is exactly what the "no one holds
+    # more than 1/N of a grade" guarantee in RANKING.md forbids. It also cut the
+    # other way, superseding people who had submitted only once but happened to
+    # share a variant set with someone else.
+    #
+    # Dropping avg_sec from the key instead was tested and is far worse: players
+    # legitimately run the same variants, so (delve, variant) overlap alone
+    # collapsed 100 of 106 codes into each other.
+    #
+    # The overlap heuristic survives as the ONLY thing available for blank
+    # handles (roughly 40% of submissions -- the field is optional), where there
+    # is no identity to key on.
     def entries(code):
         out = set()
         for d, v, t, s, c in parse_code(code):
             out.add((d, v, s))
         return out
 
-    ent = [entries(c) for c in all_codes]
     superseded = set()
-    for i in range(len(all_codes)):
+    by_handle = {}
+    for i, (_code, handle) in enumerate(all_codes):
+        key = handle.casefold()
+        if not key:
+            continue
+        if key in by_handle:
+            superseded.add(by_handle[key])   # keep the LAST code per handle
+        by_handle[key] = i
+    dropped_by_handle = len(superseded)
+
+    anon = [i for i, (_c, h) in enumerate(all_codes) if not h.casefold()]
+    ent = {i: entries(all_codes[i][0]) for i in anon}
+    for pos, i in enumerate(anon):
         if not ent[i]:
             continue
-        for j in range(i + 1, len(all_codes)):
+        for j in anon[pos + 1:]:
             if ent[j] and len(ent[i] & ent[j]) / len(ent[i]) >= 0.70:
                 superseded.add(i)
                 break
-    codes = [c for i, c in enumerate(all_codes) if i not in superseded]
+    dropped_anon = len(superseded) - dropped_by_handle
+    codes = [c for i, (c, _h) in enumerate(all_codes) if i not in superseded]
 
     submissions = 0
     for code in codes:
@@ -256,6 +297,8 @@ def main():
     if superseded:
         print(f"   ({len(superseded)} earlier resubmission(s) dropped -- each code is a full "
               f"history snapshot, so counting both would double a player's runs)")
+        print(f"    {dropped_by_handle} by handle (exact), {dropped_anon} by entry overlap "
+              f"(blank handles only -- best effort)")
     if salvaged:
         print(f"\n!! {len(salvaged)} submission(s) had no DG1; prefix (partial paste). "
               f"Salvaged what was parseable:")
