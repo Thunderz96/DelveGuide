@@ -1,0 +1,11 @@
+<Bindings>
+    <Binding name="DELVEGUIDE_TOGGLE" header="DELVEGUIDE" category="ADDONS">
+        if DelveGuide and DelveGuide.Toggle then DelveGuide.Toggle() end
+    </Binding>
+    <Binding name="DELVEGUIDE_TOGGLE_HUD" category="ADDONS">
+        if DelveGuide and DelveGuide.ToggleHUD then DelveGuide.ToggleHUD() end
+    </Binding>
+    <Binding name="DELVEGUIDE_TOGGLE_WIDGET" category="ADDONS">
+        if DelveGuide and DelveGuide.ToggleWidget then DelveGuide.ToggleWidget() end
+    </Binding>
+</Bindings>

@@ -2377,7 +2377,7 @@ loadFrame:RegisterEvent("ENCOUNTER_END")
 loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
-        InitSavedVars(); SeedLocalizedNames(); icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
+        InitSavedVars(); SeedLocalizedNames(); DelveGuideDB.minimap.showInCompartment = true; icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
         print("|cFF00BFFF[DelveGuide]|r Loaded! |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
         self:UnregisterEvent("ADDON_LOADED")
     elseif event=="PLAYER_ENTERING_WORLD" then
