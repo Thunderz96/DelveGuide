@@ -5,7 +5,9 @@ DelveGuide -- community variant ranking aggregator.
 Reads a CSV export of the Google Form responses, pulls the DelveGuide
 submission codes players paste in, averages clear times per delve/variant
 across everyone, and prints a ranked table (fastest first, per delve) plus a
-Lua-ready snippet you can merge into DelveGuideData.delves.
+regenerated DelveGuideData.delves block -- the COMPLETE block, rebuilt from the
+published one so every curated field (zone, mountable, hasBug, isBestRoute)
+comes back untouched. --write puts it into the data file in place.
 
 Submission code produced by /dg submit (format version DG1):
     DG1;delve~variant~avgTier~avgSec~count;delve~variant~...
@@ -13,6 +15,7 @@ Submission code produced by /dg submit (format version DG1):
 Usage:
     python aggregate_rankings.py responses.csv
     python aggregate_rankings.py responses.csv --min-runs 5 --min-tier 8
+    python aggregate_rankings.py responses.csv --min-tier 8 --write
 
 Notes:
   * --min-runs drops thinly-sampled variants (default 3 total runs).
@@ -26,6 +29,7 @@ Notes:
 import os
 import re
 import csv
+import sys
 import argparse
 import statistics
 from collections import defaultdict
@@ -141,7 +145,109 @@ def mmss(seconds):
     return f"{seconds // 60}m {seconds % 60:02d}s"
 
 
+# ---------------------------------------------------------------------------
+# Round-tripping the DelveGuideData.delves block.
+#
+# The emitter used to print rows with zone="?" and every curated flag hard-wired
+# to false, so its output could never be pasted -- mountable, hasBug and
+# isBestRoute are hand-researched and would have been wiped. Every refresh was
+# therefore applied by hand, one row at a time, which is exactly how a flag goes
+# missing. So: read the existing block, change ONLY ranking / medianSec /
+# players, and re-emit the whole thing. Rows we have no fresh data for are
+# copied out byte-for-byte, comments and all.
+# ---------------------------------------------------------------------------
+
+BLOCK_OPEN = "DelveGuideData.delves = {"
+
+# A row is a single-line table constructor. `.*?` never crosses a line here
+# because the block is split into lines first.
+ROW_RE = re.compile(r'^(?P<indent>\s*)\{(?P<fields>.*?)\},(?P<rest>.*)$')
+
+
+def row_key(fields):
+    """(delve, variant) for a row's field text, or None if it is not a delve row."""
+    name = re.search(r'name="([^"]*)"', fields)
+    variant = re.search(r'variant="([^"]*)"', fields)
+    if name and variant:
+        return name.group(1), variant.group(1)
+    return None
+
+
+def _set_number(fields, key, value):
+    """Set key=<int> in a row's field text, appending it if it is not there yet."""
+    pat = re.compile(r"\b" + key + r"=\d+")
+    if pat.search(fields):
+        return pat.sub(f"{key}={value}", fields, count=1)
+    return fields.rstrip() + f", {key}={value} "
+
+
+def rewrite_row(line, ranking, median_sec, players, hold=None):
+    """Update one row's grade/median/players, preserving every other field."""
+    m = ROW_RE.match(line)
+    fields = re.sub(r'ranking="[^"]*"', f'ranking="{ranking}"', m.group("fields"), count=1)
+    fields = _set_number(fields, "medianSec", int(median_sec))
+    fields = _set_number(fields, "players", players)
+    tag = f" -- HELD (would be {hold})" if hold else ""
+    return f'{m.group("indent")}{{{fields}}},  -- {mmss(median_sec)}, {players} players{tag}'
+
+
+def render_delves_block(src, fresh):
+    """Rebuild the delves block inside `src` from `fresh`.
+
+    `fresh` maps (delve, variant) -> {"ranking", "median_sec", "players", "hold"}.
+    Returns (new_src, block_text, changed, untouched, added) where `changed` is a
+    list of (key, old_line, new_line). Raises ValueError if the block is missing.
+    """
+    nl = "\r\n" if "\r\n" in src else "\n"
+    lines = src.split(nl)
+    try:
+        start = next(i for i, l in enumerate(lines) if l.startswith(BLOCK_OPEN))
+        end = next(i for i in range(start + 1, len(lines)) if lines[i].rstrip() == "}")
+    except StopIteration:
+        raise ValueError(f"no {BLOCK_OPEN!r} ... '}}' block found")
+
+    out, changed, untouched, seen = [], [], [], set()
+    for line in lines[start + 1:end]:
+        m = ROW_RE.match(line)
+        key = row_key(m.group("fields")) if m else None
+        if key is None:            # comment, blank line, anything not a row
+            out.append(line)
+            continue
+        if key not in fresh:       # no fresh data -- never rewrite, never drop
+            out.append(line)
+            untouched.append(key)
+            continue
+        seen.add(key)
+        f = fresh[key]
+        new = rewrite_row(line, f["ranking"], f["median_sec"], f["players"], f.get("hold"))
+        out.append(new)
+        if new != line:
+            changed.append((key, line, new))
+
+    added = [k for k in fresh if k not in seen]
+    if added:
+        out.append("    -- NEW -- graded this pass but not in the table yet."
+                   " Set zone and the curated flags.")
+        for key in added:
+            f = fresh[key]
+            out.append(rewrite_row(
+                f'    {{ name="{key[0]}", zone="?", variant="{key[1]}", ranking="?",'
+                f' mountable=false, hasBug=false, isBestRoute=false }},',
+                f["ranking"], f["median_sec"], f["players"], f.get("hold")))
+
+    block = nl.join([lines[start]] + out + [lines[end]])
+    new_src = nl.join(lines[:start] + [lines[start]] + out + lines[end:])
+    return new_src, block, changed, untouched, added
+
+
 def main():
+    # The data file and the unidentified-variant reports both carry non-ASCII
+    # (box-drawing rules in the comments, localized variant names), and a
+    # Windows console defaults to cp1252 -- printing either would raise
+    # UnicodeEncodeError and lose the whole run.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
     ap = argparse.ArgumentParser()
     ap.add_argument("csv", help="CSV export of the Google Form responses")
     ap.add_argument("--min-runs", type=int, default=3)
@@ -164,6 +270,10 @@ def main():
                     help="data file read for the currently published grades, which hysteresis "
                          "is measured against. Ignored if --hysteresis 0. Defaults to the copy "
                          "next to the script, so it works from any directory.")
+    ap.add_argument("--write", action="store_true",
+                    help="write the regenerated delves block back into --published, replacing "
+                         "exactly that block and leaving the rest of the file (and its line "
+                         "endings) byte-for-byte. Without it the block goes to stdout.")
     ap.add_argument("--weight", choices=("players", "runs"), default="players",
                     help="'players' (default) counts each submitter ONCE regardless of how "
                          "many times they ran it -- no single player can hold more than "
@@ -321,25 +431,32 @@ def main():
     import statistics as _st
     global_fastest = _st.median(sorted(r["avg_sec"] for r in rows)) if rows else 1
 
-    # Currently published grades, for hysteresis.
+    # The published data file, read once: it is both the hysteresis baseline and
+    # the source of the curated flags the emitter has to round-trip. newline=""
+    # so the file's own line endings survive a --write.
+    pub_path = os.path.abspath(args.published)
+    try:
+        with open(pub_path, encoding="utf-8", newline="") as fh:
+            pub_src = fh.read()
+    except FileNotFoundError:
+        pub_src = None
+
     published = {}
     if args.hysteresis > 0:
-        pub_path = os.path.abspath(args.published)
-        try:
-            with open(pub_path, encoding="utf-8") as fh:
-                # `.` excludes newlines without DOTALL, so this stays on one Lua line.
-                # Keyed on (delve, variant), never on the variant alone: variant
-                # names are unique within a delve but NOT across the table, and a
-                # collision would hand one delve's published grade to another
-                # delve's row -- an invisible wrong hold, in the one code path
-                # whose whole job is to keep a grade from moving.
-                for m in re.finditer(
-                        r'name="([^"]+)".*?variant="([^"]+)".*?ranking="([SABCDF])"', fh.read()):
-                    published[(m.group(1), m.group(2))] = m.group(3)
+        if pub_src is not None:
+            # `.` excludes newlines without DOTALL, so this stays on one Lua line.
+            # Keyed on (delve, variant), never on the variant alone: variant
+            # names are unique within a delve but NOT across the table, and a
+            # collision would hand one delve's published grade to another
+            # delve's row -- an invisible wrong hold, in the one code path
+            # whose whole job is to keep a grade from moving.
+            for m in re.finditer(
+                    r'name="([^"]+)".*?variant="([^"]+)".*?ranking="([SABCDF])"', pub_src):
+                published[(m.group(1), m.group(2))] = m.group(3)
             print(f"Hysteresis ACTIVE (+/-{args.hysteresis}s): {len(published)} published "
                   f"grade(s) read from {pub_path}")
             print()
-        except FileNotFoundError:
+        else:
             # Never swallow this. Without the published grades every letter is
             # recomputed from scratch, so variants parked near a band edge flip
             # -- which is the exact churn --hysteresis exists to stop.
@@ -370,7 +487,7 @@ def main():
             return old, f"held {old} (would be {fresh}, only {int(gap)}s past the line)"
         return fresh, None
 
-    lua, held_notes = [], []
+    graded, held_notes = {}, []
     for delve in sorted(by_delve):
         variants = sorted(by_delve[delve], key=lambda r: r["avg_sec"])
         print(f"== {delve} ==")
@@ -385,12 +502,12 @@ def main():
                   f"({r['runs']} runs / {r['submitters']} players, ~T{r['avg_tier']}){note}")
             # A held row carries the letter it WOULD have had, so the suppression
             # is visible in the data file itself and not only in this run's log.
-            hold_tag = f" -- HELD (would be {fresh})" if held else ""
-            lua.append(
-                f'    {{ name="{delve}", zone="?", variant="{r["variant"]}", '
-                f'ranking="{letter}", mountable=false, hasBug=false, isBestRoute=false }},'
-                f'  -- {mmss(r["avg_sec"])}, {r["runs"]} runs{hold_tag}'
-            )
+            graded[(delve, r["variant"])] = {
+                "ranking": letter,
+                "median_sec": int(r["avg_sec"]),
+                "players": r["submitters"],
+                "hold": fresh if held else None,
+            }
         print()
 
     if held_notes:
@@ -408,8 +525,43 @@ def main():
             print(f"   {d:<22} {v:<32} {runs} runs from {subs} player(s)")
         print()
 
-    print("---- Lua snippet (fill in zone / flags, then merge into DelveGuideData.delves) ----")
-    print("\n".join(lua))
+    if pub_src is None:
+        print(f"!! Cannot emit the delves block: no data file at {pub_path}.")
+        print("   The block is regenerated FROM the published one so the curated flags")
+        print("   (zone, mountable, hasBug, isBestRoute) survive. Point --published at it.")
+        report_unidentified()
+        return
+
+    try:
+        new_src, block, changed, untouched, added = render_delves_block(pub_src, graded)
+    except ValueError as err:
+        print(f"!! Cannot emit the delves block: {err} in {pub_path}.")
+        report_unidentified()
+        return
+
+    print(f"---- DelveGuideData.delves ({len(changed)} row(s) changed, "
+          f"{len(untouched)} left alone for lack of fresh data, {len(added)} new) ----")
+    for (d, v), _old, _new in changed:
+        print(f"   changed: {d} / {v}")
+    for d, v in sorted(untouched):
+        print(f"   no data this pass, row kept as published: {d} / {v}")
+    print()
+
+    if args.write:
+        if new_src == pub_src:
+            print(f"No change -- {pub_path} already matches this data pass.")
+        else:
+            with open(pub_path, "w", encoding="utf-8", newline="") as fh:
+                fh.write(new_src)
+            print(f"Wrote the delves block into {pub_path} "
+                  f"({len(changed)} row(s) changed, {len(added)} added).")
+            print("   Everything outside the block, and the file's line endings, are untouched.")
+            print("   Diff it before committing.")
+    else:
+        print(block)
+        print()
+        print("(re-run with --write to put this back into the data file in place)")
+
     report_unidentified()
 
 
