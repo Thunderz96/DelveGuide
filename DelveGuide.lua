@@ -1479,6 +1479,10 @@ local mainFrame,tabButtons,currentTabKey=nil,{},nil
 local tabDirty = false
 
 local function SwitchTab(key)
+    -- Only a real tab change jumps back to the top. SwitchTab is also the
+    -- redraw path (RefreshCurrentTab, the OnShow dirty repaint), and those
+    -- used to yank the list to the top on every POI/font/currency update.
+    local prevKey = currentTabKey
     currentTabKey = key
     tabDirty = false
 
@@ -1515,13 +1519,20 @@ local function SwitchTab(key)
             y = y + CreateRow(cf, y, "|cFFFF4444The " .. key .. " tab failed to render.|r") + 4
             CreateRow(cf, y, "|cFF888888Try /reload. If it keeps happening, report it with the version from /dg help.|r")
         end
-        scrollFrame:SetVerticalScroll(0)
+        if key ~= prevKey then
+            scrollFrame:SetVerticalScroll(0)
+        end
     end
 end
 
 RefreshCurrentTab = function()
     if currentTabKey and mainFrame and mainFrame:IsShown() then
+        -- A refresh is not a tab change: put the player back where they were.
+        local prev = scrollFrame and scrollFrame:GetVerticalScroll() or 0
         SwitchTab(currentTabKey)
+        if scrollFrame then
+            scrollFrame:SetVerticalScroll(math.min(prev, scrollFrame:GetVerticalScrollRange()))
+        end
     else
         tabDirty = true
     end
@@ -2308,12 +2319,17 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     elseif msg=="exportclear" then
         DelveGuideDB.ptrExports = nil
         print("|cFF00BFFF[DelveGuide]|r Export snapshots cleared.")
+    -- Tab aliases OPEN the window; they used to Toggle it, so running one
+    -- twice in a row just closed the guide again.
     elseif msg=="roster" then
-        DelveGuide.Toggle(); SwitchTab("roster")
+        if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+        SwitchTab("roster")
     elseif msg=="voidforge" or msg=="forge" then
-        DelveGuide.Toggle(); SwitchTab("voidforge")
+        if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+        SwitchTab("voidforge")
     elseif msg=="quests" or msg=="journey" then
-        DelveGuide.Toggle(); SwitchTab("quests")
+        if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+        SwitchTab("quests")
     elseif msg=="questscan" then
         if DelveGuide.ScanDelversCallQuests then DelveGuide.ScanDelversCallQuests() end
     elseif msg=="submit" or msg=="rank" then
@@ -2628,28 +2644,9 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg share [party|guild|say|raid]|r")
             return
         end
-        -- Build sorted active variant list (same pattern as compact widget)
-        local entries, seen = {}, {}
-        if DelveGuideData and DelveGuideData.delves then
-            for _, d in ipairs(DelveGuideData.delves) do
-                if activeVariants[d.variant] and not seen[d.variant] then
-                    seen[d.variant] = true
-                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
-                end
-            end
-        end
-        if #entries == 0 then
-            print("|cFF00BFFF[DelveGuide]|r No active variants found. Try |cFFFFFF00/dg scan|r first.")
-            return
-        end
-        table.sort(entries, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
-        SendChatMessage("[DelveGuide] Today's Active Delves:", channel)
-        for _, e in ipairs(entries) do
-            local ds = activeDelves[e.delve]
-            local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
-            SendChatMessage(string.format("  [%s] %s (%s)%s", e.ranking, e.variant, e.delve, bountyTag), channel)
-        end
-        print("|cFF00BFFF[DelveGuide]|r Shared "..#entries.." variants to |cFFFFFF00"..channel.."|r")
+        -- Group/guild checks, list building, line packing and sending all live
+        -- in one place now (DelveGuide_Widget.lua) -- shared with both buttons.
+        DelveGuide.ShareActiveVariants(channel)
     else DelveGuide.Toggle() end
 end
 

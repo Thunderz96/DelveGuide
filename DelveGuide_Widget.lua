@@ -42,6 +42,87 @@ local function RotationCountdown()
     return string.format("Rotates in %dm", m)
 end
 
+-- ============================================================
+-- SHARE TO CHAT
+-- ============================================================
+-- One sender behind all three share paths (/dg share, the widget button, the
+-- Delves tab button). Each used to build and send its own list -- one
+-- SendChatMessage per variant, with no check that the channel existed, so
+-- sharing to party while solo threw a red error at the player.
+local SHARE_LINE_MAX = 240   -- the server's hard chat limit is 255
+
+-- Returns the channel to actually send on, or nil plus a reason to print.
+local function ResolveShareChannel(channel)
+    if channel == "GUILD" then
+        if not IsInGuild() then return nil, "you are not in a guild" end
+        return "GUILD"
+    end
+    if channel == "PARTY" or channel == "RAID" or channel == "INSTANCE_CHAT" then
+        -- An LFG/instance group is not the "home" party: PARTY and RAID go
+        -- nowhere there, INSTANCE_CHAT is the one that reaches the group.
+        if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then return "INSTANCE_CHAT" end
+        if channel == "INSTANCE_CHAT" then return nil, "you are not in an instance group" end
+        if channel == "RAID" then
+            if not IsInRaid() then return nil, "you are not in a raid" end
+            return "RAID"
+        end
+        if not IsInGroup() then return nil, "you are not in a party" end
+        return "PARTY"
+    end
+    return channel
+end
+
+-- opts.tierFilter    -- respect the widget's S-F tier checkboxes
+-- opts.bountifulOnly -- only share delves flagged Bountiful
+DelveGuide.ShareActiveVariants = function(channel, opts)
+    opts = opts or {}
+    local target, why = ResolveShareChannel(channel)
+    if not target then
+        print("|cFF00BFFF[DelveGuide]|r Can't share to "..channel:lower()..": "..why..".")
+        return
+    end
+
+    local activeVariants = DelveGuide.activeVariants or {}
+    local activeDelves   = DelveGuide.activeDelves   or {}
+    local tiers = (DelveGuideDB and DelveGuideDB.widgetTiers) or {}
+    local entries, seen = {}, {}
+    if DelveGuideData and DelveGuideData.delves then
+        for _, d in ipairs(DelveGuideData.delves) do
+            if activeVariants[d.variant] and not seen[d.variant]
+               and ((not opts.tierFilter) or tiers[d.ranking] or not RANK_ORDER[d.ranking]) then
+                local ds = activeDelves[d.name]
+                local isB = type(ds) == "table" and ds.bountiful
+                if (not opts.bountifulOnly) or isB then
+                    seen[d.variant] = true
+                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                end
+            end
+        end
+    end
+    if #entries == 0 then
+        print("|cFF00BFFF[DelveGuide]|r No matching variants to share. Try |cFFFFFF00/dg scan|r first.")
+        return
+    end
+    table.sort(entries, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
+
+    -- Pack several variants per line: one message per variant spams the
+    -- channel and trips the server's flood protection on a full rotation.
+    local line = "[DelveGuide] Today's Active Delves:"
+    for _, e in ipairs(entries) do
+        local ds = activeDelves[e.delve]
+        local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
+        local part = string.format("[%s] %s (%s)%s", e.ranking, e.variant, e.delve, bountyTag)
+        if #line + 2 + #part > SHARE_LINE_MAX then
+            SendChatMessage(line, target)
+            line = part:sub(1, SHARE_LINE_MAX)
+        else
+            line = line .. "  " .. part
+        end
+    end
+    SendChatMessage(line, target)
+    print("|cFF00BFFF[DelveGuide]|r Shared "..#entries.." variants to |cFFFFFF00"..target.."|r")
+end
+
 DelveGuide.compactWidget = nil
 
 DelveGuide.UpdateCompactWidget = function()
@@ -60,16 +141,24 @@ DelveGuide.UpdateCompactWidget = function()
     local entries = {}
 
     local shownDelve = {}
+    -- Delves the tier filter deliberately hid, tracked separately from what we
+    -- display. The [?] fallback below would otherwise re-add every one of them
+    -- as an unranked row, which defeated the filter completely.
+    local tierFiltered = {}
     if DelveGuideData and DelveGuideData.delves then
         local seen = {}
         for _, d in ipairs(DelveGuideData.delves) do
-            if activeVariants[d.variant] and not seen[d.variant] and (tiers[d.ranking] or not RANK_ORDER[d.ranking]) then
-                local ds = activeDelves[d.name]
-                local isB = type(ds) == "table" and ds.bountiful
-                if (not bountifulOnly) or isB then
-                    seen[d.variant] = true
-                    shownDelve[d.name] = true
-                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+            if activeVariants[d.variant] and not seen[d.variant] then
+                if tiers[d.ranking] or not RANK_ORDER[d.ranking] then
+                    local ds = activeDelves[d.name]
+                    local isB = type(ds) == "table" and ds.bountiful
+                    if (not bountifulOnly) or isB then
+                        seen[d.variant] = true
+                        shownDelve[d.name] = true
+                        table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                    end
+                else
+                    tierFiltered[d.name] = true
                 end
             end
         end
@@ -98,7 +187,7 @@ DelveGuide.UpdateCompactWidget = function()
             end
         end
         for name, st in pairs(activeDelves) do
-            if not shownDelve[name] then
+            if not shownDelve[name] and not tierFiltered[name] then
                 local isB = type(st) == "table" and st.bountiful
                 if (not bountifulOnly) or isB then
                     shownDelve[name] = true
@@ -116,9 +205,14 @@ DelveGuide.UpdateCompactWidget = function()
     local overflow = math.max(0, #entries - W_MAX_LINES)
     local n = math.min(#entries, W_MAX_LINES)
     if n == 0 then
-        local emptyMsg = bountifulOnly
-            and "|cFF888888No bountiful delves today|r"
-            or  "|cFF888888No active variants|r"
+        local emptyMsg
+        if next(tierFiltered) then
+            emptyMsg = "|cFF888888No variants match your tier filter|r"
+        elseif bountifulOnly then
+            emptyMsg = "|cFF888888No bountiful delves today|r"
+        else
+            emptyMsg = "|cFF888888No active variants|r"
+        end
         cw.varLines[1].label:SetText(emptyMsg)
         cw.varLines[1].pin = nil
         cw.varLines[1]:ClearAllPoints()
@@ -302,35 +396,10 @@ DelveGuide.CreateCompactWidget = function()
     shareBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     shareBtn:SetScript("OnClick", function(_, button)
         local channel = (button == "RightButton") and "GUILD" or "PARTY"
-        local activeVariants = DelveGuide.activeVariants or {}
-        local activeDelves   = DelveGuide.activeDelves or {}
-        local tiers = DelveGuideDB.widgetTiers or {}
-        local bountifulOnly = DelveGuideDB.widgetBountifulOnly
-        local entries, seen = {}, {}
-        if DelveGuideData and DelveGuideData.delves then
-            for _, d in ipairs(DelveGuideData.delves) do
-                if activeVariants[d.variant] and not seen[d.variant] and (tiers[d.ranking] or not RANK_ORDER[d.ranking]) then
-                    local ds = activeDelves[d.name]
-                    local isB = type(ds) == "table" and ds.bountiful
-                    if (not bountifulOnly) or isB then
-                        seen[d.variant] = true
-                        table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
-                    end
-                end
-            end
-        end
-        if #entries == 0 then
-            print("|cFF00BFFF[DelveGuide]|r No matching variants to share.")
-            return
-        end
-        table.sort(entries, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
-        SendChatMessage("[DelveGuide] Today's Active Delves:", channel)
-        for _, e in ipairs(entries) do
-            local ds = activeDelves[e.delve]
-            local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
-            SendChatMessage(string.format("  [%s] %s (%s)%s", e.ranking, e.variant, e.delve, bountyTag), channel)
-        end
-        print("|cFF00BFFF[DelveGuide]|r Shared "..#entries.." variants to |cFFFFFF00"..channel.."|r")
+        DelveGuide.ShareActiveVariants(channel, {
+            tierFilter    = true,
+            bountifulOnly = DelveGuideDB.widgetBountifulOnly,
+        })
     end)
     shareBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
