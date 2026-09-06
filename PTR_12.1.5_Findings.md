@@ -243,6 +243,23 @@ model rather than hardcoding one.
 
 ---
 
+**4.8 The Pre-Entry Checklist has never fired automatically.** Raised by Nick 2026-09-06.
+Its trigger compared `UnitName("target")` to delve names, but a delve entrance is a game
+object, not a targetable unit, so the event never carried a delve name. Every appearance of
+the checklist -- and every review measurement of its rows -- came through `/dg check`. The
+README's "triggers automatically when you target a Delve entrance" described a path that
+cannot happen. Fixed: it now opens with the entrance dialog
+(`PLAYER_INTERACTION_MANAGER_FRAME_SHOW`, matched by
+`Enum.PlayerInteractionType.DelvesDifficultyPicker`, literal 3 as fallback). ⚠️ Unverified
+until the next PTR visit to an entrance; the export records the interaction type seen.
+
+**4.9 Delve glove enhancements (Wowhead datamine, 2026-09-06).** Four permanent bonuses
+that apply "while inside delve content" -- all delves, not only Labyrinths -- restricted to
+gloves of item level 334 or below (which excludes the 344 raid gloves; Wowhead suspects an
+oversight). Names, enchant IDs and acquisition are unknown; the article says so. Scaffolded
+as a checklist row keyed on the gloves' enchant ID, with the table empty until an export
+taken with one applied supplies the ID. The row speaks only when definite.
+
 ## 5. Content notes (from in-game tooltips)
 
 ### 5.1 A Labyrinth run is choose-your-path, push-your-luck
