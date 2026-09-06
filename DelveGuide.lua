@@ -983,7 +983,9 @@ local cacheResets = {}
 local function ResetPooledFontString(_, fs)
     fs:Hide(); fs:ClearAllPoints()
     fs:SetDrawLayer("OVERLAY")
-    fs:SetText("")
+    -- The pool runs this on a freshly created string too, before any font is
+    -- set, and SetText on a font-less FontString errors ("Font not set").
+    if fs:GetFont() then fs:SetText("") end
     fs:SetWidth(0)
     fs:SetJustifyH("LEFT")
     fs:SetTextColor(1,1,1,1); fs:SetAlpha(1)
@@ -1011,7 +1013,8 @@ local function ResetPooledFrame(_, f)
     end
     f:SetAlpha(1)
     if f.RegisterForClicks then f:RegisterForClicks("LeftButtonUp") end
-    if f.GetFontString and f:GetFontString() then f:SetText("") end
+    local bfs = f.GetFontString and f:GetFontString()
+    if bfs and bfs:GetFont() then f:SetText("") end
     if f.SetChecked then f:SetChecked(false) end
     if f.ClearFocus then f:ClearFocus() end
     if f.SetBackdrop then f:SetBackdrop(nil) end
