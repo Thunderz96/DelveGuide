@@ -121,7 +121,26 @@ DelveGuide.VoidforgeSlots = SLOT_INFO
 -- top because each ilvl on them carries a much larger stat budget than armor.
 DelveGuide.GetVoidforgeSlotPriority = function()
     local out = {}
+
+    -- A two-hander or a ranged weapon leaves the off-hand legitimately empty,
+    -- and empty slots sort to the top -- so the tab opened with "[empty] Off
+    -- Hand" as the first upgrade target for every such spec. Skip the row in
+    -- exactly that case: Fury warriors can Titan's Grip two two-handers, so if
+    -- anything IS equipped off-hand the row stays.
+    local skipOffHand = false
+    pcall(function()
+        if GetInventoryItemLink("player", INVSLOT_OFFHAND or 17) then return end
+        local mhLink = GetInventoryItemLink("player", INVSLOT_MAINHAND or 16)
+        if not mhLink then return end
+        if not (C_Item and C_Item.GetItemInfoInstant) then return end
+        local _, _, _, equipLoc = C_Item.GetItemInfoInstant(mhLink)
+        skipOffHand = (equipLoc == "INVTYPE_2HWEAPON")
+                   or (equipLoc == "INVTYPE_RANGED")
+                   or (equipLoc == "INVTYPE_RANGEDRIGHT")
+    end)
+
     for _, s in ipairs(SLOT_INFO) do
+        local skip = skipOffHand and s.id == (INVSLOT_OFFHAND or 17)
         local link = GetInventoryItemLink("player", s.id)
         local ilvl = 0
         if link then
@@ -134,14 +153,16 @@ DelveGuide.GetVoidforgeSlotPriority = function()
                 if ok and type(effective) == "number" then ilvl = effective end
             end
         end
-        table.insert(out, {
-            slot  = s.id,
-            label = s.label,
-            tier  = s.tier,
-            ilvl  = ilvl,
-            link  = link,
-            empty = link == nil,
-        })
+        if not skip then
+            table.insert(out, {
+                slot  = s.id,
+                label = s.label,
+                tier  = s.tier,
+                ilvl  = ilvl,
+                link  = link,
+                empty = link == nil,
+            })
+        end
     end
     table.sort(out, function(a, b)
         if a.empty ~= b.empty then return a.empty end
