@@ -141,16 +141,24 @@ DelveGuide.UpdateCompactWidget = function()
     local entries = {}
 
     local shownDelve = {}
+    -- Delves the tier filter deliberately hid, tracked separately from what we
+    -- display. The [?] fallback below would otherwise re-add every one of them
+    -- as an unranked row, which defeated the filter completely.
+    local tierFiltered = {}
     if DelveGuideData and DelveGuideData.delves then
         local seen = {}
         for _, d in ipairs(DelveGuideData.delves) do
-            if activeVariants[d.variant] and not seen[d.variant] and (tiers[d.ranking] or not RANK_ORDER[d.ranking]) then
-                local ds = activeDelves[d.name]
-                local isB = type(ds) == "table" and ds.bountiful
-                if (not bountifulOnly) or isB then
-                    seen[d.variant] = true
-                    shownDelve[d.name] = true
-                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+            if activeVariants[d.variant] and not seen[d.variant] then
+                if tiers[d.ranking] or not RANK_ORDER[d.ranking] then
+                    local ds = activeDelves[d.name]
+                    local isB = type(ds) == "table" and ds.bountiful
+                    if (not bountifulOnly) or isB then
+                        seen[d.variant] = true
+                        shownDelve[d.name] = true
+                        table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
+                    end
+                else
+                    tierFiltered[d.name] = true
                 end
             end
         end
@@ -179,7 +187,7 @@ DelveGuide.UpdateCompactWidget = function()
             end
         end
         for name, st in pairs(activeDelves) do
-            if not shownDelve[name] then
+            if not shownDelve[name] and not tierFiltered[name] then
                 local isB = type(st) == "table" and st.bountiful
                 if (not bountifulOnly) or isB then
                     shownDelve[name] = true
@@ -197,9 +205,14 @@ DelveGuide.UpdateCompactWidget = function()
     local overflow = math.max(0, #entries - W_MAX_LINES)
     local n = math.min(#entries, W_MAX_LINES)
     if n == 0 then
-        local emptyMsg = bountifulOnly
-            and "|cFF888888No bountiful delves today|r"
-            or  "|cFF888888No active variants|r"
+        local emptyMsg
+        if next(tierFiltered) then
+            emptyMsg = "|cFF888888No variants match your tier filter|r"
+        elseif bountifulOnly then
+            emptyMsg = "|cFF888888No bountiful delves today|r"
+        else
+            emptyMsg = "|cFF888888No active variants|r"
+        end
         cw.varLines[1].label:SetText(emptyMsg)
         cw.varLines[1].pin = nil
         cw.varLines[1]:ClearAllPoints()
