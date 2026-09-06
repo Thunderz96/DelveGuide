@@ -124,7 +124,7 @@ poiID is stable per (delve, map, bountiful state).
 |---|---|---|
 | 1 | scenarioID stable across tiers / bountiful | **not yet tested** — needs 2 tiers + 1 bountiful |
 | 2 | Nemesis lair scenarioID (expect 3395) | **not yet tested** |
-| 3 | scenario readable at `SCENARIO_COMPLETED` | **not yet tested** |
+| 3 | scenario readable at `SCENARIO_COMPLETED` | **answered for Labyrinth chambers (2026-09-06):** `GetInfo()` still returns name + scenarioID; `GetStepInfo()` and criteria are already torn down. Capture the ID at completion; anything step-level earlier |
 | 4 | `C_DelvesUI.GetActiveDelveTier()` returns a tier | **no** — returns an empty struct in Delves *and* Labyrinths |
 | 5 | Labyrinth scenario type / scenario ID / instance ID | **answered** — 8 / 3580 / 3043 |
 
@@ -343,6 +343,8 @@ before scanning (which leaves the Reputation pane expanded as a side effect). Tr
 | Encounter | ID | Notes |
 |---|---|---|
 | King of Souls | **3648** | `ENCOUNTER_START,3648,"King of Souls",208,1,3043`, ended success=1 |
+| Drill Sergeant | **3622** | success=1, 82s (Case B) |
+| The Undead Trollbunal | **3632** | success=true, captured by D3 with no combat log (Case C) |
 
 ⚠️ **Corrects an earlier claim in this document.** `ENCOUNTER_START`/`END` are *not* a
 general per-chamber completion signal. Over a 34-minute run (02:17-02:51) covering several
@@ -395,8 +397,24 @@ completed during stage 1, leaving a stage-2 objective that requires killing a bo
 already dead and does not respawn. The player killed "Thundering Hexmask" 13 times while
 stuck, consistent with trash respawning in a chamber that cannot be completed.
 
-Both cases leave the run unfinishable without abandoning it. Consistent with the placeholder
-state in 5.2a.
+**Case C — the mechanism, to the second (2026-09-06, no combat log; captured by D3).**
+Scenario 3605 "Raging Spirits" stage 1 ("Quell the Enraged Spirits", a percentage criterion).
+
+| Time | Event | Source |
+|---|---|---|
+| 09:39:06 | `ENCOUNTER_END 3632 "The Undead Trollbunal" success=true` | D3 encounter entry |
+| 09:39:06 | `SCENARIO_COMPLETED` for 3605 | D3 chamber entry |
+| 09:42:08 | scenario **3606** "Raging Spirits", step "Judgement Day", criterion "Undead Trollbunal slain" **0/1** | export |
+
+The boss died in the same second stage 1 completed, and the follow-on scenario whose only
+criterion is his death began *after* he was dead. Same shape as Case B (Drill Sergeant's
+encounter ended during stage 1; stage 2's "slain" criterion never moved), now with the
+race visible. Report wording: *the chamber boss can be killed during stage 1's completion
+window; the stage-2 "boss slain" criterion is created after `ENCOUNTER_END` and is never
+satisfied.*
+
+All three cases leave the run unfinishable without abandoning it. Consistent with the
+placeholder state in 5.2a.
 
 ### 5.6 criteria.assetID meaning depends on criteriaType
 
@@ -405,6 +423,7 @@ state in 5.2a.
 | 0 | **creature ID** | "Defeat the King of Souls." assetID 269822 = `Creature-...-269822-...` |
 | 0 | creature ID | "Defeat Hexbound Defenders" assetID 262929 = Hexbound Defender |
 | 165 | **encounter ID** | "Drill Sergeant slain" assetID 3622 = `ENCOUNTER_START,3622,"Drill Sergeant"` |
+| 92 | **unresolved** — not the encounter (3632) | "Undead Trollbunal slain" assetID 106706; no combat log that run, so creature ID unconfirmed |
 
 Both are locale-free and identify the objective's target without the combat log, but they are
 **not interchangeable** — read `criteriaType` before interpreting `assetID`.
