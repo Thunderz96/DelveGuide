@@ -23,6 +23,7 @@ Notes:
     the SUGGEST thresholds to taste; treat them as a starting point, not gospel.
 """
 
+import os
 import re
 import csv
 import argparse
@@ -43,6 +44,16 @@ from collections import defaultdict
 # retuning every season as gear inflates -- exactly how the Voidforge item-level
 # thresholds ended up dead at 680/700/720. A median anchor rescales itself.
 SUGGEST = [(0.82, "S"), (0.93, "A"), (1.08, "B"), (1.19, "C"), (1.37, "D")]
+
+# Letters worst-to-best is the reverse of this; index 0 = S ... index 5 = F.
+LETTERS = [letter for _ratio, letter in SUGGEST] + ["F"]
+
+# The published data file sits one level up from tools/. Resolved from __file__,
+# NOT from the working directory: a CWD-relative default meant that running the
+# script from anywhere but the repo root silently found no published grades and
+# turned hysteresis off without saying so.
+DEFAULT_PUBLISHED = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, "DelveGuide_Data.lua"))
 
 
 def split_sections(code):
@@ -149,9 +160,10 @@ def main():
                          "edges land ~1.5min apart while normal data movement is tens of "
                          "seconds -- without this, variants sitting seconds from an edge flip "
                          "letter almost every refresh regardless of sample size.")
-    ap.add_argument("--published", default="DelveGuide_Data.lua", metavar="LUA",
+    ap.add_argument("--published", default=DEFAULT_PUBLISHED, metavar="LUA",
                     help="data file read for the currently published grades, which hysteresis "
-                         "is measured against. Ignored if --hysteresis 0.")
+                         "is measured against. Ignored if --hysteresis 0. Defaults to the copy "
+                         "next to the script, so it works from any directory.")
     ap.add_argument("--weight", choices=("players", "runs"), default="players",
                     help="'players' (default) counts each submitter ONCE regardless of how "
                          "many times they ran it -- no single player can hold more than "
@@ -312,13 +324,25 @@ def main():
     # Currently published grades, for hysteresis.
     published = {}
     if args.hysteresis > 0:
+        pub_path = os.path.abspath(args.published)
         try:
-            with open(args.published, encoding="utf-8") as fh:
+            with open(pub_path, encoding="utf-8") as fh:
                 # `.` excludes newlines without DOTALL, so this stays on one Lua line.
                 for m in re.finditer(r'variant="([^"]+)".*?ranking="([SABCDF])"', fh.read()):
                     published[m.group(1)] = m.group(2)
-        except Exception:
-            pass
+            print(f"Hysteresis ACTIVE (+/-{args.hysteresis}s): {len(published)} published "
+                  f"grade(s) read from {pub_path}")
+            print()
+        except FileNotFoundError:
+            # Never swallow this. Without the published grades every letter is
+            # recomputed from scratch, so variants parked near a band edge flip
+            # -- which is the exact churn --hysteresis exists to stop.
+            print("!! HYSTERESIS IS OFF -- no published data file at:")
+            print(f"     {pub_path}")
+            print("   Grades below are recomputed from scratch and boundary-noise flips")
+            print("   are NOT suppressed. Pass --published <path>, or --hysteresis 0 to")
+            print("   mean it.")
+            print()
 
     band_edges = sorted(global_fastest * ratio for ratio, _ in SUGGEST)
 
