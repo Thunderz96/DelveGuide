@@ -1352,9 +1352,14 @@ local tabRenderers = {}
 
 local mainFrame,tabButtons,currentTabKey=nil,{},nil
 
+-- Set when a refresh was asked for while the window was hidden. Redrawing a tab
+-- nobody can see is pure cost, and POI/currency updates ask for it constantly.
+local tabDirty = false
+
 local function SwitchTab(key)
     currentTabKey = key
-    
+    tabDirty = false
+
     for _, td in ipairs(TABS) do
         local btn = tabButtons[td.key]
         if td.key == key then 
@@ -1392,7 +1397,13 @@ local function SwitchTab(key)
     end
 end
 
-RefreshCurrentTab = function() if currentTabKey then SwitchTab(currentTabKey) end end
+RefreshCurrentTab = function()
+    if currentTabKey and mainFrame and mainFrame:IsShown() then
+        SwitchTab(currentTabKey)
+    else
+        tabDirty = true
+    end
+end
 
 local function CreateMainWindow()
     local f=CreateFrame("Frame","DelveGuideFrame",UIParent,"BackdropTemplate")
