@@ -252,6 +252,20 @@ DelveGuideData.nemesisDelves = {
     "Venomfall Deeps",   -- S2 (Azta'rec), The Coiled Isle
 }
 
+-- Nemesis entrances. Same shape as DelveGuideData.mapPins (x/y are 0.0-1.0,
+-- i.e. /way coords over 100) but kept separate, because mapPins feeds the
+-- Delves tab and Nemesis delves are not rotational. The Nemesis tab renders
+-- its /way lines and its waypoint clicks from here, so there is exactly one
+-- number per entrance to correct -- it previously carried its own copy and the
+-- two had already drifted (51.2 31.0 in the tab vs 51.2 30.3 here).
+-- VERIFY IN GAME: stand at the entrance and
+--   /dump C_Map.GetPlayerMapPosition(<mapID>, "player")
+-- then replace the value below. Neither has been read off a live client yet.
+DelveGuideData.nemesisEntrances = {
+    { name="Venomfall Deeps", zone="The Coiled Isle", mapID=2512, x=0.512,  y=0.303  },  -- verify in game
+    { name="Torment's Rise",  zone="Voidstorm",       mapID=2405, x=0.6117, y=0.7137 },  -- verify in game
+}
+
 -- Nemesis access item, tracked on the Delves tab's Weekly Items row.
 -- Centralised for the same reason the trove IDs are: this ID changed between
 -- seasons and was hardcoded in DelveGuide_UI_Delves.lua, so the row silently
@@ -354,10 +368,18 @@ DelveGuideData.mapPins = {
     -- ── The Coiled Isle (2512) -- 12.1 Season 2 ───────────
     { name="Gnarldor Isle",       mapID=2512, x=0.6445, y=0.7771 },  -- verified in-game
     { name="The Ring of Glory",   mapID=2512, x=0.7126, y=0.5654 },  -- verified in-game
-    -- Venomfall Deeps (S2 Nemesis) entrance: The Serpent's Tail, /way #2512 51.2 30.3 --
-    -- intentionally not pinned here (Nemesis delves aren't rotational; location lives in the Nemesis tab)
+    -- Venomfall Deeps (S2 Nemesis) entrance: The Serpent's Tail -- intentionally
+    -- not pinned here (Nemesis delves aren't rotational). It lives in
+    -- DelveGuideData.nemesisEntrances, which the Nemesis tab reads.
 }
 
+
+-- Companion friendship/renown faction. Valeera Sanguinar = 2744, confirmed in
+-- the 12.1.5 faction sweep. The Companion tab used to find this by matching
+-- "Valeera"/"Sanguinar" against 501 factions three times over, which never
+-- matched on ruRU/zhCN/zhTW/koKR clients. It now asks C_DelvesUI first and
+-- falls back to this constant. Update at a season flip if the companion changes.
+DelveGuideData.companionFactionID = 2744
 
 -- ============================================================
 -- SECTION 3: CURIOS
@@ -393,24 +415,54 @@ DelveGuideData.poisons = {
 
 -- ============================================================
 -- SECTION 4: NOTABLE LOOT
+-- ------------------------------------------------------------
+-- Field convention, added in the 2026-09-06 Season 2 audit so the NEXT audit
+-- is a diff rather than a re-read:
+--   season   = the season the item was introduced in (1 = 12.0, 2 = 12.1).
+--              NOT "retired in": the Season 1 trinkets and weapons below still
+--              drop from the delves that carried over into Season 2.
+--   source   = where it comes from, in as few words as are actually known.
+--   verified = false marks a row taken from a web source and never seen on a
+--              live client. Absent means the row predates this convention.
+--
+-- Audit note (2026-09-06): no public source lists a Season 2 delve-exclusive
+-- TRINKET or WEAPON -- Season 2 delve gear appears to be the generic seasonal
+-- track, not named pieces like Season 1's. The named Season 2 delve rewards
+-- are all cosmetic, and are listed below with slot="Cosmetic". Nothing renders
+-- them yet: DelveGuide_UI_Loot.lua only draws the "Trinket" and "Weapon"
+-- groups, so surfacing them needs a Cosmetic section added there.
+-- Cosmetic item IDs from https://conquestcapped.com/guides/wow/midnight-delves-rewards/
 -- ============================================================
 DelveGuideData.loot = {
-    { name="Withered Saptor's Paw",        id=251782, slot="Trinket", notes="Crits grant Agility / main stat" },
-    { name="Desecrated Chalice",           id=251790, slot="Trinket", notes="Tank: on-damage versatility + damage" },
-    { name="Ever-Collapsing Void Fissure", id=251786, slot="Trinket", notes="On-use ramping haste" },
-    { name="Glorious Crusader's Keepsake", id=251792, slot="Trinket", notes="RNG incarnate idol" },
-    { name="Holy Retributor's Order",      id=251791, slot="Trinket", notes="On-hit damage + heal" },
-    { name="Lost Idol of the Hash'ey",     id=251783, slot="Trinket", notes="On-hit summons a companion" },
-    { name="Sealed Chaos Urn",             id=251787, slot="Trinket", notes="On-use all-stat buff" },
-    { name="Sylvan Wakrapuku",             id=251784, slot="Trinket", notes="On-hit physical proc" },
-    { name="Void-Reaper's Libram",         id=251785, slot="Trinket", notes="Damage proc + crit buff" },
-    { name="Ultradon Cuirass",             id=264694, slot="Trinket", notes="Tank on-use absorb" },
-    { name="Gift of Light",                id=251788, slot="Trinket", notes="Healer: on-hit ally stat buff" },
-    { name="Cosmic Bell",                  id=264701, slot="Trinket", notes="Healer on-use" },
-    { name="Consecrated Chalice",          id=251789, slot="Trinket", notes="Healer on-use absorb" },
-    { name="Lightgrasp Worldroot",         id=251935, slot="Weapon",  notes="Staff with a delve-only banish ability" },
-    { name="Radiant Foil",                 id=251885, slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
-    { name="Abyss Sabre",                  id=251884, slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
+    -- ── Season 1 (12.0) ───────────────────────────────────
+    { name="Withered Saptor's Paw",        id=251782, slot="Trinket", season=1, source="delve", notes="Crits grant Agility / main stat" },
+    { name="Desecrated Chalice",           id=251790, slot="Trinket", season=1, source="delve", notes="Tank: on-damage versatility + damage" },
+    { name="Ever-Collapsing Void Fissure", id=251786, slot="Trinket", season=1, source="delve", notes="On-use ramping haste" },
+    { name="Glorious Crusader's Keepsake", id=251792, slot="Trinket", season=1, source="delve", notes="RNG incarnate idol" },
+    { name="Holy Retributor's Order",      id=251791, slot="Trinket", season=1, source="delve", notes="On-hit damage + heal" },
+    { name="Lost Idol of the Hash'ey",     id=251783, slot="Trinket", season=1, source="delve", notes="On-hit summons a companion" },
+    { name="Sealed Chaos Urn",             id=251787, slot="Trinket", season=1, source="delve", notes="On-use all-stat buff" },
+    { name="Sylvan Wakrapuku",             id=251784, slot="Trinket", season=1, source="delve", notes="On-hit physical proc" },
+    { name="Void-Reaper's Libram",         id=251785, slot="Trinket", season=1, source="delve", notes="Damage proc + crit buff" },
+    { name="Ultradon Cuirass",             id=264694, slot="Trinket", season=1, source="delve", notes="Tank on-use absorb" },
+    { name="Gift of Light",                id=251788, slot="Trinket", season=1, source="delve", notes="Healer: on-hit ally stat buff" },
+    { name="Cosmic Bell",                  id=264701, slot="Trinket", season=1, source="delve", notes="Healer on-use" },
+    { name="Consecrated Chalice",          id=251789, slot="Trinket", season=1, source="delve", notes="Healer on-use absorb" },
+    { name="Lightgrasp Worldroot",         id=251935, slot="Weapon",  season=1, source="delve", notes="Staff with a delve-only banish ability" },
+    { name="Radiant Foil",                 id=251885, slot="Weapon",  season=1, source="delve", notes="2-set 1h sword with on-hit proc" },
+    { name="Abyss Sabre",                  id=251884, slot="Weapon",  season=1, source="delve", notes="2-set 1h sword with on-hit proc" },
+
+    -- ── Season 2 (12.1, The Coiled Isle) ──────────────────
+    -- Every row here is verified=false: sourced from the web, never seen in game.
+    { name="Apophic Soul Crusher",         id=275657, slot="Cosmetic", season=2, verified=false, source="Azta'rec, solo Tier ??",           notes="Mount" },
+    { name="Corroded Soul Crusher",        id=276162, slot="Cosmetic", season=2, verified=false, source="Delver's Journey rank 5",          notes="Mount -- 10 Voidlight Marl" },
+    { name="Delver's Arcane Golem",        id=262496, slot="Cosmetic", season=2, verified=false, source="Sturdy Chest, Gnarldor Isle",      notes="Mount" },
+    { name="Giganto Manis",                id=257199, slot="Cosmetic", season=2, verified=false, source="Glory of the Midnight Delver",     notes="Mount -- meta achievement" },
+    { name="Apophic Patagia",              id=276163, slot="Cosmetic", season=2, verified=false, source="Azta'rec, any difficulty",         notes="Back" },
+    { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Back" },
+    { name="Corroded Patagia",             id=276164, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Back" },
+    { name="Corrosive Victory",            id=275988, slot="Cosmetic", season=2, verified=false, source="Season 2 Nemesis intro questline", notes="Toy" },
+    { name="Effigy of Dundun",             id=276189, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Toy" },
 }
 
 
