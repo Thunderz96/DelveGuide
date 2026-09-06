@@ -268,11 +268,18 @@ DelveGuide.RenderCompanion = function()
     if blizzFrame and blizzFrame:IsShown() then
         if not compID or compID == 0 then compID = 11; compName = "Valeera Sanguinar" end
         
+        -- The scrape walks Blizzard's own frame tree, which we don't control: a
+        -- forbidden or unexpected child throws, and that error used to abort this
+        -- render with the tab half-drawn. Contain it -- whatever the walk read
+        -- before it threw is kept, and the rest of the tab still draws from the
+        -- API/renown values gathered above.
+        local ok, err
         if blizzFrame.CompanionConfigInfo then
-            ScrapeUI(blizzFrame.CompanionConfigInfo)
+            ok, err = pcall(ScrapeUI, blizzFrame.CompanionConfigInfo)
         else
-            ScrapeUI(blizzFrame)
+            ok, err = pcall(ScrapeUI, blizzFrame)
         end
+        if not ok then DelveGuide.lastScrapeError = err end
     end
     -- 3. Draw Header
     y = y + UI.CreateRow(cf, y, "|cFF00BFFF" .. compName .. "|r  -  Level |cFFFFD700" .. compLevel .. "|r  -  Role: |cFF00FF44" .. roleStr .. "|r") + 6
