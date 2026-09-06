@@ -164,9 +164,21 @@ frame-tree scrape has been reading off FontStrings since 12.0. Read as data it i
 call. `DelveGuide.ReadDelveHeaderWidget` does so and the HUD uses it as Method 0 with every
 older method still behind it.
 
-⚠️ Confirmed at one tier in one delve. Before retiring the scrape: a second tier, and the
-Labyrinth — whose tracker badge visibly shows a tier that `GetActiveDelveTier` and the scrape
-both failed to read (5.8). If the Labyrinth's header widget carries `tierText`, 5.8 reverses.
+**Confirmed 2026-09-06 at Tier 8 and Tier 9 in delves (Twilight Crypts) and Tier 11 in the
+Labyrinth** — the conditions set for retiring the scrape are met. Methods 1–3 stay behind
+Method 0 for 2.0.0 and only run if the widget read fails; remove them in 2.1 if no misses are
+reported.
+
+**Lives live in the same widget.** `currencies[1]`: `text = "3"`, `tooltip =
+"|Hspell:458103|h|nTotal deaths: 0"`, `iconFileID = 6013778`. Matched on the spell link or
+icon, never wording, so it holds on every locale. `DelveGuide.ReadDelveLives` returns lives and
+deaths; `ReadLivesText` uses it first. The criteria scan that never found lives is now a
+fallback only (`hud-victory#7` / `#17` closed).
+
+Other fields seen: `headerText` is the *chamber* name inside a Labyrinth ("Voices in the
+Halls") and the delve name in a delve; `spells[]` holds the header's spell icons (1318775,
+462940 on 69594); `rewardInfo` has earned/unearned tooltips (spells 463212/463213);
+`tierTooltipSpellID` differs by tier (1260965 at 8, 1260975 at 11).
 
 Related: the addon's tier detection works in Delves (`tierNum = 8`) but returns nil in
 Labyrinths (5.8), so the scrape is Delve-shaped and does not generalise.
@@ -250,8 +262,11 @@ the checklist -- and every review measurement of its rows -- came through `/dg c
 README's "triggers automatically when you target a Delve entrance" described a path that
 cannot happen. Fixed: it now opens with the entrance dialog
 (`PLAYER_INTERACTION_MANAGER_FRAME_SHOW`, matched by
-`Enum.PlayerInteractionType.DelvesDifficultyPicker`, literal 3 as fallback). ⚠️ Unverified
-until the next PTR visit to an entrance; the export records the interaction type seen.
+the interaction type seen). **The type is 79 on 69594** — recorded at a delve entrance and at
+the Labyrinth's — and `Enum.PlayerInteractionType` has no `DelvesDifficultyPicker` member
+there, so the enum is searched for a Delve-named key and 79 is the fallback. The literal 3 the
+code assumed since 12.0 is the trainer type. ⚠️ The popup itself is still unverified; the
+first build that could fire it is the one after this note.
 
 **4.9 Delve glove enhancements (Wowhead datamine, 2026-09-06).** Four permanent bonuses
 that apply "while inside delve content" -- all delves, not only Labyrinths -- restricted to
@@ -495,7 +510,12 @@ anything ranking-shaped needs a different model than the Delve one.
 ⚠️ Untested: whether the same content ID reappears across runs (i.e. whether 3580 is drawn
 from a fixed pool that will recur), and whether the pool differs by tier.
 
-### 5.8 The addon cannot detect tier in a Labyrinth
+### 5.8 ~~The addon cannot detect tier in a Labyrinth~~ — REVERSED 2026-09-06
+
+The header widget (§3.1) carried `tierText = "11"` inside Kindo'jan. `GetActiveDelveTier`
+and the frame-tree scrape both read nothing there, but the widget does. The HUD's Labyrinth
+view and the run record now use it. The original finding, kept for the record:
+
 
 `snap.tierNum`, `tierManual` and `tierAuto` are all **nil** in every Labyrinth snapshot, so
 `DelveGuide.currentDelveTierNum` is never populated. This is the internal cause of the
