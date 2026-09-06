@@ -13,6 +13,12 @@ local RUN_RESUME_MAX = 3 * 60 * 60
 local hudFrame  = nil
 local lockBtn   = nil
 
+-- /dg hud force-shows the HUD outside a delve so the player can see and place
+-- it. Without this flag the watchdog's next pass (2s later) called UpdateHUD,
+-- found no delve, and hid it again -- the toggle looked like it did nothing.
+-- Cleared as soon as there is real content to show, or by toggling off.
+local previewMode = false
+
 -- ── helpers ──────────────────────────────────────────────────
 
 local function GetCurrentDelveName()
@@ -505,12 +511,16 @@ local function UpdateHUD()
     -- (A2), which is correct for timing and history -- but it deserves a HUD.
     local labName = DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName()
     if labName then
+        previewMode = false
         if DelveGuideDB and not DelveGuideDB.hudEnabled then hudFrame:Hide(); return end
         UpdateLabyrinthHUD(labName)
         return
     end
 
     if not IsInsideDelve() then
+        -- A preview the player asked for with /dg hud stays up until they toggle
+        -- it off; there are no live values to refresh, so leave the rows alone.
+        if previewMode then return end
         hudFrame:Hide()
         return
     end
@@ -529,11 +539,24 @@ local function UpdateHUD()
         DelveGuide.SetAutoDelveTier(autoTier)
     end
 
+    -- Run finished: SCENARIO_COMPLETED hides the HUD, but the scenario stays
+    -- live while the player loots and lingers, so IsInsideDelve() is still true
+    -- and the watchdog's next pass put the HUD straight back up. runCompleted is
+    -- therefore a display gate too -- EvaluateDelveState clears it on exit.
+    -- Placed after the tier detection above on purpose: that must keep running.
+    -- An explicit /dg hud still wins, so the toggle is never a no-op.
+    if DelveGuide.runCompleted and not previewMode then
+        hudFrame:Hide()
+        return
+    end
+
     if DelveGuideDB and not DelveGuideDB.hudEnabled then
         hudFrame:Hide()
         return
     end
 
+    -- Live content from here on, so the preview has served its purpose.
+    previewMode = false
     hudFrame:Show()
     ApplyLabels(nil)
 
@@ -774,11 +797,15 @@ DelveGuide.UpdateHUD = UpdateHUD
 DelveGuide.ToggleHUD = function()
     if not hudFrame then BuildHUD() end
     if hudFrame:IsShown() then
+        previewMode = false
         hudFrame:Hide()
     else
+        previewMode = false
         UpdateHUD()  -- only shows if actually in a delve
         if not hudFrame:IsShown() then
-            -- Force-show for manual toggle outside a delve (preview mode)
+            -- Force-show for manual toggle outside a delve (preview mode).
+            -- previewMode keeps the watchdog from hiding it again 2s later.
+            previewMode = true
             hudFrame:Show()
         end
     end
