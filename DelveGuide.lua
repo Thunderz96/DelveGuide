@@ -76,6 +76,7 @@ local function InitSavedVars()
     -- checklistDismissed is session-only; reset on every load
     DelveGuideDB.checklistDismissed = false
     if not DelveGuideDB.roster then DelveGuideDB.roster = {} end
+    if not DelveGuideDB.labyrinthLog then DelveGuideDB.labyrinthLog = {} end
     if not DelveGuideDB.missingTranslations then DelveGuideDB.missingTranslations = {} end
     -- Purge entries that are no longer actually missing:
     --   * Nemesis delves (no rotational variant, so their widget text is empty)
@@ -457,6 +458,44 @@ DelveGuide.GetLabyrinthName = function()
     return name
 end
 
+-- Labyrinth observation log (D3). One flat entry per event inside a
+-- Labyrinth -- enter, chamber completion, encounter end, leave -- so a PTR
+-- session documents itself and the eventual guide is built from recorded data
+-- rather than memory. Nothing renders this yet; read DelveGuideDB.labyrinthLog
+-- off disk. Bounded; the oldest entries fall off.
+local LAB_LOG_MAX = 80
+DelveGuide.LogLabyrinth = function(entry)
+    if not DelveGuideDB then return end
+    DelveGuideDB.labyrinthLog = DelveGuideDB.labyrinthLog or {}
+    entry.at = date("%Y-%m-%d %H:%M:%S")
+    entry.labyrinth = entry.labyrinth or DelveGuide.GetLabyrinthName()
+    table.insert(DelveGuideDB.labyrinthLog, entry)
+    while #DelveGuideDB.labyrinthLog > LAB_LOG_MAX do table.remove(DelveGuideDB.labyrinthLog, 1) end
+end
+
+-- Enter/leave boundaries. Called wherever the instance state has settled;
+-- compares against the last seen Labyrinth so each transition logs once.
+-- labyrinthChamberStart is reset here and after every chamber completion,
+-- giving each chamber record an elapsed time.
+DelveGuide.TrackLabyrinthPresence = function()
+    local now = DelveGuide.GetLabyrinthName()
+    local was = DelveGuide.currentLabyrinth
+    if now == was then return end
+    if was then
+        DelveGuide.LogLabyrinth({ kind = "leave", labyrinth = was,
+            elapsed = DelveGuide.labyrinthEnteredAt and (GetTime() - DelveGuide.labyrinthEnteredAt) or nil })
+    end
+    if now then
+        DelveGuide.labyrinthEnteredAt    = GetTime()
+        DelveGuide.labyrinthChamberStart = GetTime()
+        DelveGuide.LogLabyrinth({ kind = "enter", labyrinth = now })
+    else
+        DelveGuide.labyrinthEnteredAt    = nil
+        DelveGuide.labyrinthChamberStart = nil
+    end
+    DelveGuide.currentLabyrinth = now
+end
+
 -- Trovehunter's Bounty state, shared by the Delves tab, the pre-entry
 -- checklist, the roster snapshot and the debug export so they can never
 -- disagree. IDs live in DelveGuideData.trove (one place, per season).
@@ -543,8 +582,24 @@ local function SetDelveWaypoint(pin)
         if ok then lastWaypointUID = uid end
         print("|cFF00BFFF[DelveGuide]|r TomTom waypoint set: |cFFFFD700"..pin.name.."|r")
     else
-        C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(pin.mapID, pin.x, pin.y))
-        print("|cFF00BFFF[DelveGuide]|r Waypoint set: |cFFFFD700"..pin.name.."|r")
+        -- Without TomTom this used to set the waypoint and stop: a chat line, an
+        -- opened map, and nothing on screen, because the waypoint was never
+        -- super-tracked. Blizzard's own arrow does the job once it is.
+        -- CanSetUserWaypointOnMap guards maps that refuse user waypoints.
+        local placed = false
+        pcall(function()
+            if C_Map.CanSetUserWaypointOnMap and not C_Map.CanSetUserWaypointOnMap(pin.mapID) then return end
+            C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(pin.mapID, pin.x, pin.y))
+            placed = true
+            if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
+                C_SuperTrack.SetSuperTrackedUserWaypoint(true)
+            end
+        end)
+        if placed then
+            print("|cFF00BFFF[DelveGuide]|r Waypoint set: |cFFFFD700"..pin.name.."|r")
+        else
+            print("|cFF00BFFF[DelveGuide]|r |cFFFF4444Could not set a waypoint on this map.|r")
+        end
     end
 
     -- Actually open the map. Both the widget and the Delves tab have always
@@ -552,7 +607,7 @@ local function SetDelveWaypoint(pin)
     -- opened it -- the tooltip was simply wrong for every user. (GitHub #6)
     pcall(function()
         if WorldMapFrame then
-            if not WorldMapFrame:IsShown() then ToggleWorldMap() end
+            if not InCombatLockdown() and not WorldMapFrame:IsShown() then ToggleWorldMap() end
             if WorldMapFrame.SetMapID then WorldMapFrame:SetMapID(pin.mapID) end
         end
     end)
@@ -2084,8 +2139,9 @@ loadFrame:RegisterEvent("ADDON_LOADED"); loadFrame:RegisterEvent("PLAYER_ENTERIN
 loadFrame:RegisterEvent("AREA_POIS_UPDATED"); loadFrame:RegisterEvent("SCENARIO_COMPLETED")
 loadFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED"); loadFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 loadFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+loadFrame:RegisterEvent("ENCOUNTER_END")
 loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
-loadFrame:SetScript("OnEvent",function(self,event,arg1)
+loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
         InitSavedVars(); SeedLocalizedNames(); icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
         print("|cFF00BFFF[DelveGuide]|r Loaded! |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
@@ -2113,6 +2169,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
         elseif instType == "scenario" then
             DelveGuide.inDelveInstance = true
         end
+        if DelveGuide.TrackLabyrinthPresence then DelveGuide.TrackLabyrinthPresence() end
         CacheCurrentChar()
         UpdateLDBText()
         if mainFrame and mainFrame:IsShown() then RefreshCurrentTab() end
@@ -2149,6 +2206,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
                 DelveGuide.inDelveInstance = false
                 if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
             end
+            if DelveGuide.TrackLabyrinthPresence then DelveGuide.TrackLabyrinthPresence() end
         end)
     elseif event=="PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
         -- arg1==3 is the delve entrance UI. No accessible tier API exists in Midnight 12.0;
@@ -2159,17 +2217,55 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
         end
     elseif event=="UNIT_AURA" then
         -- Reserved for future aura-based detection if Blizzard exposes tier via auras.
+    elseif event=="ENCOUNTER_END" then
+        -- D3: boss chambers fire ENCOUNTER_START/END; objective chambers do
+        -- not, so this supplements the chamber record rather than replacing it
+        -- (PTR_12.1.5_Findings.md 5.4). Delve encounters are not logged.
+        if DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName() then
+            DelveGuide.LogLabyrinth({ kind = "encounter", encounterID = arg1, name = arg2,
+                difficultyID = arg3, groupSize = arg4, success = (arg5 == 1) })
+        end
     elseif event=="SCENARIO_COMPLETED" then
         local scenarioName=C_Scenario.GetInfo()
         if not scenarioName then return end
         -- Labyrinth chambers are type-8 scenarios, so every test below says
         -- "delve", and a cleared chamber logged a delve row with no variant and
         -- tier "?" -- one per chamber, since each chamber is its own scenario
-        -- (PTR, 2026-09-05). Withhold the delve row here; the Labyrinth run
-        -- record is a separate shape. Returning early also stops
-        -- localeScenarioName below learning "Soul King" as this client's word
-        -- for Delves, which would have broken test (d) for real delves.
-        if DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName() then return end
+        -- (PTR, 2026-09-05). Withhold the delve row; the Labyrinth run record is
+        -- a separate shape. Returning early also stops localeScenarioName below
+        -- learning "Soul King" as this client's word for Delves, which would
+        -- have broken test (d) for real delves.
+        local labName = DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName()
+        if labName then
+            -- D3: record the chamber first. Fires once per cleared chamber. If
+            -- scenario info is already torn down at this event, scenarioID and
+            -- stepTitle land as nil -- which itself answers whether completion
+            -- data must be captured on entry instead (2.0 plan gate G2).
+            pcall(function()
+                local e = { kind = "chamber", labyrinth = labName }
+                local info = { C_Scenario.GetInfo() }
+                e.scenarioName, e.currentStage, e.numStages, e.flags = info[1], info[2], info[3], info[4]
+                e.scenarioID = info[13]
+                if C_ScenarioInfo and C_ScenarioInfo.GetScenarioInfo then
+                    local si = C_ScenarioInfo.GetScenarioInfo()
+                    if si and si.scenarioID then e.scenarioID = si.scenarioID end
+                end
+                e.stepTitle = (C_Scenario.GetStepInfo())
+                e.subzone   = GetSubZoneText()
+                e.criteria  = {}
+                for i = 1, (DelveGuide.GetCriteriaCount() or 0) do
+                    local c = DelveGuide.GetCriteria(i)
+                    if c then
+                        table.insert(e.criteria, { desc = c.description, qty = c.quantity, total = c.totalQuantity,
+                            ctype = c.criteriaType, assetID = c.assetID, completed = c.completed })
+                    end
+                end
+                if DelveGuide.labyrinthChamberStart then e.elapsed = GetTime() - DelveGuide.labyrinthChamberStart end
+                DelveGuide.labyrinthChamberStart = GetTime()
+                DelveGuide.LogLabyrinth(e)
+            end)
+            return
+        end
         -- Deciding "was that a delve?" USED to be `scenarioName == "Delves"` plus a
         -- match against English delve names. C_Scenario.GetInfo() returns a
         -- LOCALIZED string, so on a non-English client both tests failed and this
@@ -2319,7 +2415,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
             -- TRIGGER THE VICTORY SCREEN!
             if DelveGuide.ShowVictoryScreen then
-                DelveGuide.ShowVictoryScreen(runName, tier, vaultIlvl, elapsed)
+                DelveGuide.ShowVictoryScreen(runName, tier, vaultIlvl, elapsed, runVariant, tierNum, engRunName)
             end
 
             -- Run is logged and shown -- release the tier so the next delve
