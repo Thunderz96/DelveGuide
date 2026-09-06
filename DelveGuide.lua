@@ -252,8 +252,8 @@ local VIZ_GETTERS = {
     [12] = "GetTextureAndTextWidgetVisualizationInfo",
     [13] = "GetSpellDisplayVisualizationInfo",
     [19] = "GetDiscreteProgressStepsVisualizationInfo",
-    [20] = "GetScenarioHeaderDelvesWidgetVisualizationInfo",
     [21] = "GetTextureWithStateVisualizationInfo",
+    [29] = "GetScenarioHeaderDelvesWidgetVisualizationInfo",   -- the delve header: tierText, headerText (69594)
 }
 local function GetStepWidgetSetID()
     local id
@@ -273,11 +273,29 @@ local function DumpWidgetSet(setID)
     local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(setID) or {}
     for _, w in ipairs(widgets) do
         local m = { id = w.widgetID, type = w.widgetType }
+        local function scalars(t)
+            local o = {}
+            for k, v in pairs(t) do
+                local tv = type(v)
+                if tv == "string" or tv == "number" or tv == "boolean" then o[k] = v
+                elseif tv == "table" then o[k] = "<table>" end
+            end
+            return o
+        end
+        -- Two levels: the info's own scalars, and for each table field its
+        -- elements' scalars. Enough to see what currencies / spells /
+        -- rewardInfo hold without copying the world.
         local function copyInfo(info)
             for k, v in pairs(info) do
                 local t = type(v)
                 if t == "string" or t == "number" or t == "boolean" then m[k] = v
-                elseif t == "table" then m[k] = "<table>" end
+                elseif t == "table" then
+                    local o = {}
+                    for kk, vv in pairs(v) do
+                        o[kk] = (type(vv) == "table") and scalars(vv) or vv
+                    end
+                    m[k] = o
+                end
             end
         end
         local answered
@@ -298,6 +316,27 @@ local function DumpWidgetSet(setID)
         table.insert(out, m)
     end
     return out
+end
+
+-- The delve header widget -- ScenarioHeaderDelves, type 29 -- from the
+-- scenario step's widget set. Its visualization info carries tierText, the
+-- tier exactly as Blizzard renders it in the objective tracker, plus
+-- headerText (the delve name) and tables for currencies, spells and rewards.
+-- Read as data, this replaces the frame-tree scrape the HUD has used for the
+-- tier since 12.0. Verified on 69594 in Twilight Crypts at Tier 8.
+DelveGuide.ReadDelveHeaderWidget = function()
+    local info
+    pcall(function()
+        local setID = GetStepWidgetSetID()
+        if not setID then return end
+        local getter = C_UIWidgetManager.GetScenarioHeaderDelvesWidgetVisualizationInfo
+        if not getter then return end
+        for _, w in ipairs(C_UIWidgetManager.GetAllWidgetsBySetID(setID) or {}) do
+            local ok, i = pcall(getter, w.widgetID)
+            if ok and type(i) == "table" and i.tierText ~= nil then info = i; break end
+        end
+    end)
+    return info
 end
 
 -- type() of every Blizzard API this addon leans on, so a namespace move (as
@@ -1970,8 +2009,23 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
                     local keys = {}
                     for k in pairs(m) do table.insert(keys, k) end
                     table.sort(keys)
+                    local function fmt(v)
+                        if type(v) ~= "table" then return tostring(v) end
+                        local items = {}
+                        for kk, vv in pairs(v) do
+                            if type(vv) == "table" then
+                                local inner = {}
+                                for k3, v3 in pairs(vv) do table.insert(inner, k3.."="..tostring(v3)) end
+                                table.sort(inner); table.insert(items, tostring(kk).."{"..table.concat(inner, ",").."}")
+                            else
+                                table.insert(items, tostring(kk).."="..tostring(vv))
+                            end
+                        end
+                        table.sort(items)
+                        return "{"..table.concat(items, " ").."}"
+                    end
                     local parts = {}
-                    for _, k in ipairs(keys) do table.insert(parts, k.."="..tostring(m[k])) end
+                    for _, k in ipairs(keys) do table.insert(parts, k.."="..fmt(m[k])) end
                     line(INFO, "  "..table.concat(parts, " "))
                 end
             end

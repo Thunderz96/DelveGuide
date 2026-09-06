@@ -277,6 +277,18 @@ end
 
 -- Returns: tierNum|nil, methodLabel|nil  (the label powers /dg tierdebug)
 local function AutoDetectDelveTier()
+    -- Method 0: the delve header widget's own tierText, read from the scenario
+    -- step's widget set (DelveGuide.ReadDelveHeaderWidget). This is the data
+    -- the objective tracker renders; Method 3 below scrapes that rendering.
+    -- Verified on 69594 in Twilight Crypts at Tier 8 across three snapshots.
+    -- Kept ahead of the others, with all of them intact, until a second tier
+    -- and a Labyrinth have confirmed it -- then the scrape can go.
+    do
+        local info = DelveGuide.ReadDelveHeaderWidget and DelveGuide.ReadDelveHeaderWidget()
+        local n = info and info.tierText and tonumber((tostring(info.tierText):match("(%d+)")))
+        if n and n >= 1 and n <= 11 then return n, "0: header widget" end
+    end
+
     -- Method 1: Instance Difficulty Name (locale-independent — grab any number 1-11)
     local _, _, _, difficultyName = GetInstanceInfo()
     if difficultyName and difficultyName ~= "" then
