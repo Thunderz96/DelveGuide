@@ -150,7 +150,28 @@ DelveGuide.RenderDelves = function()
     table.sort(activeData, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
     
     local note=vc>0 and "  |cFF44FF44("..vc.." active today)|r" or "  |cFFAAAAAA(use /dg scan)|r"
-    y=y+UI.CreateHeader(cf,y,"Delve Rankings -- S=Fastest | F=Slowest"..note)+4
+    -- Hover target over the ranking header. Three CurseForge threads asked what
+    -- S-F actually measures, so the answer lives on the header itself rather
+    -- than on every row.
+    local headerY=y
+    local headerH=UI.CreateHeader(cf,headerY,"Delve Rankings -- S=Fastest | F=Slowest |cFF888888[?]|r"..note)
+    local gradeHelp=CreateFrame("Button",nil,cf)
+    gradeHelp:SetPoint("TOPLEFT",cf,"TOPLEFT",8,-headerY)
+    -- Clamped so a big font scale can't slide the hover region under the
+    -- "What are Delves?" button in the top-right corner.
+    gradeHelp:SetSize(math.min(math.floor(340*(DelveGuideDB.fontScale or 1)),math.max(80,cf:GetWidth()-60)),headerH)
+    gradeHelp:SetScript("OnEnter",function(self)
+        GameTooltip:SetOwner(self,"ANCHOR_BOTTOMLEFT")
+        GameTooltip:AddLine("|cFFFFD700How grades work|r")
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("S = fastest, F = slowest.",1,1,1,true)
+        GameTooltip:AddLine("Grades come from timed runs players sent in with |cFFFFFF00/dg submit|r -- not from how hard a delve is.",1,1,1,true)
+        GameTooltip:AddLine("Only Tier 8 and above count.",1,1,1,true)
+        GameTooltip:AddLine("A |cFF888888[?]|r grade means not enough runs yet.",1,1,1,true)
+        GameTooltip:Show()
+    end)
+    gradeHelp:SetScript("OnLeave",function() GameTooltip:Hide() end)
+    y=y+headerH+4
     local rs=DelveGuideData.rankingStats
     if rs then
         y=y+UI.CreateRow(cf,y,string.format("|cFF888888Community-timed from |r|cFF00FF88%d|r|cFF888888 player submissions -- add yours with |r|cFFFFFF00/dg submit|r|cFF888888. Credits in Settings.|r", rs.submissions or 0))
