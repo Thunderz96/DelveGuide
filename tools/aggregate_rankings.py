@@ -328,8 +328,14 @@ def main():
         try:
             with open(pub_path, encoding="utf-8") as fh:
                 # `.` excludes newlines without DOTALL, so this stays on one Lua line.
-                for m in re.finditer(r'variant="([^"]+)".*?ranking="([SABCDF])"', fh.read()):
-                    published[m.group(1)] = m.group(2)
+                # Keyed on (delve, variant), never on the variant alone: variant
+                # names are unique within a delve but NOT across the table, and a
+                # collision would hand one delve's published grade to another
+                # delve's row -- an invisible wrong hold, in the one code path
+                # whose whole job is to keep a grade from moving.
+                for m in re.finditer(
+                        r'name="([^"]+)".*?variant="([^"]+)".*?ranking="([SABCDF])"', fh.read()):
+                    published[(m.group(1), m.group(2))] = m.group(3)
             print(f"Hysteresis ACTIVE (+/-{args.hysteresis}s): {len(published)} published "
                   f"grade(s) read from {pub_path}")
             print()
@@ -346,10 +352,10 @@ def main():
 
     band_edges = sorted(global_fastest * ratio for ratio, _ in SUGGEST)
 
-    def settle(sec, fresh, variant):
+    def settle(sec, fresh, key):
         """Keep the published letter when the new time has not clearly cleared the
-        boundary. Returns (letter, held_note_or_None)."""
-        old = published.get(variant)
+        boundary. `key` is (delve, variant). Returns (letter, held_note_or_None)."""
+        old = published.get(key)
         if not old or old == fresh:
             return fresh, None
         gap = min(abs(sec - e) for e in band_edges)
@@ -363,7 +369,7 @@ def main():
         print(f"== {delve} ==")
         for r in variants:
             letter = suggest_letter(r["avg_sec"], global_fastest)
-            letter, held = settle(r["avg_sec"], letter, r["variant"])
+            letter, held = settle(r["avg_sec"], letter, (delve, r["variant"]))
             if held:
                 held_notes.append((delve, r["variant"], held))
             skew = r["mean_sec"] - r["median_sec"]
