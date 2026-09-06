@@ -359,6 +359,13 @@ DelveGuideData.mapPins = {
 }
 
 
+-- Companion friendship/renown faction. Valeera Sanguinar = 2744, confirmed in
+-- the 12.1.5 faction sweep. The Companion tab used to find this by matching
+-- "Valeera"/"Sanguinar" against 501 factions three times over, which never
+-- matched on ruRU/zhCN/zhTW/koKR clients. It now asks C_DelvesUI first and
+-- falls back to this constant. Update at a season flip if the companion changes.
+DelveGuideData.companionFactionID = 2744
+
 -- ============================================================
 -- SECTION 3: CURIOS
 -- ============================================================

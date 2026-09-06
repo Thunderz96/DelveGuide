@@ -14,10 +14,56 @@ end
 -- Auto-discovery for Valeera's reputation/renown track. Caches the hit in
 -- SavedVariables so we only scan once per character. "major" = C_MajorFactions
 -- (renown track); "rep" = regular reputation bar.
+--
+-- The name sweep below used to be the ONLY filter, which made this tab
+-- English-only: ruRU/zhCN/zhTW/koKR transliterate "Valeera Sanguinar", so
+-- nothing ever matched and the renown line never appeared. It was also the
+-- expensive path -- three sweeps of 501 pcall'd calls, 1,503 per render -- and
+-- a miss was never written anywhere, so every render re-ran the whole thing.
+-- Resolution order is now: Blizzard's own resolver, then the known constant,
+-- then the sweep as a last resort, with misses cached for the session.
+local sweepMissed = false   -- session-only: a /reload retries in case the
+                            -- companion track has been unlocked since.
+
+local function CacheFaction(id, ftype)
+    if DelveGuideDB then
+        DelveGuideDB.companionFactionID = id
+        DelveGuideDB.companionFactionType = ftype
+    end
+    return id, ftype
+end
+
 local function FindCompanionFactionID()
     if DelveGuideDB and DelveGuideDB.companionFactionID then
         return DelveGuideDB.companionFactionID, DelveGuideDB.companionFactionType
     end
+
+    -- 1. Blizzard's own resolver -- Blizzard_DelvesCompanionConfiguration.lua
+    --    maps the active companion to its faction exactly this way. Locale
+    --    independent, and one call instead of 1,503.
+    if C_DelvesUI and C_DelvesUI.GetFactionForCompanion and C_DelvesUI.GetCompanionInfoForActivePlayer then
+        local ok, id = pcall(function()
+            return C_DelvesUI.GetFactionForCompanion(C_DelvesUI.GetCompanionInfoForActivePlayer())
+        end)
+        if ok and type(id) == "number" and id > 0 then
+            return CacheFaction(id, "friendship")
+        end
+    end
+
+    -- 2. The known constant (Valeera Sanguinar = 2744, confirmed in the 12.1.5
+    --    faction sweep). Probed rather than trusted blind, so a season that
+    --    moves the companion falls through instead of reporting a dead track.
+    local constID = DelveGuideData and DelveGuideData.companionFactionID
+    if constID and C_GossipInfo and C_GossipInfo.GetFriendshipReputation then
+        local ok, d = pcall(C_GossipInfo.GetFriendshipReputation, constID)
+        if ok and d and d.friendshipFactionID and d.friendshipFactionID > 0 then
+            return CacheFaction(constID, "friendship")
+        end
+    end
+
+    -- 3. Last resort: the English-only name sweep. Only reached when both the
+    --    API and the constant fail, and only once per session.
+    if sweepMissed then return nil, nil end
 
     local function nameMatches(n)
         if not n then return false end
@@ -31,11 +77,7 @@ local function FindCompanionFactionID()
         for id = 2600, 3100 do
             local ok, d = pcall(C_GossipInfo.GetFriendshipReputation, id)
             if ok and d and d.friendshipFactionID and d.friendshipFactionID > 0 and nameMatches(d.name) then
-                if DelveGuideDB then
-                    DelveGuideDB.companionFactionID = id
-                    DelveGuideDB.companionFactionType = "friendship"
-                end
-                return id, "friendship"
+                return CacheFaction(id, "friendship")
             end
         end
     end
@@ -44,11 +86,7 @@ local function FindCompanionFactionID()
         for id = 2600, 3100 do
             local ok, d = pcall(C_MajorFactions.GetMajorFactionData, id)
             if ok and d and nameMatches(d.name) then
-                if DelveGuideDB then
-                    DelveGuideDB.companionFactionID = id
-                    DelveGuideDB.companionFactionType = "major"
-                end
-                return id, "major"
+                return CacheFaction(id, "major")
             end
         end
     end
@@ -57,14 +95,12 @@ local function FindCompanionFactionID()
         for id = 2600, 3100 do
             local ok, d = pcall(C_Reputation.GetFactionDataByID, id)
             if ok and d and nameMatches(d.name) then
-                if DelveGuideDB then
-                    DelveGuideDB.companionFactionID = id
-                    DelveGuideDB.companionFactionType = "rep"
-                end
-                return id, "rep"
+                return CacheFaction(id, "rep")
             end
         end
     end
+
+    sweepMissed = true
     return nil, nil
 end
 
