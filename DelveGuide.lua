@@ -486,10 +486,13 @@ local function SeedLocalizedNames()
 end
 
 local function ScanActiveVariants()
+    -- 2.1c: build into fresh tables, but only replace the live cache if the
+    -- scan actually found delves. A rescan during an entry transition can get
+    -- empty POI lists and used to wipe the cache the HUD relies on for the
+    -- whole run.
+    local prevDelves, prevVariants = activeDelves, activeVariants
     activeDelves, activeVariants, rawScanResults = {}, {}, {}
     SeedLocalizedNames()
-    DelveGuide.activeDelves        = activeDelves
-    DelveGuide.activeVariants      = activeVariants
     DelveGuide.rawScanResults       = rawScanResults
     DelveGuide.localizedToEnglish  = localizedToEnglish
     local knownVariants = {}
@@ -677,6 +680,11 @@ local function ScanActiveVariants()
             end
         end
     end
+    if not next(activeDelves) and next(prevDelves or {}) then
+        activeDelves, activeVariants = prevDelves, prevVariants
+    end
+    DelveGuide.activeDelves   = activeDelves
+    DelveGuide.activeVariants = activeVariants
 end
 
 local function IsVariantActive(v) return activeVariants[v]==true end
@@ -1615,7 +1623,12 @@ local function CreateMainWindow()
             keysText, delveCount, vaultProgress, maxThreshold, wqCount, resetText
         ))
     end
-    f:HookScript("OnShow",f.UpdateTracker)
+    f:HookScript("OnShow", function(self)
+        self.UpdateTracker(self)
+        -- 2.1f: RefreshCurrentTab skips redrawing while the window is hidden
+        -- and sets tabDirty instead; paint it now that it can be seen.
+        if tabDirty and currentTabKey then SwitchTab(currentTabKey) end
+    end)
     
     local tabW=(startW-32)/#TABS
     for i,td in ipairs(TABS) do
@@ -2848,6 +2861,23 @@ StaticPopupDialogs["DELVEGUIDE_CONFIRM_REMOVE_CHAR"] = {
     preferredIndex = 3,
 }
 
+-- 2.1a/b: AREA_POIS_UPDATED can arrive several times in one frame. Queue ONE
+-- scan half a second out; the Delves tab repaints inside that callback, after
+-- the scan, so it paints once with fresh data instead of stale-then-again.
+local scanQueued = false
+local function QueueScan()
+    if scanQueued then return end
+    scanQueued = true
+    C_Timer.After(0.5, function()
+        scanQueued = false
+        if IsInInstance() then return end
+        ScanActiveVariants()
+        if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end
+        UpdateLDBText()
+        if mainFrame and mainFrame:IsShown() and currentTabKey == "delves" then SwitchTab("delves") end
+    end)
+end
+
 -- Is this PLAYER_INTERACTION_MANAGER_FRAME_SHOW/HIDE type the delve entrance
 -- dialog? 79 on build 69594 at a delve entrance and at the Labyrinth's alike
 -- (both recorded by /dg export). Enum.PlayerInteractionType has no
@@ -2916,10 +2946,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
             C_Timer.After(6, function() StaticPopup_Show("DELVEGUIDE_RANKING_CALL") end)
         end
     elseif event=="AREA_POIS_UPDATED" then
-        if not IsInInstance() then
-            C_Timer.After(0, function() ScanActiveVariants(); if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end; UpdateLDBText() end)
-        end
-        if mainFrame and mainFrame:IsShown() and currentTabKey=="delves" then SwitchTab("delves") end
+        if not IsInInstance() then QueueScan() end
     elseif event=="ACTIVE_TALENT_GROUP_CHANGED" then
         if mainFrame and mainFrame:IsShown() and currentTabKey=="curios" then SwitchTab("curios") end
     elseif event=="PLAYER_TARGET_CHANGED" then
@@ -3198,35 +3225,44 @@ end)
 -- ============================================================
 -- WORLD MAP TOOLTIP INJECTIONS
 -- ============================================================
+-- 2.1e: this runs on GameTooltip's OnUpdate -- every frame any tooltip is on
+-- screen, anywhere in the game. It used to allocate two closures and a string
+-- per frame. The title FontString is hoisted, the two pcall bodies are named
+-- functions (pcall(f, args) allocates nothing), and a hidden tooltip or a
+-- secret value returns before any of it. The pcall stays as the backstop:
+-- issecretvalue is the cheap early-out, not a replacement for the bubble.
+local GameTooltipTextLeft1 = _G["GameTooltipTextLeft1"]
+local function ResolveTooltipName(self, poiName)
+    if poiName == "" then return "IGNORE" end
+    if self.dgLastCheckedName == poiName then return "IGNORE" end
+    -- Remember it for the next frame so the work below runs once per name.
+    self.dgLastCheckedName = poiName
+    return (DelveGuide.localizedToEnglish and DelveGuide.localizedToEnglish[poiName]) or poiName
+end
+local function IsActiveDelveName(engName)
+    return DelveGuide.activeDelves and DelveGuide.activeDelves[engName]
+end
+
 local function InjectDelveData(self)
     if DelveGuideDB and DelveGuideDB.mapTooltips == false then return end
+    if not self:IsShown() then return end
 
-    local titleFS = _G[self:GetName() .. "TextLeft1"]
+    local titleFS = (self == GameTooltip and GameTooltipTextLeft1) or _G[self:GetName() .. "TextLeft1"]
     if not titleFS then return end
 
     local poiName = titleFS:GetText()
     if not poiName then return end
+    -- A protected unit name is never a delve; skip the bubble entirely.
+    if issecretvalue and issecretvalue(poiName) then return end
 
-    -- 1. Put ALL string comparisons inside the pcall bubble. 
-    -- If it is a secret string, the pcall catches the security block and silently fails.
-    local ok, result = pcall(function()
-        if poiName == "" then return "IGNORE" end
-        if self.dgLastCheckedName == poiName then return "IGNORE" end
-        
-        -- It's safe! Remember it for the next frame to prevent the memory leak.
-        self.dgLastCheckedName = poiName
-        
-        return (DelveGuide.localizedToEnglish and DelveGuide.localizedToEnglish[poiName]) or poiName
-    end)
-
-    -- 2. If it was a secret string (not ok) or we already checked it ("IGNORE"), stop here!
+    -- ALL string comparisons stay inside the pcall bubble (see the note on
+    -- secret strings in OnTargetChanged); a secret that slipped past the
+    -- early-out aborts here and the tooltip is left alone.
+    local ok, result = pcall(ResolveTooltipName, self, poiName)
     if not ok or not result or result == "IGNORE" then return end
-    
-    local engName = result
 
-    local ok2, isActive = pcall(function()
-        return DelveGuide.activeDelves and DelveGuide.activeDelves[engName]
-    end)
+    local engName = result
+    local ok2, isActive = pcall(IsActiveDelveName, engName)
     if not ok2 or not isActive then return end
 
     local activeVariant = nil
