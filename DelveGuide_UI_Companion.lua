@@ -11,6 +11,10 @@ local function GetSpecRec()
     return DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID], specID
 end
 
+-- Shared with the Nemesis tab so the two screens cannot disagree about which
+-- Valeera role a spec wants. (The Curios tab still keeps its own copy.)
+UI.GetSpecRec = GetSpecRec
+
 -- Auto-discovery for Valeera's reputation/renown track. Caches the hit in
 -- SavedVariables so we only scan once per character. "major" = C_MajorFactions
 -- (renown track); "rep" = regular reputation bar.

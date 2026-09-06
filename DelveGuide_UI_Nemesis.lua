@@ -10,6 +10,46 @@ local UI = DelveGuide.UI
 -- DelveGuide_UI_Nullaeus.lua (v1.7.x).
 -- ============================================================
 
+local function Entrance(name)
+    for _, e in ipairs(DelveGuideData.nemesisEntrances or {}) do
+        if e.name == name then return e end
+    end
+end
+
+-- Clickable entrance line: same interaction as the Delves tab's name button
+-- (click = open map + set waypoint), built from the pooled button so nothing
+-- is created per render. The /way text is formatted from the pin, so the
+-- coordinate shown and the coordinate you get sent to cannot disagree.
+local function CreateEntranceRow(parent, y, pin)
+    if not pin then return 0 end
+    UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
+    local ROW_FONT = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
+
+    local btn = UI.AcquireButton()
+    btn:SetSize(parent:GetWidth() - 16, rH)
+    btn:SetPoint("TOPLEFT", parent, "TOPLEFT", 8, -y)
+
+    local fs = UI.AcquireFontString("OVERLAY")
+    fs:SetFont(ROW_FONT, rSize)
+    fs:SetPoint("LEFT", btn, "LEFT", 0, 0)
+    fs:SetWidth(btn:GetWidth()); fs:SetJustifyH("LEFT")
+    fs:SetText(string.format("|cFF888888  /way #%d %g %g|r  |cFF00FF88(click)|r",
+        pin.mapID, pin.x * 100, pin.y * 100))
+
+    btn.pin = pin
+    btn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("|cFFFFD700" .. self.pin.name .. "|r")
+        GameTooltip:AddLine("|cFFCCCCCC" .. (self.pin.zone or "") .. "|r")
+        GameTooltip:AddLine("|cFF00FF88Click to open map & set waypoint|r")
+        GameTooltip:Show()
+    end)
+    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    btn:SetScript("OnClick", function(self) UI.SetDelveWaypoint(self.pin) end)
+
+    return rH
+end
+
 DelveGuide.RenderNemesis = function()
     local cf = UI.NewContentFrame(); local y = 10
     UI.EnsureFontFiles()
@@ -24,7 +64,7 @@ DelveGuide.RenderNemesis = function()
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Location|r") + 4
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Venomfall Deeps  -  northern Coiled Isle|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888  /way #2512 51.2 31.0|r") + 8
+    y = y + CreateEntranceRow(cf, y, Entrance("Venomfall Deeps")) + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Unlock Requirements|r") + 4
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Tier ?:|r  clear any Tier 7 Delve with 1+ life remaining") + 2
@@ -57,7 +97,16 @@ DelveGuide.RenderNemesis = function()
     y = y + UI.CreateRow(cf, y, "|cFF888888  Tier ??: the sequence grows each intermission (5 -> 6 -> 7 safe spots), and an Echo of Azta'rec add spawns using his main-phase kit -- kill it before the game ends.|r") + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Recommended Setup|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Valeera:|r Healer for Tank & DPS specs; DPS Valeera for Healer specs.") + 2
+    -- Same DelveGuideData.specCurioRecs lookup the Companion and Curios tabs
+    -- use. This line used to be a hand-written generalisation, which meant the
+    -- Nemesis tab could recommend a different Valeera role than the Companion
+    -- tab for the same spec.
+    local rec = UI.GetSpecRec and UI.GetSpecRec()
+    if rec then
+        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Valeera:|r run her as |cFF00CFFF" .. (rec.companion or "--") .. "|r |cFF888888for your spec (" .. rec.spec .. ").|r") + 2
+    else
+        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Valeera:|r Healer for Tank & DPS specs; DPS Valeera for Healer specs.") + 2
+    end
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Aim for roughly 290 item level for the '?' difficulty.|r") + 2
     y = y + UI.CreateRow(cf, y, "|cFF888888  Between you and Valeera, cover the Soul Extinction interrupt and the Void Toxin dispel every time.|r") + 8
 
@@ -71,8 +120,15 @@ DelveGuide.RenderNemesis = function()
     -- LEGACY: NULLAEUS (Season 1)
     -- CONFIRMED still enterable on 12.1 PTR build 68629
     -- (instanceID 2966, interior map 2507, scenarioID 3289).
-    -- Which rewards survive is a Season-2-flip question -- check
-    -- at S2 launch, then correct the two reward lines below.
+    -- Season 2 launched 2026-08-18. Reward status below last
+    -- checked against public guides on 2026-09-06: the mount,
+    -- helm and title are all reported as Season 1 only, so they
+    -- moved to the retired list. Sources agreeing on that:
+    --   conquestcapped.com/guides/wow/arcanovoid-construct/
+    --     ("Availability: Season 1 only")
+    --   method.gg/guides/nullaeus-nemesis-delve-guide-torments-rise
+    -- Not yet confirmed in game -- if a Season 2 kill still awards
+    -- any of them, move that line back up.
     -- NOTE: C_DelvesUI.HasActiveLair() returns false even while
     -- standing inside the lair (it's seasonal state, NOT an
     -- in-lair check) -- detect Nemesis delves by instanceID.
@@ -81,13 +137,15 @@ DelveGuide.RenderNemesis = function()
     y = y + UI.CreateHeader(cf, y, "Legacy: Nullaeus  --  Season 1 Nemesis") + 4
     y = y + UI.CreateRow(cf, y, "|cFF888888Domanaar, Hand of the Harbinger. No longer seasonally relevant, but Torment's Rise stays open for collectors (as with Zekvir's Lair and Demolition Dome in TWW).|r") + 6
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Location:|r |cFFCCCCCCTorment's Rise - Voidstorm   |cFF888888/way #2405 61.17 71.37|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Location:|r |cFFCCCCCCTorment's Rise - Voidstorm|r") + 2
+    y = y + CreateEntranceRow(cf, y, Entrance("Torment's Rise")) + 2
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Unlock:|r |cFFCCCCCCTier ? = any Tier 7 delve clear / Tier ?? = any Tier 10 clear, with 1+ life remaining|r") + 2
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Summon:|r |cFFCCCCCCBeacon of Hope - the same item as Season 2's flute, one season earlier: place it after the Restoration Stone in any delve to lure Nullaeus to you (1 hour cooldown). |cFFFF8844No longer obtainable.|r") + 6
 
-    y = y + UI.CreateRow(cf, y, "|cFF00FF88Still obtainable |cFF888888(Season 1 rewards; some may retire under Season 2 -- check before grinding)|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Nullaeus Domaneye (cosmetic helm)  -  Arcanovoid Construct (mount, solo Tier ??)  -  Dominating Victory (toy)  -  \"the Ominous\" title (Tier ??)|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFFF4444No longer obtainable|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF00FF88Still obtainable|r  |cFF888888(last verified 2026-09-06)|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Dominating Victory (toy)  -  a Season 1 questline reward, not tied to a seasonal achievement.|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFF4444No longer obtainable|r  |cFF888888(Season 1 only; Season 2 started 2026-08-18 -- last verified 2026-09-06)|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Arcanovoid Construct (mount, solo Tier ??)  -  Nullaeus Domaneye (cosmetic helm)  -  \"the Ominous\" title (Tier ??)|r") + 2
     y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Fabled Vanquisher of Nullaeus (first 4,000, ended during Season 1)  -  seasonal Hero Dawncrest bonuses|r") + 2
 
     cf:SetHeight(y + 20)

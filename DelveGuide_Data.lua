@@ -252,6 +252,20 @@ DelveGuideData.nemesisDelves = {
     "Venomfall Deeps",   -- S2 (Azta'rec), The Coiled Isle
 }
 
+-- Nemesis entrances. Same shape as DelveGuideData.mapPins (x/y are 0.0-1.0,
+-- i.e. /way coords over 100) but kept separate, because mapPins feeds the
+-- Delves tab and Nemesis delves are not rotational. The Nemesis tab renders
+-- its /way lines and its waypoint clicks from here, so there is exactly one
+-- number per entrance to correct -- it previously carried its own copy and the
+-- two had already drifted (51.2 31.0 in the tab vs 51.2 30.3 here).
+-- VERIFY IN GAME: stand at the entrance and
+--   /dump C_Map.GetPlayerMapPosition(<mapID>, "player")
+-- then replace the value below. Neither has been read off a live client yet.
+DelveGuideData.nemesisEntrances = {
+    { name="Venomfall Deeps", zone="The Coiled Isle", mapID=2512, x=0.512,  y=0.303  },  -- verify in game
+    { name="Torment's Rise",  zone="Voidstorm",       mapID=2405, x=0.6117, y=0.7137 },  -- verify in game
+}
+
 -- Nemesis access item, tracked on the Delves tab's Weekly Items row.
 -- Centralised for the same reason the trove IDs are: this ID changed between
 -- seasons and was hardcoded in DelveGuide_UI_Delves.lua, so the row silently
@@ -354,8 +368,9 @@ DelveGuideData.mapPins = {
     -- ── The Coiled Isle (2512) -- 12.1 Season 2 ───────────
     { name="Gnarldor Isle",       mapID=2512, x=0.6445, y=0.7771 },  -- verified in-game
     { name="The Ring of Glory",   mapID=2512, x=0.7126, y=0.5654 },  -- verified in-game
-    -- Venomfall Deeps (S2 Nemesis) entrance: The Serpent's Tail, /way #2512 51.2 30.3 --
-    -- intentionally not pinned here (Nemesis delves aren't rotational; location lives in the Nemesis tab)
+    -- Venomfall Deeps (S2 Nemesis) entrance: The Serpent's Tail -- intentionally
+    -- not pinned here (Nemesis delves aren't rotational). It lives in
+    -- DelveGuideData.nemesisEntrances, which the Nemesis tab reads.
 }
 
 
