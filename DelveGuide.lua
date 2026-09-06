@@ -1370,9 +1370,25 @@ local function SwitchTab(key)
     
     local r = tabRenderers[key] or DelveGuide[globalFuncName]
     
-    if r then 
-        r()
-        scrollFrame:SetVerticalScroll(0) 
+    if r then
+        -- Contain the renderer. An error part-way through a tab used to leave a
+        -- half-drawn page behind AND take out whatever called us -- and since
+        -- POI updates call RefreshCurrentTab, it repeated on every update. The
+        -- error still reaches the player's error handler (BugSack, or the
+        -- default display); we just also throw the wreckage away and say so.
+        local eh = geterrorhandler()
+        local errMsg
+        local ok = xpcall(r, function(err) errMsg = err; return eh(err) end)
+        if not ok then
+            -- Exposed so /dg selftest (which pcalls SwitchTab and can no longer
+            -- see the error itself) and the Debug tab have something to read.
+            DelveGuide.lastRenderError = { key = key, err = errMsg }
+            local cf = NewContentFrame()
+            local y = 8
+            y = y + CreateRow(cf, y, "|cFFFF4444The " .. key .. " tab failed to render.|r") + 4
+            CreateRow(cf, y, "|cFF888888Try /reload. If it keeps happening, report it with the version from /dg help.|r")
+        end
+        scrollFrame:SetVerticalScroll(0)
     end
 end
 
