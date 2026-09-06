@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.11.1] - 2026-09-05
+
+### Fixed
+- **Hotfix: the HUD's lives counter has been silently dead on live 12.1.0.** `C_Scenario.GetNumCriteria` and `C_Scenario.GetCriteriaInfo` no longer exist -- confirmed `nil` on the retail client today and on the 12.1.5 PTR (build 69594). Every one of the six call sites sat inside a `pcall`, so the removal raised no error and reached no BugSack: the lives row just fell back to `--`, the `SCENARIO_CRITERIA_UPDATE` refresh did nothing, and `/dg huddump` reported zero criteria. It looked like "no data" rather than "broken", which is why nobody reported it. Criteria now come from `C_ScenarioInfo.GetCriteriaInfo`, which returns the same fields (`description`, `quantity`, `totalQuantity`, `quantityString`); the count comes from the 3rd return of `C_Scenario.GetStepInfo`, which survives. The old path is kept as a fallback so one build runs on every current client. Verified in-game on 12.1.5 inside a Delve and a Labyrinth; the code path on live is identical (same `nil`, same fallback).
+- When Blizzard removed the functions is not knowable from their docs: `C_Scenario` predates the generated API documentation and has never had a file in it, so no per-patch diff can show its members disappearing. Found only because a PTR session probed the namespace directly.
+
+### Compatibility
+- Interface `120105` added to the TOC so 12.1.5 does not flag the addon out of date.
 ## [1.11.0] - 2026-09-03
 
 ### Localization

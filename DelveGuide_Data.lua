@@ -500,6 +500,14 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "1.11.1",
+        date    = "2026-09-05",
+        entries = {
+            "Hotfix: the HUD's lives counter had quietly stopped working after a game API change -- it showed \"--\" instead of your remaining lives, with no error to notice. Fixed.",
+            "Marked compatible with patch 12.1.5.",
+        }
+    },
+    {
         version = "1.11.0",
         date    = "2026-09-03",
         entries = {
