@@ -157,7 +157,7 @@ Every unproven assumption that gates code, with the single cheapest capture that
 | G1 | scenarioID invariant across tier and bountiful for **one Delve** (protocol row 13) | 3.1, 3.2 | `/dg export` in the same delve at two tiers + once bountiful, read `scenarioInfo.scenarioID` off disk | identical all three times. **If it moves, 3.1's design is wrong** |
 | G2 | scenarioID readable inside the `SCENARIO_COMPLETED` handler (row 14) | 3.1 capture design | one debug `print(select(13, C_Scenario.GetInfo()))` at `DelveGuide.lua:2122`, complete a delve | a number prints. If nil, capture on entry and cache |
 | G3 | lives criterion shape in a Tier 4+ Delve mid-run | `hud-victory#7`, A5 | `/dg export` inside a T4+ delve after the first pull, read `criteria[]` | a criterion whose `desc`/`qtyStr` matches the lives regex — or none, which means it *is* a widget |
-| G4 | live 12.1.0 still has the old criteria API | **A1's urgency** | on **retail**: `/run print(type(C_Scenario.GetNumCriteria),type(C_ScenarioInfo.GetCriteriaInfo))` | `function function` = pre-patch prep. `nil function` = live is already silently broken; ship A1 now |
+| G4 | live 12.1.0 still has the old criteria API | **A1's urgency** | — | **✅ answered 2026-09-05: `nil function` on retail.** Live 1.11.0's lives counter is silently broken today. A1 ships as hotfix **1.11.1** from `main` (cherry-picked `41e5336` + `e2f3800`), ahead of 2.0.0 |
 | G5 | Nemesis lair scenarioID (row 13 tail; expect 3395) | 3.1 | `/dg export` inside Venomfall Deeps | 3395 |
 | G6 | bountiful delve POI atlas name | A3's atlas option | `/dg export` on a day with a bountiful delve up, read `delvePOIs[].atlas` | starts with `delves-` |
 | G7 | instanceID stable across Labyrinth tiers | A2 | — | **✅ verified** — 3043 at tiers 11, 1, 8 |
@@ -170,9 +170,10 @@ release or a hotfix. It should be the first thing done.
 
 ## 6. Recommendation
 
-**Ship Track A first, on its own if necessary.** It is small (A1 and A4 are done; A2, A3, A5
-are each S), it is the only work on Blizzard's calendar, and A1 is safe on live today. Run
-G4 tonight; if live is already broken, Track A is 1.11.1 this week.
+**Track A is now two releases.** G4 came back `nil function` on retail, so A1 + A4 ship
+immediately as **1.11.1** from `main` — the lives counter has been silently dead on live
+12.1.0. A2, A3 and A5 are Labyrinth-facing and stay on Blizzard's calendar for 12.1.5; they
+ship with 2.0.0 or as 1.12.0 if patch day arrives first.
 
 **Then Track B in the Review Plan's order**, because the aggregator miscount is live and the
 Phase 0 docs are the paste source for the CurseForge listing.
@@ -193,9 +194,9 @@ On the sequencing plan's §6 naming question: unchanged. Middle option — keep 
 
 ## 7. Decisions that are Nick's, not mine
 
-1. **Is 2.0.0 one release or a train?** This plan assumes Track A may ship ahead as 1.11.1 /
-   1.12.0 if patch day arrives first. If 2.0.0 must be a single drop, Track A's readiness
-   becomes the release date.
+1. **Is 2.0.0 one release or a train?** Partly decided by G4: A1 goes out as 1.11.1 now
+   regardless. The open half is whether A2/A3 (Labyrinth guard + POI filter) wait for 2.0.0
+   or ship as 1.12.0 if 12.1.5 lands first.
 2. **Track D scope.** "Labyrinth-aware, not guided" is a recommendation. Building a chamber
    guide against `[PH]` content is possible; it just gets rewritten.
 3. **Track E cut line.** Items 1–6 vs all ten.
