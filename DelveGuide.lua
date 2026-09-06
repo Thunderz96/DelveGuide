@@ -1379,6 +1379,21 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             end
         end)
 
+        -- Direct probe of factionID 2836, which WoWhead lists as "The Labyrinth
+        -- of Kindo'jan". The 2200-3400 sweep already called this ID and kept
+        -- nothing because it filters on a non-empty name; record the raw return
+        -- here so "exists but unnamed client-side" is distinguishable from "nil".
+        pcall(function()
+            if C_Reputation and C_Reputation.GetFactionDataByID then
+                local d = C_Reputation.GetFactionDataByID(2836)
+                snap.faction2836 = d and {
+                    name = d.name, standing = d.currentStanding, reaction = d.reaction,
+                    nextThreshold = d.nextReactionThreshold, isHeader = d.isHeader,
+                    isAccountWide = d.isAccountWide,
+                } or "nil"
+            end
+        end)
+
         -- Major factions (renown). The new Kindo'jan reputation did not appear
         -- in the standard C_Reputation list even with every header expanded, so
         -- it is probably a renown track rather than a classic faction.

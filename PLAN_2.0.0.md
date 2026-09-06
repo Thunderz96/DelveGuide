@@ -206,10 +206,25 @@ On the sequencing plan's §6 naming question: unchanged. Middle option — keep 
 
 ---
 
-## 8. Open: 12.1.5 API surface research
+## 8. 12.1.5 API surface research — done
 
-A research pass over Blizzard's 12.1.5 UI source (deprecation files and generated API docs)
-is checking all 54 namespaced calls the addon makes for further removals or renames beyond
-the criteria pair, and looking for any Labyrinth-specific API Blizzard's own UI uses to
-determine tier or content type. Results land as `api_12_1_5_research.md` and will be folded
-into Track A if anything else moved.
+Full report: `API_12.1.5_Research.md`. What it changes here:
+
+- **Track A is complete as listed.** No other documented removal in 12.1.5 touches the addon;
+  the whole patch removed exactly one Global API (`C_TableUtil.FindIndexedMismatch`, unused).
+  `C_DelvesUI` is byte-identical between 12.1.0 and 12.1.5.
+- **The criteria removal is invisible to Blizzard's tooling** — `C_Scenario` has never had a
+  generated-docs file, so no diff can show it. The in-game test is the only evidence. That is
+  a reason to run G4 on retail rather than a reason to doubt A1.
+- **Phase 3.3's drop is source-grounded, not just observed.** `GetActiveDelveTier`'s own doc
+  string still reads *"Assumes only Delves use this type for now,"* and `TieredEntranceType`
+  has no Labyrinth value. Labyrinths are not a first-class tiered-entrance type on 69594.
+- **Track D's deferral is source-grounded too.** No `C_LabyrinthInfo`, no Labyrinth-named
+  function anywhere in the generated docs. There is no API to build a guide against yet.
+- **Faction lead:** WoWhead lists factionID **2836** for the Kindo'jan reputation. The sweep
+  already called that ID and kept nothing (name filter), so `/dg export` now records its raw
+  return. If it comes back as a table with an empty name, Findings §5.10's "exists but not
+  client-side" reading is confirmed and the ID can be pre-seeded in `DelveGuideData`.
+
+Confidence limit carried over from the report: most "unchanged" verdicts rest on the
+aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's doc file.
