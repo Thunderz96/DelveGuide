@@ -233,6 +233,73 @@ local function DumpObjectiveTrackerWidgets()
     return out, setID
 end
 
+-- The scenario STEP's widget set: the 12th return of C_Scenario.GetStepInfo
+-- (842 in every delve and Labyrinth snapshot so far), or
+-- C_ScenarioInfo.GetScenarioStepInfo().widgetSetID. This is where the delve
+-- header widget lives -- the tier badge and the lives hearts that the HUD
+-- currently scrapes off rendered FontStrings. The objective-tracker set the
+-- review pointed at (240) is the generic tracker frame and is empty in and
+-- out of scenarios. Every widget's visualization info is shallow-copied, so
+-- field names we do not know yet (tierText? lives?) still land on disk. The
+-- getter for a widget type is looked up by name first, then found by trying
+-- every C_UIWidgetManager.*VisualizationInfo until one answers; the name that
+-- answered is recorded so the next capture can go straight to it.
+local VIZ_GETTERS = {
+    [0]  = "GetIconAndTextWidgetVisualizationInfo",
+    [2]  = "GetStatusBarWidgetVisualizationInfo",
+    [8]  = "GetTextWithStateWidgetVisualizationInfo",
+    [11] = "GetScenarioHeaderCurrenciesAndBackgroundWidgetVisualizationInfo",
+    [12] = "GetTextureAndTextWidgetVisualizationInfo",
+    [13] = "GetSpellDisplayVisualizationInfo",
+    [19] = "GetDiscreteProgressStepsVisualizationInfo",
+    [20] = "GetScenarioHeaderDelvesWidgetVisualizationInfo",
+    [21] = "GetTextureWithStateVisualizationInfo",
+}
+local function GetStepWidgetSetID()
+    local id
+    pcall(function()
+        if C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo then
+            local st = C_ScenarioInfo.GetScenarioStepInfo()
+            id = st and st.widgetSetID
+        end
+        if not id then id = select(12, C_Scenario.GetStepInfo()) end
+    end)
+    if id == 0 then id = nil end
+    return id
+end
+local function DumpWidgetSet(setID)
+    local out = {}
+    if not setID then return out end
+    local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(setID) or {}
+    for _, w in ipairs(widgets) do
+        local m = { id = w.widgetID, type = w.widgetType }
+        local function copyInfo(info)
+            for k, v in pairs(info) do
+                local t = type(v)
+                if t == "string" or t == "number" or t == "boolean" then m[k] = v
+                elseif t == "table" then m[k] = "<table>" end
+            end
+        end
+        local answered
+        local name = VIZ_GETTERS[w.widgetType]
+        if name and C_UIWidgetManager[name] then
+            local ok, info = pcall(C_UIWidgetManager[name], w.widgetID)
+            if ok and type(info) == "table" then copyInfo(info); answered = name end
+        end
+        if not answered then
+            for fname, fn in pairs(C_UIWidgetManager) do
+                if type(fn) == "function" and fname:find("VisualizationInfo$") then
+                    local ok, info = pcall(fn, w.widgetID)
+                    if ok and type(info) == "table" then copyInfo(info); answered = fname; break end
+                end
+            end
+        end
+        m.getter = answered or "none answered"
+        table.insert(out, m)
+    end
+    return out
+end
+
 -- type() of every Blizzard API this addon leans on, so a namespace move (as
 -- 12.1.5 did to scenario criteria) shows up as a line of output instead of
 -- failing silently inside a pcall. Shared by /dg export and /dg selftest.
@@ -1548,6 +1615,12 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         -- or a header widget (see DumpObjectiveTrackerWidgets).
         pcall(function() snap.trackerWidgets, snap.trackerWidgetSetID = DumpObjectiveTrackerWidgets() end)
 
+        -- The scenario step's widget set: tier badge and lives live here.
+        pcall(function()
+            snap.stepWidgetSetID = GetStepWidgetSetID()
+            snap.stepWidgets = DumpWidgetSet(snap.stepWidgetSetID)
+        end)
+
         -- Scenario criteria, through the 12.1.5-safe helpers.
         pcall(function()
             snap.criteria = {}
@@ -1855,8 +1928,10 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         if #rawScanResults == 0 then
             line(INFO, "no POI scan this session -- run /dg scan first for widget metadata")
         else
+            local seenName = {}   -- the scan records a delve once per map it appears on
             for _, r in ipairs(rawScanResults) do
-                if r.widgetMeta and #r.widgetMeta > 0 then
+                if r.widgetMeta and #r.widgetMeta > 0 and not seenName[r.name] then
+                    seenName[r.name] = true
                     local parts = {}
                     for _, m in ipairs(r.widgetMeta) do
                         table.insert(parts, string.format("id=%s t=%s tag=%s kit=%s ord=%s", tostring(m.id), tostring(m.type), tostring(m.tag), tostring(m.kit), tostring(m.order)))
@@ -1877,6 +1952,27 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
                 line(INFO, "objective tracker widget set "..tostring(setID)..": "..#widgets.." widget(s)")
                 for _, m in ipairs(widgets) do
                     line(INFO, string.format("  id=%s type=%s text=[%s] tag=%s kit=%s", tostring(m.id), tostring(m.type), tostring(m.text), tostring(m.tag), tostring(m.kit)))
+                end
+            end
+        end
+
+        -- 5b. The scenario step's widget set -- where tier and lives should be.
+        do
+            local setID = GetStepWidgetSetID()
+            report.stepWidgetSetID = setID
+            if not setID then
+                line(INFO, "scenario step widget set: none (not in a scenario?)")
+            else
+                local widgets = DumpWidgetSet(setID)
+                report.stepWidgets = widgets
+                line(INFO, "scenario step widget set "..tostring(setID)..": "..#widgets.." widget(s)")
+                for _, m in ipairs(widgets) do
+                    local keys = {}
+                    for k in pairs(m) do table.insert(keys, k) end
+                    table.sort(keys)
+                    local parts = {}
+                    for _, k in ipairs(keys) do table.insert(parts, k.."="..tostring(m[k])) end
+                    line(INFO, "  "..table.concat(parts, " "))
                 end
             end
         end
