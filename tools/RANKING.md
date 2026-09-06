@@ -47,7 +47,7 @@ used for the contributor credits on the Settings tab.
 
 | Step | Rule | Why |
 |---|---|---|
-| Drop resubmissions | A later code repeating ≥70% of an earlier one's exact entries supersedes it | Codes are full snapshots — counting both double-counts that player |
+| Drop resubmissions | Keep only the **last code per handle**; blank handles fall back to ≥70% exact-entry overlap | Codes are full snapshots — counting both double-counts that player |
 | Tier filter | Ignore any segment below **Tier 8** (`--min-tier 8`) | Times balloon at low tiers; mixing them is meaningless |
 | Run floor | Variant needs **≥3 total runs** (`--min-runs`) | One clear is noise |
 | Player floor | Variant needs **≥4 different submitters** (`--min-submitters`) | Stops one person grading a variant alone, and caps anyone at 1/4 of a grade |
@@ -68,10 +68,16 @@ minutes") would be perfectly stable but need retuning every season as gear
 inflates — exactly how the Voidforge item-level thresholds ended up dead at
 680/700/720. A median anchor rescales itself.
 
-**5. Paste into `DelveGuideData.delves`.** `[Best]` marks the fastest variant of
-each delve that has **≥7 runs**. Variants below the player floor are written as
-`?`, **not** left holding a stale estimate — a gap invites data, a wrong grade
-quietly misleads.
+**5. The block goes back into `DelveGuideData.delves`.** The script regenerates
+the **complete** block from the published one and changes only `ranking`,
+`medianSec` and `players` — `zone`, `mountable`, `hasBug` and `isBestRoute` are
+hand-researched and are copied through untouched. `--write` puts it back in
+place; without it the block prints to stdout. A variant with no data this pass
+keeps its published row verbatim rather than being dropped or blanked.
+
+`[Best]` marks the fastest variant of each delve that has **≥7 runs**. A variant
+that has never cleared the player floor reads `?`, **not** a stale estimate — a
+gap invites data, a wrong grade quietly misleads.
 
 ## Why median and not average
 
@@ -200,11 +206,13 @@ them.
 python tools/aggregate_rankings.py tools/responses.csv --min-tier 8
 ```
 
-Defaults are `--min-runs 3 --min-submitters 4 --stat median --weight players`.
-Output goes to
-stdout: a per-delve ranked table, any variants withheld for too few players,
-unidentified variant names reported by non-English clients, and a Lua snippet to
-merge into `DelveGuideData.delves`.
+Defaults are `--min-runs 3 --min-submitters 4 --stat median --weight players
+--hysteresis 30`. Output goes to stdout: a per-delve ranked table, any grades
+held by hysteresis, any variants withheld for too few players, unidentified
+variant names reported by non-English clients, and the regenerated
+`DelveGuideData.delves` block. Add `--write` to put that block straight into
+`DelveGuide_Data.lua` — it replaces exactly that block and leaves the rest of the
+file, line endings included, byte-for-byte. Diff it before committing.
 
 `tools/responses.csv` and `tools/rankings.txt` are **gitignored** — they contain
 contributor handles.
