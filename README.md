@@ -144,12 +144,25 @@ Roadmap for upcoming features and planned data additions, kept in-game so you ca
 | `/dg companionscan` | Re-scan for the companion reputation faction |
 | `/dg companionfaction <id>` | Manually pin the companion faction ID |
 | `/dg share [channel]` | Share active variants to chat (party/guild/say/raid) |
+| `/dg submit` | Copy your run times to submit for the community rankings |
 | `/dg tier <1-11>` | Manually set the current Delve tier in the HUD |
 | `/dg font <0.6-2.0>` | Main UI font scale |
 | `/dg widgetfont <0.6-2.0>` | Widget-only font scale (independent from main) |
 | `/dg help` | Show all available commands |
 
 > Debug commands available for bug reports and localization fixes: `dump`, `chatdump`, `huddump`, `tierdebug`, `checkdebug`, `specinfo`, `findplaza`.
+
+---
+
+## 🏆 Help rank the delves
+
+The S–F rankings aren't guesswork — they're built from players' own timed runs, and yours can go in too.
+
+1. Run some Delves. DelveGuide times every run automatically.
+2. Type `/dg submit`. It hands you a code, pre-selected — just press Ctrl+C.
+3. Paste the code into the form: **<https://forms.gle/BwrGBZkRmbQdwufN8>**
+
+Only clear times are included — no character or account data. Submitted times are pooled, reduced to a median per variant, and shipped back as the rankings you see in-game. Contributors are credited on the Settings tab.
 
 ---
 
