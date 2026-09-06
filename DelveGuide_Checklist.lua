@@ -163,12 +163,13 @@ DelveGuide.ShowChecklist = function(force)
         -- Draggable. A dragged position is remembered and then wins over the
         -- default anchor (the positioning block further down, run on each show).
         f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
+        local function StopDrag()
+            f:StopMovingOrSizing()
+            DelveGuideDB.checklistX = f:GetLeft()
+            DelveGuideDB.checklistY = f:GetTop() - UIParent:GetHeight()
+        end
         f:SetScript("OnDragStart", f.StartMoving)
-        f:SetScript("OnDragStop", function(self)
-            self:StopMovingOrSizing()
-            DelveGuideDB.checklistX = self:GetLeft()
-            DelveGuideDB.checklistY = self:GetTop() - UIParent:GetHeight()
-        end)
+        f:SetScript("OnDragStop", StopDrag)
         f:SetBackdrop({
             bgFile   = "Interface\\ChatFrame\\ChatFrameBackground",
             edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -189,13 +190,41 @@ DelveGuide.ShowChecklist = function(force)
         -- The "Don't show again this session" box is the suppress.
         closeBtn:SetScript("OnClick", function() f:Hide() end)
 
+        -- Rows are Buttons, not bare FontStrings, so a row's tip can live in a
+        -- GameTooltip on hover (review 1.7). Inline, a long tip wrapped: the
+        -- flute row's is ~160 chars, and a FontString pinned only at its top
+        -- has no height cap, so it grew three or four lines downward over the
+        -- rows below it and into the dismiss checkbox. Same shape as the
+        -- widget's varLines rows.
         f.rows = {}
         for i = 1, 6 do
-            local row = f:CreateFontString(nil, "OVERLAY")
-            row:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 11)
+            local row = CreateFrame("Button", nil, f)
+            row:SetSize(316, 22)
             row:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -(24 + (i-1)*22))
-            row:SetWidth(316)
-            row:SetJustifyH("LEFT")
+            row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestLogTitleHighlight", "ADD")
+
+            local fs = row:CreateFontString(nil, "OVERLAY")
+            fs:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 11)
+            fs:SetAllPoints()
+            fs:SetJustifyH("LEFT")
+            -- One line, always: WoW ellipsises the overflow instead of wrapping.
+            fs:SetWordWrap(false)
+            row.label = fs
+
+            -- The rows cover nearly the whole window, so forward their drags
+            -- or it stops being movable anywhere but its edges.
+            row:RegisterForDrag("LeftButton")
+            row:SetScript("OnDragStart", function() f:StartMoving() end)
+            row:SetScript("OnDragStop", StopDrag)
+
+            row:SetScript("OnEnter", function(self)
+                if not self.tip then return end
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText(self.tipTitle or "")
+                GameTooltip:AddLine(self.tip, 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            row:SetScript("OnLeave", function() GameTooltip:Hide() end)
             f.rows[i] = row
         end
 
@@ -244,10 +273,14 @@ DelveGuide.ShowChecklist = function(force)
                 icon = "|cFFFF8844?|r " 
             end
             local text = icon .. r.label
-            if r.tip then text = text .. "  |cFF888888" .. r.tip .. "|r" end
-            row:SetText(text)
+            -- "(?)" so the hover is discoverable; the tip is the tooltip now.
+            if r.tip then text = text .. "  |cFF888888(?)|r" end
+            row.label:SetText(text)
+            row.tip = r.tip
+            row.tipTitle = r.label
             row:Show()
         else
+            row.tip = nil
             row:Hide()
         end
     end
