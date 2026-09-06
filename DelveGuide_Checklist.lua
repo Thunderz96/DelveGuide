@@ -161,7 +161,7 @@ DelveGuide.ShowChecklist = function(force)
         tinsert(UISpecialFrames, "DelveGuideChecklist")
 
         -- Draggable. A dragged position is remembered and then wins over the
-        -- default anchor; see PositionChecklist.
+        -- default anchor (the positioning block further down, run on each show).
         f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
         f:SetScript("OnDragStart", f.StartMoving)
         f:SetScript("OnDragStop", function(self)
