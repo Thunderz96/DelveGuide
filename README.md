@@ -43,8 +43,9 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 ### ✅ Pre-Entry Checklist
 
 - Triggers automatically when you **target a Delve entrance**
-- Verifies: Coffer Key Shards · Restored Coffer Keys · Bountiful Delve token · Beacon of Hope · **Voidforge weekly progress**
-- Catches you before you waste a Bountiful run with missing keys or unfilled Voidforge shards
+- Verifies: **Coffer Key** (shard count + Restored Coffer Keys) · **Trovehunter's Bounty** (active / in bags but not activated / already used this week) · **Valeera** and her selected role
+- Also flags a **Scalebound Herald's Flute** in your bags, and tells you whether using it will still earn this week's Bounty map
+- Catches you before you waste a Bountiful run with no key, or enter with your Bounty still sitting unactivated in your bags
 
 ### 📦 Compact Widget
 
