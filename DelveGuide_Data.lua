@@ -886,7 +886,7 @@ DelveGuideData.changelog = {
     },
     {
         version = "1.5.1",
-        date    = "2026-03-24",
+        date    = "2026-03-23",
         entries = {
             "Hotfix: Resolved a Lua error that triggered when hovering over protected UI elements with map tooltips enabled."
         }
@@ -1086,6 +1086,27 @@ DelveGuideData.changelog = {
             "Weekly reset timer and Great Vault tracker in the header",
             "Coffer Key shard tracker in the header bar",
             "/dg help command listing all slash commands",
+        },
+    },
+    {
+        version = "1.0.4",
+        date    = "2026-03-14",
+        entries = {
+            "Fixed a crash when dragging the minimap button",
+        },
+    },
+    {
+        version = "1.0.2",
+        date    = "2026-03-14",
+        entries = {
+            "Fixed the minimap button drifting to the wrong spot while you dragged it",
+        },
+    },
+    {
+        version = "1.0.1",
+        date    = "2026-03-13",
+        entries = {
+            "The minimap button now moves with a left-click drag",
         },
     },
     {
