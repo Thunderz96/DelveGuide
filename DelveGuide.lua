@@ -2974,6 +2974,15 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
             local timeStr=elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(elapsed/60),math.floor(elapsed%60)) or ""
             local varLogStr=runVariant and ("  |cFFCCAAFF("..runVariant..")|r") or ""
             print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r"..varLogStr.."  |cFF888888["..tier.."]|r"..vaultStr..timeStr)
+            -- The comparison the Victory toast shows, also in chat as a system
+            -- message so it survives the toast fading (or being turned off).
+            if DelveGuide.GetRunComparison then
+                local cmp = DelveGuide.GetRunComparison(runName, runVariant, elapsed, tierNum, engRunName)
+                if cmp then
+                    local msg = "[DelveGuide] "..runName..": "..cmp
+                    if ChatFrame_DisplaySystemMessageInPrimary then ChatFrame_DisplaySystemMessageInPrimary(msg) else print(msg) end
+                end
+            end
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
             -- TRIGGER THE VICTORY SCREEN!
             if DelveGuide.ShowVictoryScreen then

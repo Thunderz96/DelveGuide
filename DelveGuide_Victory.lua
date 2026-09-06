@@ -3,6 +3,53 @@
 -- ============================================================
 local victoryFrame = nil
 
+-- Personal best and community median for a completed run, as one coloured
+-- line -- or nil when there is nothing honest to say. Only when the tier is
+-- known and 8+, the same floor the published medians use; never compares
+-- across tiers or against a variant with no published median. history[1] is
+-- the run just logged, so prior runs start at index 2. Shared by the Victory
+-- toast and the chat line the completion handler prints.
+DelveGuide.GetRunComparison = function(delveName, variant, elapsed, tierNum, engName)
+    -- Personal best and community median. Only when the tier is known and 8+,
+    -- the same floor the published medians use -- and say nothing rather than
+    -- compare across tiers or against a variant with no published median.
+    -- history[1] is the run just logged, so prior runs start at index 2.
+    local bestLine
+    local tn = tonumber(tierNum)
+    if variant and elapsed and tn and tn >= 8 then
+        local key = engName or delveName
+        local prior
+        if DelveGuideDB and DelveGuideDB.history then
+            for i = 2, #DelveGuideDB.history do
+                local r = DelveGuideDB.history[i]
+                local rt = tonumber(r.tierNum)
+                if r.name == key and r.variant == variant and type(r.elapsed) == "number" and r.elapsed > 0
+                   and rt and rt >= 8 then
+                    if not prior or r.elapsed < prior then prior = r.elapsed end
+                end
+            end
+        end
+        local median
+        if DelveGuideData and DelveGuideData.delves then
+            for _, d in ipairs(DelveGuideData.delves) do
+                if d.name == key and d.variant == variant then median = d.medianSec; break end
+            end
+        end
+        local function fmt(sec) return string.format("%dm %02ds", math.floor(sec / 60), math.floor(sec % 60)) end
+        local parts = {}
+        if prior then
+            if elapsed < prior then
+                table.insert(parts, "|cFF00FF88New personal best!|r |cFF888888(was " .. fmt(prior) .. ")|r")
+            else
+                table.insert(parts, "Your best: |cFF00BFFF" .. fmt(prior) .. "|r")
+            end
+        end
+        if median then table.insert(parts, "Community median: |cFFFFD700" .. fmt(median) .. "|r") end
+        if #parts > 0 then bestLine = table.concat(parts, "  |cFF555555\194\183|r  ") end
+    end
+    return bestLine
+end
+
 -- variant, tierNum and engName are optional (the dev /dg testrun omits them);
 -- without them the comparison line simply does not render.
 DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, variant, tierNum, engName)
@@ -134,43 +181,8 @@ DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, 
         victoryFrame.Vault:SetText("|cFF888888Great Vault progress updated.|r")
     end
 
-    -- Personal best and community median. Only when the tier is known and 8+,
-    -- the same floor the published medians use -- and say nothing rather than
-    -- compare across tiers or against a variant with no published median.
-    -- history[1] is the run just logged, so prior runs start at index 2.
-    local bestLine
-    local tn = tonumber(tierNum)
-    if variant and elapsed and tn and tn >= 8 then
-        local key = engName or delveName
-        local prior
-        if DelveGuideDB and DelveGuideDB.history then
-            for i = 2, #DelveGuideDB.history do
-                local r = DelveGuideDB.history[i]
-                local rt = tonumber(r.tierNum)
-                if r.name == key and r.variant == variant and type(r.elapsed) == "number" and r.elapsed > 0
-                   and rt and rt >= 8 then
-                    if not prior or r.elapsed < prior then prior = r.elapsed end
-                end
-            end
-        end
-        local median
-        if DelveGuideData and DelveGuideData.delves then
-            for _, d in ipairs(DelveGuideData.delves) do
-                if d.name == key and d.variant == variant then median = d.medianSec; break end
-            end
-        end
-        local function fmt(sec) return string.format("%dm %02ds", math.floor(sec / 60), math.floor(sec % 60)) end
-        local parts = {}
-        if prior then
-            if elapsed < prior then
-                table.insert(parts, "|cFF00FF88New personal best!|r |cFF888888(was " .. fmt(prior) .. ")|r")
-            else
-                table.insert(parts, "Your best: |cFF00BFFF" .. fmt(prior) .. "|r")
-            end
-        end
-        if median then table.insert(parts, "Community median: |cFFFFD700" .. fmt(median) .. "|r") end
-        if #parts > 0 then bestLine = table.concat(parts, "  |cFF555555\194\183|r  ") end
-    end
+    local bestLine = DelveGuide.GetRunComparison(delveName, variant, elapsed, tierNum, engName)
+
     if bestLine then
         victoryFrame.Best:SetText(bestLine); victoryFrame.Best:Show()
     else
