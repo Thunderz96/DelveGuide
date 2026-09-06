@@ -2319,12 +2319,17 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     elseif msg=="exportclear" then
         DelveGuideDB.ptrExports = nil
         print("|cFF00BFFF[DelveGuide]|r Export snapshots cleared.")
+    -- Tab aliases OPEN the window; they used to Toggle it, so running one
+    -- twice in a row just closed the guide again.
     elseif msg=="roster" then
-        DelveGuide.Toggle(); SwitchTab("roster")
+        if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+        SwitchTab("roster")
     elseif msg=="voidforge" or msg=="forge" then
-        DelveGuide.Toggle(); SwitchTab("voidforge")
+        if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+        SwitchTab("voidforge")
     elseif msg=="quests" or msg=="journey" then
-        DelveGuide.Toggle(); SwitchTab("quests")
+        if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+        SwitchTab("quests")
     elseif msg=="questscan" then
         if DelveGuide.ScanDelversCallQuests then DelveGuide.ScanDelversCallQuests() end
     elseif msg=="submit" or msg=="rank" then
