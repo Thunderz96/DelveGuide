@@ -254,3 +254,5 @@ aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's
 | 2026-09-05 | **A1, A2, A3, A4, A5** | Track A complete; A2/A3 await PTR check |
 | 2026-09-05 | **E2** native waypoint, **E5** Victory comparison row, **D3** Labyrinth observation log | E5 hides its row below tier 8 or with no median |
 | 2026-09-05 | **Phase 0** merged (branch `phase0`, 9 commits) | review's "~15 missing changelog versions" was 3; 0.12 found no fifth Atal'Aman variant; `.pkgmeta` `manual-changelog` decision still Nick's |
+| 2026-09-05 | **E4** reload-safe run record, dedupe guard, per-player median; **D2 scaffold** (gated on `finalEncounterID`, unknown on `[PH]`) | Labyrinth rows count toward the weekly vault tally via `history` |
+| 2026-09-05 | **Phase 1a** merged (branch `phase1a`, 8 commits, 23 tests) | ⚠️ 4 grade moves NOT applied — Nick's call; below-floor rows kept verbatim (agent's non-destructive reading of RANKING.md step 5) — Nick's call |
