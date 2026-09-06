@@ -2639,28 +2639,9 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
             print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg share [party|guild|say|raid]|r")
             return
         end
-        -- Build sorted active variant list (same pattern as compact widget)
-        local entries, seen = {}, {}
-        if DelveGuideData and DelveGuideData.delves then
-            for _, d in ipairs(DelveGuideData.delves) do
-                if activeVariants[d.variant] and not seen[d.variant] then
-                    seen[d.variant] = true
-                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
-                end
-            end
-        end
-        if #entries == 0 then
-            print("|cFF00BFFF[DelveGuide]|r No active variants found. Try |cFFFFFF00/dg scan|r first.")
-            return
-        end
-        table.sort(entries, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
-        SendChatMessage("[DelveGuide] Today's Active Delves:", channel)
-        for _, e in ipairs(entries) do
-            local ds = activeDelves[e.delve]
-            local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
-            SendChatMessage(string.format("  [%s] %s (%s)%s", e.ranking, e.variant, e.delve, bountyTag), channel)
-        end
-        print("|cFF00BFFF[DelveGuide]|r Shared "..#entries.." variants to |cFFFFFF00"..channel.."|r")
+        -- Group/guild checks, list building, line packing and sending all live
+        -- in one place now (DelveGuide_Widget.lua) -- shared with both buttons.
+        DelveGuide.ShareActiveVariants(channel)
     else DelveGuide.Toggle() end
 end
 

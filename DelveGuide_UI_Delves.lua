@@ -335,29 +335,7 @@ DelveGuide.RenderDelves = function()
     shareBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     shareBtn:SetScript("OnClick", function(_, button)
         local channel = (button == "RightButton") and "GUILD" or "PARTY"
-        local av = DelveGuide.activeVariants or {}
-        local ad = DelveGuide.activeDelves or {}
-        local entries, seen = {}, {}
-        if DelveGuideData and DelveGuideData.delves then
-            for _, d in ipairs(DelveGuideData.delves) do
-                if av[d.variant] and not seen[d.variant] then
-                    seen[d.variant] = true
-                    table.insert(entries, {variant=d.variant, ranking=d.ranking, delve=d.name})
-                end
-            end
-        end
-        if #entries == 0 then
-            print("|cFF00BFFF[DelveGuide]|r No active variants to share. Try |cFFFFFF00/dg scan|r first.")
-            return
-        end
-        table.sort(entries, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
-        SendChatMessage("[DelveGuide] Today's Active Delves:", channel)
-        for _, e in ipairs(entries) do
-            local ds = ad[e.delve]
-            local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
-            SendChatMessage(string.format("  [%s] %s (%s)%s", e.ranking, e.variant, e.delve, bountyTag), channel)
-        end
-        print("|cFF00BFFF[DelveGuide]|r Shared "..#entries.." variants to |cFFFFFF00"..channel.."|r")
+        DelveGuide.ShareActiveVariants(channel)
     end)
     shareBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
