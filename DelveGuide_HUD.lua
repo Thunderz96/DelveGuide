@@ -628,6 +628,25 @@ end
 
 -- ── shared state evaluation ──────────────────────────────────
 -- One authority for "are we in a delve, is the run timed, is the tier known".
+-- The variant of the delve the player is standing in, from the outdoor scan
+-- cache the HUD already uses. Captured into DelveGuideDB.activeRun when a run
+-- starts, because a /reload inside the instance empties that cache and the
+-- completion handler then logged the run with no variant -- a row that can
+-- never reach the rankings. The persisted copy survives the reload.
+local function CurrentRunVariant()
+    local variant
+    pcall(function()
+        local zone = GetRealZoneText() or ""
+        local l10n = DelveGuide and DelveGuide.localizedToEnglish
+        local eng = (l10n and l10n[zone]) or zone
+        local av = (DelveGuide and DelveGuide.activeVariants) or {}
+        for _, d in ipairs((DelveGuideData and DelveGuideData.delves) or {}) do
+            if d.name == eng and av[d.variant] then variant = d.variant; break end
+        end
+    end)
+    return variant
+end
+
 -- Called both from zone events (immediate response) and from a watchdog ticker
 -- (recovery), so a mistimed single read can never strand the HUD or the timer.
 local function EvaluateDelveState()
@@ -658,9 +677,15 @@ local function EvaluateDelveState()
                 DelveGuide.runStartTime = GetTime()
                 DelveGuide.runResumed   = nil
                 if DelveGuideDB then
-                    DelveGuideDB.activeRun = { startEpoch = time(), instanceID = instanceID }
+                    DelveGuideDB.activeRun = { startEpoch = time(), instanceID = instanceID, variant = CurrentRunVariant() }
                 end
             end
+        end
+        -- The variant may not resolve on the very first tick after entry; keep
+        -- trying while the run is live until it does.
+        do
+            local ar = DelveGuideDB and DelveGuideDB.activeRun
+            if ar and not ar.variant then ar.variant = CurrentRunVariant() end
         end
         UpdateHUD()
     else

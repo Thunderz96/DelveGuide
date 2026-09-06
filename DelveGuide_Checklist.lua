@@ -155,8 +155,20 @@ DelveGuide.ShowChecklist = function(force)
     if not checklistFrame then
         local f = CreateFrame("Frame", "DelveGuideChecklist", UIParent, "BackdropTemplate")
         f:SetSize(340, 160)
-        f:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
         f:SetFrameStrata("DIALOG")
+        -- ESC closes it like every other window (review 1.15). Needs the
+        -- frame's GLOBAL name, which is why it has one.
+        tinsert(UISpecialFrames, "DelveGuideChecklist")
+
+        -- Draggable. A dragged position is remembered and then wins over the
+        -- default anchor; see PositionChecklist.
+        f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
+        f:SetScript("OnDragStart", f.StartMoving)
+        f:SetScript("OnDragStop", function(self)
+            self:StopMovingOrSizing()
+            DelveGuideDB.checklistX = self:GetLeft()
+            DelveGuideDB.checklistY = self:GetTop() - UIParent:GetHeight()
+        end)
         f:SetBackdrop({
             bgFile   = "Interface\\ChatFrame\\ChatFrameBackground",
             edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -201,6 +213,19 @@ DelveGuide.ShowChecklist = function(force)
         cblbl:SetText("|cFF888888Don't show again this session|r")
 
         checklistFrame = f
+    end
+
+    -- Where to put it, each time it shows. A position the user dragged to
+    -- wins. Otherwise sit just above the delve entrance dialog, which is the
+    -- thing the checklist is about and what it used to cover when it opened
+    -- dead-centre. With no dialog on screen (/dg check), centre it.
+    checklistFrame:ClearAllPoints()
+    if DelveGuideDB.checklistX and DelveGuideDB.checklistY then
+        checklistFrame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", DelveGuideDB.checklistX, DelveGuideDB.checklistY)
+    elseif DelvesDifficultyPickerFrame and DelvesDifficultyPickerFrame:IsShown() then
+        checklistFrame:SetPoint("BOTTOM", DelvesDifficultyPickerFrame, "TOP", 0, 8)
+    else
+        checklistFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
     end
 
     local results = RunChecklistScan()

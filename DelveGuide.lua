@@ -2947,6 +2947,12 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
             -- The run is over: drop the persisted start so it cannot resume.
             local runResumed = DelveGuide.runResumed or nil
             DelveGuide.runResumed = nil
+            -- After a /reload the outdoor scan cache is empty and runVariant
+            -- above came back nil; the run record captured the variant when
+            -- the timer started, so take it from there.
+            if not runVariant and DelveGuideDB.activeRun and DelveGuideDB.activeRun.variant then
+                runVariant = DelveGuideDB.activeRun.variant
+            end
             DelveGuideDB.activeRun = nil
             table.insert(DelveGuideDB.history,1,{name=engRunName,locName=locName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier=tier,tierNum=tierNum,vaultIlvl=vaultIlvl,char=charName,realm=charRealm,bountiful=runBountiful,elapsed=elapsed,variant=runVariant,resumed=runResumed})
             -- 50 was too tight for an account running several alts each week --
