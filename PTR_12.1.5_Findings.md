@@ -467,10 +467,13 @@ entry anywhere:
 So this is **blocked on Blizzard**, not on finding the right API. Consistent with the
 placeholder state in 5.2a.
 
-`Delves: Season 2` is equally invisible, which is the part that matters beyond this patch:
-it is a faction the addon already depends on, so **any code that enumerates reputations to
-find a Delve faction is working from an incomplete list on 12.1.5**. That much is worth
-handling regardless of whether Kindo'jan ever gets an entry.
+`Delves: Season 2` is equally invisible to the enumeration. **Correction (2026-09-05, next
+day):** an earlier version of this section said this affected shipped code. It does not.
+Every `GetNumFactions` / `GetFactionDataByIndex` call in the addon lives inside the
+`/dg export` debug block; shipped paths use `GetFactionDataByID`, `GetFriendshipReputation`
+and `GetMajorFactionData`, all ID-based, and the addon does not track the Delves: Season 2
+faction at all. The constraint is real for any *future* reputation feature — enumerate
+nothing, query by ID — but nothing live is broken by it.
 
 Re-test on a later build. `/dg export` captures the enumeration, an ID sweep, major factions
 and the watched faction, so a single export will show the moment it lands.
