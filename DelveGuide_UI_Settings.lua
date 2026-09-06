@@ -224,6 +224,44 @@ DelveGuide.RenderSettings = function()
         y = y + UI.CreateRow(cf, y, "|cFF888888Submit your own times and your name lands here next update.|r") + 4
     end
 
+    -- ---- About / Links ----
+    y = y + 8
+    y = y + UI.CreateHeader(cf, y, "About") + 6
+
+    local version = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata("DelveGuide", "Version"))
+        or (GetAddOnMetadata and GetAddOnMetadata("DelveGuide", "Version")) or "?"
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCCVersion |cFFFFFFFF" .. version .. "|r|cFFCCCCCC by |r|cFFFFD700Thunderz|r") + 8
+
+    -- Links live in edit boxes so they can actually be copied out of the game
+    -- (Ctrl+C), the same trick the /dg submit popup uses. Typing in one just
+    -- puts the link back.
+    local function MakeLinkRow(label, url)
+        local lbl = cf:CreateFontString(nil, "OVERLAY")
+        lbl:SetFont(ROW_FONT_FILE, rSize)
+        lbl:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -(y + 4))
+        lbl:SetWidth(110); lbl:SetJustifyH("LEFT")
+        lbl:SetText("|cFFAAAAAA" .. label .. "|r")
+
+        local eb = CreateFrame("EditBox", nil, cf, "InputBoxTemplate")
+        eb:SetSize(330, 20)
+        eb:SetPoint("TOPLEFT", cf, "TOPLEFT", 126, -y)
+        eb:SetAutoFocus(false)
+        eb:SetText(url)
+        eb:SetCursorPosition(0)
+        eb:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
+        eb:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+        eb:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+        eb:SetScript("OnTextChanged", function(self, userInput)
+            if userInput then self:SetText(url); self:HighlightText() end
+        end)
+        y = y + 26
+    end
+
+    MakeLinkRow("GitHub", "https://github.com/Thunderz96/DelveGuide")
+    MakeLinkRow("CurseForge", "https://www.curseforge.com/wow/addons/delveguide")
+    -- Same form /dg submit points at (SUBMIT_URL in DelveGuide.lua).
+    MakeLinkRow("Rankings form", "https://forms.gle/BwrGBZkRmbQdwufN8")
+
     cf:SetHeight(y + 20)
 end
 
