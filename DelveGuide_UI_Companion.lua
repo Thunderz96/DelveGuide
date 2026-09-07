@@ -290,14 +290,19 @@ local CURIO_TYPES = {
 -- companionID plus the trait config that holds her nodes. Returns nil when
 -- there is no active companion, and companionID with no config when the trait
 -- lookup is unavailable.
-local function GetCompanionConfig()
-    if not C_DelvesUI then return nil end
+local function NoSay() end
+local function GetCompanionConfig(say)
+    say = say or NoSay
+    if not C_DelvesUI then say("C_DelvesUI missing"); return nil end
     local compID = TryCall(C_DelvesUI.GetCompanionInfoForActivePlayer)
+    say("GetCompanionInfoForActivePlayer ->", compID)
     if type(compID) ~= "number" or compID <= 0 then return nil end
-    if not C_Traits then return compID end
+    if not C_Traits then say("C_Traits missing"); return compID end
     local treeID = TryCall(C_DelvesUI.GetTraitTreeForCompanion, compID)
+    say("GetTraitTreeForCompanion ->", treeID, "(", type(C_DelvesUI.GetTraitTreeForCompanion), ")")
     if type(treeID) ~= "number" or treeID <= 0 then return compID end
     local configID = TryCall(C_Traits.GetConfigIDByTreeID, treeID)
+    say("GetConfigIDByTreeID ->", configID, "(", type(C_Traits.GetConfigIDByTreeID), ")")
     if type(configID) ~= "number" or configID <= 0 then return compID end
     return compID, configID
 end
@@ -335,16 +340,22 @@ end
 --     role   = { entryID, spellID, name, subTreeID, roleType, roleLabel },
 --     curios = { Combat = {...}, Utility = {...} } }
 -- In-game check:  /dump DelveGuide.ReadCompanionLoadout()
-function DelveGuide.ReadCompanionLoadout()
-    local compID, configID = GetCompanionConfig()
-    if not (compID and configID and C_Traits and C_Traits.GetNodeInfo) then return nil end
+-- Pass true to print every step to chat; the first PTR call returned nil with
+-- nothing to say about why. /run DelveGuide.ReadCompanionLoadout(true)
+function DelveGuide.ReadCompanionLoadout(verbose)
+    local say = verbose and function(...) print("|cFF00BFFF[DelveGuide]|r", ...) end or NoSay
+    local compID, configID = GetCompanionConfig(say)
+    say("GetNodeInfo:", type(C_Traits and C_Traits.GetNodeInfo))
+    if not (compID and configID and C_Traits and C_Traits.GetNodeInfo) then say("-> nil: no config"); return nil end
 
     local out = { companionID = compID, configID = configID, curios = {} }
 
     -- Role. The active entry carries the subtree it belongs to, and
     -- GetRoleSubtreeForCompanion names one subtree per role, so the role falls
     -- out of an ID compare -- no client string at any step.
-    local roleEntry = ReadActiveEntry(configID, TryCall(C_DelvesUI.GetRoleNodeForCompanion, compID))
+    local roleNode = TryCall(C_DelvesUI.GetRoleNodeForCompanion, compID)
+    local roleEntry = ReadActiveEntry(configID, roleNode)
+    say("role node", roleNode, "entry", roleEntry and roleEntry.entryID, "subTree", roleEntry and roleEntry.subTreeID, "name", roleEntry and roleEntry.name)
     if roleEntry then
         for _, r in ipairs(ROLE_TYPES) do
             local roleType  = EnumValue("CompanionRoleType", r.key, r.fallback)
@@ -362,9 +373,11 @@ function DelveGuide.ReadCompanionLoadout()
         local curioType = EnumValue("CurioType", c.key, c.fallback)
         local nodeID    = TryCall(C_DelvesUI.GetCurioNodeForCompanion, curioType, compID)
         out.curios[c.label] = ReadActiveEntry(configID, nodeID)
+        local e = out.curios[c.label]
+        say(c.label, "type", curioType, "node", nodeID, "entry", e and e.entryID, "spell", e and e.spellID, "name", e and e.name)
     end
 
-    if not (out.role or out.curios.Combat or out.curios.Utility) then return nil end
+    if not (out.role or out.curios.Combat or out.curios.Utility) then say("-> nil: no role and no curio read"); return nil end
     return out
 end
 

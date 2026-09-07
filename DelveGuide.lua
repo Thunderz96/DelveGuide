@@ -131,7 +131,7 @@ end
 -- popup has never been shown. windowX/windowY/widgetX/widgetY likewise: nil is
 -- "never moved", and the frames fall back to their own placement.
 -- ============================================================
-local DB_VERSION = 3
+local DB_VERSION = 4
 
 local DEFAULTS = {
     minimapAngle        = 225,
@@ -257,6 +257,24 @@ local MIGRATIONS = {
             end
         end
     end,
+
+    -- Week keys were floored until 2.0 and are rounded since (review 3.7).
+    -- A row written inside the jitter window carries a key one hour off the
+    -- grid, and History then shows the same week twice with the old rows in
+    -- one group and new rows in the other (seen on the PTR, 2026-09-07). Snap
+    -- every row onto the grid the current reset defines: any key within half
+    -- a week of a boundary lands on that boundary. Needs the reset API; if it
+    -- is not answering yet, return false so the version stamp is withheld and
+    -- this runs again next load.
+    [4] = function(db)
+        local cur = DelveGuide.GetResetKey and DelveGuide.GetResetKey()
+        if not cur then return false end
+        for _, run in ipairs(db.history or {}) do
+            if type(run.resetKey) == "number" then
+                run.resetKey = cur - 604800 * math.floor((cur - run.resetKey) / 604800 + 0.5)
+            end
+        end
+    end,
 }
 
 local function InitSavedVars()
@@ -272,11 +290,15 @@ local function InitSavedVars()
     if freshInstall then
         DelveGuideDB.dbVersion = DB_VERSION
     else
-        for v = (DelveGuideDB.dbVersion or 1) + 1, DB_VERSION do
+        -- A migration may return false to say "not yet" (an API it needs is
+        -- not answering); the stamp then stops before it and it re-runs next load.
+        local reached = DelveGuideDB.dbVersion or 1
+        for v = reached + 1, DB_VERSION do
             local migrate = MIGRATIONS[v]
-            if migrate then migrate(DelveGuideDB) end
+            if migrate and migrate(DelveGuideDB) == false then break end
+            reached = v
         end
-        DelveGuideDB.dbVersion = DB_VERSION
+        DelveGuideDB.dbVersion = reached
     end
 
     -- checklistDismissed is session-only; reset on every load. Deliberately not
@@ -958,7 +980,11 @@ local function GradeColor(g) return (DelveGuideData.gradeColors[g] or "|cFFFFFFF
 local zoneColors={["Zul'Aman"]="|cFFFF8C00",["Quel'Thalas"]="|cFF00CED1",["Voidstorm"]="|cFFBF5FFF",["Harandar"]="|cFF7FFF00",["Quel'Danas"]="|cFFFF69B4",["The Coiled Isle"]="|cFF1E90FF"}
 local function ZoneColor(z) return (zoneColors[z] or "|cFFCCCCCC")..z.."|r" end
 local typeColors={Combat="|cFFFF4444",Utility="|cFF44AAFF"}
-local RANK_COLORS={S="|cFF00FF44",A="|cFF66FF44",B="|cFFAAFF44",C="|cFFFFFF44",D="|cFFFF8844",F="|cFFFF4444"}
+-- Widget / Settings palette. A red-to-green gradient, kept separate from
+-- DelveGuideData.gradeColors because the HUD's green highlight block swallowed
+-- a green S there. The S itself now takes the Delves tab's colour so the top
+-- grade reads the same everywhere (Nick, 2026-09-07).
+local RANK_COLORS={S=(DelveGuideData and DelveGuideData.gradeColors and DelveGuideData.gradeColors.S) or "|cFFFF8000",A="|cFF66FF44",B="|cFFAAFF44",C="|cFFFFFF44",D="|cFFFF8844",F="|cFFFF4444"}
 local function TypeColor(t) return (typeColors[t] or "|cFFFFFFFF")..t.."|r" end
 
 -- UID of the waypoint WE set, so we can clear it before setting the next one.
@@ -2696,8 +2722,12 @@ DelveGuide.commands = {
             -- DEV ONLY: simulate a delve completion for the first delve in the DB
             local testName = DelveGuideData and DelveGuideData.delves and DelveGuideData.delves[1] and DelveGuideData.delves[1].name or "Test Delve"
             local resetKey = DelveGuide.GetResetKey()
-            local testChar="Unknown"; pcall(function() testChar=UnitName("player") or "Unknown" end)
-            table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar,elapsed=312})
+            local testChar, testRealm = "Unknown", nil
+            pcall(function() testChar=UnitName("player") or "Unknown" end)
+            pcall(function() testRealm=GetRealmName() end)
+            -- realm included: History and Roster key characters as name-realm, so
+            -- a row without it counted as a second character (PTR, 2026-09-07).
+            table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar,realm=testRealm,elapsed=312})
             print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run - |cFF00FF44"..testName.."|r")
             -- TRIGGER THE VICTORY SCREEN FOR THE TEST RUN!
             if DelveGuide.ShowVictoryScreen then
@@ -3413,10 +3443,6 @@ local function InjectDelveData(self)
         local gradeText = DelveGuide.UI and DelveGuide.UI.GradeColor(ranking) or ("|cFFFFFFFF" .. ranking .. "|r")
         self:AddLine(L["Speed Grade:"] .. " " .. gradeText .. "  " .. flags)
 
-        local minT = (DelveGuide.Voidforge and DelveGuide.Voidforge.MIN_VOIDCORE_TIER) or 8
-        -- Voidcores do not drop from delves; T8+ is where the end-of-run loot
-        -- hits the max pool, which is what makes a bonus roll there worthwhile.
-        self:AddLine("|cFFAA66CC" .. string.format(L["T%d+: max-ilvl loot -- worth a Voidcore bonus roll"], minT) .. "|r")
 
         self:Show()
     end
