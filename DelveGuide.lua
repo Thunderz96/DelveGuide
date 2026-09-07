@@ -1788,19 +1788,18 @@ local function UpdateLDBText()
     -- Shards
     local shards = 0
     pcall(function()
-        local info = C_CurrencyInfo.GetCurrencyInfo(3310)
+        local info = C_CurrencyInfo.GetCurrencyInfo(DelveGuideData.cofferKeys.SHARD_CURRENCY_ID)
         if info then shards = info.quantity or 0 end
     end)
 
     -- Best active variant
     local bestVariant, bestRank = nil, 99
-    local rankOrder = {S=1, A=2, B=3, C=4, D=5, F=6}
     if DelveGuideData and DelveGuideData.delves then
         local seen = {}
         for _, d in ipairs(DelveGuideData.delves) do
             if activeVariants[d.variant] and not seen[d.variant] then
                 seen[d.variant] = true
-                local r = rankOrder[d.ranking] or 99
+                local r = RANK_ORDER[d.ranking] or 99
                 if r < bestRank then bestRank = r; bestVariant = d.variant; end
             end
         end
@@ -1812,7 +1811,7 @@ local function UpdateLDBText()
 
     -- Format
     local parts = {}
-    table.insert(parts, string.format("Keys: %d/600", shards))
+    table.insert(parts, string.format("Keys: %d/%d", shards, DelveGuideData.cofferKeys.SHARD_WEEKLY_CAP))
     if bestVariant then
         local gradeLetter = "?"
         for letter, order in pairs(rankOrder) do if order == bestRank then gradeLetter = letter; break end end
@@ -3026,7 +3025,7 @@ loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
 loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
-        InitSavedVars(); SeedLocalizedNames(); DelveGuideDB.minimap.showInCompartment = true; icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
+        InitSavedVars(); SeedLocalizedNames(); if DelveGuideDB.minimap.showInCompartment == nil then DelveGuideDB.minimap.showInCompartment = true end; icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
         print("|cFF00BFFF[DelveGuide]|r Loaded! |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
         self:UnregisterEvent("ADDON_LOADED")
     elseif event=="PLAYER_ENTERING_WORLD" then

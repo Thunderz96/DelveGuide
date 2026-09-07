@@ -322,7 +322,7 @@ for _, cmd in ipairs({
                         if r:GetObjectType() == "FontString" and r:IsShown() then
                             local txt = r:GetText()
                             if txt and txt ~= "" then
-                                local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn[%w_]+:", ""):gsub("|r", "")
+                                local cleanTxt = DelveGuide.StripEscapes(txt)
                                 print("  ["..depth.."] " .. cleanTxt)
                             end
                         end
@@ -347,7 +347,10 @@ for _, cmd in ipairs({
             print("  companionID: " .. tostring(id))
             if id and id > 0 then
                 for roleType, roleName in pairs({[0]="DPS",[1]="Heal",[2]="Tank"}) do
-                    local node    = C_DelvesUI.GetRoleNodeForCompanion    and C_DelvesUI.GetRoleNodeForCompanion(roleType, id)
+                    -- GetRoleNodeForCompanion takes the companion ID alone (one role
+                    -- node per companion); the old (roleType, id) call looked up
+                    -- companion 0, 1 and 2 instead.
+                    local node    = C_DelvesUI.GetRoleNodeForCompanion    and C_DelvesUI.GetRoleNodeForCompanion(id)
                     local subtree = C_DelvesUI.GetRoleSubtreeForCompanion and C_DelvesUI.GetRoleSubtreeForCompanion(roleType, id)
                     print(string.format("  %s: node=%s  subtree=%s", roleName, tostring(node), tostring(subtree)))
                 end
@@ -400,7 +403,10 @@ for _, cmd in ipairs({
             -- Dump every field of the delve currencies so season-scoped vs lifetime
             -- totals can be told apart (the in-game tooltip shows both).
             print("|cFF00BFFF[DelveGuide]|r === Currency Fields ===")
-            local ids = { 3418, 3513, 3310, 3028 }
+            -- 3513 is the ID the addon used for the Voidcore before 3418 was
+            -- confirmed; kept so the two can be told apart in the output.
+            local ids = { DelveGuide.Voidforge.NEBULOUS_CURRENCY_ID, 3513,
+                          DelveGuideData.cofferKeys.SHARD_CURRENCY_ID, DelveGuideData.cofferKeys.RESTORED_CURRENCY_ID }
             for _, id in ipairs(ids) do
                 local ok, info = pcall(C_CurrencyInfo.GetCurrencyInfo, id)
                 if ok and info then
