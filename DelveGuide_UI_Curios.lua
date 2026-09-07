@@ -1,18 +1,13 @@
 local UI = DelveGuide.UI
 
-local function GetSpecRec()
-    local idx = GetSpecialization and GetSpecialization()
-    if not idx then return nil end
-    local specID = select(1, GetSpecializationInfo(idx))
-    if not specID then return nil end
-    return DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID], specID
-end
-
 DelveGuide.RenderCurios = function()
     local cf=UI.NewContentFrame(); local y=10
     UI.EnsureFontFiles(); local _,_,rH=UI.GetScaledSizes()
 
-    local rec, specID = GetSpecRec()
+    -- Shared with the Companion and Nemesis tabs. Called, not bound to a local:
+    -- this file loads BEFORE DelveGuide_UI_Companion.lua, which is where
+    -- UI.GetSpecRec is defined, so it only exists by render time.
+    local rec, specID = UI.GetSpecRec()
     y=y+UI.CreateHeader(cf,y,"Curios & Poisons  --  Season 2")+4
     y=y+UI.CreateRow(cf,y,"|cFF888888Season 2 rotated the curio set -- last season's curios are gone. Rankings show [?] until the meta settles; the description tells you what each does.|r")+6
 
