@@ -7,7 +7,7 @@ Chat, `/dg submit`. This file is the replacement, built from README.md after Pha
 it. Paste the **Description** block into the CurseForge project description; the two short
 blocks after it are for the gallery captions and the comment thread.
 
-Before pasting at release: replace `«N»` / `«V»` with the figures in
+Figures below (102 players / 40 variants) are from the 2026-09-07 rankings pass, matching
 `DelveGuideData.rankingStats` (99 / 39 at the time of writing — the corrected aggregator
 produces 97 if its four grade moves are published) and confirm the Interface line.
 
@@ -18,7 +18,7 @@ produces 97 if its four grade moves are published) and confirm the Interface lin
 **DelveGuide — the in-game reference for Midnight Delves, with rankings measured from real runs.**
 
 Every other delve addon tells you what a variant *is*. DelveGuide tells you how *fast* it is:
-the S–F grades come from **«N» players' timed runs across «V» variants**, submitted with one
+the S–F grades come from **102 players' timed runs across 40 variants**, submitted with one
 command and reduced to a median per variant. Not guesswork, not the author's opinion —
 measured, and refreshed every release.
 

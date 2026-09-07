@@ -127,10 +127,10 @@ DelveGuideData.delves = {
 -- (handles come from the submission form; anonymous entries excluded).
 -- ============================================================
 DelveGuideData.rankingStats = {
-    submissions = 99,   -- total submissions in this data pass
-    variants    = 39,   -- variants with enough Tier 8+ data to rank
-    runs        = 2463,  -- every timed run submitted (all tiers)
-    updated     = "2026-09-03",
+    submissions = 102,   -- total submissions in this data pass
+    variants    = 40,   -- variants with enough Tier 8+ data to rank
+    runs        = 2688,  -- every timed run submitted (all tiers)
+    updated     = "2026-09-07",
     -- Headline figures for the History tab's community block. Regenerated with
     -- the rankings; keep them in step or the tab will contradict the table.
     mostRun     = "Ogre Powered",
