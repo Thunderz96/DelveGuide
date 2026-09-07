@@ -210,6 +210,180 @@ local function GetCompanionRenown()
     return result
 end
 
+-- ============================================================
+-- LIVE LOADOUT -- read from Valeera's trait nodes (12.1)
+-- ------------------------------------------------------------
+-- What this replaces. RenderCompanion used to learn the equipped role and
+-- curios by walking Blizzard's DelvesCompanionConfigurationFrame and comparing
+-- every FontString it found against fixed strings (that scrape is still below,
+-- as the fallback). Two things were wrong with it:
+--
+--   * It preferred a child named `CompanionConfigInfo`, which does not exist.
+--     The frame's direct children on 12.1.5 are Border, CloseButton,
+--     CompanionPortraitFrame, CompanionExperienceRingFrame,
+--     CompanionLevelFrame, CompanionInfoFrame, CompanionSlots and
+--     CompanionConfigShowAbilitiesButton -- so that branch was dead code and
+--     the walk always started at the whole frame instead.
+--   * Every match was an English literal ("Healer", "DPS", "Tank", plus curio
+--     names out of DelveGuideData). On a deDE/frFR/ruRU/zhCN client nothing
+--     ever matched: the role stayed "Unknown" and no curio was detected. It
+--     also only worked while Blizzard's panel happened to be open on screen.
+--
+-- The node path below is exactly what Blizzard's own panel does
+-- (Blizzard_DelvesCompanionConfiguration.lua): companion -> trait tree ->
+-- config -> node -> activeEntry -> entry -> definition -> spell. It is
+-- READ-ONLY -- nothing here writes to a trait configuration, so none of the
+-- taint exposure a write path would carry -- and it is locale independent,
+-- because what we compare on is a spell ID, not a name.
+--
+-- Every call is existence-checked and pcall wrapped. On a build where any of
+-- them is missing the whole thing returns nil and the scrape runs as before.
+--
+-- API provenance (all verified against the 12.1.5 / build 69594 generated docs
+-- in Gethe/wow-ui-source `ptr`, the same source as API_12.1.5_Research.md):
+--   C_DelvesUI.GetCompanionInfoForActivePlayer()          -> companionID
+--   C_DelvesUI.GetTraitTreeForCompanion(companionID)      -> treeID
+--   C_DelvesUI.GetRoleNodeForCompanion(companionID)       -> nodeID
+--   C_DelvesUI.GetRoleSubtreeForCompanion(roleType, cID)  -> subTreeID
+--   C_DelvesUI.GetCurioNodeForCompanion(curioType, cID)   -> nodeID
+--   C_Traits.GetConfigIDByTreeID / GetNodeInfo / GetEntryInfo / GetDefinitionInfo
+--   C_Spell.GetSpellName(spellID)
+-- Note GetRoleNodeForCompanion takes the companion ID ALONE, and
+-- GetCurioNodeForCompanion takes the curio type FIRST.
+-- ============================================================
+
+local function TryCall(fn, ...)
+    if type(fn) ~= "function" then return nil end
+    local ok, v = pcall(fn, ...)
+    if ok then return v end
+    return nil
+end
+
+-- Enum.CompanionRoleType = { Dps=0, Heal=1, Tank=2 } and
+-- Enum.CurioType = { Combat=0, Utility=1 } on build 69594. Read from Enum when
+-- it is there so a re-numbering follows the client; the observed values are the
+-- fallback for a build that does not expose the enum.
+local function EnumValue(enumName, key, fallback)
+    local e = Enum and Enum[enumName]
+    local v = e and e[key]
+    if type(v) == "number" then return v end
+    return fallback
+end
+
+-- `label` is OUR word for the role and matches
+-- DelveGuideData.specCurioRecs[*].companion, so the recommendation compare in
+-- RenderCompanion never touches a client string.
+local ROLE_TYPES = {
+    { key = "Dps",  label = "Damage Dealer", fallback = 0 },
+    { key = "Heal", label = "Healer",        fallback = 1 },
+    { key = "Tank", label = "Tank",          fallback = 2 },
+}
+
+-- `label` matches DelveGuideData.curios[*].curiotype.
+local CURIO_TYPES = {
+    { key = "Combat",  label = "Combat",  fallback = 0 },
+    { key = "Utility", label = "Utility", fallback = 1 },
+}
+
+-- companionID plus the trait config that holds her nodes. Returns nil when
+-- there is no active companion, and companionID with no config when the trait
+-- lookup is unavailable.
+local function GetCompanionConfig()
+    if not C_DelvesUI then return nil end
+    local compID = TryCall(C_DelvesUI.GetCompanionInfoForActivePlayer)
+    if type(compID) ~= "number" or compID <= 0 then return nil end
+    if not C_Traits then return compID end
+    local treeID = TryCall(C_DelvesUI.GetTraitTreeForCompanion, compID)
+    if type(treeID) ~= "number" or treeID <= 0 then return compID end
+    local configID = TryCall(C_Traits.GetConfigIDByTreeID, treeID)
+    if type(configID) ~= "number" or configID <= 0 then return compID end
+    return compID, configID
+end
+
+-- What is socketed in one node right now, or nil for an empty/unreadable node.
+local function ReadActiveEntry(configID, nodeID)
+    if type(nodeID) ~= "number" or nodeID <= 0 then return nil end
+    local nodeInfo = TryCall(C_Traits.GetNodeInfo, configID, nodeID)
+    local activeEntry = nodeInfo and nodeInfo.activeEntry
+    local entryID = activeEntry and activeEntry.entryID
+    if type(entryID) ~= "number" then return nil end
+
+    local out = { entryID = entryID }
+    local entryInfo = TryCall(C_Traits.GetEntryInfo, configID, entryID)
+    if entryInfo then
+        out.subTreeID = entryInfo.subTreeID
+        if entryInfo.definitionID then
+            local def = TryCall(C_Traits.GetDefinitionInfo, entryInfo.definitionID)
+            if def then
+                -- Same precedence Blizzard's own panel uses: an override wins.
+                out.spellID = def.overriddenSpellID or def.spellID
+                out.name    = def.overrideName
+            end
+        end
+    end
+    if not out.name and out.spellID and C_Spell then
+        out.name = TryCall(C_Spell.GetSpellName, out.spellID)
+    end
+    return out
+end
+
+-- Read-only snapshot of what the active companion actually has socketed.
+-- Returns nil when the node path is unavailable; it never errors.
+--   { companionID, configID,
+--     role   = { entryID, spellID, name, subTreeID, roleType, roleLabel },
+--     curios = { Combat = {...}, Utility = {...} } }
+-- In-game check:  /dump DelveGuide.ReadCompanionLoadout()
+function DelveGuide.ReadCompanionLoadout()
+    local compID, configID = GetCompanionConfig()
+    if not (compID and configID and C_Traits and C_Traits.GetNodeInfo) then return nil end
+
+    local out = { companionID = compID, configID = configID, curios = {} }
+
+    -- Role. The active entry carries the subtree it belongs to, and
+    -- GetRoleSubtreeForCompanion names one subtree per role, so the role falls
+    -- out of an ID compare -- no client string at any step.
+    local roleEntry = ReadActiveEntry(configID, TryCall(C_DelvesUI.GetRoleNodeForCompanion, compID))
+    if roleEntry then
+        for _, r in ipairs(ROLE_TYPES) do
+            local roleType  = EnumValue("CompanionRoleType", r.key, r.fallback)
+            local subTreeID = TryCall(C_DelvesUI.GetRoleSubtreeForCompanion, roleType, compID)
+            if subTreeID and roleEntry.subTreeID and subTreeID == roleEntry.subTreeID then
+                roleEntry.roleType  = roleType
+                roleEntry.roleLabel = r.label
+                break
+            end
+        end
+        out.role = roleEntry
+    end
+
+    for _, c in ipairs(CURIO_TYPES) do
+        local curioType = EnumValue("CurioType", c.key, c.fallback)
+        local nodeID    = TryCall(C_DelvesUI.GetCurioNodeForCompanion, curioType, compID)
+        out.curios[c.label] = ReadActiveEntry(configID, nodeID)
+    end
+
+    if not (out.role or out.curios.Combat or out.curios.Utility) then return nil end
+    return out
+end
+
+-- DelveGuideData.curios[*].id is the curio's spell ID, so a socketed entry is
+-- identified by ID first. The English name compare is only the last resort --
+-- it is all the old scrape could ever do, and it never matched off enUS.
+local function MatchCurio(entry)
+    if not (entry and DelveGuideData and DelveGuideData.curios) then return nil end
+    if entry.spellID then
+        for _, c in ipairs(DelveGuideData.curios) do
+            if c.id and c.id == entry.spellID then return c end
+        end
+    end
+    if entry.name then
+        for _, c in ipairs(DelveGuideData.curios) do
+            if c.name == entry.name then return c end
+        end
+    end
+    return nil
+end
+
 DelveGuide.RenderCompanion = function()
     local cf = UI.NewContentFrame()
     local y = 10
@@ -252,9 +426,42 @@ DelveGuide.RenderCompanion = function()
         if not compID or compID == 0 then compID = 11 end
     end
 
--- 2. UI SCRAPING! (Bypasses API restrictions outside of Delves)
+    -- 2. Live loadout. Preferred path is the trait-node read above: locale
+    -- independent, and it does not care whether Blizzard's panel is open.
     local liveCombat, liveUtility
-    local foundRole = false -- Flag to prevent overwriting the role
+    local liveSource            -- "node" once the node read supplied anything
+    local roleFromNode = false  -- true only when the role came from an ID compare
+
+    local loadout = DelveGuide.ReadCompanionLoadout()
+    if loadout then
+        liveSource = "node"
+        if loadout.role then
+            if loadout.role.roleLabel then
+                roleStr = loadout.role.roleLabel
+                roleFromNode = true
+            elseif loadout.role.name then
+                -- Subtree compare came up empty (a role Blizzard added since):
+                -- show the localised entry name, but do NOT treat it as a role
+                -- key -- the mismatch warning below stays silent rather than
+                -- comparing a client string against our English label.
+                roleStr = loadout.role.name
+            end
+        end
+        local combat  = loadout.curios.Combat
+        local utility = loadout.curios.Utility
+        local mc, mu  = MatchCurio(combat), MatchCurio(utility)
+        liveCombat  = (mc and mc.name) or (combat and combat.name)
+        liveUtility = (mu and mu.name) or (utility and utility.name)
+        if not compID or compID == 0 then compID = loadout.companionID end
+    end
+
+-- 2b. UI SCRAPING -- FALLBACK ONLY. English-only and panel-only (see the long
+-- note above the node read); it now runs only when the node path returned
+-- nothing, or when the level is still unknown, which is the one thing the
+-- scrape reads that the node path does not. `foundRole` is seeded from what the
+-- node read already established so the scrape cannot overwrite it, and the
+-- curio matches below are already first-match-wins.
+    local foundRole = (roleStr ~= "Unknown") -- Flag to prevent overwriting the role
 
     local function ScrapeUI(frame)
         if not frame or frame:IsForbidden() then return end
@@ -303,9 +510,10 @@ DelveGuide.RenderCompanion = function()
         end
     end
 
-    -- Trigger the scrape if the Blizzard UI is open
+    -- Trigger the scrape if the Blizzard UI is open and the node read left
+    -- something unanswered.
     local blizzFrame = _G["DelvesCompanionConfigurationFrame"]
-    if blizzFrame and blizzFrame:IsShown() then
+    if (not liveSource or compLevel == 0) and blizzFrame and blizzFrame:IsShown() then
         if not compID or compID == 0 then compID = 11; compName = "Valeera Sanguinar" end
         
         -- The scrape walks Blizzard's own frame tree, which we don't control: a
@@ -314,6 +522,9 @@ DelveGuide.RenderCompanion = function()
         -- before it threw is kept, and the rest of the tab still draws from the
         -- API/renown values gathered above.
         local ok, err
+        -- CompanionConfigInfo is not a child of this frame on 12.1.5 (see the
+        -- header note), so this first branch never fires; kept in case a future
+        -- build adds it.
         if blizzFrame.CompanionConfigInfo then
             ok, err = pcall(ScrapeUI, blizzFrame.CompanionConfigInfo)
         else
@@ -364,8 +575,17 @@ DelveGuide.RenderCompanion = function()
         y = y + UI.CreateRow(cf, y, "Your Spec: |cFFFFFFFF" .. rec.spec .. "|r  --  Recommended Valeera role: |cFF00CFFF" .. (rec.companion or "--") .. "|r") + 6
     end
 
+    -- Role mismatch. Only raised when the live role came from the subtree ID
+    -- compare: both sides are then our own English labels, so this is a real
+    -- disagreement rather than a failed string match on a translated client.
+    if rec and rec.companion and roleFromNode and roleStr ~= rec.companion then
+        y = y + UI.CreateRow(cf, y, "|cFFFF4444Mismatch:|r Valeera is set to |cFFFFD700" .. roleStr .. "|r but this spec wants |cFF00CFFF" .. rec.companion .. "|r.") + 6
+    end
+
     if liveCombat or liveUtility then
         y = y + UI.CreateRow(cf, y, "|cFF00FF88Equipped now:|r  Combat: |cFFFFD700" .. (liveCombat or "--") .. "|r   Utility: |cFFFFD700" .. (liveUtility or "--") .. "|r")
+    elseif liveSource then
+        y = y + UI.CreateRow(cf, y, "|cFF888888No curios socketed -- open Valeera's supplies menu to slot one.|r")
     else
         y = y + UI.CreateRow(cf, y, "|cFF888888Open Blizzard's Companion panel, then reopen this tab to scan your equipped curios.|r")
     end
