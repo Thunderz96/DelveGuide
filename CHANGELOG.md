@@ -42,12 +42,13 @@ Built for **Patch 12.1.5 (Midnight)**; runs on 12.1.0 as well.
 - **Packaging:** the LICENSE ships with the addon, and the library folder's casing matches disk, so a build cannot lose its libraries on a case-sensitive builder.
 
 ### Changed
+- **Community rankings refreshed** from 102 submissions across 40 graded variants. Four letters changed: Calamitous D to C, Stolen Mana B to C, Open Night graded for the first time (S), and Caustic Crush C to F after a tenth player's time moved its median. Six variants sitting within seconds of a band edge were deliberately held. Four new contributors are credited in Settings.
 - **One grade palette everywhere**, in the tier-list convention players already know -- S salmon through F green. The Delves tab, Curios, the HUD, the compact widget and Settings all agree; S no longer reads like a D or an F on one screen and not another.
 - **The Debug tab is hidden by default.** Tick *Show Debug tab* in Settings to bring it back. The debug slash commands always run, so following a bug-report instruction never needs the tab.
 - **Season 1 Nemesis rewards are marked as no longer obtainable**, and both Nemesis entrance coordinates were re-read in game.
 
 ### Localization
-- **Every string a player sees now goes through a translation table**, so DelveGuide can be translated without a code change: copy `Locales/TEMPLATE.lua`, translate the right-hand side of each line, add the file to the TOC and open a pull request. 669 phrases are in the template.
+- **Every string a player sees now goes through a translation table**, so DelveGuide can be translated without a code change: copy `Locales/TEMPLATE.lua`, translate the right-hand side of each line, add the file to the TOC and open a pull request. About 670 phrases are in the template.
 - **There are no translations yet** -- every phrase falls back to its English text, so nothing changes for English players. Delve and variant names were already localized separately in the data file and are unaffected.
 - CurseForge's translation platform is not available to this project, which is why translations are repository files contributed by pull request.
 
