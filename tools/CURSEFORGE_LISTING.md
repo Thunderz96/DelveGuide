@@ -7,9 +7,9 @@ Chat, `/dg submit`. This file is the replacement, built from README.md after Pha
 it. Paste the **Description** block into the CurseForge project description; the two short
 blocks after it are for the gallery captions and the comment thread.
 
-Figures below (102 players / 40 variants) are from the 2026-09-07 rankings pass, matching
-`DelveGuideData.rankingStats` (99 / 39 at the time of writing — the corrected aggregator
-produces 97 if its four grade moves are published) and confirm the Interface line.
+Figures below (102 players / 40 variants) come from the 2026-09-07 rankings pass and match
+`DelveGuideData.rankingStats`. Re-run the aggregator and update both if another form export
+lands before the tag; confirm the Interface line.
 
 ---
 
