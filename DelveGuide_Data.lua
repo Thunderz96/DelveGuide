@@ -467,9 +467,10 @@ DelveGuideData.loot = {
     -- priced in Voidlight Marl). Listed: the two above plus the two delve
     -- items below. Not listed: housing decor (Amani awning, brazier post,
     -- totem, ritual stone, memorial...), the Reliquary Expedition bag/notes,
-    -- the Cosmetic Surprise Bag, and seven items the client had not cached
-    -- when the export ran (no name or link came back) -- re-export after
-    -- paging through his window once to pick those up.
+    -- the Cosmetic Surprise Bag, and seven 500-Marl housing chests (Twilight
+    -- Tabernacle, Fungal Chest, Amani Strongbox, Ancient Kaldorei Coffer,
+    -- Root-Wrapped Reliquary, Corewarden's Spoils, Delver's Bountiful Coffer)
+    -- that export #37 had caught uncached and #38 named.
     { name="Corrosive Reticule",           id=276536, slot="Cosmetic", season=2, verified=true,  source="Telemancer Astrandis, 10 Voidlight Marl", notes="" },
     { name="Delve-O-Bot 7001: Midnight Software Update Chip", id=275936, slot="Cosmetic", season=2, verified=true, source="Telemancer Astrandis, 10 Voidlight Marl", notes="" },
     -- Naleidea Rivergleam's stock, read off the PTR with /dg export #36 on
