@@ -1,8 +1,9 @@
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 
 DelveGuide.RenderFuture = function()
     local cf=UI.NewContentFrame(); local y=10
-    y=y+UI.CreateHeader(cf,y,"Future / Upcoming Content & Patch Notes")+4
+    y=y+UI.CreateHeader(cf,y,L["Future / Upcoming Content & Patch Notes"])+4
     local seen,cats={},{}
     for _,f in ipairs(DelveGuideData.future) do
         if not seen[f.category] then seen[f.category]=true; table.insert(cats,f.category) end

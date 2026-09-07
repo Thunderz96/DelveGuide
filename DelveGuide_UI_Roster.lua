@@ -2,6 +2,7 @@
 -- DelveGuide_UI_Roster.lua
 -- ============================================================
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 
 DelveGuide.RenderRoster = function()
     local cf = UI.NewContentFrame()
@@ -9,7 +10,7 @@ DelveGuide.RenderRoster = function()
     UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
 
-    y = y + UI.CreateHeader(cf, y, "Roster  --  All Characters  |cFF888888(updates on login)|r") + 4
+    y = y + UI.CreateHeader(cf, y, L["Roster  --  All Characters"] .. "  |cFF888888" .. L["(updates on login)"] .. "|r") + 4
 
     local currentName  = UnitName("player") or "?"
     local currentRealm = GetRealmName()     or "?"
@@ -26,10 +27,10 @@ DelveGuide.RenderRoster = function()
         fs:SetWidth(w); fs:SetJustifyH("LEFT")
         fs:SetTextColor(0.67, 0.67, 0.67, 1); fs:SetText(text)
     end
-    MakeHeaderCol(COL.name, 148, "Character"); MakeHeaderCol(COL.spec, 114, "Spec")
-    MakeHeaderCol(COL.ilvl, 60, "iLvl"); MakeHeaderCol(COL.shards, 60, "Shards")
-    MakeHeaderCol(COL.bounty, 50, "Bounty"); MakeHeaderCol(COL.delves, 40, "Delves")
-    MakeHeaderCol(COL.vault, 45, "Vault"); MakeHeaderCol(COL.seen, 100, "Last Seen")
+    MakeHeaderCol(COL.name, 148, L["Character"]); MakeHeaderCol(COL.spec, 114, L["Spec"])
+    MakeHeaderCol(COL.ilvl, 60, L["iLvl"]); MakeHeaderCol(COL.shards, 60, L["Shards"])
+    MakeHeaderCol(COL.bounty, 50, L["Bounty"]); MakeHeaderCol(COL.delves, 40, L["Delves"])
+    MakeHeaderCol(COL.vault, 45, L["Vault"]); MakeHeaderCol(COL.seen, 100, L["Last Seen"])
     y = y + rH
 
     local sep = UI.AcquireTexture("OVERLAY")
@@ -46,7 +47,7 @@ DelveGuide.RenderRoster = function()
     end)
 
     if #keys == 0 then
-        y = y + UI.CreateRow(cf, y, "|cFF888888No characters cached yet - log in on each alt to populate their row.|r")
+        y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["No characters cached yet - log in on each alt to populate their row."] .. "|r")
     else
         for _, k in ipairs(keys) do
             local c = roster[k]
@@ -102,7 +103,7 @@ DelveGuide.RenderRoster = function()
 
             local rk = c.restoredKeys or 0
             local shardsText = ((c.shards or 0) >= DelveGuideData.cofferKeys.SHARDS_PER_KEY or rk > 0) and ("|cFF00FF44" .. (c.shards or 0) .. "|r") or tostring(c.shards or 0)
-            if rk > 0 then shardsText = shardsText .. " |cFFFFD700(+" .. rk .. "r)|r" end
+            if rk > 0 then shardsText = shardsText .. " |cFFFFD700" .. string.format(L["(+%dr)"], rk) .. "|r" end
 
             MakeCol(COL.ilvl, 38, c.ilvl and c.ilvl > 0 and tostring(c.ilvl) or "|cFF888888?|r", "RIGHT")
             MakeCol(COL.shards, 60, shardsText)
@@ -115,9 +116,9 @@ DelveGuide.RenderRoster = function()
                     table.insert(delveLines, "|cFFCCCCCC" .. run.name .. "|r  |cFF888888[" .. (run.tier or "?") .. "]|r")
                 end
             else
-                table.insert(delveLines, "|cFF888888No delves recorded this week.|r")
+                table.insert(delveLines, "|cFF888888" .. L["No delves recorded this week."] .. "|r")
             end
-            MakeCol(COL.delves, 38, tostring(c.delveCount or 0), "RIGHT", {title="|cFFFFD700Completed Delves (This Week)|r", lines=delveLines})
+            MakeCol(COL.delves, 38, tostring(c.delveCount or 0), "RIGHT", {title="|cFFFFD700" .. L["Completed Delves (This Week)"] .. "|r", lines=delveLines})
 
             -- Vault Tooltip: per-slot progress and the actual reward each slot
             -- will hand out. vaultDetail is cached per character on login, so
@@ -128,27 +129,28 @@ DelveGuide.RenderRoster = function()
                 for i, s in ipairs(c.vaultDetail) do
                     local prog, thresh = s.progress or 0, s.threshold or 0
                     if prog >= thresh and thresh > 0 then
-                        local tierStr = s.tier and ("  |cFF888888(from Tier " .. s.tier .. ")|r") or ""
-                        table.insert(vaultLines, string.format("|cFF00FF44Slot %d|r  %d/%d delves  --  |cFFFFD700%s ilvl|r%s",
-                            i, prog, thresh, tostring(s.ilvl or "?"), tierStr))
+                        local tierStr = s.tier and ("  |cFF888888" .. string.format(L["(from Tier %s)"], s.tier) .. "|r") or ""
+                        table.insert(vaultLines, "|cFF00FF44" .. string.format(L["Slot %d"], i) .. "|r  "
+                            .. string.format(L["%d/%d delves"], prog, thresh) .. "  --  |cFFFFD700"
+                            .. string.format(L["%s ilvl"], tostring(s.ilvl or "?")) .. "|r" .. tierStr)
                     else
-                        table.insert(vaultLines, string.format("|cFF888888Slot %d   %d/%d delves  (%d more)|r",
-                            i, prog, thresh, math.max(0, thresh - prog)))
+                        table.insert(vaultLines, "|cFF888888" .. string.format(L["Slot %d   %d/%d delves  (%d more)"],
+                            i, prog, thresh, math.max(0, thresh - prog)) .. "|r")
                     end
                 end
             elseif c.maxVaultIlvl and c.maxVaultIlvl > 0 then
-                table.insert(vaultLines, "Highest Unlock: |cFFFFD700" .. c.maxVaultIlvl .. " ilvl|r")
-                table.insert(vaultLines, "|cFF888888Log in on this character to record slot details.|r")
+                table.insert(vaultLines, L["Highest Unlock:"] .. " |cFFFFD700" .. string.format(L["%s ilvl"], c.maxVaultIlvl) .. "|r")
+                table.insert(vaultLines, "|cFF888888" .. L["Log in on this character to record slot details."] .. "|r")
             else
-                table.insert(vaultLines, "|cFF888888Complete more high-tier delves to increase item level.|r")
+                table.insert(vaultLines, "|cFF888888" .. L["Complete more high-tier delves to increase item level."] .. "|r")
             end
             if not isCurrent then
                 table.insert(vaultLines, " ")
-                table.insert(vaultLines, "|cFF666666As of " .. (c.lastSeen or "?") .. "|r")
+                table.insert(vaultLines, "|cFF666666" .. string.format(L["As of %s"], c.lastSeen or "?") .. "|r")
             end
-            MakeCol(COL.vault, 38, vaultText, "RIGHT", {title="|cFF00BFFFGreat Vault Status|r", lines=vaultLines})
+            MakeCol(COL.vault, 38, vaultText, "RIGHT", {title="|cFF00BFFF" .. L["Great Vault Status"] .. "|r", lines=vaultLines})
 
-            MakeCol(COL.seen, 100, "|cFF888888" .. (c.lastSeen or "?") .. "|r" .. (isStale and " |cFF888888[prev]|r" or ""))
+            MakeCol(COL.seen, 100, "|cFF888888" .. (c.lastSeen or "?") .. "|r" .. (isStale and (" |cFF888888" .. L["[prev]"] .. "|r") or ""))
 
             if not isCurrent then
                 local capK, capName = k, c.name
@@ -157,7 +159,7 @@ DelveGuide.RenderRoster = function()
                 local delLabel = UI.AcquireFontString("OVERLAY")
                 delLabel:SetFont(ROW_FONT_FILE, rSize); delLabel:SetPoint("CENTER", delBtn, "CENTER", 0, 0); delLabel:SetText("|cFFFF4444x|r")
                 delBtn:SetScript("OnEnter", function(self)
-                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText("Remove " .. capName .. " from roster", 1, 1, 1, 1, true); GameTooltip:Show()
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(string.format(L["Remove %s from roster"], capName), 1, 1, 1, 1, true); GameTooltip:Show()
                 end)
                 delBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
                 delBtn:SetScript("OnClick", function()
@@ -170,6 +172,6 @@ DelveGuide.RenderRoster = function()
     end
 
     y = y + 12
-    y = y + UI.CreateRow(cf, y, "|cFF555555Hover over Vault and Delves numbers for detailed tooltips.|r")
+    y = y + UI.CreateRow(cf, y, "|cFF555555" .. L["Hover over Vault and Delves numbers for detailed tooltips."] .. "|r")
     cf:SetHeight(y + 20)
 end

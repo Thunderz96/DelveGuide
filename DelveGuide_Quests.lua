@@ -13,6 +13,8 @@
 -- the player is intentionally holding it for a level cap turn-in.
 -- ============================================================
 
+local L = DelveGuide.L
+
 DelveGuide.Quests = DelveGuide.Quests or {}
 
 local function CharKey()
@@ -122,12 +124,12 @@ end
 -- the user catalogue questIDs without leaving the game.
 DelveGuide.ScanDelversCallQuests = function()
     if not C_QuestLog or not C_QuestLog.GetNumQuestLogEntries then
-        print("|cFFFF4444[DelveGuide]|r Quest log API unavailable.")
+        print("|cFFFF4444[DelveGuide]|r " .. L["Quest log API unavailable."])
         return
     end
     local total = C_QuestLog.GetNumQuestLogEntries()
     local hits = 0
-    print("|cFF00BFFF[DelveGuide]|r Scanning quest log for Delver's Call quests...")
+    print("|cFF00BFFF[DelveGuide]|r " .. L["Scanning quest log for Delver's Call quests..."])
     for i = 1, total do
         local info = C_QuestLog.GetInfo(i)
         if info and not info.isHeader and info.title then
@@ -141,14 +143,14 @@ DelveGuide.ScanDelversCallQuests = function()
                         if title:find(row.delve, 1, true) then matchedDelve = row.delve; break end
                     end
                 end
-                local tag = matchedDelve and ("|cFF44FF44 -> " .. matchedDelve .. "|r") or " |cFF888888(no delve match)|r"
+                local tag = matchedDelve and ("|cFF44FF44 -> " .. matchedDelve .. "|r") or (" |cFF888888" .. L["(no delve match)"] .. "|r")
                 print(string.format("  |cFFFFD700%d|r  %s%s", info.questID or 0, title, tag))
             end
         end
     end
     if hits == 0 then
-        print("|cFF888888  No matches. Pick up a Delver's Call quest first, then re-run.|r")
+        print("|cFF888888  " .. L["No matches. Pick up a Delver's Call quest first, then re-run."] .. "|r")
     else
-        print("|cFF888888  Paste these IDs into DelveGuideData.delversCall in DelveGuide_Data.lua.|r")
+        print("|cFF888888  " .. L["Paste these IDs into DelveGuideData.delversCall in DelveGuide_Data.lua."] .. "|r")
     end
 end

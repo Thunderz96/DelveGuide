@@ -1,21 +1,23 @@
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 
 DelveGuide.RenderHistory = function()
     local cf=UI.NewContentFrame(); local y=10
-    y=y+UI.CreateHeader(cf,y,"Delve Run History  --  Weekly Great Vault Summary")+4
+    y=y+UI.CreateHeader(cf,y,L["Delve Run History  --  Weekly Great Vault Summary"])+4
 
     -- Your Fastest Variants -- averaged from your own timed runs. This is also
     -- exactly the data /dg submit shares to help build community rankings.
     local vstats = DelveGuide.GetVariantRunStats and DelveGuide.GetVariantRunStats() or {}
     if #vstats > 0 then
-        y=y+UI.CreateRow(cf,y,"|cFFFFD700Your Fastest Variants|r  |cFF888888(median clear time from your timed runs -- help rank these via /dg submit)|r")+4
+        y=y+UI.CreateRow(cf,y,"|cFFFFD700"..L["Your Fastest Variants"].."|r  |cFF888888"..L["(median clear time from your timed runs -- help rank these via /dg submit)"].."|r")+4
         for i,s in ipairs(vstats) do
             if i<=12 then
-                y=y+UI.CreateRow(cf,y,string.format("  |cFF00BFFF[%dm %02ds]|r  |cFFCCAAFF%s|r |cFF888888(%s)|r  |cFF888888x%d run%s, ~T%d|r",
-                    math.floor(s.avgSec/60), s.avgSec%60, s.variant, s.delve, s.count, s.count==1 and "" or "s", s.avgTier))
+                y=y+UI.CreateRow(cf,y,string.format("  |cFF00BFFF[%s]|r  |cFFCCAAFF%s|r |cFF888888(%s)|r  |cFF888888%s|r",
+                    string.format(L["%dm %02ds"], math.floor(s.avgSec/60), s.avgSec%60), s.variant, s.delve,
+                    string.format(L["x%d run%s, ~T%d"], s.count, s.count==1 and "" or "s", s.avgTier)))
             end
         end
-        if #vstats>12 then y=y+UI.CreateRow(cf,y,"|cFF888888  ...and "..(#vstats-12).." more|r") end
+        if #vstats>12 then y=y+UI.CreateRow(cf,y,"|cFF888888  "..string.format(L["...and %d more"], #vstats-12).."|r") end
         y=y+10
     end
 
@@ -26,22 +28,24 @@ DelveGuide.RenderHistory = function()
     do
         local RS = DelveGuideData and DelveGuideData.rankingStats
         if RS and RS.submissions then
-            local function T(sec) return string.format("%dm %02ds", math.floor(sec/60), sec%60) end
-            y=y+UI.CreateRow(cf,y,"|cFFFFD700Community|r  |cFF888888(from player submissions -- updated "..(RS.updated or "?")..")|r")+4
+            local function T(sec) return string.format(L["%dm %02ds"], math.floor(sec/60), sec%60) end
+            y=y+UI.CreateRow(cf,y,"|cFFFFD700"..L["Community"].."|r  |cFF888888"..string.format(L["(from player submissions -- updated %s)"], RS.updated or "?").."|r")+4
             y=y+UI.CreateRow(cf,y,string.format(
-                "  |cFF00FF88%d|r delvers  |cFF888888--|r  |cFF00FF88%d|r timed runs  |cFF888888--|r  |cFF00FF88%d|r variants ranked",
-                #(DelveGuideData.contributors or {}), RS.runs or 0, RS.variants or 0))
+                "  |cFF00FF88%d|r %s  |cFF888888--|r  |cFF00FF88%d|r %s  |cFF888888--|r  |cFF00FF88%d|r %s",
+                #(DelveGuideData.contributors or {}), L["delvers"], RS.runs or 0, L["timed runs"], RS.variants or 0, L["variants ranked"]))
             if RS.mostRun then
-                y=y+UI.CreateRow(cf,y,string.format("  |cFF888888Most-run:|r |cFFCCAAFF%s|r  |cFF888888(%d runs)|r",
-                    RS.mostRun, RS.mostRunRuns or 0))
+                y=y+UI.CreateRow(cf,y,string.format("  |cFF888888%s|r |cFFCCAAFF%s|r  |cFF888888%s|r",
+                    L["Most-run:"], RS.mostRun, string.format(L["(%d runs)"], RS.mostRunRuns or 0)))
             end
             if RS.fastest and RS.fastestSec then
-                y=y+UI.CreateRow(cf,y,string.format("  |cFF888888Fastest:|r |cFFCCAAFF%s|r |cFF00BFFF%s|r   |cFF888888Slowest:|r |cFFCCAAFF%s|r |cFF00BFFF%s|r",
-                    RS.fastest, T(RS.fastestSec), RS.slowest or "?", T(RS.slowestSec or 0)))
+                y=y+UI.CreateRow(cf,y,string.format("  |cFF888888%s|r |cFFCCAAFF%s|r |cFF00BFFF%s|r   |cFF888888%s|r |cFFCCAAFF%s|r |cFF00BFFF%s|r",
+                    L["Fastest:"], RS.fastest, T(RS.fastestSec), L["Slowest:"], RS.slowest or "?", T(RS.slowestSec or 0)))
                 local gap = (RS.slowestSec or 0) - RS.fastestSec
                 if gap > 0 then
-                    y=y+UI.CreateRow(cf,y,string.format(
-                        "  |cFF888888Picking well saves about|r |cFFFFD700%s|r |cFF888888a run.|r", T(gap)))
+                    -- Split in two keys because the original puts the spaces
+                    -- outside the colour segments; joining them would move a byte.
+                    y=y+UI.CreateRow(cf,y,"  |cFF888888"..L["Picking well saves about"]
+                        .."|r |cFFFFD700"..T(gap).."|r |cFF888888"..L["a run."].."|r")
                 end
             end
 
@@ -77,19 +81,20 @@ DelveGuide.RenderHistory = function()
             if #cmp > 0 then
                 table.sort(cmp, function(a,b) return a.pct < b.pct end)
                 y=y+6
-                y=y+UI.CreateRow(cf,y,"  |cFFFFD700You vs the Community|r  |cFF888888(your Tier 8+ average vs the community median -- same filter both sides)|r")+2
+                y=y+UI.CreateRow(cf,y,"  |cFFFFD700"..L["You vs the Community"].."|r  |cFF888888"..L["(your Tier 8+ average vs the community median -- same filter both sides)"].."|r")+2
                 for i,c in ipairs(cmp) do
                     if i<=10 then
                         local verdict, col
-                        if math.abs(c.pct) < 2 then verdict, col = "even", "|cFF888888"
-                        elseif c.pct < 0 then verdict, col = string.format("%.0f%% faster", -c.pct), "|cFF00FF88"
-                        else verdict, col = string.format("%.0f%% slower", c.pct), "|cFFFF8844" end
+                        if math.abs(c.pct) < 2 then verdict, col = L["even"], "|cFF888888"
+                        elseif c.pct < 0 then verdict, col = string.format(L["%.0f%% faster"], -c.pct), "|cFF00FF88"
+                        else verdict, col = string.format(L["%.0f%% slower"], c.pct), "|cFFFF8844" end
                         y=y+UI.CreateRow(cf,y,string.format(
-                            "    |cFFCCAAFF%-28s|r |cFF00BFFF%8s|r |cFF888888vs|r |cFF888888%8s|r   %s%s|r |cFF666666(%d run%s)|r",
-                            c.variant, T(c.mine), T(c.theirs), col, verdict, c.runs, c.runs==1 and "" or "s"))
+                            "    |cFFCCAAFF%-28s|r |cFF00BFFF%8s|r |cFF888888%s|r |cFF888888%8s|r   %s%s|r |cFF666666%s|r",
+                            c.variant, T(c.mine), L["vs"], T(c.theirs), col, verdict,
+                            string.format(L["(%d run%s)"], c.runs, c.runs==1 and "" or "s")))
                     end
                 end
-                if #cmp>10 then y=y+UI.CreateRow(cf,y,"|cFF888888    ...and "..(#cmp-10).." more|r") end
+                if #cmp>10 then y=y+UI.CreateRow(cf,y,"|cFF888888    "..string.format(L["...and %d more"], #cmp-10).."|r") end
             end
             y=y+10
         end
@@ -97,11 +102,11 @@ DelveGuide.RenderHistory = function()
 
     local clearBtn=UI.AcquirePanelButton()
     clearBtn:SetSize(110,22); clearBtn:SetPoint("TOPRIGHT",cf,"TOPRIGHT",-10,-8)
-    clearBtn:SetText("Clear History")
+    clearBtn:SetText(L["Clear History"])
     clearBtn:SetScript("OnClick",function() StaticPopup_Show("DELVEGUIDE_CONFIRM_CLEAR_HISTORY") end)
 
     if not DelveGuideDB.history or #DelveGuideDB.history==0 then
-        y=y+UI.CreateRow(cf,y,"|cFF888888No runs recorded yet. Go complete a Delve!|r")
+        y=y+UI.CreateRow(cf,y,"|cFF888888"..L["No runs recorded yet. Go complete a Delve!"].."|r")
     else
         -- The Great Vault is PER CHARACTER, so vault progress must be counted
         -- per character too. Grouping only by week (as this used to) merged
@@ -127,17 +132,19 @@ DelveGuide.RenderHistory = function()
 
         -- Great Vault delve slots unlock at 2 / 4 / 8 runs.
         local function VaultText(n)
-            if n>=8 then return "|cFF00FF44All 3 vault slots|r"
-            elseif n>=4 then return string.format("|cFFFFFF002/3 vault slots|r  |cFF888888(%d more for 3rd)|r",8-n)
-            elseif n>=2 then return string.format("|cFFFF88441/3 vault slots|r  |cFF888888(%d more for 2nd)|r",4-n)
-            else return string.format("|cFFFF4444No vault slots|r  |cFF888888(%d more for 1st)|r",2-n) end
+            if n>=8 then return "|cFF00FF44"..L["All 3 vault slots"].."|r"
+            elseif n>=4 then return "|cFFFFFF00"..L["2/3 vault slots"].."|r  |cFF888888"..string.format(L["(%d more for 3rd)"],8-n).."|r"
+            elseif n>=2 then return "|cFFFF8844"..L["1/3 vault slots"].."|r  |cFF888888"..string.format(L["(%d more for 2nd)"],4-n).."|r"
+            else return "|cFFFF4444"..L["No vault slots"].."|r  |cFF888888"..string.format(L["(%d more for 1st)"],2-n).."|r" end
         end
 
         for _,wkey in ipairs(weekOrder) do
             local wk=weeks[wkey]
-            local weekLabel=wkey==0 and "|cFF888888Earlier / Legacy Runs|r" or ("|cFFFFD700Week of "..date("%b %d, %Y",wkey).."|r")
+            -- date()'s "%b %d, %Y" pattern is a strftime format, not display text,
+            -- so it stays out of L[] -- only the sentence around it is wrapped.
+            local weekLabel=wkey==0 and ("|cFF888888"..L["Earlier / Legacy Runs"].."|r") or ("|cFFFFD700"..string.format(L["Week of %s"],date("%b %d, %Y",wkey)).."|r")
             y=y+8
-            y=y+UI.CreateRow(cf,y,weekLabel.."  |cFF888888"..wk.count.." run(s) across "..#wk.order.." character(s)|r")
+            y=y+UI.CreateRow(cf,y,weekLabel.."  |cFF888888"..string.format(L["%d run(s) across %d character(s)"],wk.count,#wk.order).."|r")
             y=y+UI.CreateRow(cf,y,"|cFF555555"..string.rep("-",80).."|r")+2
 
             -- Most-active character first
@@ -162,23 +169,23 @@ DelveGuide.RenderHistory = function()
                 end
                 local coreText=""
                 if coreRuns>0 then
-                    coreText=string.format("  --  |cFFAA66CC%d max-ilvl loot|r |cFF888888(bountiful T%d+)|r",coreRuns,minCoreTier)
+                    coreText="  --  |cFFAA66CC"..string.format(L["%d max-ilvl loot"],coreRuns).."|r |cFF888888"..string.format(L["(bountiful T%d+)"],minCoreTier).."|r"
                 elseif unknownCore>0 then
-                    coreText=string.format("  --  |cFF888888%d T%d+ run(s), bountiful status not recorded|r",unknownCore,minCoreTier)
+                    coreText="  --  |cFF888888"..string.format(L["%d T%d+ run(s), bountiful status not recorded"],unknownCore,minCoreTier).."|r"
                 end
 
-                y=y+UI.CreateRow(cf,y,string.format("  |cFF00FF88%s|r  |cFF888888%d run(s)|r  --  %s%s",
-                    ckey,count,VaultText(count),coreText))
+                y=y+UI.CreateRow(cf,y,string.format("  |cFF00FF88%s|r  |cFF888888%s|r  --  %s%s",
+                    ckey,string.format(L["%d run(s)"],count),VaultText(count),coreText))
 
                 for _,run in ipairs(runs) do
                     local tierStr=run.tier and ("  |cFF888888["..run.tier.."]|r") or ""
-                    local vaultStr=run.vaultIlvl and ("  |cFFFFD700"..run.vaultIlvl.." ilvl|r") or ""
-                    local timeStr=run.elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(run.elapsed/60),math.floor(run.elapsed%60)) or ""
+                    local vaultStr=run.vaultIlvl and ("  |cFFFFD700"..string.format(L["%s ilvl"],run.vaultIlvl).."|r") or ""
+                    local timeStr=run.elapsed and ("  |cFF00BFFF["..string.format(L["%dm %02ds"],math.floor(run.elapsed/60),math.floor(run.elapsed%60)).."]|r") or ""
                     local varStr=run.variant and ("  |cFFCCAAFF("..run.variant..")|r")
-                        or (run.kind=="labyrinth" and string.format("  |cFFCCAAFF(Labyrinth, %d chambers, %d vault credit%s)|r",
-                            run.chambers or 0, run.vaultCredits or 0, (run.vaultCredits or 0)==1 and "" or "s"))
+                        or (run.kind=="labyrinth" and ("  |cFFCCAAFF"..string.format(L["(Labyrinth, %d chambers, %d vault credit%s)"],
+                            run.chambers or 0, run.vaultCredits or 0, (run.vaultCredits or 0)==1 and "" or "s").."|r"))
                         or ""
-                    local bountyStr=run.bountiful and "  |cFFFFD700[B]|r" or ""
+                    local bountyStr=run.bountiful and ("  |cFFFFD700"..L["[B]"].."|r") or ""
                     -- Show the player's own language when we captured it; `name`
                     -- is the canonical English used for grouping and submissions.
                     local displayName = run.locName or run.name
