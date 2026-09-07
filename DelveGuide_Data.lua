@@ -288,6 +288,21 @@ DelveGuideData.trove = {
     -- Season 1 (retired): item 265714, aura 1254631
 }
 
+-- Coffer Key economy. The two currency IDs and the 100/600 numbers used to be
+-- typed out separately in DelveGuide.lua, DelveGuide_Widget.lua,
+-- DelveGuide_Checklist.lua, DelveGuide_UI_Roster.lua and
+-- DelveGuide_UI_Delves.lua -- five files to edit whenever Blizzard reissues the
+-- currency or moves the cap.
+DelveGuideData.cofferKeys = {
+    SHARD_CURRENCY_ID    = 3310,  -- "Coffer Key Shard" (verified in game via /dg currencydebug)
+    RESTORED_CURRENCY_ID = 3028,  -- "Restored Coffer Key" (same source)
+    SHARDS_PER_KEY       = 100,   -- 100 shards restore one key
+    -- Weekly shard cap. Only a fallback: every read prefers the live
+    -- maxWeeklyQuantity off GetCurrencyInfo and drops to this when the currency
+    -- has not been discovered yet on this character.
+    SHARD_WEEKLY_CAP     = 600,
+}
+
 
 -- ── Labyrinths (Patch 12.1.5) ──────────────────────────────
 -- Not delves, and never treated as one. Inside a Labyrinth, scenario type 8,

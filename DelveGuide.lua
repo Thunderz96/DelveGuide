@@ -1241,12 +1241,12 @@ local function CacheCurrentChar()
 
     local shards = 0
     pcall(function()
-        local info = C_CurrencyInfo.GetCurrencyInfo(3310)
+        local info = C_CurrencyInfo.GetCurrencyInfo(DelveGuideData.cofferKeys.SHARD_CURRENCY_ID)
         if info then shards = info.quantity or 0 end
     end)
 
     local bounty = C_Item.GetItemCount((DelveGuideData.trove and DelveGuideData.trove.ITEM_ID) or 0, true) or 0
-    local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
+    local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(DelveGuideData.cofferKeys.RESTORED_CURRENCY_ID)
     local restoredKeys = restoredKeyInfo and restoredKeyInfo.quantity or 0
 
     local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
@@ -1589,10 +1589,10 @@ local function CreateMainWindow()
     end)
     
     f.UpdateTracker = function()
-        local COFFER_KEY_SHARD_ID = 3310
-        local keysInfo = C_CurrencyInfo.GetCurrencyInfo(COFFER_KEY_SHARD_ID)
+        local CK = DelveGuideData.cofferKeys
+        local keysInfo = C_CurrencyInfo.GetCurrencyInfo(CK.SHARD_CURRENCY_ID)
         local shards = keysInfo and keysInfo.quantity or 0
-        local weeklyCap = keysInfo and keysInfo.maxWeeklyQuantity or 600
+        local weeklyCap = keysInfo and keysInfo.maxWeeklyQuantity or CK.SHARD_WEEKLY_CAP
         local weeklyEarned = keysInfo and keysInfo.quantityEarnedThisWeek or 0
         local delveCount, vaultSlots, maxThreshold = GetWeeklyVaultData()
         local vaultProgress = math.min(delveCount, maxThreshold)
@@ -1629,7 +1629,7 @@ local function CreateMainWindow()
         if weeklyCap > 0 and weeklyEarned >= weeklyCap then
             keysText = string.format("|cFF00FF44%d/%d (Capped)|r", shards, weeklyCap)
         else
-            keysText = string.format("%d/%d", shards, weeklyCap > 0 and weeklyCap or 600)
+            keysText = string.format("%d/%d", shards, weeklyCap > 0 and weeklyCap or CK.SHARD_WEEKLY_CAP)
         end
 
         f.TrackerText:SetText(string.format(

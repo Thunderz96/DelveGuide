@@ -36,22 +36,23 @@ local function RunChecklistScan()
         end
     end
 
-    local keyInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
+    local CK = DelveGuideData.cofferKeys
+    local keyInfo = C_CurrencyInfo.GetCurrencyInfo(CK.SHARD_CURRENCY_ID)
     local shards = keyInfo and keyInfo.quantity or 0
-    local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
+    local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(CK.RESTORED_CURRENCY_ID)
     local restoredKeys = restoredKeyInfo and restoredKeyInfo.quantity or 0
-    local hasKey = shards >= 100 or restoredKeys > 0
+    local hasKey = shards >= CK.SHARDS_PER_KEY or restoredKeys > 0
     local keyLabel
     if restoredKeys > 0 then
-        keyLabel = string.format("Coffer Key  |cFF00FF44(%d restored key%s + %d/600 shards)|r",
-            restoredKeys, restoredKeys > 1 and "s" or "", shards)
+        keyLabel = string.format("Coffer Key  |cFF00FF44(%d restored key%s + %d/%d shards)|r",
+            restoredKeys, restoredKeys > 1 and "s" or "", shards, CK.SHARD_WEEKLY_CAP)
     else
-        keyLabel = string.format("Coffer Key  |cFF888888(%d/600 shards)|r", shards)
+        keyLabel = string.format("Coffer Key  |cFF888888(%d/%d shards)|r", shards, CK.SHARD_WEEKLY_CAP)
     end
     table.insert(results, {
         label = keyLabel,
         ok    = hasKey,
-        tip   = not hasKey and "You need 100 shards (1 key) or a Restored Coffer Key to open a Bountiful Coffer." or nil,
+        tip   = not hasKey and string.format("You need %d shards (1 key) or a Restored Coffer Key to open a Bountiful Coffer.", CK.SHARDS_PER_KEY) or nil,
     })
 
     -- Trovehunter's Bounty -- shared state helper (IDs in DelveGuideData.trove)

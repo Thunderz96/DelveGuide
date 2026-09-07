@@ -199,7 +199,7 @@ DelveGuide.RenderDelves = function()
     local NI = DelveGuideData.nemesisItem or {}
     local beaconCount = (NI.ITEM_ID and C_Item.GetItemCount(NI.ITEM_ID, true)) or 0
     local beaconText=beaconCount>0 and "|cFF00FF44"..beaconCount.." in Bags|r" or "|cFFFF4444None|r"
-    local restoredKeyInfo=C_CurrencyInfo.GetCurrencyInfo(3028)
+    local restoredKeyInfo=C_CurrencyInfo.GetCurrencyInfo(DelveGuideData.cofferKeys.RESTORED_CURRENCY_ID)
     local restoredKeyCount=restoredKeyInfo and restoredKeyInfo.quantity or 0
     local restoredKeyText=restoredKeyCount>0 and "|cFF00FF44"..restoredKeyCount.." in Bags|r" or "|cFF888888None|r"
     
@@ -318,7 +318,8 @@ DelveGuide.RenderDelves = function()
         GameTooltip:AddLine("|cFFFFD700Variants:|r Each delve has rotating story variants that change daily.", 1, 1, 1, true)
         GameTooltip:AddLine("|cFFFFD700Tiers:|r 1-11 control difficulty. Tier 8+ end-of-run gear is Champion-track (295 ilvl).", 1, 1, 1, true)
         GameTooltip:AddLine("|cFFFFD700Bountiful:|r Marked delves that drop bonus loot when opened with a Restored Coffer Key.", 1, 1, 1, true)
-        GameTooltip:AddLine("|cFFFFD700Coffer Keys:|r Earn Coffer Key Shards (600/week cap) - 100 shards = 1 key.", 1, 1, 1, true)
+        GameTooltip:AddLine(string.format("|cFFFFD700Coffer Keys:|r Earn Coffer Key Shards (%d/week cap) - %d shards = 1 key.",
+            DelveGuideData.cofferKeys.SHARD_WEEKLY_CAP, DelveGuideData.cofferKeys.SHARDS_PER_KEY), 1, 1, 1, true)
         GameTooltip:AddLine("|cFFFFD700Great Vault:|r 2/4/8 delves unlock vault slots. Tier 8+ gives Hero-track (305 ilvl) vault rewards.", 1, 1, 1, true)
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("Your companion Valeera joins every run. Set her role (DPS/Healer/Tank)", 0.7, 0.7, 0.7, true)

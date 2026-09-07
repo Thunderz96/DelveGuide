@@ -102,7 +102,7 @@ DelveGuide.RenderRoster = function()
             end
 
             local rk = c.restoredKeys or 0
-            local shardsText = ((c.shards or 0) >= 100 or rk > 0) and ("|cFF00FF44" .. (c.shards or 0) .. "|r") or tostring(c.shards or 0)
+            local shardsText = ((c.shards or 0) >= DelveGuideData.cofferKeys.SHARDS_PER_KEY or rk > 0) and ("|cFF00FF44" .. (c.shards or 0) .. "|r") or tostring(c.shards or 0)
             if rk > 0 then shardsText = shardsText .. " |cFFFFD700(+" .. rk .. "r)|r" end
 
             MakeCol(COL.ilvl, 38, c.ilvl and c.ilvl > 0 and tostring(c.ilvl) or "|cFF888888?|r", "RIGHT")

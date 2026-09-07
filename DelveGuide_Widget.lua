@@ -259,11 +259,12 @@ DelveGuide.UpdateCompactWidget = function()
     cw.keysLine:ClearAllPoints()
     cw.keysLine:SetPoint("TOPLEFT", cw, "TOPLEFT", 8, keysY)
 
-    local keysInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
+    local CK = DelveGuideData.cofferKeys
+    local keysInfo = C_CurrencyInfo.GetCurrencyInfo(CK.SHARD_CURRENCY_ID)
     local shards   = keysInfo and keysInfo.quantity or 0
-    local restoredInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
+    local restoredInfo = C_CurrencyInfo.GetCurrencyInfo(CK.RESTORED_CURRENCY_ID)
     local restored = restoredInfo and restoredInfo.quantity or 0
-    local keysStr  = string.format("|cFFFFD700Keys:|r %d/600 shards", shards)
+    local keysStr  = string.format("|cFFFFD700Keys:|r %d/%d shards", shards, CK.SHARD_WEEKLY_CAP)
     if restored > 0 then
         keysStr = keysStr .. string.format("  |cFF00FF44+%d restored|r", restored)
     end
