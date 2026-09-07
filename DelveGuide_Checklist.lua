@@ -295,9 +295,53 @@ DelveGuide.HideChecklist = function()
     if checklistFrame and checklistFrame:IsShown() then checklistFrame:Hide() end
 end
 
+-- Every name that means "delve entrance", hashed once at load: catalogued
+-- delves, Nemesis delves and Labyrinths. OnTargetChanged used to walk all three
+-- lists on every PLAYER_TARGET_CHANGED -- ~50 string comparisons per target
+-- swap, and in a raid that fires constantly. All three source tables are
+-- static: DelveGuideData.delves and friends are built once in the data file and
+-- never appended to, so a load-time hash can never go stale.
+--
+-- Building this is safe even though the lookup key may be secret. The VALUES
+-- here come from the addon's own data file and are ordinary strings; the only
+-- secret value involved is the key we index WITH, and that stays inside the
+-- pcall below exactly as before.
+local delveNameSet = {}
+do
+    for _, d in ipairs((DelveGuideData and DelveGuideData.delves) or {}) do
+        if d.name then delveNameSet[d.name] = true end
+    end
+    -- Nemesis delves are deliberately absent from DelveGuideData.delves.
+    for _, n in ipairs((DelveGuideData and DelveGuideData.nemesisDelves) or {}) do
+        delveNameSet[n] = true
+    end
+    -- Labyrinths (12.1.5). Assumes the entrance object carries the
+    -- Labyrinth's name like delve entrances do -- unverified on the PTR.
+    for _, L in ipairs((DelveGuideData and DelveGuideData.labyrinths) or {}) do
+        if L.name then delveNameSet[L.name] = true end
+    end
+end
+
+-- NOTE: as of the PLAYER_INTERACTION_MANAGER_FRAME_SHOW (type 79) trigger this
+-- is no longer how the pre-entry checklist normally fires -- delve entrances
+-- are game objects, not units, so they were never targetable and this path
+-- almost certainly never matched. It is kept as a second trigger rather than
+-- deleted, and cheapened so that being effectively dead costs nothing. If the
+-- interaction trigger proves reliable in the field, this and its
+-- PLAYER_TARGET_CHANGED registration can go.
 DelveGuide.OnTargetChanged = function()
     if not DelveGuideDB.checklistEnabled then return end
     if DelveGuideDB.checklistDismissed then return end
+
+    -- Cheapest possible rejection of the common case. A protected unit name is
+    -- never a delve, and in a raid nearly every target change produces one, so
+    -- test for it before paying for the pcall. issecretvalue does not exist on
+    -- every client build; when it is missing this is simply skipped and the
+    -- pcall below remains the only line of defence, as it was before.
+    -- UnitName() itself never raises -- only comparing or indexing with what it
+    -- returns does -- so fetching the name out here is safe.
+    local targetName = UnitName("target")
+    if issecretvalue and issecretvalue(targetName) then return end
 
     -- EVERYTHING that touches the target name stays inside one pcall. In
     -- Midnight, UnitName("target") can return a SECRET STRING (protected unit
@@ -312,25 +356,17 @@ DelveGuide.OnTargetChanged = function()
     -- name is never a delve.
     local matched = false
     pcall(function()
-        local targetName = UnitName("target")
         if not targetName or targetName == "" then return end
 
         -- Localized -> English first, so the checklist fires on non-EN clients.
+        -- This mapping is what makes delveNameSet's English-only keys enough:
+        -- localizedToEnglish is populated at runtime by the POI scan, so its
+        -- keys cannot be baked into a load-time set, but one index through it
+        -- converts a localized name to a key the set does have.
         local engName = (DelveGuide.localizedToEnglish
                          and DelveGuide.localizedToEnglish[targetName]) or targetName
 
-        for _, d in ipairs((DelveGuideData and DelveGuideData.delves) or {}) do
-            if d.name == engName then matched = true; return end
-        end
-        -- Nemesis delves are deliberately absent from DelveGuideData.delves.
-        for _, n in ipairs((DelveGuideData and DelveGuideData.nemesisDelves) or {}) do
-            if n == engName then matched = true; return end
-        end
-        -- Labyrinths (12.1.5). Assumes the entrance object carries the
-        -- Labyrinth's name like delve entrances do -- unverified on the PTR.
-        for _, L in ipairs((DelveGuideData and DelveGuideData.labyrinths) or {}) do
-            if L.name == engName then matched = true; return end
-        end
+        if delveNameSet[engName] then matched = true end
     end)
 
     if matched and DelveGuide.ShowChecklist then

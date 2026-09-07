@@ -157,7 +157,7 @@ Roadmap for upcoming features and planned data additions, kept in-game so you ca
 | `/dg widgetfont <0.6-2.0>` | Widget-only font scale (independent from main) |
 | `/dg help` | Show all available commands |
 
-> Debug commands available for bug reports and localization fixes: `dump`, `chatdump`, `huddump`, `tierdebug`, `checkdebug`, `specinfo`, `findplaza`.
+> Debug commands available for bug reports and localization fixes: `dump`, `chatdump`, `huddump`, `tierdebug`, `checkdebug`, `specinfo`, `currencydebug`, `vaultdebug`, `selftest`, `findpoi <text>`. They always run; tick **Show Debug tab** in Settings to have `/dg help` list them too.
 
 ---
 
