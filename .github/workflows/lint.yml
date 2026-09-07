@@ -70,6 +70,10 @@ jobs:
         # duplicated, or when an English name hides inside a locale key. Each of
         # those makes a delve silently never fire on a localized client.
         run: python3 tools/validate_locales.py
+      - name: Python unit tests (aggregate, extractor)
+        run: python3 -m unittest discover -s tools
+      - name: Every L[] is indexed by a string literal
+        run: python3 tools/extract_locale_phrases.py --check
 
       - name: Check colour escape codes
         # FATAL. See the long comment in tools/ci_lint.py for why the obvious
