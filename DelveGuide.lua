@@ -54,6 +54,39 @@ end
 -- entries are only a belt-and-braces for English clients.
 
 -- ============================================================
+-- SHARED HELPERS
+-- ------------------------------------------------------------
+-- Small things that more than one file (or more than one place in this one)
+-- needs. They live up here, ahead of the scanner, because the scanner uses them.
+-- ============================================================
+
+-- The week a run belongs to, as a stable integer key stored on history rows.
+--
+-- time() + secondsUntilWeeklyReset is the moment of the NEXT reset; minus one
+-- week is the moment of the LAST one, i.e. the start of the current week. That
+-- timestamp is already hour-aligned, so the trailing quantisation only exists
+-- to absorb drift between the client clock and the server's countdown.
+--
+-- It used to floor. Flooring an already-aligned value means one second of
+-- negative jitter drops the key a whole hour, filing that run under a bucket no
+-- other run of the week shares -- so it disappeared from the Roster's weekly
+-- delve count, the Victory screen's tally and the History week grouping.
+-- Rounding to the nearest hour absorbs jitter in both directions instead.
+--
+-- Existing SavedVariables rows carry floored keys and still match: on an
+-- hour-aligned input floor and round agree, and they only ever disagreed inside
+-- the jitter window this change exists to close.
+--
+-- Returns nil when the API is unavailable; every caller already treats nil as
+-- "week unknown", which is what the six inline copies did too.
+function DelveGuide.GetResetKey()
+    if not (C_DateAndTime and C_DateAndTime.GetSecondsUntilWeeklyReset) then return nil end
+    local ok, secs = pcall(C_DateAndTime.GetSecondsUntilWeeklyReset)
+    if not ok or type(secs) ~= "number" then return nil end
+    return math.floor((time() + secs - 604800) / 3600 + 0.5) * 3600
+end
+
+-- ============================================================
 -- SAVEDVARIABLES SCHEMA
 -- ------------------------------------------------------------
 -- Every field that has a default lives in DEFAULTS and is applied by the one
@@ -1156,8 +1189,7 @@ DelveGuide.LogLabyrinthRun = function(name)
     local row = DelveGuide.currentLabyrinthRow
     if credits < 1 and not row then return end
 
-    local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
-    local resetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
+    local resetKey = DelveGuide.GetResetKey()
     local charName, charRealm = "Unknown", nil
     pcall(function() charName = UnitName("player") or "Unknown" end)
     pcall(function() charRealm = GetRealmName() end)
@@ -1249,8 +1281,7 @@ local function CacheCurrentChar()
     local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(DelveGuideData.cofferKeys.RESTORED_CURRENCY_ID)
     local restoredKeys = restoredKeyInfo and restoredKeyInfo.quantity or 0
 
-    local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
-    local resetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
+    local resetKey = DelveGuide.GetResetKey()
     
     local delveCount = 0
     local weeklyRuns = {} 
@@ -2594,8 +2625,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     elseif msg=="testrun" then
         -- DEV ONLY: simulate a delve completion for the first delve in the DB
         local testName = DelveGuideData and DelveGuideData.delves and DelveGuideData.delves[1] and DelveGuideData.delves[1].name or "Test Delve"
-        local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
-        local resetKey = secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
+        local resetKey = DelveGuide.GetResetKey()
         local testChar="Unknown"; pcall(function() testChar=UnitName("player") or "Unknown" end)
         table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar,elapsed=312})
         print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run - |cFF00FF44"..testName.."|r")
@@ -3192,8 +3222,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
                 if zone and zone~="" then runName=zone end
             end)
 
-            local secsUntilReset=C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
-            local resetKey=secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
+            local resetKey=DelveGuide.GetResetKey()
 
             -- Tier set manually by player via /dg tier N (no addon API exposes it in Midnight 12.0)
             local tier    = DelveGuide.currentDelveTier    or "?"

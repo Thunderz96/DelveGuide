@@ -15,8 +15,7 @@ DelveGuide.RenderRoster = function()
     local currentRealm = GetRealmName()     or "?"
     local currentKey   = currentName .. "-" .. currentRealm
 
-    local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
-    local currentResetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
+    local currentResetKey = DelveGuide.GetResetKey()
     local roster = DelveGuideDB.roster or {}
 
     local COL = { name=8, spec=160, ilvl=278, shards=322, bounty=385, delves=438, vault=480, seen=530, del=626 }
