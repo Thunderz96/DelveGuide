@@ -1,5 +1,56 @@
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 local RANK_ORDER = UI.RANK_ORDER
+
+-- ---- Zone names for display (review 3.4) ---------------------------------
+-- Every lookup -- colours, data, SavedVariables -- keeps the ENGLISH zone key.
+-- Only the text the player reads goes through here.
+--
+-- The English zone -> uiMapID map is built once from the entrance pins: they
+-- carry a name and a mapID but no zone, so they are joined to
+-- DelveGuideData.delves on the delve name.
+--
+-- The guard against DelveGuideData.zoneNames matters. Two of the six zone
+-- labels are addon groupings rather than map names -- "Quel'Thalas" covers
+-- Silvermoon City (2393) AND Eversong Woods (2395), and "Quel'Danas" is the
+-- map's "Isle of Quel'Danas" -- so taking the first pin's mapID unguarded
+-- would relabel those rows on an ENGLISH client too. Substituting only when
+-- the addon's own English name for that mapID matches the label keeps enUS
+-- byte-identical; those two zones stay English everywhere until the data
+-- carries a real mapID for them.
+local zoneMapID
+function UI.ZoneDisplayName(englishZone)
+    if not englishZone or englishZone == "" then return englishZone end
+    if not zoneMapID then
+        zoneMapID = {}
+        local pinByName = {}
+        for _, p in ipairs(DelveGuideData.mapPins or {}) do
+            if p.name and p.mapID then pinByName[p.name] = pinByName[p.name] or p.mapID end
+        end
+        local englishNames = DelveGuideData.zoneNames or {}
+        for _, d in ipairs(DelveGuideData.delves or {}) do
+            local id = d.zone and pinByName[d.name]
+            if id and not zoneMapID[d.zone] and englishNames[id] == d.zone then
+                zoneMapID[d.zone] = id
+            end
+        end
+    end
+    local id = zoneMapID[englishZone]
+    if not id or not (C_Map and C_Map.GetMapInfo) then return englishZone end
+    local ok, info = pcall(C_Map.GetMapInfo, id)
+    if ok and type(info) == "table" and type(info.name) == "string" and info.name ~= "" then
+        return info.name
+    end
+    return englishZone
+end
+
+-- UI.ZoneColor wraps the English name in its colour; peel the colour off and
+-- re-wrap the display name so the colour lookup still uses the English key.
+-- (UI.ZoneColor itself lives in DelveGuide.lua and is left alone.)
+local function ColoredZone(englishZone)
+    local wrapped = UI.ZoneColor(englishZone)
+    return wrapped:sub(1, #wrapped - #englishZone - 2) .. UI.ZoneDisplayName(englishZone) .. "|r"
+end
 
 -- Variants rotate at the daily reset -- the single most-asked question about
 -- the "active today" list. Read at render time only; the tab redraws on its
@@ -10,8 +61,8 @@ local function RotationCountdown()
     if not ok or type(secs) ~= "number" or secs <= 0 then return nil end
     local h = math.floor(secs / 3600)
     local m = math.floor((secs % 3600) / 60)
-    if h > 0 then return string.format("Rotates in %dh %dm", h, m) end
-    return string.format("Rotates in %dm", m)
+    if h > 0 then return string.format(L["Rotates in %dh %dm"], h, m) end
+    return string.format(L["Rotates in %dm"], m)
 end
 
 -- ---- Per-index row cache -------------------------------------------------
@@ -59,7 +110,7 @@ local function GetDelveRow(parent, i)
         row.nameFS:SetText("|cFFFFFFFF"..self.delveName.."|r")
         GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:AddLine("|cFFFFD700"..self.delveName.."|r")
         GameTooltip:AddLine("|cFFCCCCCC"..self.delveZone.."|r"); GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("|cFF00FF88Click to open map & set waypoint|r"); GameTooltip:Show()
+        GameTooltip:AddLine("|cFF00FF88"..L["Click to open map & set waypoint"].."|r"); GameTooltip:Show()
     end)
     row.nameBtn:SetScript("OnLeave", function(self)
         if not self.pin then return end
@@ -133,7 +184,8 @@ local function CreateDelveRow(parent, y, d, index)
     else nameText = isBountiful and ("|cFFFFD700"..d.name.."|r") or d.name end
     row.nameBtn.pin       = pin
     row.nameBtn.delveName = d.name
-    row.nameBtn.delveZone = d.zone
+    -- Display only (the row tooltip); nothing looks this value up.
+    row.nameBtn.delveZone = UI.ZoneDisplayName(d.zone)
     row.nameBtn.nameText  = nameText
     row.nameFS:SetText(nameText)
     row.nameBtn:Show()
@@ -145,7 +197,7 @@ local function CreateDelveRow(parent, y, d, index)
     -- Drop last render's fixed width first, or GetStringWidth below measures
     -- the old box instead of this row's text.
     row.infoFS:SetWidth(0)
-    row.infoFS:SetText(UI.ZoneColor(d.zone).."  "..variantText)
+    row.infoFS:SetText(ColoredZone(d.zone).."  "..variantText)
     -- Let the FontString auto-size to its text content (no fixed width)
     -- so flag buttons chain correctly after the actual text
     local infoTextW = row.infoFS:GetStringWidth()
@@ -154,12 +206,12 @@ local function CreateDelveRow(parent, y, d, index)
 
     -- Interactive flag badges with hover tooltips — all tags flow in one chain
     local FLAG_DEFS = {}
-    if d.isBestRoute then table.insert(FLAG_DEFS, {text="|cFF00FF00[Best]|r", tip="Best Route", desc="This variant has the fastest known clear path for speed runs."}) end
-    if d.hasBug then table.insert(FLAG_DEFS, {text="|cFFFF4444[Bug]|r", tip="Known Bug", desc="This variant has a known bug that may cause issues during the run."}) end
-    if d.mountable then table.insert(FLAG_DEFS, {text="|cFFFFD700[Mt]|r", tip="Mountable", desc="You can use your mount inside this delve to move between packs faster."}) end
-    if type(delveStatus)=="table" and delveStatus.nemesis then table.insert(FLAG_DEFS, {text="|cFFFF4444[Nemesis]|r", tip="Nemesis Active", desc="A Nemesis boss is present in this delve today -- a tougher fight with its own mechanics. See the Nemesis tab for what it does and how to handle it."}) end
-    if isBountiful then table.insert(FLAG_DEFS, {text="|cFFFFD700[Bountiful]|r", tip="Bountiful Delve", desc="This delve is Bountiful today. Use a Coffer Key to open the Bountiful Coffer for bonus loot."}) end
-    if active then table.insert(FLAG_DEFS, {text="|cFF00FF44* TODAY|r", tip="Active Today", desc="This variant is the one currently available for this delve."}) end
+    if d.isBestRoute then table.insert(FLAG_DEFS, {text="|cFF00FF00"..L["[Best]"].."|r", tip=L["Best Route"], desc=L["This variant has the fastest known clear path for speed runs."]}) end
+    if d.hasBug then table.insert(FLAG_DEFS, {text="|cFFFF4444"..L["[Bug]"].."|r", tip=L["Known Bug"], desc=L["This variant has a known bug that may cause issues during the run."]}) end
+    if d.mountable then table.insert(FLAG_DEFS, {text="|cFFFFD700"..L["[Mt]"].."|r", tip=L["Mountable"], desc=L["You can use your mount inside this delve to move between packs faster."]}) end
+    if type(delveStatus)=="table" and delveStatus.nemesis then table.insert(FLAG_DEFS, {text="|cFFFF4444"..L["[Nemesis]"].."|r", tip=L["Nemesis Active"], desc=L["A Nemesis boss is present in this delve today -- a tougher fight with its own mechanics. See the Nemesis tab for what it does and how to handle it."]}) end
+    if isBountiful then table.insert(FLAG_DEFS, {text="|cFFFFD700"..L["[Bountiful]"].."|r", tip=L["Bountiful Delve"], desc=L["This delve is Bountiful today. Use a Coffer Key to open the Bountiful Coffer for bonus loot."]}) end
+    if active then table.insert(FLAG_DEFS, {text="|cFF00FF44"..L["* TODAY"].."|r", tip=L["Active Today"], desc=L["This variant is the one currently available for this delve."]}) end
 
     local lastAnchor = row.infoFS
     for j = 1, #FLAG_DEFS do
@@ -189,19 +241,19 @@ DelveGuide.RenderDelves = function()
     -- Trovehunter's Bounty (weekly) -- state comes from the shared helper so
     -- this row and the pre-entry checklist can't disagree. IDs: DelveGuideData.trove.
     local troveState = DelveGuide.GetTroveStatus and DelveGuide.GetTroveStatus() or "none"
-    local troveText = (troveState == "active")     and "|cFF00FF44Active|r"
-                   or (troveState == "inBags")     and "|cFFFFFF00In Bags|r"
-                   or (troveState == "weeklyDone") and "|cFF44FF44Done this week|r"
-                   or "|cFFFF4444None|r"
+    local troveText = (troveState == "active")     and ("|cFF00FF44"..L["Active"].."|r")
+                   or (troveState == "inBags")     and ("|cFFFFFF00"..L["In Bags"].."|r")
+                   or (troveState == "weeklyDone") and ("|cFF44FF44"..L["Done this week"].."|r")
+                   or ("|cFFFF4444"..L["None"].."|r")
     -- ID lives in DelveGuideData.nemesisItem, not here. It was hardcoded to the
     -- Season 1 Beacon of Hope (253342), so after 12.1 replaced it this row was
     -- counting an item nobody could obtain and always read "None".
     local NI = DelveGuideData.nemesisItem or {}
     local beaconCount = (NI.ITEM_ID and C_Item.GetItemCount(NI.ITEM_ID, true)) or 0
-    local beaconText=beaconCount>0 and "|cFF00FF44"..beaconCount.." in Bags|r" or "|cFFFF4444None|r"
+    local beaconText=beaconCount>0 and ("|cFF00FF44"..string.format(L["%d in Bags"],beaconCount).."|r") or ("|cFFFF4444"..L["None"].."|r")
     local restoredKeyInfo=C_CurrencyInfo.GetCurrencyInfo(DelveGuideData.cofferKeys.RESTORED_CURRENCY_ID)
     local restoredKeyCount=restoredKeyInfo and restoredKeyInfo.quantity or 0
-    local restoredKeyText=restoredKeyCount>0 and "|cFF00FF44"..restoredKeyCount.." in Bags|r" or "|cFF888888None|r"
+    local restoredKeyText=restoredKeyCount>0 and ("|cFF00FF44"..string.format(L["%d in Bags"],restoredKeyCount).."|r") or ("|cFF888888"..L["None"].."|r")
     
     local activeData,inactiveData={},{}
     for _,d in ipairs(DelveGuideData.delves) do
@@ -235,7 +287,7 @@ DelveGuide.RenderDelves = function()
                 shown[name] = true
                 table.insert(activeData, {
                     name=name, zone=zoneByName[name] or "",
-                    variant=variantByDelve[name] or "New variant",
+                    variant=variantByDelve[name] or L["New variant"],
                     ranking="?", mountable=false, hasBug=false, isBestRoute=false,
                 })
             end
@@ -244,14 +296,14 @@ DelveGuide.RenderDelves = function()
 
     table.sort(activeData, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
     
-    local note=vc>0 and "  |cFF44FF44("..vc.." active today)|r" or "  |cFFAAAAAA(use /dg scan)|r"
+    local note=vc>0 and ("  |cFF44FF44"..string.format(L["(%d active today)"],vc).."|r") or ("  |cFFAAAAAA"..L["(use /dg scan)"].."|r")
     local rotate=RotationCountdown()
     if rotate then note=note.."  |cFF888888"..rotate.."|r" end
     -- Hover target over the ranking header. Three CurseForge threads asked what
     -- S-F actually measures, so the answer lives on the header itself rather
     -- than on every row.
     local headerY=y
-    local headerH=UI.CreateHeader(cf,headerY,"Delve Rankings -- S=Fastest | F=Slowest |cFF888888[?]|r"..note)
+    local headerH=UI.CreateHeader(cf,headerY,L["Delve Rankings -- S=Fastest | F=Slowest"].." |cFF888888[?]|r"..note)
     local gradeHelp=UI.AcquireButton()
     gradeHelp:SetPoint("TOPLEFT",cf,"TOPLEFT",8,-headerY)
     -- Clamped so a big font scale can't slide the hover region under the
@@ -259,21 +311,29 @@ DelveGuide.RenderDelves = function()
     gradeHelp:SetSize(math.min(math.floor(340*(DelveGuideDB.fontScale or 1)),math.max(80,cf:GetWidth()-60)),headerH)
     gradeHelp:SetScript("OnEnter",function(self)
         GameTooltip:SetOwner(self,"ANCHOR_BOTTOMLEFT")
-        GameTooltip:AddLine("|cFFFFD700How grades work|r")
+        GameTooltip:AddLine("|cFFFFD700"..L["How grades work"].."|r")
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("S = fastest, F = slowest.",1,1,1,true)
-        GameTooltip:AddLine("Grades come from timed runs players sent in with |cFFFFFF00/dg submit|r -- not from how hard a delve is.",1,1,1,true)
-        GameTooltip:AddLine("Only Tier 8 and above count.",1,1,1,true)
-        GameTooltip:AddLine("A |cFF888888[?]|r grade means not enough runs yet.",1,1,1,true)
+        GameTooltip:AddLine(L["S = fastest, F = slowest."],1,1,1,true)
+        -- Whole sentences for translators; the coloured bits go in as arguments.
+        GameTooltip:AddLine(string.format(L["Grades come from timed runs players sent in with %s -- not from how hard a delve is."],"|cFFFFFF00/dg submit|r"),1,1,1,true)
+        GameTooltip:AddLine(L["Only Tier 8 and above count."],1,1,1,true)
+        GameTooltip:AddLine(string.format(L["A %s grade means not enough runs yet."],"|cFF888888[?]|r"),1,1,1,true)
         GameTooltip:Show()
     end)
     gradeHelp:SetScript("OnLeave",function() GameTooltip:Hide() end)
     y=y+headerH+4
     local rs=DelveGuideData.rankingStats
     if rs then
-        y=y+UI.CreateRow(cf,y,string.format("|cFF888888Community-timed from |r|cFF00FF88%d|r|cFF888888 player submissions -- add yours with |r|cFFFFFF00/dg submit|r|cFF888888. Credits in Settings.|r", rs.submissions or 0))
+        -- One sentence for translators: each coloured figure closes and re-opens
+        -- the surrounding grey itself, so the rendered bytes are unchanged.
+        local subsPart   = "|r|cFF00FF88"..(rs.submissions or 0).."|r|cFF888888"
+        local submitPart = "|r|cFFFFFF00/dg submit|r|cFF888888"
+        y=y+UI.CreateRow(cf,y,"|cFF888888"..string.format(
+            L["Community-timed from %s player submissions -- add yours with %s. Credits in Settings."],
+            subsPart, submitPart).."|r")
     end
-    y=y+UI.CreateRow(cf,y,string.format("|cFF3088FFWeekly Items:|r  Trovehunter's Bounty: %s   |   %s: %s   |   Restored Coffer Key: %s",
+    -- The item names in this row are game data and stay English keys.
+    y=y+UI.CreateRow(cf,y,"|cFF3088FF"..L["Weekly Items:"].."|r"..string.format("  Trovehunter's Bounty: %s   |   %s: %s   |   Restored Coffer Key: %s",
         troveText, (DelveGuideData.nemesisItem and DelveGuideData.nemesisItem.NAME) or "Nemesis Item", beaconText, restoredKeyText))
     
     local delveCount,_,_,vaultActs=UI.GetWeeklyVaultData()
@@ -286,16 +346,16 @@ DelveGuide.RenderDelves = function()
             -- the per-tier table is only a fallback (and can't know which of
             -- your activities actually decides the slot).
             local reward=tierNum and DelveGuideData.tierRewards and DelveGuideData.tierRewards[tierNum]
-            local ilvlText=a.rewardIlvl and ("|cFFFFD700"..a.rewardIlvl.." ilvl|r")
-                or (reward and ("|cFFFFD700"..reward.vault.." ilvl|r"))
-                or (tierNum and ("|cFFFFD700T"..tierNum.."|r")) or "|cFF888888?|r"
+            local ilvlText=a.rewardIlvl and ("|cFFFFD700"..string.format(L["%s ilvl"],a.rewardIlvl).."|r")
+                or (reward and ("|cFFFFD700"..string.format(L["%s ilvl"],reward.vault).."|r"))
+                or (tierNum and ("|cFFFFD700"..string.format(L["T%s"],tierNum).."|r")) or "|cFF888888?|r"
             if done then
-                table.insert(parts,string.format("|cFF00FF44Slot %d|r (%s)",a.index or #parts+1,ilvlText))
+                table.insert(parts,"|cFF00FF44"..string.format(L["Slot %d"],a.index or #parts+1).."|r ("..ilvlText..")")
             else
-                table.insert(parts,string.format("|cFF888888Slot %d:|r %d/%d needed",a.index or #parts+1,a.progress,a.threshold))
+                table.insert(parts,"|cFF888888"..string.format(L["Slot %d:"],a.index or #parts+1).."|r "..string.format(L["%d/%d needed"],a.progress,a.threshold))
             end
         end
-        y=y+UI.CreateRow(cf,y,string.format("|cFF3088FFGreat Vault:|r  %d delve(s) this week  --  %s",delveCount,table.concat(parts,"  |  ")))
+        y=y+UI.CreateRow(cf,y,"|cFF3088FF"..L["Great Vault:"].."|r  "..string.format(L["%d delve(s) this week"],delveCount).."  --  "..table.concat(parts,"  |  "))
     end
     y=y+8
 
@@ -310,20 +370,23 @@ DelveGuide.RenderDelves = function()
     helpBtn:SetScript("OnEnter", function(self)
         helpFS:SetText("|cFFFFFFFF?|r")
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine("|cFFFFD700What are Delves?|r")
+        GameTooltip:AddLine("|cFFFFD700"..L["What are Delves?"].."|r")
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Short 1-5 player mini-dungeons across Quel'Thalas.", 1, 1, 1, true)
-        GameTooltip:AddLine("No role requirements - bring any spec, any class.", 1, 1, 1, true)
+        GameTooltip:AddLine(L["Short 1-5 player mini-dungeons across Quel'Thalas."], 1, 1, 1, true)
+        GameTooltip:AddLine(L["No role requirements - bring any spec, any class."], 1, 1, 1, true)
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("|cFFFFD700Variants:|r Each delve has rotating story variants that change daily.", 1, 1, 1, true)
-        GameTooltip:AddLine("|cFFFFD700Tiers:|r 1-11 control difficulty. Tier 8+ end-of-run gear is Champion-track (295 ilvl).", 1, 1, 1, true)
-        GameTooltip:AddLine("|cFFFFD700Bountiful:|r Marked delves that drop bonus loot when opened with a Restored Coffer Key.", 1, 1, 1, true)
-        GameTooltip:AddLine(string.format("|cFFFFD700Coffer Keys:|r Earn Coffer Key Shards (%d/week cap) - %d shards = 1 key.",
+        GameTooltip:AddLine("|cFFFFD700"..L["Variants:"].."|r "..L["Each delve has rotating story variants that change daily."], 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700"..L["Tiers:"].."|r "..L["1-11 control difficulty. Tier 8+ end-of-run gear is Champion-track (295 ilvl)."], 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700"..L["Bountiful:"].."|r "..L["Marked delves that drop bonus loot when opened with a Restored Coffer Key."], 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700"..L["Coffer Keys:"].."|r "..string.format(L["Earn Coffer Key Shards (%d/week cap) - %d shards = 1 key."],
             DelveGuideData.cofferKeys.SHARD_WEEKLY_CAP, DelveGuideData.cofferKeys.SHARDS_PER_KEY), 1, 1, 1, true)
-        GameTooltip:AddLine("|cFFFFD700Great Vault:|r 2/4/8 delves unlock vault slots. Tier 8+ gives Hero-track (305 ilvl) vault rewards.", 1, 1, 1, true)
+        GameTooltip:AddLine("|cFFFFD700"..L["Great Vault:"].."|r "..L["2/4/8 delves unlock vault slots. Tier 8+ gives Hero-track (305 ilvl) vault rewards."], 1, 1, 1, true)
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Your companion Valeera joins every run. Set her role (DPS/Healer/Tank)", 0.7, 0.7, 0.7, true)
-        GameTooltip:AddLine("at Restoration Stones inside the delve. She levels up as you play.", 0.7, 0.7, 0.7, true)
+        -- These two lines are one sentence split across two AddLine calls; kept
+        -- split so the wrapped rendering is unchanged. The companion name is a
+        -- format argument because it is game data, not text to translate.
+        GameTooltip:AddLine(string.format(L["Your companion %s joins every run. Set her role (DPS/Healer/Tank)"], "Valeera"), 0.7, 0.7, 0.7, true)
+        GameTooltip:AddLine(L["at Restoration Stones inside the delve. She levels up as you play."], 0.7, 0.7, 0.7, true)
         GameTooltip:Show()
     end)
     helpBtn:SetScript("OnLeave", function() helpFS:SetText("|cFF777777?|r"); GameTooltip:Hide() end)
@@ -332,7 +395,7 @@ DelveGuide.RenderDelves = function()
     local shareBtn = UI.AcquirePanelButton()
     shareBtn:SetSize(110, 20)
     shareBtn:SetPoint("TOPRIGHT", cf, "TOPRIGHT", -10, -(y - 2))
-    shareBtn:SetText("Share to Party")
+    shareBtn:SetText(L["Share to Party"])
     shareBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     shareBtn:SetScript("OnClick", function(_, button)
         local channel = (button == "RightButton") and "GUILD" or "PARTY"
@@ -340,23 +403,24 @@ DelveGuide.RenderDelves = function()
     end)
     shareBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine("|cFFFFD700Share Active Variants|r")
-        GameTooltip:AddLine("Left-click: Share to Party", 0.7, 1, 0.7)
-        GameTooltip:AddLine("Right-click: Share to Guild", 0.5, 0.7, 1)
+        GameTooltip:AddLine("|cFFFFD700"..L["Share Active Variants"].."|r")
+        GameTooltip:AddLine(L["Left-click: Share to Party"], 0.7, 1, 0.7)
+        GameTooltip:AddLine(L["Right-click: Share to Guild"], 0.5, 0.7, 1)
         GameTooltip:Show()
     end)
     shareBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    y=y+UI.CreateRow(cf,y,"|cFFAAAAAA"..string.format("%-6s  %-22s  %-14s  %s","Rank","Delve","Zone","Variant / Flags").."|r")
+    y=y+UI.CreateRow(cf,y,"|cFFAAAAAA"..string.format("%-6s  %-22s  %-14s  %s",L["Rank"],L["Delve"],L["Zone"],L["Variant / Flags"]).."|r")
     y=y+UI.CreateRow(cf,y,"|cFF555555"..string.rep("-",90).."|r")+2
     if vc>0 then
-        y=y+4; y=y+UI.CreateRow(cf,y,"|cFF00FF44-- * ACTIVE TODAY --|r")
+        y=y+4; y=y+UI.CreateRow(cf,y,"|cFF00FF44"..L["-- * ACTIVE TODAY --"].."|r")
         for _,d in ipairs(activeData) do rowIndex=rowIndex+1; y=y+CreateDelveRow(cf,y,d,rowIndex) end
-        y=y+12; y=y+UI.CreateRow(cf,y,"|cFF888888-- ALL VARIANTS (INACTIVE) --|r")
+        y=y+12; y=y+UI.CreateRow(cf,y,"|cFF888888"..L["-- ALL VARIANTS (INACTIVE) --"].."|r")
     end
     local lastZone=""
     for _,d in ipairs(inactiveData) do
-        if d.zone~=lastZone then y=y+4; y=y+UI.CreateRow(cf,y,"|cFF666666-- "..d.zone.." --|r"); lastZone=d.zone end
+        -- Grouping still compares the English zone; only the label is translated.
+        if d.zone~=lastZone then y=y+4; y=y+UI.CreateRow(cf,y,"|cFF666666"..string.format(L["-- %s --"],UI.ZoneDisplayName(d.zone)).."|r"); lastZone=d.zone end
         rowIndex=rowIndex+1; y=y+CreateDelveRow(cf,y,d,rowIndex)
     end
     cf:SetHeight(y+20)
