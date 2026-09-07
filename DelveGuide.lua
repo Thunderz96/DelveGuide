@@ -60,6 +60,11 @@ end
 -- needs. They live up here, ahead of the scanner, because the scanner uses them.
 -- ============================================================
 
+-- Sort weight for the S-F rankings. Three files carried their own identical
+-- copy of this table, so adding a rank (or re-lettering one) meant finding all
+-- three. Exported as UI.RANK_ORDER for the tab renderers and the widget.
+local RANK_ORDER = { S=1, A=2, B=3, C=4, D=5, F=6 }
+
 -- Strip WoW's inline escape sequences out of a string.
 --
 -- Five copies of this gsub chain had drifted apart: some stripped only hex
@@ -949,7 +954,6 @@ local zoneColors={["Zul'Aman"]="|cFFFF8C00",["Quel'Thalas"]="|cFF00CED1",["Voids
 local function ZoneColor(z) return (zoneColors[z] or "|cFFCCCCCC")..z.."|r" end
 local typeColors={Combat="|cFFFF4444",Utility="|cFF44AAFF"}
 local RANK_COLORS={S="|cFF00FF44",A="|cFF66FF44",B="|cFFAAFF44",C="|cFFFFFF44",D="|cFFFF8844",F="|cFFFF4444"}
-local RANK_ORDER={S=1,A=2,B=3,C=4,D=5,F=6}
 local function TypeColor(t) return (typeColors[t] or "|cFFFFFFFF")..t.."|r" end
 
 -- UID of the waypoint WE set, so we can clear it before setting the next one.
@@ -1504,6 +1508,7 @@ DelveGuide.UI = {
     ZoneColor       = ZoneColor,
     TypeColor       = TypeColor,
     RANK_COLORS     = RANK_COLORS,
+    RANK_ORDER      = RANK_ORDER,
     SetDelveWaypoint= SetDelveWaypoint,
     FindPinByName   = FindPinByName,
     GetWeeklyVaultData = GetWeeklyVaultData,

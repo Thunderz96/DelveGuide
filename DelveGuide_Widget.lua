@@ -3,7 +3,7 @@
 -- ============================================================
 local UI = DelveGuide.UI
 
-local RANK_ORDER       = {S=1, A=2, B=3, C=4, D=5, F=6}
+local RANK_ORDER       = UI.RANK_ORDER
 local W_HEADER_H       = 28
 local W_PAD            = 10
 local W_MAX_LINES      = 14   -- 12 rotational delves in Season 2, + headroom
