@@ -2614,7 +2614,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         print("  |cFFFFFF00/dg bountiful|r          - Toggle widget filter to show only bountiful delves")
         print("  |cFFFFFF00/dg check|r              - Show pre-entry checklist")
         print("  |cFFFFFF00/dg roster|r             - Open Roster tab")
-        print("  |cFFFFFF00/dg voidforge|r          - Open Voidforge tab (Voidcore transmutes, upgrades, slot priority)")
+        print("  |cFFFFFF00/dg voidforge|r          - Open Voidforge tab (bonus rolls, upgrades, slot priority)")
         print("  |cFFFFFF00/dg journey|r            - Open the Journey tab: Delver's Journey ranks + Delver's Call quests (alias /dg quests)")
         print("  |cFFFFFF00/dg submit|r             - Copy your run times to submit for community variant rankings")
         print("  |cFFFFFF00/dg questscan|r          - Scan quest log for Delver's Call quest IDs")
@@ -3364,7 +3364,9 @@ local function InjectDelveData(self)
         self:AddLine("Speed Grade: " .. gradeText .. "  " .. flags)
 
         local minT = (DelveGuide.Voidforge and DelveGuide.Voidforge.MIN_VOIDCORE_TIER) or 8
-        self:AddLine(string.format("|cFFAA66CCT%d+: drops Nebulous Voidcore|r", minT))
+        -- Voidcores do not drop from delves; T8+ is where the end-of-run loot
+        -- hits the max pool, which is what makes a bonus roll there worthwhile.
+        self:AddLine(string.format("|cFFAA66CCT%d+: max-ilvl loot -- worth a Voidcore bonus roll|r", minT))
 
         self:Show()
     end

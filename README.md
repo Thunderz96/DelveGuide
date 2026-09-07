@@ -23,7 +23,7 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - Highlights your current best routes and known bugs/quirks
 - **Share to Chat** — send today's active variants to Party or Guild with one click
 - **"What are Delves?"** tooltip (hover the **?** icon) for new players
-- **World Map Tooltips** — hover active Delves on the map to see their Speed Grade and Variant. Tier 8+ delves are flagged as Voidcore-eligible.
+- **World Map Tooltips** — hover active Delves on the map to see their Speed Grade and Variant. Tier 8+ delves are flagged as max-ilvl loot, worth a Voidcore bonus roll.
 
 ### 🎯 In-Run HUD
 
@@ -56,14 +56,14 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - **Independent font scale** — `/dg widgetfont` keeps the widget compact even when the main UI font is bumped up
 - Draggable and lockable, with optional click-to-open and auto-hide
 
-### 🧙 Voidforge — Transmutes & Gear Upgrades
+### 🧙 Voidforge — Bonus Rolls & Gear Upgrades
 
 The Voidforge tab tracks Season 2's two delve reward currencies:
 
-- **Nebulous Voidcore** — the transmute token. Transmute one into equipment after a raid boss, Mythic+ dungeon, Bountiful Delve (Tier 8+) or Nightmare Prey Hunt; one item per difficulty level until your spec's pool is exhausted.
-- **Ascendant Venomstone** — the gear-upgrade material *(arriving later this season)*. 10 upgrade one weapon, trinket or neck; a Tier 11 Bountiful Delve guarantees one (~1-2).
+- **Nebulous Voidcore** — the bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. For now only the Great Vault awards them; a weekly purchase is expected around 12.1.5.
+- **Ascendant Venomstone** — the gear-upgrade material *(arriving later this season)*. 10 upgrade one weapon or trinket, the only slots they apply to; a Tier 11 Bountiful Delve guarantees one (~1-2).
 
-Plus a **slot upgrade priority** scan (weapons & trinkets first, then armor by lowest ilvl) and an **alt stockpile** rollup across your cached characters.
+Plus an **upgrade priority** scan of the four Venomstone slots (weapons and trinkets, lowest ilvl first) and an **alt stockpile** rollup across your cached characters.
 
 ### 📊 DataBroker Feed
 
@@ -111,7 +111,7 @@ Delve loot reference organized by tier — know what drops before you go in. Inc
 
 - Run log grouped by **weekly reset** — timestamps, character names, variant details
 - **Completion times** displayed per run
-- Per-week count of **Tier 8+ runs** (Voidcore-eligible)
+- Per-week count of **Tier 8+ runs** (max-ilvl loot)
 
 ### 🔮 Future Tab
 

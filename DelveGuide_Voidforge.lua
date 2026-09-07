@@ -1,5 +1,5 @@
 -- ============================================================
--- DelveGuide_Voidforge.lua  --  Season 2 transmute-token & upgrade state
+-- DelveGuide_Voidforge.lua  --  Season 2 bonus-roll & upgrade state
 -- ============================================================
 -- One source of truth for the delve reward currencies, shared by the
 -- widget, checklist, Voidforge tab, history tab, and map tooltip.
@@ -33,8 +33,9 @@ DelveGuide.Voidforge = {
                                      -- S2). Set this when it appears as a currency...
     VENOMSTONE_ITEM_ID      = nil,  -- ...or set this if it turns out to be a bag item instead.
     VENOMSTONE_PER_UPGRADE  = 10,   -- 10 Venomstones upgrade one eligible piece.
-    MIN_VOIDCORE_TIER       = 8,    -- The addon's gate for "this run can award a Voidcore". The currency's
-                                     -- own tooltip says only "Bountiful Delves", no tier (PTR 2026-09-06).
+    MIN_VOIDCORE_TIER       = 8,    -- The tier from which a Bountiful Delve's end-of-run loot is the max
+                                     -- pool (Tiers 9-11 match 8), i.e. where a Voidcore bonus roll is worth
+                                     -- spending. Voidcores do NOT drop from delves (Nick, live, 2026-09-06).
     VENOMSTONE_TIER         = 11,   -- T11 Bountiful Delves guarantee an Ascendant Venomstone.
 }
 
@@ -45,7 +46,7 @@ DelveGuide.GetVoidforgeStatus = function()
     local V = DelveGuide.Voidforge
     local s = {
         configured       = false,
-        cores            = nil,  -- current Nebulous Voidcore (transmute token) count
+        cores            = nil,  -- current Nebulous Voidcore (bonus-roll) count
         coreMax          = nil,  -- weekly or seasonal cap (if the API exposes one)
         venomstones      = nil,  -- Ascendant Venomstone count (nil until it goes live)
         venomstonesPerUp = V.VENOMSTONE_PER_UPGRADE,
@@ -87,39 +88,25 @@ DelveGuide.IsDelveVoidcoreEligible = function(tierNum)
 end
 
 -- Equipment slot scan -- powers the Voidforge tab's "upgrade priority" table.
--- We map slot IDs -> human labels here so the UI doesn't have to. Slot 4 (shirt),
--- 18 (legacy ranged), and 19 (tabard) are skipped because they don't take ilvl
--- upgrades from Voidcores.
+-- Ascendant Venomstones upgrade weapons and trinkets ONLY (Nick, live,
+-- 2026-09-06), so these four are the only slots that belong here. The tab
+-- used to list all sixteen with armour marked [low]; that implied armour could
+-- be upgraded at all, which it cannot.
 --
--- `tier` controls upgrade priority (lower = recommend first):
---   1 = weapons & trinkets (highest stat-per-ilvl, biggest DPS/HPS gain)
---   2 = everything else
--- Within a tier, items sort ASC by ilvl, and empty slots beat both tiers.
+-- `tier` is kept (all 1) so the sort and the UI's prefix logic stay as they
+-- were; empty slots still sort first, then ASC by ilvl.
 local SLOT_INFO = {
     { id = 16, label = "Main Hand", tier = 1 },
     { id = 17, label = "Off Hand",  tier = 1 },
     { id = 13, label = "Trinket 1", tier = 1 },
     { id = 14, label = "Trinket 2", tier = 1 },
-    { id = 1,  label = "Head",      tier = 2 },
-    { id = 2,  label = "Neck",      tier = 2 },
-    { id = 3,  label = "Shoulder",  tier = 2 },
-    { id = 15, label = "Back",      tier = 2 },
-    { id = 5,  label = "Chest",     tier = 2 },
-    { id = 9,  label = "Wrist",     tier = 2 },
-    { id = 10, label = "Hands",     tier = 2 },
-    { id = 6,  label = "Waist",     tier = 2 },
-    { id = 7,  label = "Legs",      tier = 2 },
-    { id = 8,  label = "Feet",      tier = 2 },
-    { id = 11, label = "Finger 1",  tier = 2 },
-    { id = 12, label = "Finger 2",  tier = 2 },
 }
 
 DelveGuide.VoidforgeSlots = SLOT_INFO
 
--- Returns a list of {slot, label, tier, ilvl, link, empty} for every gear slot
--- worth upgrading. Sort order: empty slots first, then weapons/trinkets ASC by
--- ilvl, then everything else ASC by ilvl. Weapons & trinkets get bumped to the
--- top because each ilvl on them carries a much larger stat budget than armor.
+-- Returns a list of {slot, label, tier, ilvl, link, empty} for the four
+-- Venomstone-upgradeable slots. Sort order: empty slots first, then ASC by
+-- ilvl, so the lowest weapon or trinket is the first upgrade target.
 DelveGuide.GetVoidforgeSlotPriority = function()
     local out = {}
 

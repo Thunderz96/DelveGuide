@@ -2,8 +2,8 @@
 -- DelveGuide_UI_Voidforge.lua  --  Voidforge tracker tab
 -- ============================================================
 -- Surfaces the Season 2 delve reward economy from DelveGuide_Voidforge.lua
--- (Nebulous Voidcore transmutes + Ascendant Venomstone upgrades) plus:
---   * lowest-ilvl gear slots (best Venomstone upgrade targets)
+-- (Nebulous Voidcore bonus rolls + Ascendant Venomstone upgrades) plus:
+--   * the four Venomstone-upgradeable slots (weapons + trinkets) by ilvl
 --   * cross-character stockpile rolled up from DelveGuideDB.roster.
 -- ============================================================
 local UI = DelveGuide.UI
@@ -29,18 +29,18 @@ DelveGuide.RenderVoidforge = function()
     local cf = UI.NewContentFrame(); local y = 10
     UI.EnsureFontFiles()
 
-    y = y + UI.CreateHeader(cf, y, "Voidforge  --  Transmutes & Gear Upgrades") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888Season 2 splits the delve reward economy in two: Nebulous Voidcores transmute into equipment after a qualifying run, and Ascendant Venomstones -- arriving later this season -- upgrade the gear you have (10 per piece).|r") + 8
+    y = y + UI.CreateHeader(cf, y, "Voidforge  --  Bonus Rolls & Gear Upgrades") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888Season 2 splits the delve reward economy in two: Nebulous Voidcores are bonus-roll tokens (roll for additional loot after a boss or a run), and Ascendant Venomstones -- arriving later this season -- upgrade weapons and trinkets (10 per piece).|r") + 8
 
     local s = DelveGuide.GetVoidforgeStatus and DelveGuide.GetVoidforgeStatus() or { configured = false }
 
-    -- ---- Transmutes (Nebulous Voidcore) ----
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Transmutes  --  Nebulous Voidcore|r") + 4
+    -- ---- Bonus Rolls (Nebulous Voidcore) ----
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Bonus Rolls  --  Nebulous Voidcore|r") + 4
     if s.cores then
         local capStr = s.coreMax and ("/" .. s.coreMax) or ""
-        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(transmute into gear after a raid boss / M+ / Bountiful Delve / Nightmare Prey)|r", s.cores, capStr)) + 2
+        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(bonus roll after a raid boss / M+ / Bountiful Delve / Nightmare Prey)|r", s.cores, capStr)) + 2
     else
-        y = y + UI.CreateRow(cf, y, "|cFF888888  None yet -- they come from Tier 8+ Bountiful Delves, Mythic+ and Nightmare Prey Hunts. (Populates in-game or after a /reload.)|r") + 2
+        y = y + UI.CreateRow(cf, y, "|cFF888888  None yet -- for now the Great Vault is the only source. (Populates in-game or after a /reload.)|r") + 2
     end
     y = y + 6
 
@@ -59,7 +59,7 @@ DelveGuide.RenderVoidforge = function()
     -- ---- Where to Earn ----
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Where to Earn|r") + 4
     local sources = {
-        { tag = "|cFFAA66CCVoidcores|r",   text = (DelveGuideData.currencyNotes and DelveGuideData.currencyNotes.voidcore or "") .. " Also selectable as a Great Vault consolation." },
+        { tag = "|cFFAA66CCVoidcores|r",   text = (DelveGuideData.currencyNotes and DelveGuideData.currencyNotes.voidcore or "") },
         { tag = "|cFFAA66CCVenomstones|r", text = (DelveGuideData.currencyNotes and DelveGuideData.currencyNotes.venomstone or "") },
     }
     for _, src in ipairs(sources) do
@@ -69,7 +69,7 @@ DelveGuide.RenderVoidforge = function()
 
     -- ---- Slot Upgrade Priority ----
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Upgrade Priority|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888  Weapons & trinkets first (largest stat-per-ilvl gain), then armor by lowest ilvl. Hover for tooltip, shift-click to chat-link.|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888  Venomstones upgrade weapons and trinkets only, so these are the four slots that matter, lowest ilvl first. Hover for tooltip, shift-click to chat-link.|r") + 4
 
     local slotData = DelveGuide.GetVoidforgeSlotPriority and DelveGuide.GetVoidforgeSlotPriority() or {}
     if #slotData == 0 then
@@ -105,7 +105,6 @@ DelveGuide.RenderVoidforge = function()
         y = y + UI.CreateRow(cf, y, string.format("|cFFCCCCCC  Equipped average: %s  --  Lowest: %s  --  Gap: |cFFFFD700%d|r |cFF888888ilvls|r",
             ColorIlvl(avg), ColorIlvl(lowest), avg > 0 and (avg - lowest) or 0)) + 6
 
-        local tier2Rank = 0
         for _, row in ipairs(slotData) do
             local btn = UI.AcquireButton()
             btn:SetPoint("TOPLEFT", cf, "TOPLEFT", 16, -y)
@@ -116,15 +115,10 @@ DelveGuide.RenderVoidforge = function()
             local prefix
             if row.empty then
                 prefix = "|cFFFF4444[empty]   |r "
-            elseif row.tier == 1 then
-                prefix = "|cFFFF8000[priority]|r "
             else
-                tier2Rank = tier2Rank + 1
-                if tier2Rank <= 4 then
-                    prefix = "|cFFFFD700[low]     |r "
-                else
-                    prefix = "          "
-                end
+                -- Every listed slot is upgradeable now; the old [priority]/[low]
+                -- split against armour rows has nothing left to contrast with.
+                prefix = "          "
             end
 
             local linkText = row.link or "|cFF888888(empty slot)|r"

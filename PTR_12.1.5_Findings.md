@@ -243,6 +243,15 @@ the global kept as a 12.1.0 fallback. A sweep of every other deprecated global t
 has been deleting found no further bare uses. **Lesson:** rendering every tab under `pcall`
 catches what static sweeps miss; the selftest earned its place on day one.
 
+**4.7b A third removal: the global `GetMerchantItemInfo`.** Found 2026-09-06 by `/dg export`'s
+vendor capture, which recorded Naleidea Rivergleam's name and zero items because the call
+errored inside its pcall. Export #36 probed the family: `GetMerchantNumItems`,
+`GetMerchantItemLink`, `GetMerchantItemCostInfo` and `GetMerchantItemCostItem` are still
+globals; `GetMerchantItemInfo` is nil and `C_MerchantFrame.GetItemInfo(i)` (a table with
+`name`, `price`, `stackCount`, `currencyID`, `hasExtendedCost`) replaces it; there is no
+`C_MerchantFrame.GetNumItems`. The addon's shipping code never called any of these -- only
+the export does -- so nothing user-facing was affected.
+
 **Chamber progress source.** Criteria give quantified, locale-free progress (5/6), which is
 a better source than the subzone approach in 5.1 — it measures completion rather than
 position and needs no string matching. Chambers are sequentially gated (the door to

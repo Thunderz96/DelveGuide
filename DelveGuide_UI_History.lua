@@ -162,7 +162,7 @@ DelveGuide.RenderHistory = function()
                 end
                 local coreText=""
                 if coreRuns>0 then
-                    coreText=string.format("  --  |cFFAA66CC%d Voidcore-eligible|r |cFF888888(bountiful T%d+)|r",coreRuns,minCoreTier)
+                    coreText=string.format("  --  |cFFAA66CC%d max-ilvl loot|r |cFF888888(bountiful T%d+)|r",coreRuns,minCoreTier)
                 elseif unknownCore>0 then
                     coreText=string.format("  --  |cFF888888%d T%d+ run(s), bountiful status not recorded|r",unknownCore,minCoreTier)
                 end

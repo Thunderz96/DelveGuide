@@ -459,10 +459,35 @@ DelveGuideData.loot = {
     { name="Delver's Arcane Golem",        id=262496, slot="Cosmetic", season=2, verified=false, source="Sturdy Chest, Gnarldor Isle",      notes="Mount" },
     { name="Giganto Manis",                id=257199, slot="Cosmetic", season=2, verified=false, source="Glory of the Midnight Delver",     notes="Mount -- meta achievement" },
     { name="Apophic Patagia",              id=276163, slot="Cosmetic", season=2, verified=false, source="Azta'rec, any difficulty",         notes="Back" },
-    { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=true,  source="Naleidea Rivergleam (vendor), 2500",  notes="Back" },  -- seen on the PTR vendor, page 2 of 4, 2026-09-06
+    { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=true,  source="Naleidea Rivergleam, 2500 Undercoin", notes="Back" },
     { name="Corroded Patagia",             id=276164, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Back" },
     { name="Corrosive Victory",            id=275988, slot="Cosmetic", season=2, verified=false, source="Season 2 Nemesis intro questline", notes="Toy" },
     { name="Effigy of Dundun",             id=276189, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Toy" },
+    -- Naleidea Rivergleam's stock, read off the PTR with /dg export #36 on
+    -- 2026-09-06 (Silvermoon City, 40 items, all priced in Undercoin). Listed:
+    -- the mounts, pets, toys and transmog. Not listed: the 15 housing-decor
+    -- items (Amani grill, urns, tapestry, canoe...), the consumables (Starter
+    -- Kit, Coffer Key Glue, Restored Coffer Keys, Undercoin/Marl pouches) and
+    -- the flute, which is DelveGuideData.nemesisItem. Item types not stated
+    -- where the name alone does not make them certain; hover shows them.
+    { name="Kreepah'zoyd",                 id=262393, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 10000 Undercoin", notes="" },
+    { name="Corewarden's Hearthstone",     id=265100, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 10000 Undercoin", notes="Hearthstone toy" },
+    { name="Midnight Delver's Flare Gun",  id=264414, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="" },
+    { name="Ensemble: Sprawling Garb",     id=263520, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog set" },
+    { name="Ensemble: Osseoclad's Wear",   id=263574, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog set" },
+    { name="Ensemble: Elder Moss Outfit",  id=263575, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog set" },
+    { name="Ensemble: Rampant Thorn Armor",id=263576, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog set" },
+    { name="Arsenal: Rootlands Weaponry",  id=263577, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog weapon set" },
+    { name="Spirit Effigy",                id=284056, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="" },
+    { name="Hexbinder's Spaulders",        id=284055, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="Transmog" },
+    { name="Twilight Magus's Cowl",        id=264860, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="Transmog" },
+    { name="Gilded Twilight Spaulder",     id=264853, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="Transmog" },
+    { name="Dewy Vinepouch",               id=264849, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="Transmog" },
+    { name="Well Urned Rest",              id=279289, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2000 Undercoin",  notes="" },
+    { name="Sin'dorei Gravestone",         id=262951, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2000 Undercoin",  notes="" },
+    { name="Vilebranch Lifeseer",          id=264856, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2000 Undercoin",  notes="Transmog" },
+    { name="L00T RAID-R Mini",             id=244193, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 1000 Undercoin",  notes="" },
+    { name="Delve-O-Bot 7001",             id=230850, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 500 Undercoin",   notes="" },
 }
 
 
@@ -470,18 +495,21 @@ DelveGuideData.loot = {
 -- SECTION 5: FUTURE / PATCH NOTES
 -- ============================================================
 -- The two Season 2 delve currencies, described once. Every tab that mentions
--- them reads these (Loot, Voidforge, Future) so the wording cannot drift --
--- review 1.8 found the Voidcore called a "bonus roll" in three places and a
--- "transmute" in two. The in-game tooltip (PTR 69594, 2026-09-06) settles it:
--- "Transmutable into powerful equipment upon defeating powerful foes in
--- Midnight raids or completing Mythic+ dungeons, Bountiful Delves and Prey
--- Hunts on Nightmare difficulty. Items may be received once per difficulty
--- level until all potential items for your current specialization have been
--- transmuted." It names NO delve tier; Tier 8+ is this addon's gate
--- (DelveGuide.Voidforge.MIN_VOIDCORE_TIER), not Blizzard's wording.
+-- them reads these (Loot, Voidforge, Future) so the wording cannot drift
+-- (review 1.8). What they are, from Nick's live play (2026-09-06), which
+-- outranks the tooltip's flavour text ("transmutable into powerful
+-- equipment ... once per difficulty level"):
+--   * Nebulous Voidcore = a BONUS-ROLL token: after a boss or a completed
+--     run you spend one to roll for additional loot. It does NOT drop from
+--     delves at any tier -- right now the Great Vault is the only source, and
+--     a weekly quest to buy them (gold, Voidlight Marl or 80 Veteran Crests)
+--     is expected around 12.1.5. MIN_VOIDCORE_TIER in DelveGuide_Voidforge.lua
+--     is therefore about where a roll is WORTH spending, not where one drops.
+--   * Ascendant Venomstone = the UPGRADE material, and it upgrades weapons and
+--     trinkets ONLY -- hence the Voidforge tab's slot list is those four slots.
 DelveGuideData.currencyNotes = {
-    voidcore   = "Transmute into powerful equipment after Midnight raid bosses, Mythic+ dungeons, Bountiful Delves (Tier 8+) or Nightmare Prey Hunts. One item per difficulty level, until your spec's pool is exhausted.",
-    venomstone = "Gear-upgrade material, arriving later this season. 10 upgrade one weapon, trinket or neck; a Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+.",
+    voidcore   = "Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve or Nightmare Prey Hunt, spend one to roll for additional loot -- one item per difficulty level until your spec's pool is exhausted. For now only the Great Vault awards them; a weekly purchase (gold, Voidlight Marl or 80 Veteran Crests) is expected around 12.1.5.",
+    venomstone = "Gear-upgrade material, arriving later this season. 10 upgrade one weapon or trinket -- the only slots they apply to. A Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+.",
 }
 
 DelveGuideData.future = {
