@@ -405,7 +405,7 @@ DelveGuideData.companionFactionID = 2744
 -- meta settles; id = wowhead spell ID (reference only -- curios match by name).
 DelveGuideData.curios = {
     -- ── Combat ──
-    { name="Corrosive Bilespear",        id=1248877, description=L["Chance in combat for your companion to impale the highest- and lowest-health nearby targets for tremendous Nature damage."], curiotype="Combat",  ranking="?" },
+    { name="Corrosive Bilespear",        id=1248877, ids={1248875, 1248877}, description=L["Chance in combat for your companion to impale the highest- and lowest-health nearby targets for tremendous Nature damage."], curiotype="Combat",  ranking="?" },
     { name="Ouroboric Curse",            id=1248856, description=L["At <50% HP: Horrify nearby enemies 6s; you gain +20% primary & +50% leech/avoid/speed for 20s (2 min cd)."],                                          curiotype="Combat",  ranking="?" },
     { name="Essence Trap",               id=1288788, description=L["In combat your companion may place a trap. An enemy within 3 yds triggers it: slows 20% for 5s, then detonates for moderate Nature damage and stuns for 5s."], curiotype="Combat",  ranking="?" },
     -- ── Utility ──
@@ -651,13 +651,18 @@ DelveGuideData.specCurioRecs = {
 -- ============================================================
 -- GRADE COLORS
 -- ============================================================
+-- The one grade palette (Delves tab, Curios, HUD, widget, Settings). The
+-- tier-list convention players already know, warm at the top and cool at the
+-- bottom: S is the only salmon, so it never reads as D or F, and the warm top
+-- grades stay visible over the HUD's green highlight (Nick, 2026-09-07 --
+-- replaced two disagreeing palettes whose S was orange next to an orange D).
 DelveGuideData.gradeColors = {
-    S = "|cFFFF8000",
-    A = "|cFF00FF00",
-    B = "|cFF00BFFF",
-    C = "|cFFFFFF00",
-    D = "|cFFFF6600",
-    F = "|cFFFF0000",
+    S = "|cFFFF7F7F",
+    A = "|cFFFFBF7F",
+    B = "|cFFFFDF7F",
+    C = "|cFFFFFF7F",
+    D = "|cFFBFFF7F",
+    F = "|cFF7FFF7F",
 }
 -- ============================================================
 -- SECTION 8: CHANGELOG

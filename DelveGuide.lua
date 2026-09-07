@@ -995,11 +995,9 @@ local function GradeColor(g) return (DelveGuideData.gradeColors[g] or "|cFFFFFFF
 local zoneColors={["Zul'Aman"]="|cFFFF8C00",["Quel'Thalas"]="|cFF00CED1",["Voidstorm"]="|cFFBF5FFF",["Harandar"]="|cFF7FFF00",["Quel'Danas"]="|cFFFF69B4",["The Coiled Isle"]="|cFF1E90FF"}
 local function ZoneColor(z) return (zoneColors[z] or "|cFFCCCCCC")..z.."|r" end
 local typeColors={Combat="|cFFFF4444",Utility="|cFF44AAFF"}
--- Widget / Settings palette. A red-to-green gradient, kept separate from
--- DelveGuideData.gradeColors because the HUD's green highlight block swallowed
--- a green S there. The S itself now takes the Delves tab's colour so the top
--- grade reads the same everywhere (Nick, 2026-09-07).
-local RANK_COLORS={S=(DelveGuideData and DelveGuideData.gradeColors and DelveGuideData.gradeColors.S) or "|cFFFF8000",A="|cFF66FF44",B="|cFFAAFF44",C="|cFFFFFF44",D="|cFFFF8844",F="|cFFFF4444"}
+-- Widget / Settings colours are the same palette as everything else now
+-- (DelveGuideData.gradeColors); the separate gradient is gone.
+local RANK_COLORS = DelveGuideData.gradeColors
 local function TypeColor(t) return (typeColors[t] or "|cFFFFFFFF")..t.."|r" end
 
 -- UID of the waypoint WE set, so we can clear it before setting the next one.
@@ -2305,6 +2303,24 @@ DelveGuide.commands = {
                     end
                     snap.gloves = { link = link, enchantID = tonumber(link:match("item:%d+:(%d+):")) or 0, ilvl = ilvl }
                 end
+            end)
+
+            -- Valeera's live loadout by trait node (role, both curios), each
+            -- with the spell's description, so a curio missing from
+            -- DelveGuideData.curios (Dusty Loa Totem, PTR 2026-09-07) or a
+            -- rank ID the data lacks can be filled in from an export.
+            pcall(function()
+                local lo = DelveGuide.ReadCompanionLoadout and DelveGuide.ReadCompanionLoadout()
+                if not lo then snap.companion = "nil"; return end
+                local function desc(e)
+                    if e and e.spellID and C_Spell and C_Spell.GetSpellDescription then
+                        local ok, d = pcall(C_Spell.GetSpellDescription, e.spellID)
+                        if ok then e.description = d end
+                    end
+                    return e
+                end
+                snap.companion = { companionID = lo.companionID, configID = lo.configID,
+                    role = lo.role, curios = { Combat = desc(lo.curios.Combat), Utility = desc(lo.curios.Utility) } }
             end)
 
             -- Where the player is standing: the map the client considers current

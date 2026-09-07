@@ -295,9 +295,10 @@ local function NoSay() end
 -- Blizzard's companion frame calls the C_DelvesUI lookups with NO companion
 -- ID whenever its own is unset ("DelvesUI accessors will default to the
 -- active mirror data companion otherwise" -- Blizzard_DelvesCompanionConfiguration.lua).
--- GetTraitTreeForCompanion(12) returned 0 on the PTR with the panel open and
--- closed alike, so the ID from GetCompanionInfoForActivePlayer may not be the
--- ID these accessors want. Try with the ID, then without.
+-- Confirmed on the PTR 2026-09-07: GetTraitTreeForCompanion(12) is nil,
+-- GetTraitTreeForCompanion(nil) is 1223 and everything resolves from there.
+-- The ID from GetCompanionInfoForActivePlayer is not the ID these accessors
+-- take, so the no-ID form goes first and the ID form is only a fallback.
 local function Positive(v) return (type(v) == "number" and v > 0) and v or nil end
 local function GetCompanionConfig(say)
     say = say or NoSay
@@ -306,11 +307,11 @@ local function GetCompanionConfig(say)
     say("GetCompanionInfoForActivePlayer ->", compID)
     if type(compID) ~= "number" or compID <= 0 then return nil end
     if not C_Traits then say("C_Traits missing"); return compID end
-    local treeID = Positive(TryCall(C_DelvesUI.GetTraitTreeForCompanion, compID))
-    say("GetTraitTreeForCompanion(" .. tostring(compID) .. ") ->", treeID)
+    local treeID = Positive(TryCall(C_DelvesUI.GetTraitTreeForCompanion, nil))
+    say("GetTraitTreeForCompanion(nil) ->", treeID)
     if not treeID then
-        treeID = Positive(TryCall(C_DelvesUI.GetTraitTreeForCompanion, nil))
-        say("GetTraitTreeForCompanion(nil) ->", treeID)
+        treeID = Positive(TryCall(C_DelvesUI.GetTraitTreeForCompanion, compID))
+        say("GetTraitTreeForCompanion(" .. tostring(compID) .. ") ->", treeID)
     end
     local configID
     if treeID then
@@ -383,15 +384,15 @@ function DelveGuide.ReadCompanionLoadout(verbose)
     -- Role. The active entry carries the subtree it belongs to, and
     -- GetRoleSubtreeForCompanion names one subtree per role, so the role falls
     -- out of an ID compare -- no client string at any step.
-    local roleNode = Positive(TryCall(C_DelvesUI.GetRoleNodeForCompanion, compID))
-                  or Positive(TryCall(C_DelvesUI.GetRoleNodeForCompanion, nil))
+    local roleNode = Positive(TryCall(C_DelvesUI.GetRoleNodeForCompanion, nil))
+                  or Positive(TryCall(C_DelvesUI.GetRoleNodeForCompanion, compID))
     local roleEntry = ReadActiveEntry(configID, roleNode)
     say("role node", roleNode, "entry", roleEntry and roleEntry.entryID, "subTree", roleEntry and roleEntry.subTreeID, "name", roleEntry and roleEntry.name)
     if roleEntry then
         for _, r in ipairs(ROLE_TYPES) do
             local roleType  = EnumValue("CompanionRoleType", r.key, r.fallback)
-            local subTreeID = Positive(TryCall(C_DelvesUI.GetRoleSubtreeForCompanion, roleType, compID))
-                           or Positive(TryCall(C_DelvesUI.GetRoleSubtreeForCompanion, roleType, nil))
+            local subTreeID = Positive(TryCall(C_DelvesUI.GetRoleSubtreeForCompanion, roleType, nil))
+                           or Positive(TryCall(C_DelvesUI.GetRoleSubtreeForCompanion, roleType, compID))
             if subTreeID and roleEntry.subTreeID and subTreeID == roleEntry.subTreeID then
                 roleEntry.roleType  = roleType
                 roleEntry.roleLabel = r.label
@@ -403,8 +404,8 @@ function DelveGuide.ReadCompanionLoadout(verbose)
 
     for _, c in ipairs(CURIO_TYPES) do
         local curioType = EnumValue("CurioType", c.key, c.fallback)
-        local nodeID    = Positive(TryCall(C_DelvesUI.GetCurioNodeForCompanion, curioType, compID))
-                       or Positive(TryCall(C_DelvesUI.GetCurioNodeForCompanion, curioType, nil))
+        local nodeID    = Positive(TryCall(C_DelvesUI.GetCurioNodeForCompanion, curioType, nil))
+                       or Positive(TryCall(C_DelvesUI.GetCurioNodeForCompanion, curioType, compID))
         out.curios[c.label] = ReadActiveEntry(configID, nodeID)
         local e = out.curios[c.label]
         say(c.label, "type", curioType, "node", nodeID, "entry", e and e.entryID, "spell", e and e.spellID, "name", e and e.name)
@@ -419,9 +420,17 @@ end
 -- it is all the old scrape could ever do, and it never matched off enUS.
 local function MatchCurio(entry)
     if not (entry and DelveGuideData and DelveGuideData.curios) then return nil end
+    -- A curio has one spell ID per rank (Corrosive Bilespear read as 1248875
+    -- on the PTR where the data had 1248877), so a row may carry an `ids` set
+    -- alongside `id`. Every ID seen in a trait read should be added to it.
     if entry.spellID then
         for _, c in ipairs(DelveGuideData.curios) do
             if c.id and c.id == entry.spellID then return c end
+            if c.ids then
+                for _, id in ipairs(c.ids) do
+                    if id == entry.spellID then return c end
+                end
+            end
         end
     end
     if entry.name then
