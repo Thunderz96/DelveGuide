@@ -1,11 +1,12 @@
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 
 -- Labels for the bindings declared in Bindings.xml (the client auto-loads that
 -- file from the addon root, so it has no .toc entry).
 BINDING_HEADER_DELVEGUIDE             = "DelveGuide"
-BINDING_NAME_DELVEGUIDE_TOGGLE        = "Toggle DelveGuide window"
-BINDING_NAME_DELVEGUIDE_TOGGLE_HUD    = "Toggle in-run HUD"
-BINDING_NAME_DELVEGUIDE_TOGGLE_WIDGET = "Toggle compact widget"
+BINDING_NAME_DELVEGUIDE_TOGGLE        = L["Toggle DelveGuide window"]
+BINDING_NAME_DELVEGUIDE_TOGGLE_HUD    = L["Toggle in-run HUD"]
+BINDING_NAME_DELVEGUIDE_TOGGLE_WIDGET = L["Toggle compact widget"]
 
 local function MakeSettingCheckbox(parent, y, labelText, getValue, onToggle)
     UI.EnsureFontFiles(); local _, rSize = UI.GetScaledSizes()
@@ -26,24 +27,26 @@ DelveGuide.RenderSettings = function()
     UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
 
-    y = y + UI.CreateHeader(cf, y, "Settings") + 8
+    y = y + UI.CreateHeader(cf, y, L["Settings"]) + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Minimap|r") + 6
-    y = y + MakeSettingCheckbox(cf, y, "Show minimap button  |cFF888888(or: /dg minimap)|r",
+    -- Slash commands stay out of L (see the policy note in DelveGuide_Locale.lua):
+    -- they are typed, not read, so they ride into the caption as the %s.
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Minimap"] .. "|r") + 6
+    y = y + MakeSettingCheckbox(cf, y, L["Show minimap button"] .. "  |cFF888888" .. string.format(L["(or: %s)"], "/dg minimap") .. "|r",
         function() return not DelveGuideDB.minimap.hide end,
         function(checked) DelveGuideDB.minimap.hide = not checked; UI.UpdateMinimap() end) + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Compact Widget|r") + 6
-    y = y + MakeSettingCheckbox(cf, y, "Show compact floating widget  |cFF888888(or: /dg widget)|r",
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Compact Widget"] .. "|r") + 6
+    y = y + MakeSettingCheckbox(cf, y, L["Show compact floating widget"] .. "  |cFF888888" .. string.format(L["(or: %s)"], "/dg widget") .. "|r",
         function() return not DelveGuideDB.widgetHidden end,
         function(checked) DelveGuideDB.widgetHidden = not checked; UI.UpdateWidgetVis() end)
-    y = y + MakeSettingCheckbox(cf, y, "Click widget to open/close main window",
+    y = y + MakeSettingCheckbox(cf, y, L["Click widget to open/close main window"],
         function() return DelveGuideDB.widgetClickOpens end,
         function(checked) DelveGuideDB.widgetClickOpens = checked end)
-    y = y + MakeSettingCheckbox(cf, y, "Auto-hide widget  |cFF888888(fades out when not hovered)|r",
+    y = y + MakeSettingCheckbox(cf, y, L["Auto-hide widget"] .. "  |cFF888888" .. L["(fades out when not hovered)"] .. "|r",
         function() return DelveGuideDB.widgetAutoHide end,
         function(checked) DelveGuideDB.widgetAutoHide = checked; UI.UpdateWidgetAlpha() end)
-    y = y + MakeSettingCheckbox(cf, y, "Show only |cFFFFD700bountiful|r delves  |cFF888888(or: /dg bountiful, or [B] button on widget)|r",
+    y = y + MakeSettingCheckbox(cf, y, string.format(L["Show only %s delves"], "|cFFFFD700bountiful|r") .. "  |cFF888888" .. string.format(L["(or: %s, or [B] button on widget)"], "/dg bountiful") .. "|r",
         function() return DelveGuideDB.widgetBountifulOnly end,
         function(checked)
             DelveGuideDB.widgetBountifulOnly = checked
@@ -53,7 +56,7 @@ DelveGuide.RenderSettings = function()
         end)
 
     y = y + 4
-    y = y + UI.CreateRow(cf, y, "|cFFAAAAAAWidget tier filter - show active variants at these rankings:|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFAAAAAA" .. L["Widget tier filter - show active variants at these rankings:"] .. "|r") + 6
     local allRanks = {"S","A","B","C","D","F"}
     for i, rank in ipairs(allRanks) do
         local cb = UI.AcquireCheckButton()
@@ -70,37 +73,37 @@ DelveGuide.RenderSettings = function()
     end
     y = y + 30 + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Pre-Entry Checklist|r") + 6
-    y = y + MakeSettingCheckbox(cf, y, "Show checklist when targeting a delve entrance  |cFF888888(or: /dg check)|r",
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Pre-Entry Checklist"] .. "|r") + 6
+    y = y + MakeSettingCheckbox(cf, y, L["Show checklist when targeting a delve entrance"] .. "  |cFF888888" .. string.format(L["(or: %s)"], "/dg check") .. "|r",
         function() return DelveGuideDB.checklistEnabled end,
         function(checked) DelveGuideDB.checklistEnabled = checked end) + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700In-Run HUD|r") + 6
-    y = y + MakeSettingCheckbox(cf, y, "Auto-show HUD when inside a Delve  |cFF888888(or: /dg hud)|r",
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["In-Run HUD"] .. "|r") + 6
+    y = y + MakeSettingCheckbox(cf, y, L["Auto-show HUD when inside a Delve"] .. "  |cFF888888" .. string.format(L["(or: %s)"], "/dg hud") .. "|r",
         function() return DelveGuideDB.hudEnabled end,
         function(checked) DelveGuideDB.hudEnabled = checked; if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end end) + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Font Scale|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Font Scale"] .. "|r") + 6
     local fsDesc = UI.AcquireFontString("OVERLAY")
     fsDesc:SetFont(ROW_FONT_FILE, rSize)
     fsDesc:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
-    fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.fontScale))
+    fsDesc:SetText(string.format(L["Current: %s  (range: 0.6 - 2.0)"], string.format("|cFFFFFFFF%.1fx|r", DelveGuideDB.fontScale)))
     y = y + rH + 4
 
     
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Victory Screen|r") + 6
-    y = y + MakeSettingCheckbox(cf, y, "Enable Victory Screen popup on completion",
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Victory Screen"] .. "|r") + 6
+    y = y + MakeSettingCheckbox(cf, y, L["Enable Victory Screen popup on completion"],
         function() return DelveGuideDB.victoryEnabled ~= false end, -- Defaults to true
         function(checked) DelveGuideDB.victoryEnabled = checked end)
-    y = y + MakeSettingCheckbox(cf, y, "Play victory sound effect",
+    y = y + MakeSettingCheckbox(cf, y, L["Play victory sound effect"],
         function() return DelveGuideDB.victorySound ~= false end, -- Defaults to true
         function(checked) DelveGuideDB.victorySound = checked end)
-    y = y + MakeSettingCheckbox(cf, y, "Unlock Victory Screen (allows dragging)",
+    y = y + MakeSettingCheckbox(cf, y, L["Unlock Victory Screen (allows dragging)"],
         function() return DelveGuideDB.victoryUnlocked end,
         function(checked) DelveGuideDB.victoryUnlocked = checked end) + 4
         
     local testVicBtn = UI.AcquirePanelButton()
-    testVicBtn:SetSize(160, 22); testVicBtn:SetText("Test / Move Popup")
+    testVicBtn:SetSize(160, 22); testVicBtn:SetText(L["Test / Move Popup"])
     testVicBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 14, -y)
     testVicBtn:SetScript("OnClick", function()
         if DelveGuide.ShowVictoryScreen then
@@ -114,27 +117,27 @@ DelveGuide.RenderSettings = function()
         b:SetSize(36, 22); b:SetText(label); b:SetPoint("TOPLEFT", cf, "TOPLEFT", xOff, -y)
         b:SetScript("OnClick", function()
             DelveGuideDB.fontScale = math.max(0.6, math.min(2.0, DelveGuideDB.fontScale + delta))
-            fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.fontScale))
+            fsDesc:SetText(string.format(L["Current: %s  (range: 0.6 - 2.0)"], string.format("|cFFFFFFFF%.1fx|r", DelveGuideDB.fontScale)))
             UI.RefreshCurrentTab()
         end)
     end
     MakeFontScaleBtn("A-", 10, -0.1); MakeFontScaleBtn("A+", 52, 0.1)
 
     local resetBtn = UI.AcquirePanelButton()
-    resetBtn:SetSize(60, 22); resetBtn:SetText("Reset"); resetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
+    resetBtn:SetSize(60, 22); resetBtn:SetText(L["Reset"]); resetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
     resetBtn:SetScript("OnClick", function()
         DelveGuideDB.fontScale = 1.0
-        fsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.fontScale))
+        fsDesc:SetText(string.format(L["Current: %s  (range: 0.6 - 2.0)"], string.format("|cFFFFFFFF%.1fx|r", DelveGuideDB.fontScale)))
         UI.RefreshCurrentTab()
     end)
     y = y + 30 + 16
 
     -- Widget Font Scale (independent of main font scale)
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Widget Font Scale|r  |cFF888888(independent from main font)|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Widget Font Scale"] .. "|r  |cFF888888" .. L["(independent from main font)"] .. "|r") + 6
     local wfsDesc = UI.AcquireFontString("OVERLAY")
     wfsDesc:SetFont(ROW_FONT_FILE, rSize)
     wfsDesc:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
-    wfsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.widgetFontScale or 1.0))
+    wfsDesc:SetText(string.format(L["Current: %s  (range: 0.6 - 2.0)"], string.format("|cFFFFFFFF%.1fx|r", DelveGuideDB.widgetFontScale or 1.0)))
     y = y + rH + 4
 
     local function MakeWidgetFontBtn(label, xOff, delta)
@@ -142,35 +145,35 @@ DelveGuide.RenderSettings = function()
         b:SetSize(36, 22); b:SetText(label); b:SetPoint("TOPLEFT", cf, "TOPLEFT", xOff, -y)
         b:SetScript("OnClick", function()
             DelveGuideDB.widgetFontScale = math.max(0.6, math.min(2.0, (DelveGuideDB.widgetFontScale or 1.0) + delta))
-            wfsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.widgetFontScale))
+            wfsDesc:SetText(string.format(L["Current: %s  (range: 0.6 - 2.0)"], string.format("|cFFFFFFFF%.1fx|r", DelveGuideDB.widgetFontScale)))
             if DelveGuide.RefreshCompactWidgetFonts then DelveGuide.RefreshCompactWidgetFonts() end
         end)
     end
     MakeWidgetFontBtn("A-", 10, -0.1); MakeWidgetFontBtn("A+", 52, 0.1)
 
     local wResetBtn = UI.AcquirePanelButton()
-    wResetBtn:SetSize(60, 22); wResetBtn:SetText("Reset"); wResetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
+    wResetBtn:SetSize(60, 22); wResetBtn:SetText(L["Reset"]); wResetBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 94, -y)
     wResetBtn:SetScript("OnClick", function()
         DelveGuideDB.widgetFontScale = 1.0
-        wfsDesc:SetText(string.format("Current: |cFFFFFFFF%.1fx|r  (range: 0.6 - 2.0)", DelveGuideDB.widgetFontScale))
+        wfsDesc:SetText(string.format(L["Current: %s  (range: 0.6 - 2.0)"], string.format("|cFFFFFFFF%.1fx|r", DelveGuideDB.widgetFontScale)))
         if DelveGuide.RefreshCompactWidgetFonts then DelveGuide.RefreshCompactWidgetFonts() end
     end)
     y = y + 30 + 16
 
     -- Map Tooltips Section 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Map Tooltips|r") + 6
-    y = y + MakeSettingCheckbox(cf, y, "Enable World Map tooltips for active delves",
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Map Tooltips"] .. "|r") + 6
+    y = y + MakeSettingCheckbox(cf, y, L["Enable World Map tooltips for active delves"],
         function() return DelveGuideDB.mapTooltips ~= false end,
         function(checked) 
             DelveGuideDB.mapTooltips = checked 
-            print("|cFF00BFFF[DelveGuide]|r Map Tooltips: " .. (checked and "|cFF44FF44Enabled|r" or "|cFFFF4444Disabled|r"))
+            print("|cFF00BFFF[DelveGuide]|r " .. L["Map Tooltips:"] .. " " .. (checked and "|cFF44FF44" .. L["Enabled"] .. "|r" or "|cFFFF4444" .. L["Disabled"] .. "|r"))
         end) + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Changelog|r") + 6
-    y = y + MakeSettingCheckbox(cf, y, "Show What's New popup on version update",
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Changelog"] .. "|r") + 6
+    y = y + MakeSettingCheckbox(cf, y, L["Show What's New popup on version update"],
         function() return DelveGuideDB.showChangelog end,
         function(checked) DelveGuideDB.showChangelog = checked end) + 4
-    y = y + MakeSettingCheckbox(cf, y, "Show the Debug tab |cFF888888(for bug reports and translations)|r",
+    y = y + MakeSettingCheckbox(cf, y, L["Show the Debug tab"] .. " |cFF888888" .. L["(for bug reports and translations)"] .. "|r",
         function() return DelveGuideDB.showDebugTab end,
         function(checked)
             DelveGuideDB.showDebugTab = checked
@@ -178,29 +181,33 @@ DelveGuide.RenderSettings = function()
         end) + 4
         
     local clBtn = UI.AcquirePanelButton()
-    clBtn:SetSize(160, 26); clBtn:SetText("View Changelog")
+    clBtn:SetSize(160, 26); clBtn:SetText(L["View Changelog"])
     clBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
     clBtn:SetScript("OnClick", UI.ShowChangelogPopup)
     y = y + 34 + 8
 
     -- ---- Community Rankings & Contributors ----
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Community Rankings|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Community Rankings"] .. "|r") + 6
 
     local rs = DelveGuideData.rankingStats
     if rs then
+        -- The two counts arrive pre-coloured so the sentence a translator sees
+        -- carries no markup, and they can move the numbers within it.
         y = y + UI.CreateRow(cf, y, string.format(
-            "|cFFCCCCCCDelve rankings come from |cFF00FF88%d|r|cFFCCCCCC player submissions -- |cFF00FF88%d|r|cFFCCCCCC variants ranked by median Tier 8+ clear time.|r  |cFF888888(updated %s)|r",
-            rs.submissions or 0, rs.variants or 0, rs.updated or "?")) + 4
+            "|cFFCCCCCC" .. L["Delve rankings come from %s player submissions -- %s variants ranked by median Tier 8+ clear time."] .. "|r  |cFF888888" .. L["(updated %s)"] .. "|r",
+            "|cFF00FF88" .. (rs.submissions or 0) .. "|r|cFFCCCCCC",
+            "|cFF00FF88" .. (rs.variants or 0) .. "|r|cFFCCCCCC",
+            rs.updated or "?")) + 4
     end
 
     local subBtn = UI.AcquirePanelButton()
-    subBtn:SetSize(200, 26); subBtn:SetText("Contribute Your Times")
+    subBtn:SetSize(200, 26); subBtn:SetText(L["Contribute Your Times"])
     subBtn:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -y)
     subBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("|cFFFFD700Help rank the delves|r")
-        GameTooltip:AddLine("Copies your run times so you can paste them into the ranking form.", 1, 1, 1, true)
-        GameTooltip:AddLine("Same as /dg submit.", 0.7, 0.7, 0.7, true)
+        GameTooltip:AddLine("|cFFFFD700" .. L["Help rank the delves"] .. "|r")
+        GameTooltip:AddLine(L["Copies your run times so you can paste them into the ranking form."], 1, 1, 1, true)
+        GameTooltip:AddLine(string.format(L["Same as %s."], "/dg submit"), 0.7, 0.7, 0.7, true)
         GameTooltip:Show()
     end)
     subBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -211,7 +218,7 @@ DelveGuide.RenderSettings = function()
 
     local contribs = DelveGuideData.contributors
     if contribs and #contribs > 0 then
-        y = y + UI.CreateRow(cf, y, string.format("|cFF00FF88Thanks to the %d delvers who sent in their times:|r", #contribs)) + 4
+        y = y + UI.CreateRow(cf, y, string.format("|cFF00FF88" .. L["Thanks to the %d delvers who sent in their times:"] .. "|r", #contribs)) + 4
         -- Wrap the handles into lines that fit the window.
         local line, lineLen = {}, 0
         local function flush()
@@ -227,16 +234,18 @@ DelveGuide.RenderSettings = function()
         end
         flush()
         y = y + 4
-        y = y + UI.CreateRow(cf, y, "|cFF888888Submit your own times and your name lands here next update.|r") + 4
+        y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Submit your own times and your name lands here next update."] .. "|r") + 4
     end
 
     -- ---- About / Links ----
     y = y + 8
-    y = y + UI.CreateHeader(cf, y, "About") + 6
+    y = y + UI.CreateHeader(cf, y, L["About"]) + 6
 
     local version = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata("DelveGuide", "Version"))
         or (GetAddOnMetadata and GetAddOnMetadata("DelveGuide", "Version")) or "?"
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCCVersion |cFFFFFFFF" .. version .. "|r|cFFCCCCCC by |r|cFFFFD700Thunderz|r") + 8
+    -- Version string and author name are arguments, never translated content.
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC" .. string.format(L["Version %s by %s"],
+        "|cFFFFFFFF" .. version .. "|r|cFFCCCCCC", "|r|cFFFFD700Thunderz|r")) + 8
 
     -- Links live in edit boxes so they can actually be copied out of the game
     -- (Ctrl+C), the same trick the /dg submit popup uses. Typing in one just
@@ -266,7 +275,7 @@ DelveGuide.RenderSettings = function()
     MakeLinkRow("GitHub", "https://github.com/Thunderz96/DelveGuide")
     MakeLinkRow("CurseForge", "https://www.curseforge.com/wow/addons/delveguide")
     -- Same form /dg submit points at (SUBMIT_URL in DelveGuide.lua).
-    MakeLinkRow("Rankings form", "https://forms.gle/BwrGBZkRmbQdwufN8")
+    MakeLinkRow(L["Rankings form"], "https://forms.gle/BwrGBZkRmbQdwufN8")
 
     cf:SetHeight(y + 20)
 end
@@ -280,10 +289,10 @@ if Settings and Settings.RegisterCanvasLayoutCategory then
 
     local desc = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     desc:SetPoint("TOPLEFT", panel, "TOPLEFT", 16, -16)
-    desc:SetText("DelveGuide's settings live in its own window.")
+    desc:SetText(L["DelveGuide's settings live in its own window."])
 
     local openBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    openBtn:SetSize(180, 24); openBtn:SetText("Open DelveGuide")
+    openBtn:SetSize(180, 24); openBtn:SetText(L["Open DelveGuide"])
     openBtn:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -12)
     openBtn:SetScript("OnClick", function()
         -- The options panel sits on top of everything, so close it or the
