@@ -1,4 +1,5 @@
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 
 -- ============================================================
 -- NEMESIS TAB
@@ -33,7 +34,7 @@ local function CreateEntranceRow(parent, y, pin)
     fs:SetFont(ROW_FONT, rSize)
     fs:SetPoint("LEFT", btn, "LEFT", 0, 0)
     fs:SetWidth(btn:GetWidth()); fs:SetJustifyH("LEFT")
-    fs:SetText(string.format("|cFF888888  /way #%d %g %g|r  |cFF00FF88(click)|r",
+    fs:SetText(string.format("|cFF888888  /way #%d %g %g|r  |cFF00FF88" .. L["(click)"] .. "|r",
         pin.mapID, pin.x * 100, pin.y * 100))
 
     btn.pin = pin
@@ -41,7 +42,7 @@ local function CreateEntranceRow(parent, y, pin)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("|cFFFFD700" .. self.pin.name .. "|r")
         GameTooltip:AddLine("|cFFCCCCCC" .. (self.pin.zone or "") .. "|r")
-        GameTooltip:AddLine("|cFF00FF88Click to open map & set waypoint|r")
+        GameTooltip:AddLine("|cFF00FF88" .. L["Click to open map & set waypoint"] .. "|r")
         GameTooltip:Show()
     end)
     btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -59,62 +60,64 @@ DelveGuide.RenderNemesis = function()
     -- Content compiled from Season 2 guides (wowhead/icy-veins/method),
     -- last refreshed 2026-08-16. Confirm mechanics/rewards through play.
     -- ========================================================
-    y = y + UI.CreateHeader(cf, y, "Venomfall Deeps  --  Season 2 Nemesis") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCCAzta'rec, tied to the Ula'tek storyline. A venom-and-memory fight: survive the poison in the main phase, then nail the Simon-Says quadrant game in each intermission.|r") + 8
+    y = y + UI.CreateHeader(cf, y, L["Venomfall Deeps  --  Season 2 Nemesis"]) + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC" .. L["Azta'rec, tied to the Ula'tek storyline. A venom-and-memory fight: survive the poison in the main phase, then nail the Simon-Says quadrant game in each intermission."] .. "|r") + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Location|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Venomfall Deeps  -  northern Coiled Isle|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Location"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Venomfall Deeps  -  northern Coiled Isle"] .. "|r") + 2
     y = y + CreateEntranceRow(cf, y, Entrance("Venomfall Deeps")) + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Unlock Requirements|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Tier ?:|r  clear any Tier 7 Delve with 1+ life remaining") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Tier ??:|r clear any Tier 10 Delve with 1+ life remaining") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Unlock Requirements"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Tier ?:"] .. "|r  " .. L["clear any Tier 7 Delve with 1+ life remaining"]) + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Tier ??:"] .. "|r " .. L["clear any Tier 10 Delve with 1+ life remaining"]) + 2
     -- Tooltip verbatim: "Play the Scalebound Herald's Flute, luring the Nemesis to
     -- its location. Only usable after activating an Abandoned Restoration Stone
     -- inside of a Delve. (1 Hour Cooldown)" -- i.e. it SUMMONS him into whatever
     -- delve you are already in. It is not an access item for Venomfall Deeps.
     y = y + 4
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Summon Him Anywhere|r  |cFF888888(Scalebound Herald's Flute)|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  You do not have to run Venomfall Deeps. The flute lures Azta'rec to you in |cFFFFD700any|r|cFFCCCCCC delve, at the mid-delve respawn point.|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888  \"Play the Scalebound Herald's Flute, luring the Nemesis to its location. Only usable after activating an Abandoned Restoration Stone inside of a Delve. (1 Hour Cooldown)\"|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF00FF88  Guarantees a Trovehunter's Bounty map|r |cFFCCCCCCif you have not looted one this week.|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Where to get it: drops from Mislaid Curiosities in delves  -  5,000 Undercoin from Naleidea Rivergleam in Silvermoon City  -  weekly reward from the prey quest \"A Nightmarish Task\".|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888  DelveGuide shows how many you are carrying on the Delves tab, and reminds you on the pre-entry checklist.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Summon Him Anywhere"] .. "|r  |cFF888888" .. L["(Scalebound Herald's Flute)"] .. "|r") + 4
+    -- The emphasised "any" is passed in as the %s, so the colour switch and the
+    -- switch back never reach L and a translation can move the word.
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. string.format(L["You do not have to run Venomfall Deeps. The flute lures Azta'rec to you in %s delve, at the mid-delve respawn point."], "|cFFFFD700any|r|cFFCCCCCC") .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  \"" .. L["Play the Scalebound Herald's Flute, luring the Nemesis to its location. Only usable after activating an Abandoned Restoration Stone inside of a Delve. (1 Hour Cooldown)"] .. "\"|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF00FF88  " .. L["Guarantees a Trovehunter's Bounty map"] .. "|r |cFFCCCCCC" .. L["if you have not looted one this week."] .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Where to get it: drops from Mislaid Curiosities in delves  -  5,000 Undercoin from Naleidea Rivergleam in Silvermoon City  -  weekly reward from the prey quest \"A Nightmarish Task\"."] .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["DelveGuide shows how many you are carrying on the Delves tab, and reminds you on the pre-entry checklist."] .. "|r") + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Intro Questline|r  |cFF888888(optional -- toy reward)|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Valeera offers a short chain at the Delver's HQ (lvl 90): Slithering Spoils -> Fangs for the Memories. Not needed to fight Azta'rec, but it grants the Corrosive Victory toy once you beat him on any difficulty.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Intro Questline"] .. "|r  |cFF888888" .. L["(optional -- toy reward)"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Valeera offers a short chain at the Delver's HQ (lvl 90): Slithering Spoils -> Fangs for the Memories. Not needed to fight Azta'rec, but it grants the Corrosive Victory toy once you beat him on any difficulty."] .. "|r") + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Main Phase|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Soul Extinction:|r interruptible cast, ~2M damage -- kick it (Valeera will, if you don't).") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Void Toxin:|r magic DoT that also cuts your damage by 40% -- dispel it.") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Noxious Bile:|r frontal poison cone -- dodge it; it leaves ground puddles.") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Venom Storm:|r summons waves across the arena -- keep moving.") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Serpent's Strike:|r tank-only tankbuster (fairly mild physical hit).") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888  He auto-attacks hard and outruns you, so kiting doesn't work -- surviving is the real test for non-tanks. A tank spec has it easiest (only the mild tankbuster).|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Main Phase"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Soul Extinction:"] .. "|r " .. L["interruptible cast, ~2M damage -- kick it (Valeera will, if you don't)."]) + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Void Toxin:"] .. "|r " .. L["magic DoT that also cuts your damage by 40% -- dispel it."]) + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Noxious Bile:"] .. "|r " .. L["frontal poison cone -- dodge it; it leaves ground puddles."]) + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Venom Storm:"] .. "|r " .. L["summons waves across the arena -- keep moving."]) + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Serpent's Strike:"] .. "|r " .. L["tank-only tankbuster (fairly mild physical hit)."]) + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["He auto-attacks hard and outruns you, so kiting doesn't work -- surviving is the real test for non-tanks. A tank spec has it easiest (only the mild tankbuster)."] .. "|r") + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Intermissions  --  Memory Game (90% / 60% / 30%)|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  He goes immune and blasts 3 of the 4 quadrants (one is safe). Sermon of Ula'tek telegraphs the pattern; Echo of Ula'tek then repeats it with NO telegraph -- memorise the safe-spot order, then re-run it.|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888  Tier ??: the sequence grows each intermission (5 -> 6 -> 7 safe spots), and an Echo of Azta'rec add spawns using his main-phase kit -- kill it before the game ends.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Intermissions  --  Memory Game (90% / 60% / 30%)"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["He goes immune and blasts 3 of the 4 quadrants (one is safe). Sermon of Ula'tek telegraphs the pattern; Echo of Ula'tek then repeats it with NO telegraph -- memorise the safe-spot order, then re-run it."] .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Tier ??: the sequence grows each intermission (5 -> 6 -> 7 safe spots), and an Echo of Azta'rec add spawns using his main-phase kit -- kill it before the game ends."] .. "|r") + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Recommended Setup|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Recommended Setup"] .. "|r") + 4
     -- Same DelveGuideData.specCurioRecs lookup the Companion and Curios tabs
     -- use. This line used to be a hand-written generalisation, which meant the
     -- Nemesis tab could recommend a different Valeera role than the Companion
     -- tab for the same spec.
     local rec = UI.GetSpecRec and UI.GetSpecRec()
     if rec then
-        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Valeera:|r run her as |cFF00CFFF" .. (rec.companion or "--") .. "|r |cFF888888for your spec (" .. rec.spec .. ").|r") + 2
+        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Valeera:"] .. "|r " .. L["run her as"] .. " |cFF00CFFF" .. (rec.companion or "--") .. "|r |cFF888888" .. string.format(L["for your spec (%s)."], rec.spec) .. "|r") + 2
     else
-        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Valeera:|r Healer for Tank & DPS specs; DPS Valeera for Healer specs.") + 2
+        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Valeera:"] .. "|r " .. L["Healer for Tank & DPS specs; DPS Valeera for Healer specs."]) + 2
     end
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Aim for roughly 290 item level for the '?' difficulty.|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888  Between you and Valeera, cover the Soul Extinction interrupt and the Void Toxin dispel every time.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Aim for roughly 290 item level for the '?' difficulty."] .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Between you and Valeera, cover the Soul Extinction interrupt and the Void Toxin dispel every time."] .. "|r") + 8
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Rewards|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Mistcrests |cFF888888(uncapped, every kill):|r|cFFCCCCCC ? drops 30 Hero; ?? drops 30 more Hero + Myth.|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Apophic Soul Crusher |cFF888888(flying mount -- solo ?? kill)|r|cFFCCCCCC  -  Apophic Patagia |cFF888888(back -- any difficulty)|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  \"the Poisonous\" title |cFF888888(?? kill)|r|cFFCCCCCC  -  Corrosive Victory |cFF888888(toy -- from the intro questline)|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFFF8844  Time-limited:|r |cFFCCCCCCFabled Vanquisher of Azta'rec|r |cFF888888title -- defeat ?? solo in the first week of Season 2.|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Rewards"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Mistcrests"] .. " |cFF888888" .. L["(uncapped, every kill):"] .. "|r|cFFCCCCCC " .. L["? drops 30 Hero; ?? drops 30 more Hero + Myth."] .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Apophic Soul Crusher"] .. " |cFF888888" .. L["(flying mount -- solo ?? kill)"] .. "|r|cFFCCCCCC  -  " .. L["Apophic Patagia"] .. " |cFF888888" .. L["(back -- any difficulty)"] .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["\"the Poisonous\" title"] .. " |cFF888888" .. L["(?? kill)"] .. "|r|cFFCCCCCC  -  " .. L["Corrosive Victory"] .. " |cFF888888" .. L["(toy -- from the intro questline)"] .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFFF8844  " .. L["Time-limited:"] .. "|r |cFFCCCCCC" .. L["Fabled Vanquisher of Azta'rec"] .. "|r |cFF888888" .. L["title -- defeat ?? solo in the first week of Season 2."] .. "|r") + 8
 
     -- ========================================================
     -- LEGACY: NULLAEUS (Season 1)
@@ -134,19 +137,21 @@ DelveGuide.RenderNemesis = function()
     -- in-lair check) -- detect Nemesis delves by instanceID.
     -- ========================================================
     y = y + 8
-    y = y + UI.CreateHeader(cf, y, "Legacy: Nullaeus  --  Season 1 Nemesis") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888Domanaar, Hand of the Harbinger. No longer seasonally relevant, but Torment's Rise stays open for collectors (as with Zekvir's Lair and Demolition Dome in TWW).|r") + 6
+    y = y + UI.CreateHeader(cf, y, L["Legacy: Nullaeus  --  Season 1 Nemesis"]) + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Domanaar, Hand of the Harbinger. No longer seasonally relevant, but Torment's Rise stays open for collectors (as with Zekvir's Lair and Demolition Dome in TWW)."] .. "|r") + 6
 
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Location:|r |cFFCCCCCCTorment's Rise - Voidstorm|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Location:"] .. "|r |cFFCCCCCC" .. L["Torment's Rise - Voidstorm"] .. "|r") + 2
     y = y + CreateEntranceRow(cf, y, Entrance("Torment's Rise")) + 2
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Unlock:|r |cFFCCCCCCTier ? = any Tier 7 delve clear / Tier ?? = any Tier 10 clear, with 1+ life remaining|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Summon:|r |cFFCCCCCCBeacon of Hope - the same item as Season 2's flute, one season earlier: place it after the Restoration Stone in any delve to lure Nullaeus to you (1 hour cooldown). |cFFFF8844No longer obtainable.|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Unlock:"] .. "|r |cFFCCCCCC" .. L["Tier ? = any Tier 7 delve clear / Tier ?? = any Tier 10 clear, with 1+ life remaining"] .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Summon:"] .. "|r |cFFCCCCCC" .. L["Beacon of Hope - the same item as Season 2's flute, one season earlier: place it after the Restoration Stone in any delve to lure Nullaeus to you (1 hour cooldown)."] .. " |cFFFF8844" .. L["No longer obtainable."] .. "|r") + 6
 
-    y = y + UI.CreateRow(cf, y, "|cFF00FF88Still obtainable|r  |cFF888888(last verified 2026-09-06)|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Dominating Victory (toy)  -  a Season 1 questline reward, not tied to a seasonal achievement.|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFFFF4444No longer obtainable|r  |cFF888888(Season 1 only; Season 2 started 2026-08-18 -- last verified 2026-09-06)|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Arcanovoid Construct (mount, solo Tier ??)  -  Nullaeus Domaneye (cosmetic helm)  -  \"the Ominous\" title (Tier ??)|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  Fabled Vanquisher of Nullaeus (first 4,000, ended during Season 1)  -  seasonal Hero Dawncrest bonuses|r") + 2
+    -- The dates ride in as arguments: a re-verification pass then edits the date
+    -- only, and every existing translation of the caption still applies.
+    y = y + UI.CreateRow(cf, y, "|cFF00FF88" .. L["Still obtainable"] .. "|r  |cFF888888" .. string.format(L["(last verified %s)"], "2026-09-06") .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Dominating Victory (toy)  -  a Season 1 questline reward, not tied to a seasonal achievement."] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFF4444" .. L["No longer obtainable"] .. "|r  |cFF888888" .. string.format(L["(Season 1 only; Season 2 started %s -- last verified %s)"], "2026-08-18", "2026-09-06") .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Arcanovoid Construct (mount, solo Tier ??)  -  Nullaeus Domaneye (cosmetic helm)  -  \"the Ominous\" title (Tier ??)"] .. "|r") + 2
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Fabled Vanquisher of Nullaeus (first 4,000, ended during Season 1)  -  seasonal Hero Dawncrest bonuses"] .. "|r") + 2
 
     cf:SetHeight(y + 20)
 end
