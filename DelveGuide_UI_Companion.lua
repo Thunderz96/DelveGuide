@@ -267,7 +267,7 @@ DelveGuide.RenderCompanion = function()
             if r:GetObjectType() == "FontString" and r:IsShown() then
                 local txt = r:GetText()
                 if txt and txt ~= "" then
-                    local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+                    local cleanTxt = DelveGuide.StripEscapes(txt)
                     
                     -- Detect Role (Lock in the FIRST match)
                     if not foundRole and (cleanTxt == "Healer" or cleanTxt == "DPS" or cleanTxt == "Damage Dealer" or cleanTxt == "Tank") then

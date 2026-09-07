@@ -60,6 +60,30 @@ end
 -- needs. They live up here, ahead of the scanner, because the scanner uses them.
 -- ============================================================
 
+-- Strip WoW's inline escape sequences out of a string.
+--
+-- Five copies of this gsub chain had drifted apart: some stripped only hex
+-- colours (|cAARRGGBB), some also the named form (|cnWHITE_FONT_COLOR:), some
+-- also textures (|T...|t) and atlases (|A...|a). Missing the named form is what
+-- once logged a variant as "|cnWHITE_FONT_COLOR:Basalisk Blitz". This strips
+-- the union, so no caller can be the one that forgot a form -- including
+-- hyperlinks (|Hitem:...|h[Name]|h), which no copy handled and which turn up in
+-- objective-tracker text.
+--
+-- nil (or any non-string) gives "", because every caller was guarding for that
+-- itself before it dared call :gsub.
+function DelveGuide.StripEscapes(s)
+    if type(s) ~= "string" then return "" end
+    -- The parentheses drop gsub's second return value (the match count), which
+    -- would otherwise leak into a caller's string.format or table.insert.
+    return (s:gsub("|c%x%x%x%x%x%x%x%x", "")
+             :gsub("|cn[%w_]+:", "")
+             :gsub("|r", "")
+             :gsub("|H.-|h(.-)|h", "%1")
+             :gsub("|T.-|t", "")
+             :gsub("|A.-|a", ""))
+end
+
 -- The week a run belongs to, as a stable integer key stored on history rows.
 --
 -- time() + secondsUntilWeeklyReset is the moment of the NEXT reset; minus one
@@ -571,7 +595,7 @@ local function ScanActiveVariants()
                         -- and named ones (|cnWHITE_FONT_COLOR:) -- the named form
                         -- was being left in, so logged text came out as
                         -- "Story Variant: |cnWHITE_FONT_COLOR:Basalisk Blitz".
-                        local clean=t:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|cn[%w_]+:",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
+                        local clean=DelveGuide.StripEscapes(t)
                         if string.find(clean,"Nemesis",1,true) then hasNemesis=true end
                         if not variantName then
                             -- Try English text match first (EN clients)
@@ -675,7 +699,7 @@ local function ScanActiveVariants()
                         end
                         local displayText = safeText or "Unknown Variant Text"
                         -- Strip WoW color codes from the raw text to make it readable
-                        displayText = displayText:gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|cn[%w_]+:",""):gsub("|r",""):gsub("|T.-|t",""):gsub("|A.-|a","")
+                        displayText = DelveGuide.StripEscapes(displayText)
                         variantName = "[Missing Translation] " .. displayText
 
                         -- Log to SavedVariables for the Debug tab
@@ -1476,6 +1500,7 @@ DelveGuide.UI = {
     AcquireBackdropFrame = AcquireBackdropFrame,
     WINDOW_W        = WINDOW_W,
     GradeColor      = GradeColor,
+    StripEscapes    = DelveGuide.StripEscapes,
     ZoneColor       = ZoneColor,
     TypeColor       = TypeColor,
     RANK_COLORS     = RANK_COLORS,

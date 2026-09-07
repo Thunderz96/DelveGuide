@@ -373,7 +373,7 @@ local function AutoDetectDelveTier()
                     local txt = r:GetText()
                     if txt and txt ~= "" then
                         -- Clean all color codes and whitespace
-                        local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn[%w_]+:", ""):gsub("|r", ""):gsub("^%s+", ""):gsub("%s+$", "")
+                        local cleanTxt = DelveGuide.StripEscapes(txt):gsub("^%s+", ""):gsub("%s+$", "")
 
                         -- An explicit "Tier N" always wins outright.
                         local tier = cleanTxt:match("Tier %s*(%d+)") or cleanTxt:match("Tier: %s*(%d+)") or cleanTxt:match("Difficulty: %s*(%d+)")
