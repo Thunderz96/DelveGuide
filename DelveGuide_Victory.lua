@@ -186,8 +186,15 @@ DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, 
 
     if bestLine then
         victoryFrame.Best:SetText(bestLine); victoryFrame.Best:Show()
+        -- The comparison is the widest line by far ("New personal best! (was
+        -- 12m 00s) . Community median: 12m 22s" overran a 340px toast on the
+        -- PTR, 2026-09-07). Grow the toast to fit it; everything else is
+        -- anchored to the frame's centre or edges and follows.
+        local need = math.ceil(victoryFrame.Best:GetStringWidth()) + 36
+        victoryFrame:SetWidth(math.max(340, need))
     else
         victoryFrame.Best:SetText(""); victoryFrame.Best:Hide()
+        victoryFrame:SetWidth(340)
     end
 
     victoryFrame.animGroup:Stop() 
