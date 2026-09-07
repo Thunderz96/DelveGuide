@@ -9,6 +9,7 @@ ignore:
   - CHANGELOG.md
   - README.md
   - tools
+  - Locales/TEMPLATE.lua
 
 # Libraries are committed under libs/ and packaged as-is. No externals
 # fetched at build time -- the previous URLs (CurseForge git mirrors and

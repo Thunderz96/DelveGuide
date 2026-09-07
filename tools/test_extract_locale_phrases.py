@@ -7,7 +7,7 @@ Tests for extract_locale_phrases.py.
 
 Every fixture here is SYNTHETIC Lua written into a temporary directory that the
 module is pointed at, so a test can never read, rewrite or delete a real addon
-file -- extract_locale_phrases.py writes tools/locale_phrases.lua as a side
+file -- extract_locale_phrases.py writes Locales/TEMPLATE.lua as a side
 effect of a plain run, and that file is committed.
 
 The three cases are the three ways the extractor can be wrong in a way nobody
@@ -69,7 +69,7 @@ class TestDedupe(ExtractorCase):
         with open(os.path.join(self.tmp, ex.OUT_REL), encoding="utf-8") as fh:
             lines = fh.read().splitlines()
         body = [ln for ln in lines if not ln.startswith("--")]
-        self.assertEqual(body, ['L["apple"] = true', 'L["zebra"] = true'])
+        self.assertEqual(body, ['L["apple"] = "apple"', 'L["zebra"] = "zebra"'])
         self.assertIn("2 phrases", lines[1])
 
     def test_whole_line_comments_are_not_phrases(self):
@@ -90,7 +90,7 @@ class TestEscapedQuote(ExtractorCase):
         self.assertEqual(rc, 0)
         with open(os.path.join(self.tmp, ex.OUT_REL), encoding="utf-8") as fh:
             out = fh.read()
-        self.assertIn('L["Say \\"go\\" now"] = true', out)
+        self.assertIn('L["Say \\"go\\" now"] = "Say \\"go\\" now"', out)
 
     def test_apostrophe_phrase_in_double_quotes(self):
         self.write("A.lua", 'print(L["Today\'s Active Delves:"])\n')

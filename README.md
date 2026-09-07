@@ -173,6 +173,10 @@ Only clear times are included — no character or account data. Submitted times 
 
 ---
 
+## 🌍 Translating
+
+Every string a player sees goes through a lookup table, so DelveGuide can show your language without a code change. Copy `Locales/TEMPLATE.lua` to `Locales/<locale>.lua` (for example `Locales/deDE.lua`), set the locale on its first code line, translate the right-hand side of each line, delete the lines you did not translate (they fall back to English), add the file to `DelveGuide.toc` directly after `DelveGuide_Locale.lua`, and open a pull request. Keep `%s` / `%d` placeholders in the same order. Delve, variant and item names are game data and are not in the template; those live in the locale tables inside `DelveGuide_Data.lua`.
+
 ## 📋 Requirements
 
 - **No dependencies required** — works out of the box
