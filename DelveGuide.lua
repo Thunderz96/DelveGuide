@@ -2,6 +2,7 @@
 -- DelveGuide.lua  --  Main addon logic
 -- ============================================================
 DelveGuide = DelveGuide or {}   -- DelveGuide_Locale.lua loads first and already put L on it
+local L = DelveGuide.L
 
 local ADDON_NAME       = "DelveGuide"
 local ADDON_VERSION    = "1.11.0"
@@ -21,18 +22,18 @@ local SUBMIT_URL       = "https://forms.gle/BwrGBZkRmbQdwufN8"
 
 local TABS = {
     --{ label = "Dashboard", key = "dashboard" },
-    { label = "Delves",   key = "delves"   },
-    { label = "Curios",   key = "curios"   },
-    { label = "Companion", key = "companion" },
-    { label = "Loot",     key = "loot"     },
-    { label = "Voidforge", key = "voidforge" },
-    { label = "Journey",  key = "quests"   },
-    { label = "Nemesis",  key = "nemesis"  },
-    { label = "History",  key = "history"  },
-    { label = "Future",   key = "future"   },
-    { label = "Roster",   key = "roster"   },
-    { label = "Settings", key = "settings" },
-    { label = "Debug",    key = "debug"    },
+    { label = L["Delves"],   key = "delves"   },
+    { label = L["Curios"],   key = "curios"   },
+    { label = L["Companion"], key = "companion" },
+    { label = L["Loot"],     key = "loot"     },
+    { label = L["Voidforge"], key = "voidforge" },
+    { label = L["Journey"],  key = "quests"   },
+    { label = L["Nemesis"],  key = "nemesis"  },
+    { label = L["History"],  key = "history"  },
+    { label = L["Future"],   key = "future"   },
+    { label = L["Roster"],   key = "roster"   },
+    { label = L["Settings"], key = "settings" },
+    { label = L["Debug"],    key = "debug"    },
 }
 
 -- Shared with the Debug tab -- see DelveGuideData.zoneMapIDs / .zoneNames.
@@ -985,7 +986,7 @@ local function SetDelveWaypoint(pin)
             crazy      = true,   -- point the arrow at it, every time
         })
         if ok then lastWaypointUID = uid end
-        print("|cFF00BFFF[DelveGuide]|r TomTom waypoint set: |cFFFFD700"..pin.name.."|r")
+        print("|cFF00BFFF[DelveGuide]|r " .. L["TomTom waypoint set:"] .. " |cFFFFD700"..pin.name.."|r")
     else
         -- Without TomTom this used to set the waypoint and stop: a chat line, an
         -- opened map, and nothing on screen, because the waypoint was never
@@ -1001,9 +1002,9 @@ local function SetDelveWaypoint(pin)
             end
         end)
         if placed then
-            print("|cFF00BFFF[DelveGuide]|r Waypoint set: |cFFFFD700"..pin.name.."|r")
+            print("|cFF00BFFF[DelveGuide]|r " .. L["Waypoint set:"] .. " |cFFFFD700"..pin.name.."|r")
         else
-            print("|cFF00BFFF[DelveGuide]|r |cFFFF4444Could not set a waypoint on this map.|r")
+            print("|cFF00BFFF[DelveGuide]|r |cFFFF4444" .. L["Could not set a waypoint on this map."] .. "|r")
         end
     end
 
@@ -1158,7 +1159,7 @@ local function CreateRow(parent,y,text)
 end
 
 local function FormatResetTime(secs)
-    if not secs or secs <= 0 then return "|cFFFF4444Now|r" end
+    if not secs or secs <= 0 then return "|cFFFF4444" .. L["Now"] .. "|r" end
     local d = math.floor(secs / 86400)
     local h = math.floor((secs % 86400) / 3600)
     local m = math.floor((secs % 3600) / 60)
@@ -1266,8 +1267,9 @@ DelveGuide.LogLabyrinthRun = function(name)
 
     if row.vaultCredits > (DelveGuide.labyrinthCreditsAnnounced or 0) then
         DelveGuide.labyrinthCreditsAnnounced = row.vaultCredits
-        print(string.format("|cFF00BFFF[DelveGuide]|r Logged Labyrinth: |cFF00FF44%s|r  |cFF888888(%d chambers, %d vault credit%s)|r",
-            name, row.chambers, row.vaultCredits, row.vaultCredits == 1 and "" or "s"))
+        print("|cFF00BFFF[DelveGuide]|r " .. L["Logged Labyrinth:"] .. " |cFF00FF44" .. name .. "|r  |cFF888888" ..
+            string.format(L["(%d chambers, %d vault credit%s)"],
+                row.chambers, row.vaultCredits, row.vaultCredits == 1 and "" or "s") .. "|r")
         -- mainFrame / currentTabKey are declared further down the file, so from
         -- here they would resolve as globals; go through the exported UI table.
         if DelveGuide.UI and DelveGuide.UI.RefreshCurrentTab then DelveGuide.UI.RefreshCurrentTab() end
@@ -1423,7 +1425,7 @@ local function ShowChangelogPopup()
 
         local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         title:SetPoint("TOPLEFT", f, "TOPLEFT", 14, -10)
-        title:SetText("|cFF3399FFDelveGuide|r  --  What's New")
+        title:SetText("|cFF3399FFDelveGuide|r  --  " .. L["What's New"])
 
         local closeBtn = CreateFrame("Button", nil, f, "UIPanelCloseButton")
         closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", -2, -2)
@@ -1479,7 +1481,7 @@ local function ShowChangelogPopup()
 
         -- "Got it!" button
         local okBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-        okBtn:SetSize(100, 26); okBtn:SetText("Got it!")
+        okBtn:SetSize(100, 26); okBtn:SetText(L["Got it!"])
         okBtn:SetPoint("BOTTOM", f, "BOTTOM", 0, 10)
         okBtn:SetScript("OnClick", function() f:Hide() end)
 
@@ -1581,8 +1583,8 @@ local function SwitchTab(key)
             DelveGuide.lastRenderError = { key = key, err = errMsg }
             local cf = NewContentFrame()
             local y = 8
-            y = y + CreateRow(cf, y, "|cFFFF4444The " .. key .. " tab failed to render.|r") + 4
-            CreateRow(cf, y, "|cFF888888Try /reload. If it keeps happening, report it with the version from /dg help.|r")
+            y = y + CreateRow(cf, y, "|cFFFF4444" .. string.format(L["The %s tab failed to render."], key) .. "|r") + 4
+            CreateRow(cf, y, "|cFF888888" .. L["Try /reload. If it keeps happening, report it with the version from /dg help."] .. "|r")
         end
         if key ~= prevKey then
             scrollFrame:SetVerticalScroll(0)
@@ -1632,7 +1634,7 @@ local function CreateMainWindow()
     
     local closeBtn=CreateFrame("Button",nil,f,"UIPanelCloseButton"); closeBtn:SetPoint("TOPRIGHT",f,"TOPRIGHT",-4,-4)
     f.TitleText=f:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
-    f.TitleText:SetPoint("TOPLEFT",f,"TOPLEFT",16,-12); f.TitleText:SetText("|cFF00BFFFDelveGuide|r |cFF888888v"..ADDON_VERSION.."|r -- Midnight Reference")
+    f.TitleText:SetPoint("TOPLEFT",f,"TOPLEFT",16,-12); f.TitleText:SetText("|cFF00BFFFDelveGuide|r |cFF888888v"..ADDON_VERSION.."|r -- " .. L["Midnight Reference"])
     f.TrackerText=f:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall"); f.TrackerText:SetPoint("TOPRIGHT",f,"TOPRIGHT",-40,-14)
     
     -- Resize Grip Handle
@@ -1692,14 +1694,16 @@ local function CreateMainWindow()
 
         local keysText
         if weeklyCap > 0 and weeklyEarned >= weeklyCap then
-            keysText = string.format("|cFF00FF44%d/%d (Capped)|r", shards, weeklyCap)
+            keysText = "|cFF00FF44" .. string.format(L["%d/%d (Capped)"], shards, weeklyCap) .. "|r"
         else
             keysText = string.format("%d/%d", shards, weeklyCap > 0 and weeklyCap or CK.SHARD_WEEKLY_CAP)
         end
 
         f.TrackerText:SetText(string.format(
-            "|cFFFFD700Keys:|r %s  |  |cFF00BFFFDelves:|r %d  |cFF888888(Vault %d/%d)|r  |  |cFF00FF88WQs:|r %d  |  |cFFAAAA00Reset:|r %s",
-            keysText, delveCount, vaultProgress, maxThreshold, wqCount, resetText
+            "|cFFFFD700%s|r %s  |  |cFF00BFFF%s|r %d  |cFF888888%s|r  |  |cFF00FF88%s|r %d  |  |cFFAAAA00%s|r %s",
+            L["Keys:"], keysText, L["Delves:"], delveCount,
+            string.format(L["(Vault %d/%d)"], vaultProgress, maxThreshold),
+            L["WQs:"], wqCount, L["Reset:"], resetText
         ))
     end
     f:HookScript("OnShow", function(self)
@@ -1779,8 +1783,8 @@ local DelveGuideLDB = LDB:NewDataObject("DelveGuide", {
     end,
     OnTooltipShow = function(tooltip)
         tooltip:AddLine("|cFF00BFFFDelveGuide|r")
-        tooltip:AddLine("Left-Click to open/close.", 1, 1, 1)
-        tooltip:AddLine("Right-Click for Settings.", 0.7, 0.7, 0.7)
+        tooltip:AddLine(L["Left-Click to open/close."], 1, 1, 1)
+        tooltip:AddLine(L["Right-Click for Settings."], 0.7, 0.7, 0.7)
     end,
 })
 
@@ -1811,13 +1815,13 @@ local function UpdateLDBText()
 
     -- Format
     local parts = {}
-    table.insert(parts, string.format("Keys: %d/%d", shards, DelveGuideData.cofferKeys.SHARD_WEEKLY_CAP))
+    table.insert(parts, string.format(L["Keys: %d/%d"], shards, DelveGuideData.cofferKeys.SHARD_WEEKLY_CAP))
     if bestVariant then
         local gradeLetter = "?"
         for letter, order in pairs(rankOrder) do if order == bestRank then gradeLetter = letter; break end end
         table.insert(parts, string.format("[%s] %s", gradeLetter, bestVariant))
     end
-    table.insert(parts, string.format("Vault: %d/%d", vaultProgress, maxThreshold > 0 and maxThreshold or 8))
+    table.insert(parts, string.format(L["Vault: %d/%d"], vaultProgress, maxThreshold > 0 and maxThreshold or 8))
 
     DelveGuideLDB.text = table.concat(parts, " | ")
 end
@@ -1853,14 +1857,14 @@ DelveGuide.commands = {
     -- ---- window ----------------------------------------------------
     {
         name = "hide",
-        desc = "Hide the window",
+        desc = L["Hide the window"],
         handler = function()
             if mainFrame then mainFrame:Hide() end
         end,
     },
     {
         name = "show",
-        desc = "Show the window",
+        desc = L["Show the window"],
         handler = function()
             if not mainFrame then CreateMainWindow() end
             mainFrame:Show()
@@ -1868,55 +1872,55 @@ DelveGuide.commands = {
     },
     {
         name = "scan",
-        desc = "Rescan active delve variants",
+        desc = L["Rescan active delve variants"],
         handler = function()
             ScanActiveVariants(); RefreshCurrentTab()
             local vc,dc=0,0
             for _ in pairs(activeVariants) do vc=vc+1 end
             for _ in pairs(activeDelves) do dc=dc+1 end
-            print(string.format("|cFF00BFFF[DelveGuide]|r Scan: |cFF44FF44%d|r delves, |cFF44FF44%d|r variants.",dc,vc))
+            print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Scan: %s delves, %s variants."], "|cFF44FF44"..dc.."|r", "|cFF44FF44"..vc.."|r"))
             if vc>0 then
                 local list={}; for v in pairs(activeVariants) do table.insert(list,v) end
-                print("|cFF00BFFF[DelveGuide]|r Active variants: "..table.concat(list,", "))
+                print("|cFF00BFFF[DelveGuide]|r " .. L["Active variants:"] .. " "..table.concat(list,", "))
             end
         end,
     },
     {
         name = "map",
-        desc = "Open world map",
+        desc = L["Open world map"],
         handler = function()
             ToggleWorldMap()
         end,
     },
     {
         name = "minimap",
-        desc = "Toggle minimap button",
+        desc = L["Toggle minimap button"],
         handler = function()
             DelveGuideDB.minimap.hide = not DelveGuideDB.minimap.hide
             if icon then
                 if DelveGuideDB.minimap.hide then icon:Hide("DelveGuide") else icon:Show("DelveGuide") end
             end
-            print("|cFF00BFFF[DelveGuide]|r Minimap button: " .. (DelveGuideDB.minimap.hide and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
+            print("|cFF00BFFF[DelveGuide]|r " .. L["Minimap button:"] .. " " .. (DelveGuideDB.minimap.hide and ("|cFFFF4444" .. L["hidden"] .. "|r") or ("|cFF44FF44" .. L["shown"] .. "|r")))
         end,
     },
     {
         name = "hud",
-        desc = "Toggle in-run HUD overlay",
+        desc = L["Toggle in-run HUD overlay"],
         handler = function()
             if DelveGuide.ToggleHUD then DelveGuide.ToggleHUD()
-            else print("|cFF00BFFF[DelveGuide]|r HUD not loaded.") end
+            else print("|cFF00BFFF[DelveGuide]|r " .. L["HUD not loaded."]) end
         end,
     },
     {
         name = "widget",
-        desc = "Toggle compact floating widget",
+        desc = L["Toggle compact floating widget"],
         handler = function()
             if DelveGuide.ToggleWidget then DelveGuide.ToggleWidget() end
         end,
     },
     {
         name = "resetwidget",
-        desc = "Reset widget position to center",
+        desc = L["Reset widget position to center"],
         handler = function()
             DelveGuideDB.widgetX = nil
             DelveGuideDB.widgetY = nil
@@ -1927,12 +1931,12 @@ DelveGuide.commands = {
                 cw:Show()
             end
             DelveGuideDB.widgetHidden = false
-            print("|cFF00BFFF[DelveGuide]|r Widget position reset to center.")
+            print("|cFF00BFFF[DelveGuide]|r " .. L["Widget position reset to center."])
         end,
     },
     {
         name = "resethud",
-        desc = "Reset the in-run HUD position",
+        desc = L["Reset the in-run HUD position"],
         handler = function()
             -- Parity with /dg resetwidget. Asked for by a user whose HUD kept
             -- landing at the bottom of the screen (the restore-anchor bug), with
@@ -1944,24 +1948,24 @@ DelveGuide.commands = {
                 hf:ClearAllPoints()
                 hf:SetPoint("CENTER", UIParent, "CENTER", 450, 100)
             end
-            print("|cFF00BFFF[DelveGuide]|r In-run HUD position reset. Drag it where you want it and it will stay there.")
+            print("|cFF00BFFF[DelveGuide]|r " .. L["In-run HUD position reset. Drag it where you want it and it will stay there."])
         end,
     },
     {
         name = "bountiful",
-        desc = "Toggle widget filter to show only bountiful delves",
+        desc = L["Toggle widget filter to show only bountiful delves"],
         handler = function()
             DelveGuideDB.widgetBountifulOnly = not DelveGuideDB.widgetBountifulOnly
             local cw = DelveGuide.compactWidget
             if cw and cw.RefreshBountyBtn then cw.RefreshBountyBtn() end
             if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end
-            print("|cFF00BFFF[DelveGuide]|r Widget bountiful filter: "
-                ..(DelveGuideDB.widgetBountifulOnly and "|cFFFFD700ON|r (only bountiful delves)" or "|cFF888888OFF|r (all variants)"))
+            print("|cFF00BFFF[DelveGuide]|r " .. L["Widget bountiful filter:"] .. " "
+                ..(DelveGuideDB.widgetBountifulOnly and ("|cFFFFD700" .. L["ON"] .. "|r " .. L["(only bountiful delves)"]) or ("|cFF888888" .. L["OFF"] .. "|r " .. L["(all variants)"])))
         end,
     },
     {
         name = "check",
-        desc = "Show pre-entry checklist",
+        desc = L["Show pre-entry checklist"],
         handler = function()
             if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(true) end
         end,
@@ -1971,7 +1975,7 @@ DelveGuide.commands = {
     -- one twice in a row just closed the guide again. ------------------
     {
         name = "roster",
-        desc = "Open Roster tab",
+        desc = L["Open Roster tab"],
         handler = function()
             if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
             SwitchTab("roster")
@@ -1980,7 +1984,7 @@ DelveGuide.commands = {
     {
         name = "voidforge",
         aliases = { "forge" },
-        desc = "Open Voidforge tab (bonus rolls, upgrades, slot priority)",
+        desc = L["Open Voidforge tab (bonus rolls, upgrades, slot priority)"],
         handler = function()
             if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
             SwitchTab("voidforge")
@@ -1989,7 +1993,7 @@ DelveGuide.commands = {
     {
         name = "journey",
         aliases = { "quests" },
-        desc = "Open the Journey tab: Delver's Journey ranks + Delver's Call quests (alias /dg quests)",
+        desc = L["Open the Journey tab: Delver's Journey ranks + Delver's Call quests (alias /dg quests)"],
         handler = function()
             if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
             SwitchTab("quests")
@@ -2000,21 +2004,21 @@ DelveGuide.commands = {
     {
         name = "submit",
         aliases = { "rank" },
-        desc = "Copy your run times to submit for community variant rankings",
+        desc = L["Copy your run times to submit for community variant rankings"],
         handler = function()
             DelveGuide.ShowSubmitDialog()
         end,
     },
     {
         name = "questscan",
-        desc = "Scan quest log for Delver's Call quest IDs",
+        desc = L["Scan quest log for Delver's Call quest IDs"],
         handler = function()
             if DelveGuide.ScanDelversCallQuests then DelveGuide.ScanDelversCallQuests() end
         end,
     },
     {
         name = "export",
-        desc = "Snapshot zone/delve/quest data to SavedVariables (attach to bug reports)",
+        desc = L["Snapshot zone/delve/quest data to SavedVariables (attach to bug reports)"],
         handler = function()
             -- Capture a structured snapshot into SavedVariables so PTR data
             -- can be pulled from disk instead of copied out of chat. Run it
@@ -2421,75 +2425,75 @@ DelveGuide.commands = {
             end)
 
             table.insert(DelveGuideDB.ptrExports, snap)
-            print(string.format("|cFF00BFFF[DelveGuide]|r Export snapshot |cFF44FF44#%d|r captured (%s). |cFFFFD700/reload|r or logout to write to disk.",
-                #DelveGuideDB.ptrExports, snap.zone or "?"))
+            print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Export snapshot %s captured (%s). %s or logout to write to disk."],
+                "|cFF44FF44#" .. #DelveGuideDB.ptrExports .. "|r", snap.zone or "?", "|cFFFFD700/reload|r"))
         end,
     },
     {
         name = "exportclear",
-        desc = "Clear export snapshots",
+        desc = L["Clear export snapshots"],
         handler = function()
             DelveGuideDB.ptrExports = nil
-            print("|cFF00BFFF[DelveGuide]|r Export snapshots cleared.")
+            print("|cFF00BFFF[DelveGuide]|r " .. L["Export snapshots cleared."])
         end,
     },
     {
         name = "companionscan",
-        desc = "Re-scan for the companion reputation faction",
+        desc = L["Re-scan for the companion reputation faction"],
         handler = function()
             if DelveGuideDB then
                 DelveGuideDB.companionFactionID   = nil
                 DelveGuideDB.companionFactionType = nil
             end
-            print("|cFF00BFFF[DelveGuide]|r Companion faction cache cleared. Open Companion tab to rescan.")
+            print("|cFF00BFFF[DelveGuide]|r " .. L["Companion faction cache cleared. Open Companion tab to rescan."])
             if currentTabKey=="companion" then RefreshCurrentTab() end
         end,
     },
     {
         name = "companionfaction",
-        usage = "<id>",
-        desc = "Manually pin the companion faction ID",
+        usage = L["<id>"],
+        desc = L["Manually pin the companion faction ID"],
         handler = function(arg)
             local val = tonumber(arg)
             if val and DelveGuideDB then
                 DelveGuideDB.companionFactionID   = val
                 DelveGuideDB.companionFactionType = nil  -- let the renown query auto-detect Major vs Reputation
-                print("|cFF00BFFF[DelveGuide]|r Companion faction ID set to "..val..". Open Companion tab to verify.")
+                print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Companion faction ID set to %s."], val) .. " " .. L["Open Companion tab to verify."])
                 if currentTabKey=="companion" then RefreshCurrentTab() end
             else
-                print("|cFF00BFFF[DelveGuide]|r Usage: /dg companionfaction <factionID>")
+                print("|cFF00BFFF[DelveGuide]|r " .. L["Usage:"] .. " /dg companionfaction <factionID>")
             end
         end,
     },
     {
         name = "tier",
-        usage = "<1-11>",
-        desc = "Manually set current delve tier",
+        usage = L["<1-11>"],
+        desc = L["Manually set current delve tier"],
         handler = function(arg)
             local num = tonumber(arg)
             if num and num >= 1 and num <= 11 then
                 DelveGuide.SetManualDelveTier(num)
                 if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
-                print("|cFF00BFFF[DelveGuide]|r Delve tier set to |cFFCCCCCC" .. num .. "|r |cFF888888(manual override -- /dg tier auto to clear)|r")
+                print("|cFF00BFFF[DelveGuide]|r " .. L["Delve tier set to"] .. " |cFFCCCCCC" .. num .. "|r |cFF888888" .. L["(manual override -- /dg tier auto to clear)"] .. "|r")
             elseif arg == "auto" or num == 0 then
                 DelveGuide.SetManualDelveTier(nil)
                 if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
-                print("|cFF00BFFF[DelveGuide]|r Manual tier cleared -- back to auto-detection.")
+                print("|cFF00BFFF[DelveGuide]|r " .. L["Manual tier cleared -- back to auto-detection."])
             else
-                print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg tier 3|r  (1-11), or |cFFFFFF00/dg tier auto|r to clear")
+                print("|cFF00BFFF[DelveGuide]|r " .. L["Usage:"] .. " |cFFFFFF00/dg tier 3|r  " .. string.format(L["(1-11), or %s to clear"], "|cFFFFFF00/dg tier auto|r"))
             end
         end,
     },
     {
         name = "share",
-        usage = "[channel]",
-        desc = "Share active variants (party/guild/say/raid)",
+        usage = L["[channel]"],
+        desc = L["Share active variants (party/guild/say/raid)"],
         handler = function(arg)
             local channel = arg:upper()
             if channel == "" then channel = "PARTY" end
             local validChannels = {PARTY=true, GUILD=true, SAY=true, RAID=true, INSTANCE_CHAT=true}
             if not validChannels[channel] then
-                print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg share [party|guild|say|raid]|r")
+                print("|cFF00BFFF[DelveGuide]|r " .. L["Usage:"] .. " |cFFFFFF00/dg share [party|guild|say|raid]|r")
                 return
             end
             -- Group/guild checks, list building, line packing and sending all live
@@ -2499,30 +2503,30 @@ DelveGuide.commands = {
     },
     {
         name = "font",
-        usage = "<0.6-2.0>",
-        desc = "Main UI font scale",
+        usage = L["<0.6-2.0>"],
+        desc = L["Main UI font scale"],
         handler = function(arg)
             local val=tonumber(arg)
             if val then DelveGuideDB.fontScale=math.max(0.6,math.min(2.0,val)); RefreshCurrentTab()
-                print(string.format("|cFF00BFFF[DelveGuide]|r Font: %.1fx",DelveGuideDB.fontScale))
-            else print(string.format("|cFF00BFFF[DelveGuide]|r Font: %.1fx (0.6-2.0)",DelveGuideDB.fontScale)) end
+                print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Font: %.1fx"],DelveGuideDB.fontScale))
+            else print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Font: %.1fx (0.6-2.0)"],DelveGuideDB.fontScale)) end
         end,
     },
     {
         name = "widgetfont",
-        usage = "<0.6-2.0>",
-        desc = "Widget-only font scale (independent)",
+        usage = L["<0.6-2.0>"],
+        desc = L["Widget-only font scale (independent)"],
         handler = function(arg)
             local val=tonumber(arg)
             if val then DelveGuideDB.widgetFontScale=math.max(0.6,math.min(2.0,val))
                 if DelveGuide.RefreshCompactWidgetFonts then DelveGuide.RefreshCompactWidgetFonts() end
-                print(string.format("|cFF00BFFF[DelveGuide]|r Widget font: %.1fx",DelveGuideDB.widgetFontScale))
-            else print(string.format("|cFF00BFFF[DelveGuide]|r Widget font: %.1fx (0.6-2.0)",DelveGuideDB.widgetFontScale)) end
+                print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Widget font: %.1fx"],DelveGuideDB.widgetFontScale))
+            else print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Widget font: %.1fx (0.6-2.0)"],DelveGuideDB.widgetFontScale)) end
         end,
     },
     {
         name = "help",
-        desc = "Show this help",
+        desc = L["Show this help"],
         handler = function()
             DelveGuide.PrintHelp()
         end,
@@ -2536,7 +2540,7 @@ DelveGuide.commands = {
     -- state, which is a bigger change than the move is worth.
     {
         name = "selftest",
-        desc = "Run the full pass/fail self-test (paste the output into bug reports)",
+        desc = L["Run the full pass/fail self-test (paste the output into bug reports)"],
         debug = true,
         handler = function()
             -- One command that turns "does this still work on the new patch" into
@@ -2686,7 +2690,7 @@ DelveGuide.commands = {
     },
     {
         name = "testrun",
-        desc = "DEV: inject a fake completed run and show the victory screen",
+        desc = L["DEV: inject a fake completed run and show the victory screen"],
         debug = true,
         handler = function()
             -- DEV ONLY: simulate a delve completion for the first delve in the DB
@@ -2717,9 +2721,9 @@ local function HelpLine(c)
 end
 
 DelveGuide.PrintHelp = function()
-    print("|cFF00BFFF[DelveGuide]|r |cFFFFFFFFv"..ADDON_VERSION.."|r  |cFF888888(include this in bug reports)|r")
-    print("|cFF00BFFF[DelveGuide]|r Commands:")
-    print("  |cFFFFFF00/dg|r                    - Toggle window")
+    print("|cFF00BFFF[DelveGuide]|r |cFFFFFFFFv"..ADDON_VERSION.."|r  |cFF888888" .. L["(include this in bug reports)"] .. "|r")
+    print("|cFF00BFFF[DelveGuide]|r " .. L["Commands:"])
+    print("  |cFFFFFF00/dg|r                    - " .. L["Toggle window"])
     local hidden = 0
     for _, c in ipairs(COMMANDS) do
         if c.desc and not c.debug then print(HelpLine(c)) end
@@ -2731,12 +2735,12 @@ DelveGuide.PrintHelp = function()
     -- would be worse than a slightly longer help block.
     if hidden > 0 then
         if DelveGuideDB and DelveGuideDB.showDebugTab then
-            print("|cFF888888  Debug / diagnostics:|r")
+            print("|cFF888888  " .. L["Debug / diagnostics:"] .. "|r")
             for _, c in ipairs(COMMANDS) do
                 if c.desc and c.debug then print(HelpLine(c)) end
             end
         else
-            print(string.format("|cFF888888  (+%d debug commands, hidden -- tick 'Show Debug tab' in Settings to list them)|r", hidden))
+            print("|cFF888888  " .. string.format(L["(+%d debug commands, hidden -- tick 'Show Debug tab' in Settings to list them)"], hidden) .. "|r")
         end
     end
 end
@@ -2762,7 +2766,7 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     -- Unknown command prints the usage. It used to fall through to Toggle(),
     -- so a typo silently opened or closed the window and looked like the
     -- command had worked.
-    print("|cFF00BFFF[DelveGuide]|r Unknown command: |cFFFFFF00"..word.."|r")
+    print("|cFF00BFFF[DelveGuide]|r " .. L["Unknown command:"] .. " |cFFFFFF00"..word.."|r")
     DelveGuide.PrintHelp()
 end
 
@@ -2887,21 +2891,21 @@ end
 DelveGuide.ShowSubmitDialog = function()
     local code = DelveGuide.BuildSubmissionCode and DelveGuide.BuildSubmissionCode()
     if not code then
-        print("|cFF00BFFF[DelveGuide]|r Nothing to send yet -- complete a few delves, then |cFFFFFF00/dg submit|r to help rank them.")
+        print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Nothing to send yet -- complete a few delves, then %s to help rank them."], "|cFFFFFF00/dg submit|r"))
         return false
     end
-    print("|cFF00BFFF[DelveGuide]|r Thanks for helping rank the delves! Paste the copied code into the form: |cFFFFFF00" .. SUBMIT_URL .. "|r")
+    print("|cFF00BFFF[DelveGuide]|r " .. L["Thanks for helping rank the delves! Paste the copied code into the form:"] .. " |cFFFFFF00" .. SUBMIT_URL .. "|r")
     StaticPopup_Show("DELVEGUIDE_SUBMIT_EXPORT", nil, nil, code)
     return true
 end
 
 StaticPopupDialogs["DELVEGUIDE_SUBMIT_EXPORT"] = {
-    text = "Copy the code below (it's pre-selected -- Ctrl+C), then paste it into the ranking form:\n\n" .. SUBMIT_URL,
+    text = L["Copy the code below (it's pre-selected -- Ctrl+C), then paste it into the ranking form:"] .. "\n\n" .. SUBMIT_URL,
     button1 = CLOSE or "Close",
     -- The form URL was plain dialog text, so there was no way to get it out of
     -- the game short of retyping it -- asked for by a submitter. This swaps to a
     -- popup holding the link in a highlighted edit box.
-    button2 = "Copy Form Link",
+    button2 = L["Copy Form Link"],
     OnCancel = function() StaticPopup_Show("DELVEGUIDE_SUBMIT_URL") end,
     hasEditBox = true,
     editBoxWidth = 350,
@@ -2923,7 +2927,7 @@ StaticPopupDialogs["DELVEGUIDE_SUBMIT_EXPORT"] = {
 }
 
 StaticPopupDialogs["DELVEGUIDE_SUBMIT_URL"] = {
-    text = "Ranking form link (pre-selected -- Ctrl+C):",
+    text = L["Ranking form link (pre-selected -- Ctrl+C):"],
     button1 = CLOSE or "Close",
     hasEditBox = true,
     editBoxWidth = 350,
@@ -2943,12 +2947,12 @@ StaticPopupDialogs["DELVEGUIDE_SUBMIT_URL"] = {
 }
 
 StaticPopupDialogs["DELVEGUIDE_RANKING_CALL"] = {
-    text = "|cFFFFD700DELVEGUIDE NEEDS YOU, DELVER!|r\n\n"
-        .. "Season 2's new delves are crawling with |cFF888888[?]|r unranked variants -- and your addon has been timing your runs this whole time.\n\n"
-        .. "Enlist! Send your clear times to help build the community rankings. No character or account data -- just cold, hard times, |cFFFFFF00FOR THE VAULT!|r\n\n"
-        .. "Your times become everyone's rankings.\n|cFF888888(You can always enlist later with /dg submit.)|r",
-    button1 = "Enlist Now!",
-    button2 = "Maybe Later",
+    text = "|cFFFFD700" .. L["DELVEGUIDE NEEDS YOU, DELVER!"] .. "|r\n\n"
+        .. string.format(L["Season 2's new delves are crawling with %s unranked variants -- and your addon has been timing your runs this whole time."], "|cFF888888[?]|r") .. "\n\n"
+        .. string.format(L["Enlist! Send your clear times to help build the community rankings. No character or account data -- just cold, hard times, %s"], "|cFFFFFF00" .. L["FOR THE VAULT!"] .. "|r") .. "\n\n"
+        .. L["Your times become everyone's rankings."] .. "\n|cFF888888" .. L["(You can always enlist later with /dg submit.)"] .. "|r",
+    button1 = L["Enlist Now!"],
+    button2 = L["Maybe Later"],
     OnAccept = function()
         if DelveGuide.ShowSubmitDialog then DelveGuide.ShowSubmitDialog() end
     end,
@@ -2956,9 +2960,9 @@ StaticPopupDialogs["DELVEGUIDE_RANKING_CALL"] = {
 }
 
 StaticPopupDialogs["DELVEGUIDE_CONFIRM_CLEAR_HISTORY"] = {
-    text          = "Clear all delve run history? This cannot be undone.",
-    button1       = "Clear",
-    button2       = "Cancel",
+    text          = L["Clear all delve run history? This cannot be undone."],
+    button1       = L["Clear"],
+    button2       = L["Cancel"],
     OnAccept      = function()
         DelveGuideDB.history = {}
         RefreshCurrentTab()
@@ -2970,9 +2974,9 @@ StaticPopupDialogs["DELVEGUIDE_CONFIRM_CLEAR_HISTORY"] = {
 }
 
 StaticPopupDialogs["DELVEGUIDE_CONFIRM_REMOVE_CHAR"] = {
-    text          = "Remove %s from your roster?",
-    button1       = "Remove",
-    button2       = "Cancel",
+    text          = L["Remove %s from your roster?"],
+    button1       = L["Remove"],
+    button2       = L["Cancel"],
     OnAccept      = function(self)
         DelveGuideDB.roster[self.data] = nil
         RefreshCurrentTab()
@@ -3026,7 +3030,7 @@ loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
         InitSavedVars(); SeedLocalizedNames(); if DelveGuideDB.minimap.showInCompartment == nil then DelveGuideDB.minimap.showInCompartment = true end; icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
-        print("|cFF00BFFF[DelveGuide]|r Loaded! |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
+        print("|cFF00BFFF[DelveGuide]|r " .. L["Loaded!"] .. " |cFFFFFF00/dg|r  *  |cFFFFFF00/dg scan|r")
         self:UnregisterEvent("ADDON_LOADED")
     elseif event=="PLAYER_ENTERING_WORLD" then
         -- Only rescan POIs when in the outdoor world — inside an instance the POI data is empty
@@ -3044,7 +3048,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
                     for _ in pairs(DelveGuideDB.missingTranslations) do count = count + 1 end
                     if count > 0 and not DelveGuideDB.missingNotified then
                         DelveGuideDB.missingNotified = true
-                        print("|cFF00BFFF[DelveGuide]|r |cFFFFFF00" .. count .. " untranslated variant(s) on your client.|r Use |cFFFFFF00/dg chatdump|r to help add your language!")
+                        print("|cFF00BFFF[DelveGuide]|r |cFFFFFF00" .. string.format(L["%d untranslated variant(s) on your client."], count) .. "|r " .. string.format(L["Use %s to help add your language!"], "|cFFFFFF00/dg chatdump|r"))
                     end
                 end
             end)
@@ -3317,10 +3321,10 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
             -- a busy week could push older characters' runs out and undercount
             -- their vault progress. History rows are tiny.
             if #DelveGuideDB.history>200 then table.remove(DelveGuideDB.history) end
-            local vaultStr=vaultIlvl and ("  |cFFFFD700[Vault: "..vaultIlvl.." ilvl]|r") or ""
+            local vaultStr=vaultIlvl and ("  |cFFFFD700[" .. string.format(L["Vault: %d ilvl"], vaultIlvl) .. "]|r") or ""
             local timeStr=elapsed and string.format("  |cFF00BFFF[%dm %02ds]|r",math.floor(elapsed/60),math.floor(elapsed%60)) or ""
             local varLogStr=runVariant and ("  |cFFCCAAFF("..runVariant..")|r") or ""
-            print("|cFF00BFFF[DelveGuide]|r Logged: |cFF00FF44"..runName.."|r"..varLogStr.."  |cFF888888["..tier.."]|r"..vaultStr..timeStr)
+            print("|cFF00BFFF[DelveGuide]|r " .. L["Logged:"] .. " |cFF00FF44"..runName.."|r"..varLogStr.."  |cFF888888["..tier.."]|r"..vaultStr..timeStr)
             -- The comparison the Victory toast shows, also in chat as a system
             -- message so it survives the toast fading (or being turned off).
             if DelveGuide.GetRunComparison then
@@ -3394,9 +3398,9 @@ local function InjectDelveData(self)
         if d.name == engName and DelveGuide.activeVariants[d.variant] then
             activeVariant = d.variant
             ranking = d.ranking
-            if d.isBestRoute then flags = flags .. "|cFF00FF00[Best Route]|r " end
-            if d.mountable then flags = flags .. "|cFFFFD700[Mountable]|r " end
-            if d.hasBug then flags = flags .. "|cFFFF4444[Bugged]|r " end
+            if d.isBestRoute then flags = flags .. "|cFF00FF00[" .. L["Best Route"] .. "]|r " end
+            if d.mountable then flags = flags .. "|cFFFFD700[" .. L["Mountable"] .. "]|r " end
+            if d.hasBug then flags = flags .. "|cFFFF4444[" .. L["Bugged"] .. "]|r " end
             break
         end
     end
@@ -3407,12 +3411,12 @@ local function InjectDelveData(self)
         self:AddLine("|cFF00BFFFDelveGuide:|r")
 
         local gradeText = DelveGuide.UI and DelveGuide.UI.GradeColor(ranking) or ("|cFFFFFFFF" .. ranking .. "|r")
-        self:AddLine("Speed Grade: " .. gradeText .. "  " .. flags)
+        self:AddLine(L["Speed Grade:"] .. " " .. gradeText .. "  " .. flags)
 
         local minT = (DelveGuide.Voidforge and DelveGuide.Voidforge.MIN_VOIDCORE_TIER) or 8
         -- Voidcores do not drop from delves; T8+ is where the end-of-run loot
         -- hits the max pool, which is what makes a bonus roll there worthwhile.
-        self:AddLine(string.format("|cFFAA66CCT%d+: max-ilvl loot -- worth a Voidcore bonus roll|r", minT))
+        self:AddLine("|cFFAA66CC" .. string.format(L["T%d+: max-ilvl loot -- worth a Voidcore bonus roll"], minT) .. "|r")
 
         self:Show()
     end

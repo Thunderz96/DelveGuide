@@ -1,6 +1,8 @@
 -- ============================================================
 -- DelveGuide_Checklist.lua
 -- ============================================================
+local L = DelveGuide.L
+
 local checklistFrame
 
 local function RunChecklistScan()
@@ -23,15 +25,15 @@ local function RunChecklistScan()
         local NI = (DelveGuideData and DelveGuideData.nemesisItem) or {}
         local flutes = (NI.ITEM_ID and C_Item.GetItemCount(NI.ITEM_ID, true)) or 0
         if flutes > 0 then
-            local label = NI.NAME or "Nemesis flute"
+            local label = NI.NAME or L["Nemesis flute"]
             local troveState = DelveGuide.GetTroveStatus and DelveGuide.GetTroveStatus() or "none"
             local bountyPending = (troveState ~= "weeklyDone")
             table.insert(results, {
-                label = string.format("%s  |cFF00FF44(%d in bags)|r", label, flutes),
+                label = label .. "  |cFF00FF44" .. string.format(L["(%d in bags)"], flutes) .. "|r",
                 ok    = true,
                 tip   = bountyPending
-                    and "Use it at the Abandoned Restoration Stone to summon the Nemesis. Guarantees this week's Trovehunter's Bounty map, which you have not claimed yet. 1 hour cooldown."
-                    or  "Use it at the Abandoned Restoration Stone to summon the Nemesis. You already have this week's Bounty, so no map from this one. 1 hour cooldown.",
+                    and L["Use it at the Abandoned Restoration Stone to summon the Nemesis. Guarantees this week's Trovehunter's Bounty map, which you have not claimed yet. 1 hour cooldown."]
+                    or  L["Use it at the Abandoned Restoration Stone to summon the Nemesis. You already have this week's Bounty, so no map from this one. 1 hour cooldown."],
             })
         end
     end
@@ -44,15 +46,15 @@ local function RunChecklistScan()
     local hasKey = shards >= CK.SHARDS_PER_KEY or restoredKeys > 0
     local keyLabel
     if restoredKeys > 0 then
-        keyLabel = string.format("Coffer Key  |cFF00FF44(%d restored key%s + %d/%d shards)|r",
-            restoredKeys, restoredKeys > 1 and "s" or "", shards, CK.SHARD_WEEKLY_CAP)
+        keyLabel = L["Coffer Key"] .. "  |cFF00FF44" .. string.format(L["(%d restored key%s + %d/%d shards)"],
+            restoredKeys, restoredKeys > 1 and "s" or "", shards, CK.SHARD_WEEKLY_CAP) .. "|r"
     else
-        keyLabel = string.format("Coffer Key  |cFF888888(%d/%d shards)|r", shards, CK.SHARD_WEEKLY_CAP)
+        keyLabel = L["Coffer Key"] .. "  |cFF888888" .. string.format(L["(%d/%d shards)"], shards, CK.SHARD_WEEKLY_CAP) .. "|r"
     end
     table.insert(results, {
         label = keyLabel,
         ok    = hasKey,
-        tip   = not hasKey and string.format("You need %d shards (1 key) or a Restored Coffer Key to open a Bountiful Coffer.", CK.SHARDS_PER_KEY) or nil,
+        tip   = not hasKey and string.format(L["You need %d shards (1 key) or a Restored Coffer Key to open a Bountiful Coffer."], CK.SHARDS_PER_KEY) or nil,
     })
 
     -- Trovehunter's Bounty -- shared state helper (IDs in DelveGuideData.trove)
@@ -61,45 +63,45 @@ local function RunChecklistScan()
     if DelveGuide.GetTroveStatus then troveState, troveCount = DelveGuide.GetTroveStatus() end
 
     if troveState == "active" then
-        table.insert(results, { label="Trovehunter's Bounty  |cFF00FF44(Active)|r", ok=true })
+        table.insert(results, { label="Trovehunter's Bounty  |cFF00FF44" .. L["(Active)"] .. "|r", ok=true })
     elseif troveState == "inBags" then
         table.insert(results, {
-            label = string.format("Trovehunter's Bounty  |cFFFFD700(%d in bags - not active)|r", troveCount),
+            label = "Trovehunter's Bounty  |cFFFFD700" .. string.format(L["(%d in bags - not active)"], troveCount) .. "|r",
             ok    = false,
-            tip   = "Right-click the item to activate it before entering.",
+            tip   = L["Right-click the item to activate it before entering."],
         })
     elseif troveState == "weeklyDone" then
         table.insert(results, {
-            label = "Trovehunter's Bounty  |cFF44FF44(Used this week)|r",
+            label = "Trovehunter's Bounty  |cFF44FF44" .. L["(Used this week)"] .. "|r",
             ok    = true,
-            tip   = "You've already claimed and spent this week's bounty. It resets with the weekly.",
+            tip   = L["You've already claimed and spent this week's bounty. It resets with the weekly."],
         })
     else
         table.insert(results, {
-            label = "Trovehunter's Bounty  |cFFFF4444(None)|r",
+            label = "Trovehunter's Bounty  |cFFFF4444" .. L["(None)"] .. "|r",
             ok    = false,
-            tip   = "Complete the weekly 'Purging the Vaults' on the Coiled Isle to earn one, or use a flute to summon the Nemesis and loot one from it.",
+            tip   = L["Complete the weekly 'Purging the Vaults' on the Coiled Isle to earn one, or use a flute to summon the Nemesis and loot one from it."],
         })
     end
 
-    local valeeraOk, valeeraLabel = false, "|cFFFF4444Not detected|r"
+    local valeeraOk, valeeraLabel = false, "|cFFFF4444" .. L["Not detected"] .. "|r"
     pcall(function()
         if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then
             local companionID = C_DelvesUI.GetCompanionInfoForActivePlayer()
             if companionID and companionID > 0 then
-                local roleNames = { [0]="DPS", [1]="Healer", [2]="Tank" }
+                local roleNames = { [0]=L["DPS"], [1]=L["Healer"], [2]=L["Tank"] }
                 local role = DelvesCompanionConfigurationFrame
                     and DelvesCompanionConfigurationFrame.selectedRole
-                local roleStr = role and roleNames[role] or "check role"
+                local roleStr = role and roleNames[role] or L["check role"]
                 valeeraOk    = true
-                valeeraLabel = "|cFF00FF44Present|r  |cFF888888(" .. roleStr .. ")|r"
+                valeeraLabel = "|cFF00FF44" .. L["Present"] .. "|r  |cFF888888(" .. roleStr .. ")|r"
             end
         end
     end)
     table.insert(results, {
         label = "Valeera  " .. valeeraLabel,
         ok    = valeeraOk,
-        tip   = not valeeraOk and "Open the companion panel to configure Valeera." or nil,
+        tip   = not valeeraOk and L["Open the companion panel to configure Valeera."] or nil,
     })
 
     -- Delve glove enhancement (12.1.5). Says something only when it can be
@@ -122,20 +124,20 @@ local function RunChecklistScan()
         local name = known[enchantID]
         if name then
             table.insert(results, {
-                label = "Delve glove enhancement  |cFF00FF44(" .. name .. ")|r",
+                label = L["Delve glove enhancement"] .. "  |cFF00FF44(" .. name .. ")|r",
                 ok    = true,
             })
         elseif ilvl > cap then
             table.insert(results, {
-                label = string.format("Delve glove enhancement  |cFFFF4444(gloves are ilvl %d)|r", ilvl),
+                label = L["Delve glove enhancement"] .. "  |cFFFF4444" .. string.format(L["(gloves are ilvl %d)"], ilvl) .. "|r",
                 ok    = false,
-                tip   = string.format("The 12.1.5 glove enhancements only apply to gloves of item level %d or below. Yours cannot take one.", cap),
+                tip   = string.format(L["The 12.1.5 glove enhancements only apply to gloves of item level %d or below. Yours cannot take one."], cap),
             })
         elseif hasKnown then
             table.insert(results, {
-                label = "Delve glove enhancement  |cFFFF4444(None)|r",
+                label = L["Delve glove enhancement"] .. "  |cFFFF4444" .. L["(None)"] .. "|r",
                 ok    = false,
-                tip   = "A permanent bonus inside delve content. Apply one to your gloves before entering.",
+                tip   = L["A permanent bonus inside delve content. Apply one to your gloves before entering."],
             })
         end
     end)
@@ -182,7 +184,7 @@ DelveGuide.ShowChecklist = function(force)
 
         local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         title:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -10)
-        title:SetText("|cFFFFD700[DelveGuide]|r  Pre-Entry Checklist")
+        title:SetText("|cFFFFD700[DelveGuide]|r  " .. L["Pre-Entry Checklist"])
 
         local closeBtn = CreateFrame("Button", nil, f, "UIPanelCloseButton")
         closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
@@ -240,7 +242,7 @@ DelveGuide.ShowChecklist = function(force)
         local cblbl = f:CreateFontString(nil, "OVERLAY")
         cblbl:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 10)
         cblbl:SetPoint("LEFT", cb, "RIGHT", 2, 0)
-        cblbl:SetText("|cFF888888Don't show again this session|r")
+        cblbl:SetText("|cFF888888" .. L["Don't show again this session"] .. "|r")
 
         checklistFrame = f
     end
@@ -267,7 +269,7 @@ DelveGuide.ShowChecklist = function(force)
         if r then
             local icon
             if r.ok == true then
-                icon = "|cFF00FF44(OK)|r "
+                icon = "|cFF00FF44" .. L["(OK)"] .. "|r "
             elseif r.ok == false then
                 icon = "|cFFFF4444X|r "
             else

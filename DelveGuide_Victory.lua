@@ -1,6 +1,8 @@
 -- ============================================================
 -- DelveGuide_Victory.lua
 -- ============================================================
+local L = DelveGuide.L
+
 local victoryFrame = nil
 
 -- Personal best and community median for a completed run, as one coloured
@@ -39,12 +41,12 @@ DelveGuide.GetRunComparison = function(delveName, variant, elapsed, tierNum, eng
         local parts = {}
         if prior then
             if elapsed < prior then
-                table.insert(parts, "|cFF00FF88New personal best!|r |cFF888888(was " .. fmt(prior) .. ")|r")
+                table.insert(parts, "|cFF00FF88" .. L["New personal best!"] .. "|r |cFF888888" .. string.format(L["(was %s)"], fmt(prior)) .. "|r")
             else
-                table.insert(parts, "Your best: |cFF00BFFF" .. fmt(prior) .. "|r")
+                table.insert(parts, L["Your best:"] .. " |cFF00BFFF" .. fmt(prior) .. "|r")
             end
         end
-        if median then table.insert(parts, "Community median: |cFFFFD700" .. fmt(median) .. "|r") end
+        if median then table.insert(parts, L["Community median:"] .. " |cFFFFD700" .. fmt(median) .. "|r") end
         if #parts > 0 then bestLine = table.concat(parts, "  |cFF555555\194\183|r  ") end
     end
     return bestLine
@@ -157,27 +159,27 @@ DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, 
     victoryFrame:EnableMouse(DelveGuideDB and DelveGuideDB.victoryUnlocked == true)
 
     -- 2. Populate the Text
-    victoryFrame.Title:SetText("|cFFFFD700" .. (delveName or "Unknown Delve") .. " Defeated!|r")
+    victoryFrame.Title:SetText("|cFFFFD700" .. string.format(L["%s Defeated!"], delveName or L["Unknown Delve"]) .. "|r")
     
     local tStr = tierStr and tostring(tierStr):gsub("Tier ", "") or "?"
-    victoryFrame.Tier:SetText("Tier |cFF00FF44" .. tStr .. "|r Completed")
+    victoryFrame.Tier:SetText(string.format(L["Tier %s Completed"], "|cFF00FF44" .. tStr .. "|r"))
 
     if elapsed then
         local mins = math.floor(elapsed / 60)
         local secs = math.floor(elapsed % 60)
-        victoryFrame.Time:SetText("Completion Time: |cFF00BFFF" .. mins .. "m " .. string.format("%02d", secs) .. "s|r")
+        victoryFrame.Time:SetText(L["Completion Time:"] .. " |cFF00BFFF" .. mins .. "m " .. string.format("%02d", secs) .. "s|r")
         victoryFrame.Time:Show()
     else
         victoryFrame.Time:SetText("")
         victoryFrame.Time:Hide()
     end
 
-    victoryFrame.Runs:SetText("Weekly Delves Completed: |cFF00BFFF" .. trueDelveCount .. "|r")
+    victoryFrame.Runs:SetText(L["Weekly Delves Completed:"] .. " |cFF00BFFF" .. trueDelveCount .. "|r")
 
     if vaultIlvl and vaultIlvl > 0 then
-        victoryFrame.Vault:SetText("Great Vault Unlock: |cFFFFD700" .. vaultIlvl .. " ilvl|r")
+        victoryFrame.Vault:SetText(L["Great Vault Unlock:"] .. " |cFFFFD700" .. string.format(L["%d ilvl"], vaultIlvl) .. "|r")
     else
-        victoryFrame.Vault:SetText("|cFF888888Great Vault progress updated.|r")
+        victoryFrame.Vault:SetText("|cFF888888" .. L["Great Vault progress updated."] .. "|r")
     end
 
     local bestLine = DelveGuide.GetRunComparison(delveName, variant, elapsed, tierNum, engName)
