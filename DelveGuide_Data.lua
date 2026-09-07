@@ -417,7 +417,7 @@ DelveGuideData.curios = {
     -- Read off Valeera's trait node on the PTR (2026-09-07, /dg export #2/#3):
     -- spell 1288805, entry 137816. Description from C_Spell.GetSpellDescription,
     -- markup stripped.
-    { name="Dusty Loa Totem",            id=1288805, description=L["On entering combat, and every 60s, gain Might of the Loa (+20% max health, +12% Strength) or Grace of the Loa (+20% Speed, +12% Haste) for 30s."], curiotype="Utility" },
+    { name="Dusty Loa Totem",            id=1288805, ranking="?", description=L["On entering combat, and every 60s, gain Might of the Loa (+20% max health, +12% Strength) or Grace of the Loa (+20% Speed, +12% Haste) for 30s."], curiotype="Utility" },
 }
 
 -- ============================================================

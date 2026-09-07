@@ -5,7 +5,11 @@ DelveGuide = DelveGuide or {}   -- DelveGuide_Locale.lua loads first and already
 local L = DelveGuide.L
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.11.0"
+-- Version comes from the TOC so it cannot drift from the packaged file;
+-- 2.0.0's release prep bumped the TOC and left this constant at 1.11.0, so
+-- the window title and the what's-new popup both said the wrong thing.
+local ADDON_VERSION    = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata("DelveGuide", "Version"))
+                      or (GetAddOnMetadata and GetAddOnMetadata("DelveGuide", "Version")) or "2.0.0"
 -- Exported so the debug slash commands in DelveGuide_UI_Debug.lua can stamp
 -- their output with the version; both /dg chatdump and /dg huddump exist to be
 -- pasted into bug reports, where the version is the first thing anyone asks for.
@@ -991,7 +995,7 @@ local function GetScaledSizes()
     return math.floor(BASE_HEADER_SIZE*s+0.5),math.floor(BASE_ROW_SIZE*s+0.5),math.floor(BASE_ROW_HEIGHT*s+0.5)
 end
 
-local function GradeColor(g) return (DelveGuideData.gradeColors[g] or "|cFFFFFFFF")..g.."|r" end
+local function GradeColor(g) g = g or "?"; return (DelveGuideData.gradeColors[g] or "|cFFFFFFFF")..g.."|r" end
 local zoneColors={["Zul'Aman"]="|cFFFF8C00",["Quel'Thalas"]="|cFF00CED1",["Voidstorm"]="|cFFBF5FFF",["Harandar"]="|cFF7FFF00",["Quel'Danas"]="|cFFFF69B4",["The Coiled Isle"]="|cFF1E90FF"}
 local function ZoneColor(z) return (zoneColors[z] or "|cFFCCCCCC")..z.."|r" end
 local typeColors={Combat="|cFFFF4444",Utility="|cFF44AAFF"}
