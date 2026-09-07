@@ -319,8 +319,8 @@ do
     end
     -- Labyrinths (12.1.5). Assumes the entrance object carries the
     -- Labyrinth's name like delve entrances do -- unverified on the PTR.
-    for _, L in ipairs((DelveGuideData and DelveGuideData.labyrinths) or {}) do
-        if L.name then delveNameSet[L.name] = true end
+    for _, lab in ipairs((DelveGuideData and DelveGuideData.labyrinths) or {}) do
+        if lab.name then delveNameSet[lab.name] = true end
     end
 end
 
