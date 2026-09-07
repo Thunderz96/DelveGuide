@@ -196,16 +196,16 @@ DelveGuideData.delversCall = {
 -- player's current rank isn't detected). Ranks 1-10 confirmed for S2.
 -- ============================================================
 DelveGuideData.delversJourney = {
-    { rank=1,  unlock="Curiosity boons & first decor", note="Temporary character buffs from Mislaid Curiosities and Heavy Trunks, plus the first housing decor purchase." },
-    { rank=2,  unlock="Corrosive Reticule",            note="Unlocks the Corrosive Reticule purchase." },
-    { rank=3,  unlock="Shrine of Abundance",           note="Bountiful Delves gain a chance to contain a Shrine of Abundance. The Effigy of Dundun toy becomes purchasable." },
-    { rank=4,  unlock="Gilded Stashes appear",         note="Tier 11 Gilded Stashes begin carrying Hero and Myth Mistcrests -- the first rank that changes your upgrade-currency income rather than cosmetics." },
-    { rank=5,  unlock="Zah'ran & first mount",         note="Extra Curiosity boons, the Zah'ran gear vendor at the end of Tier 6+ Delves, and the Corroded Soul Crusher purchase." },
-    { rank=6,  unlock="Two Restored Coffer Keys",      note="Naleidea Rivergleam hands over two Restored Coffer Keys, plus decor and gravestone options." },
-    { rank=7,  unlock="Delve teleports",               note="The Delve-O-Bot 7001 Midnight Software Update Chip adds Midnight Delves to the bot's teleport destinations." },
-    { rank=8,  unlock="Champion Warbound gear",        note="Champion Warbound gear can appear in Tier 9+ Delves. The Ula'tek Ritual Stone decor unlocks." },
-    { rank=9,  unlock="Hero gear currency",            note="Tier 11 Bountiful Coffers can provide Hero gear or Untainted Mana-Crystals, which Zah'ran accepts for Hero-track items." },
-    { rank=10, unlock="Snake Eater",                   note="The Snake Eater title, and increased Coffer Key Shards from every source." },
+    { rank=1,  unlock=L["Curiosity boons & first decor"], note=L["Temporary character buffs from Mislaid Curiosities and Heavy Trunks, plus the first housing decor purchase."] },
+    { rank=2,  unlock=L["Corrosive Reticule"],            note=L["Unlocks the Corrosive Reticule purchase."] },
+    { rank=3,  unlock=L["Shrine of Abundance"],           note=L["Bountiful Delves gain a chance to contain a Shrine of Abundance. The Effigy of Dundun toy becomes purchasable."] },
+    { rank=4,  unlock=L["Gilded Stashes appear"],         note=L["Tier 11 Gilded Stashes begin carrying Hero and Myth Mistcrests -- the first rank that changes your upgrade-currency income rather than cosmetics."] },
+    { rank=5,  unlock=L["Zah'ran & first mount"],         note=L["Extra Curiosity boons, the Zah'ran gear vendor at the end of Tier 6+ Delves, and the Corroded Soul Crusher purchase."] },
+    { rank=6,  unlock=L["Two Restored Coffer Keys"],      note=L["Naleidea Rivergleam hands over two Restored Coffer Keys, plus decor and gravestone options."] },
+    { rank=7,  unlock=L["Delve teleports"],               note=L["The Delve-O-Bot 7001 Midnight Software Update Chip adds Midnight Delves to the bot's teleport destinations."] },
+    { rank=8,  unlock=L["Champion Warbound gear"],        note=L["Champion Warbound gear can appear in Tier 9+ Delves. The Ula'tek Ritual Stone decor unlocks."] },
+    { rank=9,  unlock=L["Hero gear currency"],            note=L["Tier 11 Bountiful Coffers can provide Hero gear or Untainted Mana-Crystals, which Zah'ran accepts for Hero-track items."] },
+    { rank=10, unlock=L["Snake Eater"],                   note=L["The Snake Eater title, and increased Coffer Key Shards from every source."] },
 }
 
 
@@ -542,14 +542,14 @@ DelveGuideData.currencyNotes = {
 
 DelveGuideData.future = {
     -- ── Later in Season 2 (12.1) ────────────────────────────
-    { category="Later in Season 2", note=string.format(L["Ascendant Venomstone: %s"], DelveGuideData.currencyNotes.venomstone) },
+    { category=L["Later in Season 2"], note=string.format(L["Ascendant Venomstone: %s"], DelveGuideData.currencyNotes.venomstone) },
     -- ── Labyrinths (Patch 12.1.5 -- ~Autumn 2026) ───────────
-    { category="Labyrinths (Patch 12.1.5)", note=L["Confirmed for 12.1.5 (~autumn 2026): a larger, mega-dungeon-inspired Delve variant -- pitched as the difficulty ceiling for players who skip raiding."] },
-    { category="Labyrinths (Patch 12.1.5)", note=L["Multi-boss, playable solo or in a small group, with progress saved between sessions (not a simple repeatable delve)."] },
-    { category="Labyrinths (Patch 12.1.5)", note=L["Different reward structure than Delves: Hero-track gear at mid-to-high difficulty, plus a separate currency track for housing & seasonal vendors."] },
-    { category="Labyrinths (Patch 12.1.5)", note=L["Exact difficulty tiers, lockouts, and Great Vault interaction are still on the PTR -- details may change."] },
+    { category=L["Labyrinths (Patch 12.1.5)"], note=L["Confirmed for 12.1.5 (~autumn 2026): a larger, mega-dungeon-inspired Delve variant -- pitched as the difficulty ceiling for players who skip raiding."] },
+    { category=L["Labyrinths (Patch 12.1.5)"], note=L["Multi-boss, playable solo or in a small group, with progress saved between sessions (not a simple repeatable delve)."] },
+    { category=L["Labyrinths (Patch 12.1.5)"], note=L["Different reward structure than Delves: Hero-track gear at mid-to-high difficulty, plus a separate currency track for housing & seasonal vendors."] },
+    { category=L["Labyrinths (Patch 12.1.5)"], note=L["Exact difficulty tiers, lockouts, and Great Vault interaction are still on the PTR -- details may change."] },
     -- ── Also in Patch 12.1.5 ────────────────────────────────
-    { category="Also in 12.1.5", note=L["A new raid arrives alongside Labyrinths."] },
+    { category=L["Also in 12.1.5"], note=L["A new raid arrives alongside Labyrinths."] },
 }
 
 -- ============================================================
