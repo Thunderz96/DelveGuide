@@ -2754,19 +2754,43 @@ DelveGuide.commands = {
         desc = L["DEV: inject a fake completed run and show the victory screen"],
         debug = true,
         handler = function()
-            -- DEV ONLY: simulate a delve completion for the first delve in the DB
-            local testName = DelveGuideData and DelveGuideData.delves and DelveGuideData.delves[1] and DelveGuideData.delves[1].name or "Test Delve"
+            -- DEV ONLY: simulate a Tier 8 completion that exercises the Victory
+            -- screen's comparison row. That row needs a variant with a published
+            -- median and a prior Tier 8+ run of the same delve and variant, so:
+            -- pick the first delve that has a median, plant a slower prior run if
+            -- none exists yet, then log a run a little faster than the median.
+            local pick
+            for _, d in ipairs((DelveGuideData and DelveGuideData.delves) or {}) do
+                if d.medianSec and d.medianSec > 0 then pick = d; break end
+            end
+            local testName    = pick and pick.name or "Test Delve"
+            local testVariant = pick and pick.variant or nil
+            local median      = pick and pick.medianSec or 600
+            local elapsed     = math.floor(median * 0.9)
             local resetKey = DelveGuide.GetResetKey()
             local testChar, testRealm = "Unknown", nil
             pcall(function() testChar=UnitName("player") or "Unknown" end)
             pcall(function() testRealm=GetRealmName() end)
+            local hasPrior = false
+            for _, r in ipairs(DelveGuideDB.history) do
+                if r.name == testName and r.variant == testVariant and tonumber(r.tierNum) and tonumber(r.tierNum) >= 8 and r.elapsed then hasPrior = true; break end
+            end
+            if not hasPrior then
+                table.insert(DelveGuideDB.history,1,{name=testName,variant=testVariant,date=date("%Y-%m-%d %H:%M", time()-3600),resetKey=resetKey,tier="Tier 8",tierNum=8,vaultIlvl=610,char=testChar,realm=testRealm,elapsed=math.floor(median*1.05),bountiful=true})
+            end
             -- realm included: History and Roster key characters as name-realm, so
             -- a row without it counted as a second character (PTR, 2026-09-07).
-            table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar,realm=testRealm,elapsed=312})
-            print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run - |cFF00FF44"..testName.."|r")
-            -- TRIGGER THE VICTORY SCREEN FOR THE TEST RUN!
+            table.insert(DelveGuideDB.history,1,{name=testName,variant=testVariant,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",tierNum=8,vaultIlvl=610,char=testChar,realm=testRealm,elapsed=elapsed,bountiful=true})
+            print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run - |cFF00FF44"..testName.."|r"..(testVariant and ("  |cFFCCAAFF("..testVariant..")|r") or ""))
+            if DelveGuide.GetRunComparison then
+                local cmp = DelveGuide.GetRunComparison(testName, testVariant, elapsed, 8, testName)
+                if cmp then
+                    local msg = "[DelveGuide] "..testName..": "..cmp
+                    if ChatFrame_DisplaySystemMessageInPrimary then ChatFrame_DisplaySystemMessageInPrimary(msg) else print(msg) end
+                end
+            end
             if DelveGuide.ShowVictoryScreen then
-                DelveGuide.ShowVictoryScreen(testName, "Tier 8", 610, 312)
+                DelveGuide.ShowVictoryScreen(testName, "Tier 8", 610, elapsed, testVariant, 8, testName)
             end
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
         end,
