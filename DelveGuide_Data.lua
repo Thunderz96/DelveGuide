@@ -2,6 +2,7 @@
 -- DelveGuide_Data.lua
 -- ============================================================
 DelveGuideData = {}
+local L = DelveGuide.L
 
 -- ============================================================
 -- SECTION 1: DELVE RANKINGS
@@ -336,9 +337,9 @@ DelveGuideData.DELVE_GLOVE_ENHANCEMENT_MAX_ILVL = 334
 -- Derived lookups; the table above is the single source of truth.
 DelveGuideData.labyrinthInstances  = {}   -- instanceID  -> name
 DelveGuideData.labyrinthWidgetSets = {}   -- widgetSetID -> name
-for _, L in ipairs(DelveGuideData.labyrinths) do
-    DelveGuideData.labyrinthInstances[L.instanceID]   = L.name
-    DelveGuideData.labyrinthWidgetSets[L.widgetSetID] = L.name
+for _, lab in ipairs(DelveGuideData.labyrinths) do
+    DelveGuideData.labyrinthInstances[lab.instanceID]   = lab.name
+    DelveGuideData.labyrinthWidgetSets[lab.widgetSetID] = lab.name
 end
 
 -- ============================================================
@@ -404,13 +405,13 @@ DelveGuideData.companionFactionID = 2744
 -- meta settles; id = wowhead spell ID (reference only -- curios match by name).
 DelveGuideData.curios = {
     -- ── Combat ──
-    { name="Corrosive Bilespear",        id=1248877, description="Chance in combat for your companion to impale the highest- and lowest-health nearby targets for tremendous Nature damage.", curiotype="Combat",  ranking="?" },
-    { name="Ouroboric Curse",            id=1248856, description="At <50% HP: Horrify nearby enemies 6s; you gain +20% primary & +50% leech/avoid/speed for 20s (2 min cd).",                                          curiotype="Combat",  ranking="?" },
-    { name="Essence Trap",               id=1288788, description="In combat your companion may place a trap. An enemy within 3 yds triggers it: slows 20% for 5s, then detonates for moderate Nature damage and stuns for 5s.", curiotype="Combat",  ranking="?" },
+    { name="Corrosive Bilespear",        id=1248877, description=L["Chance in combat for your companion to impale the highest- and lowest-health nearby targets for tremendous Nature damage."], curiotype="Combat",  ranking="?" },
+    { name="Ouroboric Curse",            id=1248856, description=L["At <50% HP: Horrify nearby enemies 6s; you gain +20% primary & +50% leech/avoid/speed for 20s (2 min cd)."],                                          curiotype="Combat",  ranking="?" },
+    { name="Essence Trap",               id=1288788, description=L["In combat your companion may place a trap. An enemy within 3 yds triggers it: slows 20% for 5s, then detonates for moderate Nature damage and stuns for 5s."], curiotype="Combat",  ranking="?" },
     -- ── Utility ──
-    { name="Soul-Cracking Dreamcatcher", id=1248899, description="When a party member interrupts or crowd-controls an Elite, that enemy takes +15% damage for 10s (stacks up to 1).",                                     curiotype="Utility", ranking="?" },
-    { name="Dundun's Favor",             id=1248894, description="In combat a Mislaid Spirit may appear; walking over a Mislaid Curiosity/Spirit fires 4 Volatile Sprites at random enemies. Curiosity contents auto-loot.", curiotype="Utility", ranking="?" },
-    { name="Venom Infusion",             id=1288782, description="On entering combat the party is Poisoned: 1% current HP/min as Nature, but +1% move & +1% haste per 5% HP missing (reversed for the first 6s).",       curiotype="Utility", ranking="?" },
+    { name="Soul-Cracking Dreamcatcher", id=1248899, description=L["When a party member interrupts or crowd-controls an Elite, that enemy takes +15% damage for 10s (stacks up to 1)."],                                     curiotype="Utility", ranking="?" },
+    { name="Dundun's Favor",             id=1248894, description=L["In combat a Mislaid Spirit may appear; walking over a Mislaid Curiosity/Spirit fires 4 Volatile Sprites at random enemies. Curiosity contents auto-loot."], curiotype="Utility", ranking="?" },
+    { name="Venom Infusion",             id=1288782, description=L["On entering combat the party is Poisoned: 1% current HP/min as Nature, but +1% move & +1% haste per 5% HP missing (reversed for the first 6s)."],       curiotype="Utility", ranking="?" },
 }
 
 -- ============================================================
@@ -420,12 +421,12 @@ DelveGuideData.curios = {
 -- No source crowns a "best" one, so `use` is an effect-based hint, not a meta.
 -- ============================================================
 DelveGuideData.poisons = {
-    { name="Bloodcrypt Toxin",               id=1251120, base=true,  effect="Enemies hit deal -10% damage & -10% Haste (20s).",                                  use="Survivability -- solo, progression, high tiers." },
-    { name="Poison of the Forgotten Master", id=1249934, base=true,  effect="+5% damage, stacking every 3s up to 5 -- ALL stacks are lost when you take damage.", use="Best when you can avoid damage; weak while getting hit." },
-    { name="Soulthirst Venom",               id=1250826, base=true,  effect="+10% Leech / Avoidance / Speed.",                                                   use="Niche stat-stick." },
-    { name="Frostheart Venom",               base=false, effect="Enemies hit: -30% movement and -20% melee/ranged/cast speed (10s).",               use="Strong control/defense vs melee & caster packs." },
-    { name="Phantasmal Spore Toxin",         base=false, effect="Enemies hit are interrupted and feared for 1s.",                                    use="Interrupt-heavy or caster-dense pulls." },
-    { name="Bursting Toad Toxin",            base=false, effect="Enemies hit occasionally burst: Nature damage every 1s for 8s to enemies within 8 yds.", use="Extra AoE for trash-heavy runs." },
+    { name="Bloodcrypt Toxin",               id=1251120, base=true,  effect=L["Enemies hit deal -10% damage & -10% Haste (20s)."],                                  use=L["Survivability -- solo, progression, high tiers."] },
+    { name="Poison of the Forgotten Master", id=1249934, base=true,  effect=L["+5% damage, stacking every 3s up to 5 -- ALL stacks are lost when you take damage."], use=L["Best when you can avoid damage; weak while getting hit."] },
+    { name="Soulthirst Venom",               id=1250826, base=true,  effect=L["+10% Leech / Avoidance / Speed."],                                                   use=L["Niche stat-stick."] },
+    { name="Frostheart Venom",               base=false, effect=L["Enemies hit: -30% movement and -20% melee/ranged/cast speed (10s)."],               use=L["Strong control/defense vs melee & caster packs."] },
+    { name="Phantasmal Spore Toxin",         base=false, effect=L["Enemies hit are interrupted and feared for 1s."],                                    use=L["Interrupt-heavy or caster-dense pulls."] },
+    { name="Bursting Toad Toxin",            base=false, effect=L["Enemies hit occasionally burst: Nature damage every 1s for 8s to enemies within 8 yds."], use=L["Extra AoE for trash-heavy runs."] },
 }
 
 -- ============================================================
@@ -450,34 +451,34 @@ DelveGuideData.poisons = {
 -- ============================================================
 DelveGuideData.loot = {
     -- ── Season 1 (12.0) ───────────────────────────────────
-    { name="Withered Saptor's Paw",        id=251782, slot="Trinket", season=1, source="delve", notes="Crits grant Agility / main stat" },
-    { name="Desecrated Chalice",           id=251790, slot="Trinket", season=1, source="delve", notes="Tank: on-damage versatility + damage" },
-    { name="Ever-Collapsing Void Fissure", id=251786, slot="Trinket", season=1, source="delve", notes="On-use ramping haste" },
-    { name="Glorious Crusader's Keepsake", id=251792, slot="Trinket", season=1, source="delve", notes="RNG incarnate idol" },
-    { name="Holy Retributor's Order",      id=251791, slot="Trinket", season=1, source="delve", notes="On-hit damage + heal" },
-    { name="Lost Idol of the Hash'ey",     id=251783, slot="Trinket", season=1, source="delve", notes="On-hit summons a companion" },
-    { name="Sealed Chaos Urn",             id=251787, slot="Trinket", season=1, source="delve", notes="On-use all-stat buff" },
-    { name="Sylvan Wakrapuku",             id=251784, slot="Trinket", season=1, source="delve", notes="On-hit physical proc" },
-    { name="Void-Reaper's Libram",         id=251785, slot="Trinket", season=1, source="delve", notes="Damage proc + crit buff" },
-    { name="Ultradon Cuirass",             id=264694, slot="Trinket", season=1, source="delve", notes="Tank on-use absorb" },
-    { name="Gift of Light",                id=251788, slot="Trinket", season=1, source="delve", notes="Healer: on-hit ally stat buff" },
-    { name="Cosmic Bell",                  id=264701, slot="Trinket", season=1, source="delve", notes="Healer on-use" },
-    { name="Consecrated Chalice",          id=251789, slot="Trinket", season=1, source="delve", notes="Healer on-use absorb" },
-    { name="Lightgrasp Worldroot",         id=251935, slot="Weapon",  season=1, source="delve", notes="Staff with a delve-only banish ability" },
-    { name="Radiant Foil",                 id=251885, slot="Weapon",  season=1, source="delve", notes="2-set 1h sword with on-hit proc" },
-    { name="Abyss Sabre",                  id=251884, slot="Weapon",  season=1, source="delve", notes="2-set 1h sword with on-hit proc" },
+    { name="Withered Saptor's Paw",        id=251782, slot="Trinket", season=1, source=L["delve"], notes=L["Crits grant Agility / main stat"] },
+    { name="Desecrated Chalice",           id=251790, slot="Trinket", season=1, source=L["delve"], notes=L["Tank: on-damage versatility + damage"] },
+    { name="Ever-Collapsing Void Fissure", id=251786, slot="Trinket", season=1, source=L["delve"], notes=L["On-use ramping haste"] },
+    { name="Glorious Crusader's Keepsake", id=251792, slot="Trinket", season=1, source=L["delve"], notes=L["RNG incarnate idol"] },
+    { name="Holy Retributor's Order",      id=251791, slot="Trinket", season=1, source=L["delve"], notes=L["On-hit damage + heal"] },
+    { name="Lost Idol of the Hash'ey",     id=251783, slot="Trinket", season=1, source=L["delve"], notes=L["On-hit summons a companion"] },
+    { name="Sealed Chaos Urn",             id=251787, slot="Trinket", season=1, source=L["delve"], notes=L["On-use all-stat buff"] },
+    { name="Sylvan Wakrapuku",             id=251784, slot="Trinket", season=1, source=L["delve"], notes=L["On-hit physical proc"] },
+    { name="Void-Reaper's Libram",         id=251785, slot="Trinket", season=1, source=L["delve"], notes=L["Damage proc + crit buff"] },
+    { name="Ultradon Cuirass",             id=264694, slot="Trinket", season=1, source=L["delve"], notes=L["Tank on-use absorb"] },
+    { name="Gift of Light",                id=251788, slot="Trinket", season=1, source=L["delve"], notes=L["Healer: on-hit ally stat buff"] },
+    { name="Cosmic Bell",                  id=264701, slot="Trinket", season=1, source=L["delve"], notes=L["Healer on-use"] },
+    { name="Consecrated Chalice",          id=251789, slot="Trinket", season=1, source=L["delve"], notes=L["Healer on-use absorb"] },
+    { name="Lightgrasp Worldroot",         id=251935, slot="Weapon",  season=1, source=L["delve"], notes=L["Staff with a delve-only banish ability"] },
+    { name="Radiant Foil",                 id=251885, slot="Weapon",  season=1, source=L["delve"], notes=L["2-set 1h sword with on-hit proc"] },
+    { name="Abyss Sabre",                  id=251884, slot="Weapon",  season=1, source=L["delve"], notes=L["2-set 1h sword with on-hit proc"] },
 
     -- ── Season 2 (12.1, The Coiled Isle) ──────────────────
     -- Every row here is verified=false: sourced from the web, never seen in game.
-    { name="Apophic Soul Crusher",         id=275657, slot="Cosmetic", season=2, verified=false, source="Azta'rec, solo Tier ??",           notes="Mount" },
-    { name="Corroded Soul Crusher",        id=276162, slot="Cosmetic", season=2, verified=true,  source="Telemancer Astrandis, 10 Voidlight Marl", notes="Mount (guides say Delver's Journey rank 5 unlocks it)" },
-    { name="Delver's Arcane Golem",        id=262496, slot="Cosmetic", season=2, verified=false, source="Sturdy Chest, Gnarldor Isle",      notes="Mount" },
-    { name="Giganto Manis",                id=257199, slot="Cosmetic", season=2, verified=false, source="Glory of the Midnight Delver",     notes="Mount -- meta achievement" },
-    { name="Apophic Patagia",              id=276163, slot="Cosmetic", season=2, verified=false, source="Azta'rec, any difficulty",         notes="Back" },
-    { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=true,  source="Naleidea Rivergleam, 2500 Undercoin", notes="Back" },
-    { name="Corroded Patagia",             id=276164, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Back" },
-    { name="Corrosive Victory",            id=275988, slot="Cosmetic", season=2, verified=false, source="Season 2 Nemesis intro questline", notes="Toy" },
-    { name="Effigy of Dundun",             id=276189, slot="Cosmetic", season=2, verified=true,  source="Telemancer Astrandis, 10 Voidlight Marl", notes="Toy" },
+    { name="Apophic Soul Crusher",         id=275657, slot="Cosmetic", season=2, verified=false, source=L["Azta'rec, solo Tier ??"],           notes=L["Mount"] },
+    { name="Corroded Soul Crusher",        id=276162, slot="Cosmetic", season=2, verified=true,  source=L["Telemancer Astrandis, 10 Voidlight Marl"], notes=L["Mount (guides say Delver's Journey rank 5 unlocks it)"] },
+    { name="Delver's Arcane Golem",        id=262496, slot="Cosmetic", season=2, verified=false, source=L["Sturdy Chest, Gnarldor Isle"],      notes=L["Mount"] },
+    { name="Giganto Manis",                id=257199, slot="Cosmetic", season=2, verified=false, source=L["Glory of the Midnight Delver"],     notes=L["Mount -- meta achievement"] },
+    { name="Apophic Patagia",              id=276163, slot="Cosmetic", season=2, verified=false, source=L["Azta'rec, any difficulty"],         notes=L["Back"] },
+    { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=true,  source=L["Naleidea Rivergleam, 2500 Undercoin"], notes=L["Back"] },
+    { name="Corroded Patagia",             id=276164, slot="Cosmetic", season=2, verified=false, source=L["Season 2 delves (exact source unverified)"], notes=L["Back"] },
+    { name="Corrosive Victory",            id=275988, slot="Cosmetic", season=2, verified=false, source=L["Season 2 Nemesis intro questline"], notes=L["Toy"] },
+    { name="Effigy of Dundun",             id=276189, slot="Cosmetic", season=2, verified=true,  source=L["Telemancer Astrandis, 10 Voidlight Marl"], notes=L["Toy"] },
     -- Telemancer Astrandis' stock, /dg export #37 on 2026-09-06 (22 items, all
     -- priced in Voidlight Marl). Listed: the two above plus the two delve
     -- items below. Not listed: housing decor (Amani awning, brazier post,
@@ -486,8 +487,8 @@ DelveGuideData.loot = {
     -- Tabernacle, Fungal Chest, Amani Strongbox, Ancient Kaldorei Coffer,
     -- Root-Wrapped Reliquary, Corewarden's Spoils, Delver's Bountiful Coffer)
     -- that export #37 had caught uncached and #38 named.
-    { name="Corrosive Reticule",           id=276536, slot="Cosmetic", season=2, verified=true,  source="Telemancer Astrandis, 10 Voidlight Marl", notes="" },
-    { name="Delve-O-Bot 7001: Midnight Software Update Chip", id=275936, slot="Cosmetic", season=2, verified=true, source="Telemancer Astrandis, 10 Voidlight Marl", notes="" },
+    { name="Corrosive Reticule",           id=276536, slot="Cosmetic", season=2, verified=true,  source=L["Telemancer Astrandis, 10 Voidlight Marl"], notes="" },
+    { name="Delve-O-Bot 7001: Midnight Software Update Chip", id=275936, slot="Cosmetic", season=2, verified=true, source=L["Telemancer Astrandis, 10 Voidlight Marl"], notes="" },
     -- Naleidea Rivergleam's stock, read off the PTR with /dg export #36 on
     -- 2026-09-06 (Silvermoon City, 40 items, all priced in Undercoin). Listed:
     -- the mounts, pets, toys and transmog. Not listed: the 15 housing-decor
@@ -495,24 +496,24 @@ DelveGuideData.loot = {
     -- Kit, Coffer Key Glue, Restored Coffer Keys, Undercoin/Marl pouches) and
     -- the flute, which is DelveGuideData.nemesisItem. Item types not stated
     -- where the name alone does not make them certain; hover shows them.
-    { name="Kreepah'zoyd",                 id=262393, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 10000 Undercoin", notes="" },
-    { name="Corewarden's Hearthstone",     id=265100, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 10000 Undercoin", notes="Hearthstone toy" },
-    { name="Midnight Delver's Flare Gun",  id=264414, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="" },
-    { name="Ensemble: Sprawling Garb",     id=263520, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog set" },
-    { name="Ensemble: Osseoclad's Wear",   id=263574, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog set" },
-    { name="Ensemble: Elder Moss Outfit",  id=263575, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog set" },
-    { name="Ensemble: Rampant Thorn Armor",id=263576, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog set" },
-    { name="Arsenal: Rootlands Weaponry",  id=263577, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 5000 Undercoin",  notes="Transmog weapon set" },
-    { name="Spirit Effigy",                id=284056, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="" },
-    { name="Hexbinder's Spaulders",        id=284055, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="Transmog" },
-    { name="Twilight Magus's Cowl",        id=264860, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="Transmog" },
-    { name="Gilded Twilight Spaulder",     id=264853, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="Transmog" },
-    { name="Dewy Vinepouch",               id=264849, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2500 Undercoin",  notes="Transmog" },
-    { name="Well Urned Rest",              id=279289, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2000 Undercoin",  notes="" },
-    { name="Sin'dorei Gravestone",         id=262951, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2000 Undercoin",  notes="" },
-    { name="Vilebranch Lifeseer",          id=264856, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 2000 Undercoin",  notes="Transmog" },
-    { name="L00T RAID-R Mini",             id=244193, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 1000 Undercoin",  notes="" },
-    { name="Delve-O-Bot 7001",             id=230850, slot="Cosmetic", season=2, verified=true, source="Naleidea Rivergleam, 500 Undercoin",   notes="" },
+    { name="Kreepah'zoyd",                 id=262393, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 10000 Undercoin"], notes="" },
+    { name="Corewarden's Hearthstone",     id=265100, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 10000 Undercoin"], notes=L["Hearthstone toy"] },
+    { name="Midnight Delver's Flare Gun",  id=264414, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes="" },
+    { name="Ensemble: Sprawling Garb",     id=263520, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog set"] },
+    { name="Ensemble: Osseoclad's Wear",   id=263574, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog set"] },
+    { name="Ensemble: Elder Moss Outfit",  id=263575, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog set"] },
+    { name="Ensemble: Rampant Thorn Armor",id=263576, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog set"] },
+    { name="Arsenal: Rootlands Weaponry",  id=263577, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog weapon set"] },
+    { name="Spirit Effigy",                id=284056, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes="" },
+    { name="Hexbinder's Spaulders",        id=284055, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes=L["Transmog"] },
+    { name="Twilight Magus's Cowl",        id=264860, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes=L["Transmog"] },
+    { name="Gilded Twilight Spaulder",     id=264853, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes=L["Transmog"] },
+    { name="Dewy Vinepouch",               id=264849, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes=L["Transmog"] },
+    { name="Well Urned Rest",              id=279289, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2000 Undercoin"],  notes="" },
+    { name="Sin'dorei Gravestone",         id=262951, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2000 Undercoin"],  notes="" },
+    { name="Vilebranch Lifeseer",          id=264856, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2000 Undercoin"],  notes=L["Transmog"] },
+    { name="L00T RAID-R Mini",             id=244193, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 1000 Undercoin"],  notes="" },
+    { name="Delve-O-Bot 7001",             id=230850, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 500 Undercoin"],   notes="" },
 }
 
 
@@ -535,20 +536,20 @@ DelveGuideData.loot = {
 --   * Ascendant Venomstone = the UPGRADE material, and it upgrades weapons and
 --     trinkets ONLY -- hence the Voidforge tab's slot list is those four slots.
 DelveGuideData.currencyNotes = {
-    voidcore   = "Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve (any tier -- Tier 8+ has the max loot pool) or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. For now only the Great Vault awards them; a weekly purchase (gold, Voidlight Marl or 80 Veteran Crests) is expected around 12.1.5.",
-    venomstone = "Gear-upgrade material, arriving later this season. 10 upgrade one weapon or trinket -- the only slots they apply to. A Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+.",
+    voidcore   = L["Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve (any tier -- Tier 8+ has the max loot pool) or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. For now only the Great Vault awards them; a weekly purchase (gold, Voidlight Marl or 80 Veteran Crests) is expected around 12.1.5."],
+    venomstone = L["Gear-upgrade material, arriving later this season. 10 upgrade one weapon or trinket -- the only slots they apply to. A Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+."],
 }
 
 DelveGuideData.future = {
     -- ── Later in Season 2 (12.1) ────────────────────────────
-    { category="Later in Season 2", note="Ascendant Venomstone: " .. DelveGuideData.currencyNotes.venomstone },
+    { category="Later in Season 2", note=string.format(L["Ascendant Venomstone: %s"], DelveGuideData.currencyNotes.venomstone) },
     -- ── Labyrinths (Patch 12.1.5 -- ~Autumn 2026) ───────────
-    { category="Labyrinths (Patch 12.1.5)", note="Confirmed for 12.1.5 (~autumn 2026): a larger, mega-dungeon-inspired Delve variant -- pitched as the difficulty ceiling for players who skip raiding." },
-    { category="Labyrinths (Patch 12.1.5)", note="Multi-boss, playable solo or in a small group, with progress saved between sessions (not a simple repeatable delve)." },
-    { category="Labyrinths (Patch 12.1.5)", note="Different reward structure than Delves: Hero-track gear at mid-to-high difficulty, plus a separate currency track for housing & seasonal vendors." },
-    { category="Labyrinths (Patch 12.1.5)", note="Exact difficulty tiers, lockouts, and Great Vault interaction are still on the PTR -- details may change." },
+    { category="Labyrinths (Patch 12.1.5)", note=L["Confirmed for 12.1.5 (~autumn 2026): a larger, mega-dungeon-inspired Delve variant -- pitched as the difficulty ceiling for players who skip raiding."] },
+    { category="Labyrinths (Patch 12.1.5)", note=L["Multi-boss, playable solo or in a small group, with progress saved between sessions (not a simple repeatable delve)."] },
+    { category="Labyrinths (Patch 12.1.5)", note=L["Different reward structure than Delves: Hero-track gear at mid-to-high difficulty, plus a separate currency track for housing & seasonal vendors."] },
+    { category="Labyrinths (Patch 12.1.5)", note=L["Exact difficulty tiers, lockouts, and Great Vault interaction are still on the PTR -- details may change."] },
     -- ── Also in Patch 12.1.5 ────────────────────────────────
-    { category="Also in 12.1.5", note="A new raid arrives alongside Labyrinths." },
+    { category="Also in 12.1.5", note=L["A new raid arrives alongside Labyrinths."] },
 }
 
 -- ============================================================
