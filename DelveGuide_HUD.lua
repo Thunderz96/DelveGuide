@@ -3,6 +3,8 @@
 -- Auto-shows while inside a known Delve, hides on exit.
 -- ============================================================
 
+local L = DelveGuide.L
+
 local HUD_W, HUD_H = 290, 196
 
 -- A persisted run start older than this is a stale record from a run that was
@@ -84,7 +86,7 @@ local function ReadLivesText()
         local lives, deaths = DelveGuide.ReadDelveLives and DelveGuide.ReadDelveLives()
         if lives then
             local t = "|cFF00FF88" .. lives .. "|r"
-            if deaths and deaths > 0 then t = t .. "  |cFF888888(" .. deaths .. " death" .. (deaths == 1 and "" or "s") .. ")|r" end
+            if deaths and deaths > 0 then t = t .. "  |cFF888888" .. string.format(L["(%d death%s)"], deaths, deaths == 1 and "" or "s") .. "|r" end
             return t
         end
     end
@@ -175,7 +177,7 @@ local function BuildHUD()
 
     local hdrTitle = hudFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     hdrTitle:SetPoint("LEFT", hdrBg, "LEFT", 6, 0)
-    hdrTitle:SetText("|cFF00BFFFDelveGuide|r  |cFF555555--|r  |cFF888888IN RUN|r")
+    hdrTitle:SetText("|cFF00BFFFDelveGuide|r  |cFF555555--|r  |cFF888888" .. L["IN RUN"] .. "|r")
 
     lockBtn = CreateFrame("Button", nil, hudFrame)
     lockBtn:SetSize(14, 14)
@@ -198,7 +200,7 @@ local function BuildHUD()
     lockBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         local locked = DelveGuideDB and DelveGuideDB.hudLocked
-        GameTooltip:AddLine(locked and "|cFFFF4444Locked|r -- click to unlock" or "|cFF44FF44Unlocked|r -- click to lock")
+        GameTooltip:AddLine(locked and ("|cFFFF4444" .. L["Locked"] .. "|r -- " .. L["click to unlock"]) or ("|cFF44FF44" .. L["Unlocked"] .. "|r -- " .. L["click to lock"]))
         GameTooltip:Show()
     end)
     lockBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -247,15 +249,15 @@ local function BuildHUD()
         labels[key] = lbl
     end
 
-    MakeRow("delve",     "Delve",     -30)
-    MakeRow("variant",   "Variant",   -48)
-    MakeRow("grade",     "Grade",     -66)
-    MakeRow("tier",      "Tier",      -84)
-    MakeRow("curio",     "Companion", -102)
-    MakeRow("nemesis",   "Nemesis",   -120)
-    MakeRow("bountiful", "Bountiful", -138)
-    MakeRow("lives",     "Lives",     -156)
-    MakeRow("timer",     "Time",      -174)
+    MakeRow("delve",     L["Delve"],     -30)
+    MakeRow("variant",   L["Variant"],   -48)
+    MakeRow("grade",     L["Grade"],     -66)
+    MakeRow("tier",      L["Tier"],      -84)
+    MakeRow("curio",     L["Companion"], -102)
+    MakeRow("nemesis",   L["Nemesis"],   -120)
+    MakeRow("bountiful", L["Bountiful"], -138)
+    MakeRow("lives",     L["Lives"],     -156)
+    MakeRow("timer",     L["Time"],      -174)
 
     hudFrame.rows = rows
     hudFrame.labels = labels
@@ -420,8 +422,8 @@ end
 -- Row labels for the two views. The delve view re-applies the defaults on
 -- every refresh so a Labyrinth's labels can never linger into a delve.
 local LAB_LABELS = {
-    delve = "Labyrinth", variant = "Chamber", grade = "Step", tier = "Objective",
-    curio = "Cleared", nemesis = "Note", bountiful = "Tier", lives = "Lives", timer = "Time",
+    delve = L["Labyrinth"], variant = L["Chamber"], grade = L["Step"], tier = L["Objective"],
+    curio = L["Cleared"], nemesis = L["Note"], bountiful = L["Tier"], lives = L["Lives"], timer = L["Time"],
 }
 local function ApplyLabels(overrides)
     if not (hudFrame and hudFrame.labels) then return end
@@ -457,7 +459,7 @@ local function UpdateLabyrinthHUD(name)
     pcall(function() scen = C_Scenario.GetInfo() or "" end)
     pcall(function() step = C_Scenario.GetStepInfo() or "" end)
     -- Between chambers the hub reports the generic "Delves" scenario.
-    if scen == "" or scen == "Delves" then scen = "|cFF888888Choose your path|r" end
+    if scen == "" or scen == "Delves" then scen = "|cFF888888" .. L["Choose your path"] .. "|r" end
     rows.variant:SetText(scen)
     rows.grade:SetText(step ~= "" and step or "|cFF888888--|r")
 
@@ -482,10 +484,10 @@ local function UpdateLabyrinthHUD(name)
 
     local cleared = CountChambersThisRun()
     local credits = math.floor(cleared / 3)
-    rows.curio:SetText(string.format("|cFF00FF44%d|r |cFF888888this run|r  %s", cleared,
-        credits > 0 and string.format("|cFFFFD700%d vault credit%s|r", credits, credits == 1 and "" or "s")
-                     or "|cFF888888(3 for vault credit)|r"))
-    rows.nemesis:SetText("|cFF888888Vault credit every 3 chambers (3 / 6 / 9)|r")
+    rows.curio:SetText(string.format("|cFF00FF44%d|r |cFF888888%s|r  %s", cleared, L["this run"],
+        credits > 0 and ("|cFFFFD700" .. string.format(L["%d vault credit%s"], credits, credits == 1 and "" or "s") .. "|r")
+                     or ("|cFF888888" .. L["(3 for vault credit)"] .. "|r")))
+    rows.nemesis:SetText("|cFF888888" .. L["Vault credit every 3 chambers (3 / 6 / 9)"] .. "|r")
     -- The Labyrinth's tier IS readable: the same header widget carried
     -- tierText = "11" inside Kindo'jan on 69594. Read it directly here since
     -- the delve tier machinery is bypassed in a Labyrinth (A2).
@@ -568,7 +570,7 @@ local function UpdateHUD()
     rows.delve:SetText("|cFFFFD700" .. zoneName .. "|r")
 
     -- Variant + grade — cross-ref activeVariants exposed by main addon
-    local varText   = "|cFF888888Unknown|r"
+    local varText   = "|cFF888888" .. L["Unknown"] .. "|r"
     local gradeText = "|cFF888888?|r"
     local activeVars = (DelveGuide and DelveGuide.activeVariants) or {}
 
@@ -585,8 +587,8 @@ local function UpdateHUD()
                 -- white fallback, and the HUD's hand-rolled copy would have
                 -- gone on disagreeing with the Delves tab silently.
                 gradeText = DelveGuide.UI.GradeColor(d.ranking)
-                    .. (d.isBestRoute and "  |cFF00FF88[Best Route]|r" or "")
-                    .. (d.hasBug     and "  |cFFFF4444[Bug]|r"        or "")
+                    .. (d.isBestRoute and ("  |cFF00FF88[" .. L["Best Route"] .. "]|r") or "")
+                    .. (d.hasBug     and ("  |cFFFF4444[" .. L["Bug"] .. "]|r")        or "")
                 break
             end
         end
@@ -604,9 +606,9 @@ local function UpdateHUD()
     if tierNum then
         rows.tier:SetText(string.format("%s%d|r |cFF888888(%s)|r",
             isManual and "|cFFCCCCCC" or "|cFF00FF44", tierNum,
-            isManual and "Manual" or "Auto"))
+            isManual and L["Manual"] or L["Auto"]))
     else
-        rows.tier:SetText("|cFFFF4444Unknown |cFF555555(/dg tier N)|r")
+        rows.tier:SetText("|cFFFF4444" .. L["Unknown"] .. " |cFF555555(/dg tier N)|r")
     end
 
     -- Companion recommendation. The old per-spec combat/utility curio picks
@@ -631,10 +633,10 @@ local function UpdateHUD()
     local info = activeDelves[engZoneName]
 
     rows.nemesis:SetText(
-        (info and info.nemesis) and "|cFFFF4444[!] ACTIVE|r" or "|cFF00FF44None|r"
+        (info and info.nemesis) and ("|cFFFF4444[!] " .. L["ACTIVE"] .. "|r") or ("|cFF00FF44" .. L["None"] .. "|r")
     )
     rows.bountiful:SetText(
-        (info and info.bountiful) and "|cFFFFD700Yes|r" or "|cFF888888No|r"
+        (info and info.bountiful) and ("|cFFFFD700" .. L["Yes"] .. "|r") or ("|cFF888888" .. L["No"] .. "|r")
     )
 
     -- Lives row: one shared reader (see ReadLivesText).
