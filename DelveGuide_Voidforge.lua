@@ -5,7 +5,7 @@
 -- widget, checklist, Voidforge tab, history tab, and map tooltip.
 --
 -- Season 2 (12.1) model:
---   * Nebulous Voidcore (3418) -- confirmed in game. Transmuted into gear
+--   * Nebulous Voidcore (3418) -- confirmed in game. Spent on bonus rolls
 --       after Midnight raid bosses, M+, Bountiful Delves and Nightmare Prey.
 --       One item per difficulty level until the spec's pool is exhausted.
 --       Blizzard's own tooltip lists per-character totals, so an account-wide
