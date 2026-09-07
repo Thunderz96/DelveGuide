@@ -81,7 +81,7 @@ Blizzard's patch date**, which nothing else in 2.0.0 is.
 | A3 | **Filter Labyrinth POIs out of the rotational scan.** ✅ **Done** — `C_AreaPoiInfo.GetDelvesForMap` returns Kindo'jan on maps 2437, 2395, 2537 (set 2316, atlas `overworld-active-64x64`). Without a filter the Delves tab and widget show a quarantined junk row **on live patch day**. Exclude by `labyrinthWidgetSets = { [2316] = true }`; optionally also by atlas not starting `delves-`. The set allowlist is the existing idiom (`widgetSetDelves`) and is precise; the atlas check catches an uncatalogued Labyrinth B generically but its safety depends on bountiful delves also using a `delves-*` atlas, which is **not yet verified** | **New** | S | `/dg scan` in Eversong: 12 delves, 12 variants, no `[Missing Translation]` line |
 | A4 | `.toc` Interface 120105 | **Done** (`e2f3800`) | — | verified `select(4, GetBuildInfo())` |
 | A5 | Extract `ReadLivesText()` (`hud-victory#17`) — both duplicates were just touched | ✅ **Done** | S | lives row unchanged in a Tier 4+ Delve |
-| A6 | **Retail check** (G4 below): does live 12.1.0 still have `C_Scenario.GetNumCriteria`? Decides whether A1 is pre-patch prep or a live hotfix | **Unrun** | one command | — |
+| A6 | **Retail check** (G4 below): does live 12.1.0 still have `C_Scenario.GetNumCriteria`? | ✅ **Done 2026-09-05** — `nil` on retail; shipped as 1.11.1 on 2026-09-07 | one command | — |
 
 **Track A can and should ship before 12.1.5 goes live**, independent of the rest of 2.0.0.
 A1 is safe on 12.1.0 today by construction. If 2.0.0 is not ready by patch day, Track A
@@ -208,12 +208,10 @@ On the sequencing plan's §6 naming question: unchanged. Middle option — keep 
 
 ## 7. Decisions that are Nick's, not mine
 
-1. **Is 2.0.0 one release or a train?** Partly decided by G4: A1 goes out as 1.11.1 now
-   regardless. The open half is whether A2/A3 (Labyrinth guard + POI filter) wait for 2.0.0
-   or ship as 1.12.0 if 12.1.5 lands first.
+1. ~~**Is 2.0.0 one release or a train?**~~ **Decided:** one release. 1.11.1 shipped 2026-09-07; everything else is 2.0.0 on patch day.
 2. ~~**Track D scope.**~~ **Decided:** aware + guided shell in 2.0.0, content as builds
    stabilise. See Track D.
-3. **Track E cut line.** Items 1–6 vs all ten.
+3. ~~**Track E cut line.**~~ **Decided:** items 1–6 in 2.0.0; 7–10 and Phase 5 in 2.1.
 4. **Move the two source documents into `docs/`.** Keeps the plan's references stable; puts a
    120 KB internal review in a public repo.
 5. **A3's filter** — set allowlist only (precise, misses Labyrinth B until catalogued) or
