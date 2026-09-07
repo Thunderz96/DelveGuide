@@ -1,7 +1,7 @@
 -- ============================================================
 -- DelveGuide.lua  --  Main addon logic
 -- ============================================================
-DelveGuide = {}
+DelveGuide = DelveGuide or {}   -- DelveGuide_Locale.lua loads first and already put L on it
 
 local ADDON_NAME       = "DelveGuide"
 local ADDON_VERSION    = "1.11.0"
