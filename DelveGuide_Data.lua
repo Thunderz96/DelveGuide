@@ -455,14 +455,23 @@ DelveGuideData.loot = {
     -- ── Season 2 (12.1, The Coiled Isle) ──────────────────
     -- Every row here is verified=false: sourced from the web, never seen in game.
     { name="Apophic Soul Crusher",         id=275657, slot="Cosmetic", season=2, verified=false, source="Azta'rec, solo Tier ??",           notes="Mount" },
-    { name="Corroded Soul Crusher",        id=276162, slot="Cosmetic", season=2, verified=false, source="Delver's Journey rank 5",          notes="Mount -- 10 Voidlight Marl" },
+    { name="Corroded Soul Crusher",        id=276162, slot="Cosmetic", season=2, verified=true,  source="Telemancer Astrandis, 10 Voidlight Marl", notes="Mount (guides say Delver's Journey rank 5 unlocks it)" },
     { name="Delver's Arcane Golem",        id=262496, slot="Cosmetic", season=2, verified=false, source="Sturdy Chest, Gnarldor Isle",      notes="Mount" },
     { name="Giganto Manis",                id=257199, slot="Cosmetic", season=2, verified=false, source="Glory of the Midnight Delver",     notes="Mount -- meta achievement" },
     { name="Apophic Patagia",              id=276163, slot="Cosmetic", season=2, verified=false, source="Azta'rec, any difficulty",         notes="Back" },
     { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=true,  source="Naleidea Rivergleam, 2500 Undercoin", notes="Back" },
     { name="Corroded Patagia",             id=276164, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Back" },
     { name="Corrosive Victory",            id=275988, slot="Cosmetic", season=2, verified=false, source="Season 2 Nemesis intro questline", notes="Toy" },
-    { name="Effigy of Dundun",             id=276189, slot="Cosmetic", season=2, verified=false, source="Season 2 delves (exact source unverified)", notes="Toy" },
+    { name="Effigy of Dundun",             id=276189, slot="Cosmetic", season=2, verified=true,  source="Telemancer Astrandis, 10 Voidlight Marl", notes="Toy" },
+    -- Telemancer Astrandis' stock, /dg export #37 on 2026-09-06 (22 items, all
+    -- priced in Voidlight Marl). Listed: the two above plus the two delve
+    -- items below. Not listed: housing decor (Amani awning, brazier post,
+    -- totem, ritual stone, memorial...), the Reliquary Expedition bag/notes,
+    -- the Cosmetic Surprise Bag, and seven items the client had not cached
+    -- when the export ran (no name or link came back) -- re-export after
+    -- paging through his window once to pick those up.
+    { name="Corrosive Reticule",           id=276536, slot="Cosmetic", season=2, verified=true,  source="Telemancer Astrandis, 10 Voidlight Marl", notes="" },
+    { name="Delve-O-Bot 7001: Midnight Software Update Chip", id=275936, slot="Cosmetic", season=2, verified=true, source="Telemancer Astrandis, 10 Voidlight Marl", notes="" },
     -- Naleidea Rivergleam's stock, read off the PTR with /dg export #36 on
     -- 2026-09-06 (Silvermoon City, 40 items, all priced in Undercoin). Listed:
     -- the mounts, pets, toys and transmog. Not listed: the 15 housing-decor
@@ -503,12 +512,14 @@ DelveGuideData.loot = {
 --     run you spend one to roll for additional loot. It does NOT drop from
 --     delves at any tier -- right now the Great Vault is the only source, and
 --     a weekly quest to buy them (gold, Voidlight Marl or 80 Veteran Crests)
---     is expected around 12.1.5. MIN_VOIDCORE_TIER in DelveGuide_Voidforge.lua
---     is therefore about where a roll is WORTH spending, not where one drops.
+--     is expected around 12.1.5. A roll can be used after a Bountiful Delve
+--     of ANY tier (Nick rolled after a Tier 1, PTR 2026-09-06), so
+--     MIN_VOIDCORE_TIER in DelveGuide_Voidforge.lua is only about where a roll
+--     is WORTH spending -- the end-of-run loot pool is max from Tier 8.
 --   * Ascendant Venomstone = the UPGRADE material, and it upgrades weapons and
 --     trinkets ONLY -- hence the Voidforge tab's slot list is those four slots.
 DelveGuideData.currencyNotes = {
-    voidcore   = "Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve or Nightmare Prey Hunt, spend one to roll for additional loot -- one item per difficulty level until your spec's pool is exhausted. For now only the Great Vault awards them; a weekly purchase (gold, Voidlight Marl or 80 Veteran Crests) is expected around 12.1.5.",
+    voidcore   = "Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve (any tier -- Tier 8+ has the max loot pool) or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. For now only the Great Vault awards them; a weekly purchase (gold, Voidlight Marl or 80 Veteran Crests) is expected around 12.1.5.",
     venomstone = "Gear-upgrade material, arriving later this season. 10 upgrade one weapon or trinket -- the only slots they apply to. A Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+.",
 }
 

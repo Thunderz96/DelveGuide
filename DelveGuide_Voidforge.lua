@@ -33,9 +33,11 @@ DelveGuide.Voidforge = {
                                      -- S2). Set this when it appears as a currency...
     VENOMSTONE_ITEM_ID      = nil,  -- ...or set this if it turns out to be a bag item instead.
     VENOMSTONE_PER_UPGRADE  = 10,   -- 10 Venomstones upgrade one eligible piece.
-    MIN_VOIDCORE_TIER       = 8,    -- The tier from which a Bountiful Delve's end-of-run loot is the max
-                                     -- pool (Tiers 9-11 match 8), i.e. where a Voidcore bonus roll is worth
-                                     -- spending. Voidcores do NOT drop from delves (Nick, live, 2026-09-06).
+    MIN_VOIDCORE_TIER       = 8,    -- A recommendation, not a rule: the tier from which a Bountiful Delve's
+                                     -- end-of-run loot is the max pool (Tiers 9-11 match 8), so a Voidcore
+                                     -- bonus roll there draws from the best pool. A roll is ACCEPTED at any
+                                     -- tier (Nick rolled after a Tier 1 on the PTR, 2026-09-06), and
+                                     -- Voidcores do not drop from delves at all.
     VENOMSTONE_TIER         = 11,   -- T11 Bountiful Delves guarantee an Ascendant Venomstone.
 }
 

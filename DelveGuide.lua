@@ -2137,6 +2137,10 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
                         local link = GetMerchantItemLink and GetMerchantItemLink(i)
                         e.link = link
                         e.itemID = link and tonumber(link:match("item:(%d+)"))
+                        -- Export #37: seven of 22 rows came back with no name and
+                        -- no link -- the client had not cached those items yet.
+                        -- Say so, rather than leaving a bare cost.
+                        if not e.name and not link then e.uncached = true end
                         local nCosts = (GetMerchantItemCostInfo and GetMerchantItemCostInfo(i)) or 0
                         if nCosts > 0 and GetMerchantItemCostItem then
                             e.costs = {}
