@@ -2,6 +2,7 @@
 -- DelveGuide_UI_Companion.lua
 -- ============================================================
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 
 local function GetSpecRec()
     local idx = GetSpecialization and GetSpecialization()
@@ -391,12 +392,15 @@ DelveGuide.RenderCompanion = function()
     UI.EnsureFontFiles(); local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
 
-    y = y + UI.CreateHeader(cf, y, "Companion  --  XP, Role & Live Curio Loadout") + 8
+    y = y + UI.CreateHeader(cf, y, L["Companion  --  XP, Role & Live Curio Loadout"]) + 8
 
     -- 1. Fetch initial API Data
     local compID = nil
-    local compName = "Companion"
+    local compName = L["Companion"]
     local compLevel, compXP, compMaxXP = 0, 0, 1
+    -- NOT wrapped: `roleStr` is compared against "Unknown" below (foundRole), and
+    -- its other values are either ROLE_TYPES labels -- which must stay raw for the
+    -- specCurioRecs compare -- or a client string. Wrapping it would break both.
     local roleStr = "Unknown"
 
     pcall(function()
@@ -404,7 +408,7 @@ DelveGuide.RenderCompanion = function()
             compID = C_DelvesUI.GetCompanionInfoForActivePlayer()
         end
         if compID and compID > 0 then
-            compName = (compID == 11) and "Valeera Sanguinar" or "Companion"
+            compName = (compID == 11) and "Valeera Sanguinar" or L["Companion"]
             if C_DelvesUI.GetCompanionInfo then
                 local info = C_DelvesUI.GetCompanionInfo(compID)
                 if info then
@@ -534,7 +538,8 @@ DelveGuide.RenderCompanion = function()
         if not ok then DelveGuide.lastScrapeError = err end
     end
     -- 3. Draw Header
-    y = y + UI.CreateRow(cf, y, "|cFF00BFFF" .. compName .. "|r  -  Level |cFFFFD700" .. compLevel .. "|r  -  Role: |cFF00FF44" .. roleStr .. "|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFF00BFFF" .. compName .. "|r  -  " .. string.format(L["Level %s  -  Role: %s"],
+        "|cFFFFD700" .. compLevel .. "|r", "|cFF00FF44" .. roleStr .. "|r")) + 6
 
     -- 4. Draw XP Progress Bar
     local barW = UI.WINDOW_W - 32; local barH = 20
@@ -559,9 +564,9 @@ DelveGuide.RenderCompanion = function()
     xpText:SetPoint("CENTER", xpBg, "CENTER", 0, 0)
     
     if compMaxXP > 1 then
-        xpText:SetText(string.format("%d / %d XP  (%.1f%%)", compXP, compMaxXP, fillPct * 100))
+        xpText:SetText(string.format(L["%d / %d XP  (%.1f%%)"], compXP, compMaxXP, fillPct * 100))
     else
-        xpText:SetText("|cFF888888XP Data unavailable  -  try /dg companionscan|r")
+        xpText:SetText("|cFF888888" .. string.format(L["XP Data unavailable  -  try %s"], "/dg companionscan") .. "|r")
     end
     y = y + barH + 20
 
@@ -569,39 +574,42 @@ DelveGuide.RenderCompanion = function()
     -- live scan detects equipped. Per-spec S2 curio picks are pending (S1's are
     -- gone), so equipped curios show as info; the Curios tab is the full S2
     -- curio + poison reference.
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Curio Loadout --|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- " .. L["Curio Loadout"] .. " --|r") + 4
 
     local rec, specID = GetSpecRec()
     if rec then
-        y = y + UI.CreateRow(cf, y, "Your Spec: |cFFFFFFFF" .. rec.spec .. "|r  --  Recommended Valeera role: |cFF00CFFF" .. (rec.companion or "--") .. "|r") + 6
+        y = y + UI.CreateRow(cf, y, string.format(L["Your Spec: %s  --  Recommended Valeera role: %s"],
+            "|cFFFFFFFF" .. rec.spec .. "|r", "|cFF00CFFF" .. (rec.companion or "--") .. "|r")) + 6
     end
 
     -- Role mismatch. Only raised when the live role came from the subtree ID
     -- compare: both sides are then our own English labels, so this is a real
     -- disagreement rather than a failed string match on a translated client.
     if rec and rec.companion and roleFromNode and roleStr ~= rec.companion then
-        y = y + UI.CreateRow(cf, y, "|cFFFF4444Mismatch:|r Valeera is set to |cFFFFD700" .. roleStr .. "|r but this spec wants |cFF00CFFF" .. rec.companion .. "|r.") + 6
+        y = y + UI.CreateRow(cf, y, "|cFFFF4444" .. L["Mismatch:"] .. "|r " .. string.format(L["Valeera is set to %s but this spec wants %s."],
+            "|cFFFFD700" .. roleStr .. "|r", "|cFF00CFFF" .. rec.companion .. "|r")) + 6
     end
 
     if liveCombat or liveUtility then
-        y = y + UI.CreateRow(cf, y, "|cFF00FF88Equipped now:|r  Combat: |cFFFFD700" .. (liveCombat or "--") .. "|r   Utility: |cFFFFD700" .. (liveUtility or "--") .. "|r")
+        y = y + UI.CreateRow(cf, y, "|cFF00FF88" .. L["Equipped now:"] .. "|r  " .. string.format(L["Combat: %s   Utility: %s"],
+            "|cFFFFD700" .. (liveCombat or "--") .. "|r", "|cFFFFD700" .. (liveUtility or "--") .. "|r"))
     elseif liveSource then
-        y = y + UI.CreateRow(cf, y, "|cFF888888No curios socketed -- open Valeera's supplies menu to slot one.|r")
+        y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["No curios socketed -- open Valeera's supplies menu to slot one."] .. "|r")
     else
-        y = y + UI.CreateRow(cf, y, "|cFF888888Open Blizzard's Companion panel, then reopen this tab to scan your equipped curios.|r")
+        y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Open Blizzard's Companion panel, then reopen this tab to scan your equipped curios."] .. "|r")
     end
-    y = y + UI.CreateRow(cf, y, "|cFF888888Full Season 2 curio & poison list: the Curios tab.|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Full Season 2 curio & poison list: the Curios tab."] .. "|r") + 4
 
     -- 6. Poisons (new 12.1 choice node in Valeera's supplies menu -- independent
     -- of her role). Rendered from DelveGuideData.poisons (same as the Curios tab).
     y = y + 8
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Poisons  (new in 12.1) --|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888Pick one in Valeera's supplies menu -- independent of her role now.|r") + 6
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- " .. L["Poisons  (new in 12.1)"] .. " --|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Pick one in Valeera's supplies menu -- independent of her role now."] .. "|r") + 6
     for _, p in ipairs(DelveGuideData.poisons or {}) do
-        local tag = p.base and "|cFF00FF88[Base] |r" or "|cFFFFD700[Quest]|r"
+        local tag = p.base and "|cFF00FF88" .. L["[Base]"] .. " |r" or "|cFFFFD700" .. L["[Quest]"] .. "|r"
         y = y + UI.CreateRow(cf, y, string.format("%s |cFFAA66CC%s|r  |cFFCCCCCC%s|r  |cFF888888%s|r", tag, p.name, p.effect, p.use)) + 2
     end
-    y = y + UI.CreateRow(cf, y, "|cFF00FF88Rule of thumb:|r |cFFCCCCCCBloodcrypt Toxin is the safe default; Frostheart Venom for defense once unlocked. Forgotten Master loses all stacks when you take damage -- only worth it if you're rarely getting hit.|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF00FF88" .. L["Rule of thumb:"] .. "|r |cFFCCCCCC" .. L["Bloodcrypt Toxin is the safe default; Frostheart Venom for defense once unlocked. Forgotten Master loses all stacks when you take damage -- only worth it if you're rarely getting hit."] .. "|r") + 4
 
     cf:SetHeight(y + 20)
 end
