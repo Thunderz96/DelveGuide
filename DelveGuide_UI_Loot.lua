@@ -2,6 +2,15 @@
 -- DelveGuide_UI_Loot.lua
 -- ============================================================
 local UI = DelveGuide.UI
+local L = DelveGuide.L
+
+-- The loop below iterates the ENGLISH slot tags because they are matched against
+-- item.slot; only the heading is player-visible, so it gets its own literal key.
+local SLOT_HEADING = {
+    Trinket  = L["Trinkets"],
+    Weapon   = L["Weapons"],
+    Cosmetic = L["Cosmetics"],
+}
 
 local function CreateLootRow(parent, y, item)
     UI.EnsureFontFiles()
@@ -68,34 +77,34 @@ DelveGuide.RenderLoot = function()
     local _, rSize, rH = UI.GetScaledSizes()
     local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
     
-    y = y + UI.CreateHeader(cf, y, "Notable Loot  --  Trinkets, Weapons & Cosmetics from Midnight Delves") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888Hover an item name to preview its tooltip.|r") + 4
+    y = y + UI.CreateHeader(cf, y, L["Notable Loot  --  Trinkets, Weapons & Cosmetics from Midnight Delves"]) + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Hover an item name to preview its tooltip."] .. "|r") + 4
 
     -- Season 2 delve reward currencies
     y = y + 4
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Delve Reward Currencies|r  |cFF888888(Season 2)|r")
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Delve Reward Currencies"] .. "|r  |cFF888888" .. L["(Season 2)"] .. "|r")
     local notes = DelveGuideData.currencyNotes or {}
     y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888" .. (notes.voidcore or "") .. "|r")
     y = y + UI.CreateRow(cf, y, "  |cFFAA66CCAscendant Venomstone|r   |cFF888888" .. (notes.venomstone or "") .. "|r") + 6
     
     for _, slot in ipairs({"Trinket", "Weapon", "Cosmetic"}) do
         y = y + 4
-        y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. slot .. "s|r")
+        y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. SLOT_HEADING[slot] .. "|r")
         if slot == "Cosmetic" then
-            y = y + UI.CreateRow(cf, y, "|cFF888888Mounts, back pieces and toys. Rows marked unverified came from guide sites and have not been seen in game yet.|r")
+            y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Mounts, back pieces and toys. Rows marked unverified came from guide sites and have not been seen in game yet."] .. "|r")
         end
         
         -- Custom perfectly-aligned header row
         local hName = UI.AcquireFontString("OVERLAY")
         hName:SetFont(ROW_FONT_FILE, rSize)
         hName:SetPoint("TOPLEFT", cf, "TOPLEFT", rH + 16, -y) -- perfectly aligns with item name
-        hName:SetText("|cFF888888Item Name|r")
+        hName:SetText("|cFF888888" .. L["Item Name"] .. "|r")
         hName:SetJustifyH("LEFT")
         
         local hNotes = UI.AcquireFontString("OVERLAY")
         hNotes:SetFont(ROW_FONT_FILE, rSize)
         hNotes:SetPoint("TOPLEFT", cf, "TOPLEFT", 236, -y) -- perfectly aligns with item notes
-        hNotes:SetText("|cFF888888Effect / Notes|r")
+        hNotes:SetText("|cFF888888" .. L["Effect / Notes"] .. "|r")
         hNotes:SetJustifyH("LEFT")
         
         y = y + rH + 2
@@ -108,7 +117,7 @@ DelveGuide.RenderLoot = function()
                     -- the data row stays untouched.
                     local shown = { name = item.name, id = item.id,
                         notes = (item.notes or "") .. "  |cFF888888" .. (item.source or "") .. "|r"
-                              .. (item.verified == false and "  |cFFFF8800unverified|r" or "") }
+                              .. (item.verified == false and ("  |cFFFF8800" .. L["unverified"] .. "|r") or "") }
                     y = y + CreateLootRow(cf, y, shown)
                 else
                     y = y + CreateLootRow(cf, y, item)
@@ -119,8 +128,8 @@ DelveGuide.RenderLoot = function()
     end
     
     y = y + 8
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700-- Midnight Delve iLvl Scaling  (Season 2) --|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888End-of-run gear caps at Tier 3 without a Restored Coffer Key; Tiers 9-11 match Tier 8+.|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["-- Midnight Delve iLvl Scaling  (Season 2) --"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["End-of-run gear caps at Tier 3 without a Restored Coffer Key; Tiers 9-11 match Tier 8+."] .. "|r") + 4
     
     -- Helper function to draw text at exact X positions for perfect columns
     local function MakeScalingCol(x, text)
@@ -132,9 +141,9 @@ DelveGuide.RenderLoot = function()
     end
 
     -- Aligned headers -- values come from DelveGuideData.tierRewards (single source).
-    MakeScalingCol(16,  "|cFF888888Tier|r")
-    MakeScalingCol(70,  "|cFF888888End-of-run|r")
-    MakeScalingCol(190, "|cFF888888Great Vault|r")
+    MakeScalingCol(16,  "|cFF888888" .. L["Tier"] .. "|r")
+    MakeScalingCol(70,  "|cFF888888" .. L["End-of-run"] .. "|r")
+    MakeScalingCol(190, "|cFF888888" .. L["Great Vault"] .. "|r")
     y = y + rH + 4
 
     local rewards = DelveGuideData.tierRewards or {}
