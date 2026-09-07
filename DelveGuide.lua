@@ -2771,10 +2771,16 @@ DelveGuide.commands = {
             local testChar, testRealm = "Unknown", nil
             pcall(function() testChar=UnitName("player") or "Unknown" end)
             pcall(function() testRealm=GetRealmName() end)
-            local hasPrior = false
+            -- Each repeat beats the previous best by 5-30s, so the toast shows
+            -- "New personal best!" every time rather than tying itself.
+            local hasPrior, best = false, nil
             for _, r in ipairs(DelveGuideDB.history) do
-                if r.name == testName and r.variant == testVariant and tonumber(r.tierNum) and tonumber(r.tierNum) >= 8 and r.elapsed then hasPrior = true; break end
+                if r.name == testName and r.variant == testVariant and tonumber(r.tierNum) and tonumber(r.tierNum) >= 8 and r.elapsed then
+                    hasPrior = true
+                    if not best or r.elapsed < best then best = r.elapsed end
+                end
             end
+            if best then elapsed = math.max(60, best - math.random(5, 30)) end
             if not hasPrior then
                 table.insert(DelveGuideDB.history,1,{name=testName,variant=testVariant,date=date("%Y-%m-%d %H:%M", time()-3600),resetKey=resetKey,tier="Tier 8",tierNum=8,vaultIlvl=610,char=testChar,realm=testRealm,elapsed=math.floor(median*1.05),bountiful=true})
             end
