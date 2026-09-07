@@ -2,6 +2,7 @@
 -- DelveGuide_Widget.lua
 -- ============================================================
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 
 local RANK_ORDER       = UI.RANK_ORDER
 local W_HEADER_H       = 28
@@ -38,8 +39,8 @@ local function RotationCountdown()
     if not ok or type(secs) ~= "number" or secs <= 0 then return nil end
     local h = math.floor(secs / 3600)
     local m = math.floor((secs % 3600) / 60)
-    if h > 0 then return string.format("Rotates in %dh %dm", h, m) end
-    return string.format("Rotates in %dm", m)
+    if h > 0 then return string.format(L["Rotates in %dh %dm"], h, m) end
+    return string.format(L["Rotates in %dm"], m)
 end
 
 -- ============================================================
@@ -54,19 +55,19 @@ local SHARE_LINE_MAX = 240   -- the server's hard chat limit is 255
 -- Returns the channel to actually send on, or nil plus a reason to print.
 local function ResolveShareChannel(channel)
     if channel == "GUILD" then
-        if not IsInGuild() then return nil, "you are not in a guild" end
+        if not IsInGuild() then return nil, L["you are not in a guild"] end
         return "GUILD"
     end
     if channel == "PARTY" or channel == "RAID" or channel == "INSTANCE_CHAT" then
         -- An LFG/instance group is not the "home" party: PARTY and RAID go
         -- nowhere there, INSTANCE_CHAT is the one that reaches the group.
         if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then return "INSTANCE_CHAT" end
-        if channel == "INSTANCE_CHAT" then return nil, "you are not in an instance group" end
+        if channel == "INSTANCE_CHAT" then return nil, L["you are not in an instance group"] end
         if channel == "RAID" then
-            if not IsInRaid() then return nil, "you are not in a raid" end
+            if not IsInRaid() then return nil, L["you are not in a raid"] end
             return "RAID"
         end
-        if not IsInGroup() then return nil, "you are not in a party" end
+        if not IsInGroup() then return nil, L["you are not in a party"] end
         return "PARTY"
     end
     return channel
@@ -78,7 +79,7 @@ DelveGuide.ShareActiveVariants = function(channel, opts)
     opts = opts or {}
     local target, why = ResolveShareChannel(channel)
     if not target then
-        print("|cFF00BFFF[DelveGuide]|r Can't share to "..channel:lower()..": "..why..".")
+        print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Can't share to %s: %s."], channel:lower(), why))
         return
     end
 
@@ -100,14 +101,14 @@ DelveGuide.ShareActiveVariants = function(channel, opts)
         end
     end
     if #entries == 0 then
-        print("|cFF00BFFF[DelveGuide]|r No matching variants to share. Try |cFFFFFF00/dg scan|r first.")
+        print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["No matching variants to share. Try %s first."], "|cFFFFFF00/dg scan|r"))
         return
     end
     table.sort(entries, function(a,b) return (RANK_ORDER[a.ranking] or 99) < (RANK_ORDER[b.ranking] or 99) end)
 
     -- Pack several variants per line: one message per variant spams the
     -- channel and trips the server's flood protection on a full rotation.
-    local line = "[DelveGuide] Today's Active Delves:"
+    local line = "[DelveGuide] " .. L["Today's Active Delves:"]
     for _, e in ipairs(entries) do
         local ds = activeDelves[e.delve]
         local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
@@ -120,7 +121,7 @@ DelveGuide.ShareActiveVariants = function(channel, opts)
         end
     end
     SendChatMessage(line, target)
-    print("|cFF00BFFF[DelveGuide]|r Shared "..#entries.." variants to |cFFFFFF00"..target.."|r")
+    print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Shared %d variants to %s"], #entries, "|cFFFFFF00"..target.."|r"))
 end
 
 DelveGuide.compactWidget = nil
@@ -214,11 +215,11 @@ DelveGuide.UpdateCompactWidget = function()
     if n == 0 then
         local emptyMsg
         if next(tierFiltered) then
-            emptyMsg = "|cFF888888No variants match your tier filter|r"
+            emptyMsg = "|cFF888888" .. L["No variants match your tier filter"] .. "|r"
         elseif bountifulOnly then
-            emptyMsg = "|cFF888888No bountiful delves today|r"
+            emptyMsg = "|cFF888888" .. L["No bountiful delves today"] .. "|r"
         else
-            emptyMsg = "|cFF888888No active variants|r"
+            emptyMsg = "|cFF888888" .. L["No active variants"] .. "|r"
         end
         cw.varLines[1].label:SetText(emptyMsg)
         cw.varLines[1].pin = nil
@@ -242,7 +243,7 @@ DelveGuide.UpdateCompactWidget = function()
                 -- If more variants are active than we can show, say so on the
                 -- last line instead of silently dropping them.
                 if i == W_MAX_LINES and overflow > 0 then
-                    line.label:SetText(string.format("|cFF888888...and %d more (see Delves tab)|r", overflow + 1))
+                    line.label:SetText("|cFF888888" .. string.format(L["...and %d more (see Delves tab)"], overflow + 1) .. "|r")
                     line.pin = nil
                 else
                     line.label:SetText(rc.."["..e.ranking.."]|r  "..displayName..bountyTag)
@@ -264,9 +265,9 @@ DelveGuide.UpdateCompactWidget = function()
     local shards   = keysInfo and keysInfo.quantity or 0
     local restoredInfo = C_CurrencyInfo.GetCurrencyInfo(CK.RESTORED_CURRENCY_ID)
     local restored = restoredInfo and restoredInfo.quantity or 0
-    local keysStr  = string.format("|cFFFFD700Keys:|r %d/%d shards", shards, CK.SHARD_WEEKLY_CAP)
+    local keysStr  = "|cFFFFD700" .. L["Keys:"] .. "|r " .. string.format(L["%d/%d shards"], shards, CK.SHARD_WEEKLY_CAP)
     if restored > 0 then
-        keysStr = keysStr .. string.format("  |cFF00FF44+%d restored|r", restored)
+        keysStr = keysStr .. "  |cFF00FF44" .. string.format(L["+%d restored"], restored) .. "|r"
     end
     cw.keysLine:SetText(keysStr)
 
@@ -342,8 +343,8 @@ DelveGuide.CreateCompactWidget = function()
     f:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:AddLine("|cFF00BFFFDelveGuide|r")
-        GameTooltip:AddLine("Drag to reposition.", 0.7, 0.7, 0.7)
-        if DelveGuideDB.widgetClickOpens then GameTooltip:AddLine("Click to open/close.", 1, 1, 1) end
+        GameTooltip:AddLine(L["Drag to reposition."], 0.7, 0.7, 0.7)
+        if DelveGuideDB.widgetClickOpens then GameTooltip:AddLine(L["Click to open/close."], 1, 1, 1) end
         GameTooltip:Show()
         if DelveGuideDB.widgetAutoHide then UIFrameFadeIn(self, 0.2, self:GetAlpha(), 1.0) end
     end)
@@ -385,11 +386,11 @@ DelveGuide.CreateCompactWidget = function()
     f.RefreshBountyBtn = RefreshBountyBtn
     bountyBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine("|cFFFFD700Bountiful Filter|r")
+        GameTooltip:AddLine("|cFFFFD700" .. L["Bountiful Filter"] .. "|r")
         if DelveGuideDB.widgetBountifulOnly then
-            GameTooltip:AddLine("|cFF44FF44ON|r -- click to show all variants.", 0.7, 1, 0.7)
+            GameTooltip:AddLine("|cFF44FF44" .. L["ON"] .. "|r -- " .. L["click to show all variants."], 0.7, 1, 0.7)
         else
-            GameTooltip:AddLine("|cFF888888OFF|r -- click to show only bountiful delves.", 0.7, 0.7, 0.7)
+            GameTooltip:AddLine("|cFF888888" .. L["OFF"] .. "|r -- " .. L["click to show only bountiful delves."], 0.7, 0.7, 0.7)
         end
         GameTooltip:Show()
     end)
@@ -411,10 +412,10 @@ DelveGuide.CreateCompactWidget = function()
     end)
     shareBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine("|cFFFFD700Share Active Variants|r")
-        GameTooltip:AddLine("Left-click: Share to Party", 0.7, 1, 0.7)
-        GameTooltip:AddLine("Right-click: Share to Guild", 0.5, 0.7, 1)
-        GameTooltip:AddLine("Only shares ranks shown by your tier filter.", 0.5, 0.5, 0.5)
+        GameTooltip:AddLine("|cFFFFD700" .. L["Share Active Variants"] .. "|r")
+        GameTooltip:AddLine(L["Left-click: Share to Party"], 0.7, 1, 0.7)
+        GameTooltip:AddLine(L["Right-click: Share to Guild"], 0.5, 0.7, 1)
+        GameTooltip:AddLine(L["Only shares ranks shown by your tier filter."], 0.5, 0.5, 0.5)
         GameTooltip:Show()
     end)
     shareBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -438,7 +439,7 @@ DelveGuide.CreateCompactWidget = function()
     
     lockBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine(DelveGuideDB.widgetLocked and "|cFFFF4444Locked|r - click to unlock" or "|cFF44FF44Unlocked|r - click to lock")
+        GameTooltip:AddLine(DelveGuideDB.widgetLocked and ("|cFFFF4444" .. L["Locked"] .. "|r - " .. L["click to unlock"]) or ("|cFF44FF44" .. L["Unlocked"] .. "|r - " .. L["click to lock"]))
         GameTooltip:Show()
     end)
     lockBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -480,7 +481,7 @@ DelveGuide.CreateCompactWidget = function()
             if self.pin then
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                 GameTooltip:AddLine("|cFFFFD700"..self.pin.name.."|r")
-                GameTooltip:AddLine("Click to open map & set waypoint", 0, 1, 0.5)
+                GameTooltip:AddLine(L["Click to open map & set waypoint"], 0, 1, 0.5)
                 GameTooltip:Show()
             end
         end)
@@ -492,7 +493,7 @@ DelveGuide.CreateCompactWidget = function()
 
     f.keysLine = f:CreateFontString(nil, "OVERLAY")
     f.keysLine:SetFont(sf, rSizeInit); f.keysLine:SetWidth(innerW); f.keysLine:SetJustifyH("LEFT")
-    f.keysLine:SetText("|cFFFFD700Keys:|r --")
+    f.keysLine:SetText("|cFFFFD700" .. L["Keys:"] .. "|r --")
 
     f.voidforgeLine = f:CreateFontString(nil, "OVERLAY")
     f.voidforgeLine:SetFont(sf, rSizeInit); f.voidforgeLine:SetWidth(innerW); f.voidforgeLine:SetJustifyH("LEFT")
@@ -542,5 +543,5 @@ DelveGuide.ToggleWidget = function()
         -- nothing at all, if it was hidden at login before the first scan).
         if DelveGuideDB.widgetHidden then cw:Hide() else cw:Show(); UI.UpdateCompactWidget() end
     end
-    print("|cFF00BFFF[DelveGuide]|r Compact widget: "..(DelveGuideDB.widgetHidden and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
+    print("|cFF00BFFF[DelveGuide]|r " .. L["Compact widget:"] .. " " .. (DelveGuideDB.widgetHidden and ("|cFFFF4444" .. L["hidden"] .. "|r") or ("|cFF44FF44" .. L["shown"] .. "|r")))
 end
