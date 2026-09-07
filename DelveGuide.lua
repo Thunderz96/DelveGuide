@@ -1992,7 +1992,7 @@ DelveGuide.commands = {
     },
     {
         name = "journey",
-        aliases = { "quests" },
+        aliases = { "quests", "quest" },   -- "quest" typed on the PTR sweep, 2026-09-07
         desc = L["Open the Journey tab: Delver's Journey ranks + Delver's Call quests (alias /dg quests)"],
         handler = function()
             if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
