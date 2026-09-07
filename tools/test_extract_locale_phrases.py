@@ -68,8 +68,11 @@ class TestDedupe(ExtractorCase):
 
         with open(os.path.join(self.tmp, ex.OUT_REL), encoding="utf-8") as fh:
             lines = fh.read().splitlines()
-        body = [ln for ln in lines if not ln.startswith("--")]
+        # The template opens with a GetLocale() guard and `local L`; the
+        # phrase lines are everything after those.
+        body = [ln for ln in lines if ln.startswith('L["')]
         self.assertEqual(body, ['L["apple"] = "apple"', 'L["zebra"] = "zebra"'])
+        self.assertIn('if GetLocale() ~= "xxYY" then return end', lines)
         self.assertIn("2 phrases", lines[1])
 
     def test_whole_line_comments_are_not_phrases(self):
