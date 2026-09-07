@@ -300,11 +300,29 @@ local function GetCompanionConfig(say)
     if not C_Traits then say("C_Traits missing"); return compID end
     local treeID = TryCall(C_DelvesUI.GetTraitTreeForCompanion, compID)
     say("GetTraitTreeForCompanion ->", treeID, "(", type(C_DelvesUI.GetTraitTreeForCompanion), ")")
-    if type(treeID) ~= "number" or treeID <= 0 then return compID end
-    local configID = TryCall(C_Traits.GetConfigIDByTreeID, treeID)
-    say("GetConfigIDByTreeID ->", configID, "(", type(C_Traits.GetConfigIDByTreeID), ")")
-    if type(configID) ~= "number" or configID <= 0 then return compID end
-    return compID, configID
+    local configID
+    if type(treeID) == "number" and treeID > 0 then
+        configID = TryCall(C_Traits.GetConfigIDByTreeID, treeID)
+        say("GetConfigIDByTreeID ->", configID, "(", type(C_Traits.GetConfigIDByTreeID), ")")
+    end
+    -- The tree reads 0 until the server has sent this session's companion
+    -- config, which happens when the companion panel opens: Blizzard's own
+    -- frame makes these same two calls in its OnShow and never earlier
+    -- (PTR trace, 2026-09-07: companion 12, tree 0, panel closed). The IDs
+    -- are constants for a companion, so remember them the first time they
+    -- resolve and use the memory when the live read comes back empty.
+    if type(configID) == "number" and configID > 0 then
+        if DelveGuideDB then
+            DelveGuideDB.companionConfig = { companionID = compID, treeID = treeID, configID = configID }
+        end
+        return compID, configID
+    end
+    local cached = DelveGuideDB and DelveGuideDB.companionConfig
+    if cached and cached.companionID == compID and type(cached.configID) == "number" then
+        say("live read empty; using remembered configID", cached.configID)
+        return compID, cached.configID
+    end
+    return compID
 end
 
 -- What is socketed in one node right now, or nil for an empty/unreadable node.

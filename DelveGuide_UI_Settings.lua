@@ -34,7 +34,22 @@ DelveGuide.RenderSettings = function()
     y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Minimap"] .. "|r") + 6
     y = y + MakeSettingCheckbox(cf, y, L["Show minimap button"] .. "  |cFF888888" .. string.format(L["(or: %s)"], "/dg minimap") .. "|r",
         function() return not DelveGuideDB.minimap.hide end,
-        function(checked) DelveGuideDB.minimap.hide = not checked; UI.UpdateMinimap() end) + 8
+        function(checked) DelveGuideDB.minimap.hide = not checked; UI.UpdateMinimap() end) + 4
+    -- The compartment is Blizzard's "AddOns" button on the minimap. Until 2.0
+    -- the flag was forced on at every load, so there was no way to leave it;
+    -- this is the way. LibDBIcon keeps the flag in DelveGuideDB.minimap itself.
+    y = y + MakeSettingCheckbox(cf, y, L["Show in the addon compartment"] .. "  |cFF888888" .. L["(the AddOns button on the minimap)"] .. "|r",
+        function() return DelveGuideDB.minimap.showInCompartment ~= false end,
+        function(checked)
+            DelveGuideDB.minimap.showInCompartment = checked
+            local lib = LibStub and LibStub("LibDBIcon-1.0", true)
+            if not lib then return end
+            if checked then
+                if lib.AddButtonToCompartment then lib:AddButtonToCompartment("DelveGuide") end
+            elseif lib.RemoveButtonFromCompartment then
+                lib:RemoveButtonFromCompartment("DelveGuide")
+            end
+        end) + 8
 
     y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Compact Widget"] .. "|r") + 6
     y = y + MakeSettingCheckbox(cf, y, L["Show compact floating widget"] .. "  |cFF888888" .. string.format(L["(or: %s)"], "/dg widget") .. "|r",

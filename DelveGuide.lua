@@ -131,7 +131,7 @@ end
 -- popup has never been shown. windowX/windowY/widgetX/widgetY likewise: nil is
 -- "never moved", and the frames fall back to their own placement.
 -- ============================================================
-local DB_VERSION = 4
+local DB_VERSION = 5
 
 local DEFAULTS = {
     minimapAngle        = 225,
@@ -273,6 +273,21 @@ local MIGRATIONS = {
             if type(run.resetKey) == "number" then
                 run.resetKey = cur - 604800 * math.floor((cur - run.resetKey) / 604800 + 0.5)
             end
+        end
+    end,
+
+    -- Rows without a realm showed as a second character in History and the
+    -- Roster, which key characters as name-realm; /dg testrun wrote such rows
+    -- until 2026-09-07. Stamp the current realm onto realm-less rows that carry
+    -- the current character's name and leave every other row alone. Needs the
+    -- player's name and realm; defers if either is not answering yet.
+    [5] = function(db)
+        local me, realm
+        pcall(function() me = UnitName("player") end)
+        pcall(function() realm = GetRealmName() end)
+        if not (me and realm and realm ~= "") then return false end
+        for _, run in ipairs(db.history or {}) do
+            if run.realm == nil and run.char == me then run.realm = realm end
         end
     end,
 }
