@@ -15,8 +15,7 @@ DelveGuide.RenderRoster = function()
     local currentRealm = GetRealmName()     or "?"
     local currentKey   = currentName .. "-" .. currentRealm
 
-    local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
-    local currentResetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
+    local currentResetKey = DelveGuide.GetResetKey()
     local roster = DelveGuideDB.roster or {}
 
     local COL = { name=8, spec=160, ilvl=278, shards=322, bounty=385, delves=438, vault=480, seen=530, del=626 }
@@ -102,7 +101,7 @@ DelveGuide.RenderRoster = function()
             end
 
             local rk = c.restoredKeys or 0
-            local shardsText = ((c.shards or 0) >= 100 or rk > 0) and ("|cFF00FF44" .. (c.shards or 0) .. "|r") or tostring(c.shards or 0)
+            local shardsText = ((c.shards or 0) >= DelveGuideData.cofferKeys.SHARDS_PER_KEY or rk > 0) and ("|cFF00FF44" .. (c.shards or 0) .. "|r") or tostring(c.shards or 0)
             if rk > 0 then shardsText = shardsText .. " |cFFFFD700(+" .. rk .. "r)|r" end
 
             MakeCol(COL.ilvl, 38, c.ilvl and c.ilvl > 0 and tostring(c.ilvl) or "|cFF888888?|r", "RIGHT")

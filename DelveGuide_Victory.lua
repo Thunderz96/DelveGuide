@@ -140,8 +140,7 @@ DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, 
     end
 
     -- 1. Calculate EXACT Delve runs for this character this week (Fixing the Vault API flaw!)
-    local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset() or nil
-    local currentResetKey = secsUntilReset and (math.floor((time() + secsUntilReset - 604800) / 3600) * 3600) or nil
+    local currentResetKey = DelveGuide.GetResetKey()
     local charName = UnitName("player") or "Unknown"
     
     local trueDelveCount = 0

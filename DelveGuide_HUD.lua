@@ -373,7 +373,7 @@ local function AutoDetectDelveTier()
                     local txt = r:GetText()
                     if txt and txt ~= "" then
                         -- Clean all color codes and whitespace
-                        local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn[%w_]+:", ""):gsub("|r", ""):gsub("^%s+", ""):gsub("%s+$", "")
+                        local cleanTxt = DelveGuide.StripEscapes(txt):gsub("^%s+", ""):gsub("%s+$", "")
 
                         -- An explicit "Tier N" always wins outright.
                         local tier = cleanTxt:match("Tier %s*(%d+)") or cleanTxt:match("Tier: %s*(%d+)") or cleanTxt:match("Difficulty: %s*(%d+)")
@@ -580,9 +580,11 @@ local function UpdateHUD()
     if DelveGuideData and DelveGuideData.delves then
         for _, d in ipairs(DelveGuideData.delves) do
             if d.name == engZoneName and activeVars[d.variant] then
-                local gc = (DelveGuideData.gradeColors and DelveGuideData.gradeColors[d.ranking]) or "|cFFFFFFFF"
                 varText   = d.variant
-                gradeText = gc .. d.ranking .. "|r"
+                -- One palette: UI.GradeColor is the same lookup with the same
+                -- white fallback, and the HUD's hand-rolled copy would have
+                -- gone on disagreeing with the Delves tab silently.
+                gradeText = DelveGuide.UI.GradeColor(d.ranking)
                     .. (d.isBestRoute and "  |cFF00FF88[Best Route]|r" or "")
                     .. (d.hasBug     and "  |cFFFF4444[Bug]|r"        or "")
                 break
