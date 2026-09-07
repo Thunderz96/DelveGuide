@@ -291,6 +291,14 @@ local CURIO_TYPES = {
 -- there is no active companion, and companionID with no config when the trait
 -- lookup is unavailable.
 local function NoSay() end
+
+-- Blizzard's companion frame calls the C_DelvesUI lookups with NO companion
+-- ID whenever its own is unset ("DelvesUI accessors will default to the
+-- active mirror data companion otherwise" -- Blizzard_DelvesCompanionConfiguration.lua).
+-- GetTraitTreeForCompanion(12) returned 0 on the PTR with the panel open and
+-- closed alike, so the ID from GetCompanionInfoForActivePlayer may not be the
+-- ID these accessors want. Try with the ID, then without.
+local function Positive(v) return (type(v) == "number" and v > 0) and v or nil end
 local function GetCompanionConfig(say)
     say = say or NoSay
     if not C_DelvesUI then say("C_DelvesUI missing"); return nil end
@@ -298,10 +306,14 @@ local function GetCompanionConfig(say)
     say("GetCompanionInfoForActivePlayer ->", compID)
     if type(compID) ~= "number" or compID <= 0 then return nil end
     if not C_Traits then say("C_Traits missing"); return compID end
-    local treeID = TryCall(C_DelvesUI.GetTraitTreeForCompanion, compID)
-    say("GetTraitTreeForCompanion ->", treeID, "(", type(C_DelvesUI.GetTraitTreeForCompanion), ")")
+    local treeID = Positive(TryCall(C_DelvesUI.GetTraitTreeForCompanion, compID))
+    say("GetTraitTreeForCompanion(" .. tostring(compID) .. ") ->", treeID)
+    if not treeID then
+        treeID = Positive(TryCall(C_DelvesUI.GetTraitTreeForCompanion, nil))
+        say("GetTraitTreeForCompanion(nil) ->", treeID)
+    end
     local configID
-    if type(treeID) == "number" and treeID > 0 then
+    if treeID then
         configID = TryCall(C_Traits.GetConfigIDByTreeID, treeID)
         say("GetConfigIDByTreeID ->", configID, "(", type(C_Traits.GetConfigIDByTreeID), ")")
     end
@@ -371,13 +383,15 @@ function DelveGuide.ReadCompanionLoadout(verbose)
     -- Role. The active entry carries the subtree it belongs to, and
     -- GetRoleSubtreeForCompanion names one subtree per role, so the role falls
     -- out of an ID compare -- no client string at any step.
-    local roleNode = TryCall(C_DelvesUI.GetRoleNodeForCompanion, compID)
+    local roleNode = Positive(TryCall(C_DelvesUI.GetRoleNodeForCompanion, compID))
+                  or Positive(TryCall(C_DelvesUI.GetRoleNodeForCompanion, nil))
     local roleEntry = ReadActiveEntry(configID, roleNode)
     say("role node", roleNode, "entry", roleEntry and roleEntry.entryID, "subTree", roleEntry and roleEntry.subTreeID, "name", roleEntry and roleEntry.name)
     if roleEntry then
         for _, r in ipairs(ROLE_TYPES) do
             local roleType  = EnumValue("CompanionRoleType", r.key, r.fallback)
-            local subTreeID = TryCall(C_DelvesUI.GetRoleSubtreeForCompanion, roleType, compID)
+            local subTreeID = Positive(TryCall(C_DelvesUI.GetRoleSubtreeForCompanion, roleType, compID))
+                           or Positive(TryCall(C_DelvesUI.GetRoleSubtreeForCompanion, roleType, nil))
             if subTreeID and roleEntry.subTreeID and subTreeID == roleEntry.subTreeID then
                 roleEntry.roleType  = roleType
                 roleEntry.roleLabel = r.label
@@ -389,7 +403,8 @@ function DelveGuide.ReadCompanionLoadout(verbose)
 
     for _, c in ipairs(CURIO_TYPES) do
         local curioType = EnumValue("CurioType", c.key, c.fallback)
-        local nodeID    = TryCall(C_DelvesUI.GetCurioNodeForCompanion, curioType, compID)
+        local nodeID    = Positive(TryCall(C_DelvesUI.GetCurioNodeForCompanion, curioType, compID))
+                       or Positive(TryCall(C_DelvesUI.GetCurioNodeForCompanion, curioType, nil))
         out.curios[c.label] = ReadActiveEntry(configID, nodeID)
         local e = out.curios[c.label]
         say(c.label, "type", curioType, "node", nodeID, "entry", e and e.entryID, "spell", e and e.spellID, "name", e and e.name)
