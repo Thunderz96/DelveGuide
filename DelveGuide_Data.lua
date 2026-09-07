@@ -669,6 +669,24 @@ DelveGuideData.gradeColors = {
 -- ============================================================
 DelveGuideData.changelog = {
     {
+        version = "2.0.0",
+        date    = "2026-09-TBD",
+        entries = {
+            "Built for patch 12.1.5. It still runs on 12.1.0.",
+            "Labyrinths: DelveGuide now recognises the Labyrinth of Kindo'jan. It is not a delve, so it no longer starts a delve timer or leaves half-empty rows in your history. It has its own in-run HUD -- chamber, tier, lives, objective and chambers cleared -- and its runs are logged and counted toward the weekly vault, one vault slot for every 3 chambers cleared, at any tier.",
+            "Blizzard's Labyrinth content is still unfinished, so this is Labyrinth support rather than a Labyrinth guide. There are no route tips yet.",
+            "The pre-entry checklist finally opens by itself, with the delve entrance dialog. It never fired automatically before: it was watching your target, and a delve entrance is not something you can target. You can drag it, and it remembers where you put it.",
+            "A reload in the middle of a run no longer loses the run. The timer picks up where it was and the variant is kept, so the run still counts toward the rankings.",
+            "The Victory screen now tells you how the run went against your own best for that delve and variant, and against the community median. The same line is printed to chat.",
+            "New: keybindings for the window, HUD and widget; an addon compartment entry; a countdown to the daily variant rotation; a native map waypoint when you click a delve; a Cosmetics group on the Loot tab; and an About block in Settings.",
+            "Nebulous Voidcores are bonus-roll tokens you spend after a boss or a completed run for extra loot -- they do not drop from delves at all. Right now the Great Vault is the only source, with a weekly purchase expected around 12.1.5. Ascendant Venomstones upgrade weapons and trinkets only, so the Voidforge priority list is those four slots.",
+            "Fixed: runs finished near the weekly reset could land in the previous week and go missing from your counts; the Loot tab errored on every render on 12.1.5; tier and lives are read from the delve's own header now, so they work in any language and inside a Labyrinth; the Companion tab reads Valeera's live role and curios from game data instead of the panel text.",
+            "One grade palette everywhere now, in the tier-list convention: S salmon down to F green. The Debug tab is hidden unless you tick it on in Settings; the debug commands still run.",
+            "Every string in the addon can now be translated. Copy Locales/TEMPLATE.lua, translate it, and open a pull request -- there are no translations yet, so English is unchanged.",
+            "Under the hood: tabs reuse their frames instead of leaking a new set on every render, so the window no longer costs you frames-per-second over a session, and a broken tab can no longer take the whole window down.",
+        }
+    },
+    {
         version = "1.11.1",
         date    = "2026-09-05",
         entries = {
