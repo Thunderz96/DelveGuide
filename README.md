@@ -56,7 +56,7 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - **Independent font scale** — `/dg widgetfont` keeps the widget compact even when the main UI font is bumped up
 - Draggable and lockable, with optional click-to-open and auto-hide
 
-### 🧙 Voidforge — Bonus Rolls & Gear Upgrades
+### 🧙 Voidforge — Transmutes & Gear Upgrades
 
 The Voidforge tab tracks Season 2's two delve reward currencies:
 
