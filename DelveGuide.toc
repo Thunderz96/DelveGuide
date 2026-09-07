@@ -1,6 +1,6 @@
 ## Interface: 120000, 120001, 120005, 120100, 120105
 ## Title: DelveGuide
-## Notes: A reference guide for Midnight Delves - rankings, curios, loot, and more.
+## Notes: A reference guide for Midnight Delves and Labyrinths - rankings, curios, loot, an in-run HUD, and more.
 ## IconTexture: Interface\Icons\INV_Misc_Map09
 ## Author: Thunderz
 ## Version: 2.0.0
