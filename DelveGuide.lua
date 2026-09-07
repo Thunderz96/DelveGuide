@@ -5,6 +5,10 @@ DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
 local ADDON_VERSION    = "1.11.0"
+-- Exported so the debug slash commands in DelveGuide_UI_Debug.lua can stamp
+-- their output with the version; both /dg chatdump and /dg huddump exist to be
+-- pasted into bug reports, where the version is the first thing anyone asks for.
+DelveGuide.ADDON_VERSION = ADDON_VERSION
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -1759,968 +1763,948 @@ local function UpdateLDBText()
 end
 DelveGuide.UpdateLDBText = UpdateLDBText
 
+-- ============================================================
+-- SLASH COMMANDS
+--
+-- One table, not an if/elseif chain. /dg help is GENERATED from it, so a
+-- command can no longer exist without being documented, nor stay documented
+-- after it is removed -- the old chain had drifted both ways.
+--
+-- Entry fields:
+--   name     the word as typed, matched exactly (no more prefix matching,
+--            which used to make /dg fontsize a silent alias for /dg font)
+--   aliases  extra words running the same handler
+--   usage    argument spec shown after the name in help, e.g. "<1-11>"
+--   desc     the help text; keep it short -- a printed chat line is
+--            truncated by the client past 255 characters
+--   debug    listed in /dg help only when the Debug tab is enabled; the
+--            command itself always runs, so a bug-report instruction like
+--            "send me /dg huddump" never hits a wall
+--   handler  function(arg) -- arg is everything after the first space,
+--            already lowercased and trimmed, "" when nothing was given
+--
+-- Debug command bodies live in DelveGuide_UI_Debug.lua, which the .toc loads
+-- after this file and which appends its entries to DelveGuide.commands at
+-- load. Dispatch happens at runtime, long after both files are in, so the
+-- split is invisible to the player.
+-- ============================================================
+DelveGuide.commands = {
+
+    -- ---- window ----------------------------------------------------
+    {
+        name = "hide",
+        desc = "Hide the window",
+        handler = function()
+            if mainFrame then mainFrame:Hide() end
+        end,
+    },
+    {
+        name = "show",
+        desc = "Show the window",
+        handler = function()
+            if not mainFrame then CreateMainWindow() end
+            mainFrame:Show()
+        end,
+    },
+    {
+        name = "scan",
+        desc = "Rescan active delve variants",
+        handler = function()
+            ScanActiveVariants(); RefreshCurrentTab()
+            local vc,dc=0,0
+            for _ in pairs(activeVariants) do vc=vc+1 end
+            for _ in pairs(activeDelves) do dc=dc+1 end
+            print(string.format("|cFF00BFFF[DelveGuide]|r Scan: |cFF44FF44%d|r delves, |cFF44FF44%d|r variants.",dc,vc))
+            if vc>0 then
+                local list={}; for v in pairs(activeVariants) do table.insert(list,v) end
+                print("|cFF00BFFF[DelveGuide]|r Active variants: "..table.concat(list,", "))
+            end
+        end,
+    },
+    {
+        name = "map",
+        desc = "Open world map",
+        handler = function()
+            ToggleWorldMap()
+        end,
+    },
+    {
+        name = "minimap",
+        desc = "Toggle minimap button",
+        handler = function()
+            DelveGuideDB.minimap.hide = not DelveGuideDB.minimap.hide
+            if icon then
+                if DelveGuideDB.minimap.hide then icon:Hide("DelveGuide") else icon:Show("DelveGuide") end
+            end
+            print("|cFF00BFFF[DelveGuide]|r Minimap button: " .. (DelveGuideDB.minimap.hide and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
+        end,
+    },
+    {
+        name = "hud",
+        desc = "Toggle in-run HUD overlay",
+        handler = function()
+            if DelveGuide.ToggleHUD then DelveGuide.ToggleHUD()
+            else print("|cFF00BFFF[DelveGuide]|r HUD not loaded.") end
+        end,
+    },
+    {
+        name = "widget",
+        desc = "Toggle compact floating widget",
+        handler = function()
+            if DelveGuide.ToggleWidget then DelveGuide.ToggleWidget() end
+        end,
+    },
+    {
+        name = "resetwidget",
+        desc = "Reset widget position to center",
+        handler = function()
+            DelveGuideDB.widgetX = nil
+            DelveGuideDB.widgetY = nil
+            local cw = DelveGuide.compactWidget
+            if cw then
+                cw:ClearAllPoints()
+                cw:SetPoint("CENTER", UIParent, "CENTER", 0, 250)
+                cw:Show()
+            end
+            DelveGuideDB.widgetHidden = false
+            print("|cFF00BFFF[DelveGuide]|r Widget position reset to center.")
+        end,
+    },
+    {
+        name = "resethud",
+        desc = "Reset the in-run HUD position",
+        handler = function()
+            -- Parity with /dg resetwidget. Asked for by a user whose HUD kept
+            -- landing at the bottom of the screen (the restore-anchor bug), with
+            -- no way to put it back.
+            DelveGuideDB.hudX = nil
+            DelveGuideDB.hudY = nil
+            local hf = _G["DelveGuideHUDFrame"]
+            if hf then
+                hf:ClearAllPoints()
+                hf:SetPoint("CENTER", UIParent, "CENTER", 450, 100)
+            end
+            print("|cFF00BFFF[DelveGuide]|r In-run HUD position reset. Drag it where you want it and it will stay there.")
+        end,
+    },
+    {
+        name = "bountiful",
+        desc = "Toggle widget filter to show only bountiful delves",
+        handler = function()
+            DelveGuideDB.widgetBountifulOnly = not DelveGuideDB.widgetBountifulOnly
+            local cw = DelveGuide.compactWidget
+            if cw and cw.RefreshBountyBtn then cw.RefreshBountyBtn() end
+            if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end
+            print("|cFF00BFFF[DelveGuide]|r Widget bountiful filter: "
+                ..(DelveGuideDB.widgetBountifulOnly and "|cFFFFD700ON|r (only bountiful delves)" or "|cFF888888OFF|r (all variants)"))
+        end,
+    },
+    {
+        name = "check",
+        desc = "Show pre-entry checklist",
+        handler = function()
+            if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(true) end
+        end,
+    },
+
+    -- ---- tabs. These OPEN the window; they used to Toggle it, so running
+    -- one twice in a row just closed the guide again. ------------------
+    {
+        name = "roster",
+        desc = "Open Roster tab",
+        handler = function()
+            if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+            SwitchTab("roster")
+        end,
+    },
+    {
+        name = "voidforge",
+        aliases = { "forge" },
+        desc = "Open Voidforge tab (bonus rolls, upgrades, slot priority)",
+        handler = function()
+            if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+            SwitchTab("voidforge")
+        end,
+    },
+    {
+        name = "journey",
+        aliases = { "quests" },
+        desc = "Open the Journey tab: Delver's Journey ranks + Delver's Call quests (alias /dg quests)",
+        handler = function()
+            if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+            SwitchTab("quests")
+        end,
+    },
+
+    -- ---- data and settings ------------------------------------------
+    {
+        name = "submit",
+        aliases = { "rank" },
+        desc = "Copy your run times to submit for community variant rankings",
+        handler = function()
+            DelveGuide.ShowSubmitDialog()
+        end,
+    },
+    {
+        name = "questscan",
+        desc = "Scan quest log for Delver's Call quest IDs",
+        handler = function()
+            if DelveGuide.ScanDelversCallQuests then DelveGuide.ScanDelversCallQuests() end
+        end,
+    },
+    {
+        name = "export",
+        desc = "Snapshot zone/delve/quest data to SavedVariables (attach to bug reports)",
+        handler = function()
+            -- Capture a structured snapshot into SavedVariables so PTR data
+            -- can be pulled from disk instead of copied out of chat. Run it
+            -- inside each delve (and once outside), then /reload to flush.
+            DelveGuideDB.ptrExports = DelveGuideDB.ptrExports or {}
+            local snap = { at = date("%Y-%m-%d %H:%M:%S"), build = {GetBuildInfo()} }
+            pcall(function() snap.zone = GetRealZoneText(); snap.subzone = GetSubZoneText() end)
+            pcall(function()
+                local name, instType, diffID, diffName, _, _, _, instanceID = GetInstanceInfo()
+                snap.instance = {name=name, type=instType, diffID=diffID, diffName=diffName, instanceID=instanceID}
+            end)
+            pcall(function()
+                if C_Scenario and C_Scenario.GetInfo then snap.scenario = {C_Scenario.GetInfo()} end
+                if C_Scenario and C_Scenario.GetStepInfo then snap.scenarioStep = {C_Scenario.GetStepInfo()} end
+            end)
+            pcall(function()
+                local mapID = C_Map.GetBestMapForUnit("player")
+                snap.mapID = mapID
+                if mapID then
+                    local info = C_Map.GetMapInfo(mapID)
+                    snap.mapName = info and info.name
+                    snap.parentMapID = info and info.parentMapID
+                    local pos = C_Map.GetPlayerMapPosition(mapID, "player")
+                    if pos then snap.pos = {x=pos.x, y=pos.y} end
+                end
+            end)
+            pcall(function()
+                if C_DelvesUI and C_DelvesUI.HasActiveLair then snap.hasActiveLair = C_DelvesUI.HasActiveLair() end
+                if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then snap.companionID = C_DelvesUI.GetCompanionInfoForActivePlayer() end
+            end)
+            pcall(function()
+                local state, count, hasAura, weeklyDone = DelveGuide.GetTroveStatus()
+                snap.troveState  = state
+                snap.bountyAura  = hasAura
+                snap.bountyCount = count
+                snap.troveWeekly = weeklyDone
+            end)
+            pcall(function()
+                snap.delversCallQuests = {}
+                for i = 1, C_QuestLog.GetNumQuestLogEntries() do
+                    local q = C_QuestLog.GetInfo(i)
+                    if q and not q.isHeader and q.title and q.title:find("Delver") then
+                        table.insert(snap.delversCallQuests, {id=q.questID, title=q.title})
+                    end
+                end
+            end)
+            pcall(function()
+                snap.delvePOIs = {}
+                local maps, seen = {}, {}
+                for _, m in ipairs(ALL_ZONE_MAP_IDS) do table.insert(maps, m) end
+                if snap.mapID then table.insert(maps, snap.mapID) end
+                if snap.parentMapID then table.insert(maps, snap.parentMapID) end
+                for _, mapID in ipairs(maps) do
+                    if not seen[mapID] then
+                        seen[mapID] = true
+                        local poiIDs = C_AreaPoiInfo.GetDelvesForMap(mapID)
+                        if poiIDs then
+                            for _, poiID in ipairs(poiIDs) do
+                                local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
+                                if info then
+                                    table.insert(snap.delvePOIs, {mapID=mapID, poiID=poiID, name=info.name, atlas=info.atlasName, set=info.tooltipWidgetSet})
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+            -- API presence probe, shared with /dg selftest (see ProbeAPIs).
+            pcall(function() snap.api, snap.apiMissing = ProbeAPIs() end)
+
+            -- Objective-tracker widget set: settles whether lives are a criterion
+            -- or a header widget (see DumpObjectiveTrackerWidgets).
+            pcall(function() snap.trackerWidgets, snap.trackerWidgetSetID = DumpObjectiveTrackerWidgets() end)
+
+            -- The scenario step's widget set: tier badge and lives live here.
+            pcall(function()
+                snap.stepWidgetSetID = GetStepWidgetSetID()
+                snap.stepWidgets = DumpWidgetSet(snap.stepWidgetSetID)
+            end)
+
+            -- Scenario criteria, through the 12.1.5-safe helpers.
+            pcall(function()
+                snap.criteria = {}
+                local n = DelveGuide.GetCriteriaCount and DelveGuide.GetCriteriaCount() or 0
+                snap.criteriaCount = n
+                for i = 1, n do
+                    local c = DelveGuide.GetCriteria(i)
+                    if c then
+                        table.insert(snap.criteria, {
+                            id = c.criteriaID, desc = c.description, qty = c.quantity,
+                            total = c.totalQuantity, qtyStr = c.quantityString,
+                            completed = c.completed, failed = c.failed, assetID = c.assetID,
+                            elapsed = c.elapsed, duration = c.duration,
+                            ctype = c.criteriaType, cflags = c.flags,
+                        })
+                    end
+                end
+            end)
+
+            -- Modern scenario structs, which carry named fields the positional
+            -- C_Scenario.GetInfo array does not.
+            pcall(function()
+                if C_ScenarioInfo and C_ScenarioInfo.GetScenarioInfo then
+                    local si = C_ScenarioInfo.GetScenarioInfo()
+                    if si then
+                        snap.scenarioInfo = {
+                            name = si.name, scenarioID = si.scenarioID, type = si.type,
+                            flags = si.flags, currentStage = si.currentStage,
+                            numStages = si.numStages, isComplete = si.isComplete, area = si.area,
+                        }
+                    end
+                end
+                if C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo then
+                    local st = C_ScenarioInfo.GetScenarioStepInfo()
+                    if st then
+                        snap.scenarioStepInfo = {
+                            title = st.title, description = st.description,
+                            numCriteria = st.numCriteria, stageID = st.stageID,
+                            isComplete = st.isComplete,
+                        }
+                    end
+                end
+            end)
+
+            -- Delve tier struct. Returned all zeros inside a Labyrinth on 69594;
+            -- captured in full so the shape can be compared across content types.
+            pcall(function()
+                if C_DelvesUI and C_DelvesUI.GetActiveDelveTier then
+                    local t = C_DelvesUI.GetActiveDelveTier()
+                    if type(t) == "table" then
+                        snap.delveTier = {
+                            tier = t.tier, unlocked = t.unlocked, difficultyID = t.difficultyID,
+                            suggestedILvl = t.suggestedILvl, tierDescription = t.tierDescription,
+                            modifierUIWidgetSetID = t.modifierUIWidgetSetID,
+                            overrideTooltipSpellID = t.overrideTooltipSpellID,
+                            queueAsLFG = t.queueAsLFG,
+                        }
+                    else
+                        snap.delveTier = { raw = tostring(t) }
+                    end
+                end
+            end)
+
+            -- Outdoor POI widget texts, so the variant-text question no longer needs
+            -- /dg scan + /dg chatdump pasted into chat. Populated only if a scan has
+            -- run this session.
+            pcall(function()
+                snap.zoneEnglish = localizedToEnglish and localizedToEnglish[GetRealZoneText() or ""] or nil
+                snap.rawScan = {}
+                for _, r in ipairs(rawScanResults or {}) do
+                    table.insert(snap.rawScan, {
+                        mapID = r.mapID, poiID = r.poiID, name = r.name,
+                        atlas = r.atlasName, set = r.widgetSetID, texts = r.widgetTexts,
+                        meta = r.widgetMeta,
+                    })
+                end
+            end)
+
+            -- Faction ID sweep. GetNumFactions does not enumerate warband
+            -- reputations: "Delves: Season 2" and "The Labyrinth of Kindo'jan" both
+            -- award rep in chat yet neither appears in the list even with every
+            -- header expanded. GetFactionDataByID answers for them directly, so
+            -- sweep the modern ID range and keep whatever returns a name. A first
+            -- pass over 2400-2900 returned 130+ factions but neither target (top hit
+            -- 2838), so the new warband reps sit above that -- widened to 2200-3400.
+            pcall(function()
+                snap.factionSweep = {}
+                if C_Reputation and C_Reputation.GetFactionDataByID then
+                    for id = 2200, 3400 do
+                        local d = C_Reputation.GetFactionDataByID(id)
+                        if d and d.name and d.name ~= "" then
+                            table.insert(snap.factionSweep, {
+                                id = id, name = d.name, standing = d.currentStanding,
+                                reaction = d.reaction, nextThreshold = d.nextReactionThreshold,
+                            })
+                        end
+                    end
+                end
+            end)
+
+            -- Watched faction. Warband reputations answer to neither GetNumFactions
+            -- nor a GetFactionDataByID sweep of 2200-3400, but GetWatchedFactionData
+            -- returns the factionID of whatever the player is tracking on the XP bar.
+            -- Track "The Labyrinth of Kindo'jan" (or "Delves: Season 2") and export
+            -- to capture its ID directly.
+            pcall(function()
+                if C_Reputation and C_Reputation.GetWatchedFactionData then
+                    local w = C_Reputation.GetWatchedFactionData()
+                    if w then
+                        snap.watchedFaction = {
+                            id = w.factionID, name = w.name, standing = w.currentStanding,
+                            reaction = w.reaction, nextThreshold = w.nextReactionThreshold,
+                        }
+                    end
+                end
+            end)
+
+            -- Direct probe of factionID 2836, which WoWhead lists as "The Labyrinth
+            -- of Kindo'jan". The 2200-3400 sweep already called this ID and kept
+            -- nothing because it filters on a non-empty name; record the raw return
+            -- here so "exists but unnamed client-side" is distinguishable from "nil".
+            pcall(function()
+                if C_Reputation and C_Reputation.GetFactionDataByID then
+                    local d = C_Reputation.GetFactionDataByID(2836)
+                    snap.faction2836 = d and {
+                        name = d.name, standing = d.currentStanding, reaction = d.reaction,
+                        nextThreshold = d.nextReactionThreshold, isHeader = d.isHeader,
+                        isAccountWide = d.isAccountWide,
+                    } or "nil"
+                end
+            end)
+
+            -- Major factions (renown). The new Kindo'jan reputation did not appear
+            -- in the standard C_Reputation list even with every header expanded, so
+            -- it is probably a renown track rather than a classic faction.
+            pcall(function()
+                snap.majorFactions = {}
+                if C_MajorFactions and C_MajorFactions.GetMajorFactionIDs then
+                    for _, id in ipairs(C_MajorFactions.GetMajorFactionIDs() or {}) do
+                        local d = C_MajorFactions.GetMajorFactionData(id)
+                        if d then
+                            table.insert(snap.majorFactions, {
+                                id = id, name = d.name, renown = d.renownLevel,
+                                current = d.renownReputationEarned,
+                                needed = d.renownLevelThreshold,
+                                unlocked = d.isUnlocked,
+                            })
+                        end
+                    end
+                end
+            end)
+
+            -- Equipped gloves: link, parsed enchant ID, item level. The first export
+            -- taken with a 12.1.5 delve glove enhancement applied gives the enchant
+            -- ID that DelveGuideData.delveGloveEnhancements is keyed on.
+            pcall(function()
+                local link = GetInventoryItemLink("player", INVSLOT_HAND or 10)
+                if link then
+                    local ilvl
+                    if C_Item and C_Item.GetDetailedItemLevelInfo then
+                        local ok, eff = pcall(C_Item.GetDetailedItemLevelInfo, link)
+                        if ok then ilvl = eff end
+                    end
+                    snap.gloves = { link = link, enchantID = tonumber(link:match("item:%d+:(%d+):")) or 0, ilvl = ilvl }
+                end
+            end)
+
+            -- Where the player is standing: the map the client considers current
+            -- and the position on it. Replaces a hand-typed /dump with a guessed
+            -- map ID (2512 came back empty at Venomfall Deeps -- wrong map).
+            pcall(function()
+                local mapID = C_Map.GetBestMapForUnit("player")
+                local pos = mapID and C_Map.GetPlayerMapPosition(mapID, "player")
+                local info = mapID and C_Map.GetMapInfo(mapID)
+                snap.playerMap = { mapID = mapID, name = info and info.name,
+                    x = pos and pos.x, y = pos and pos.y }
+            end)
+
+            -- A vendor window that is open right now: every item with its price
+            -- and currency. Run /dg export with the delve vendor open and the
+            -- cosmetic rows' IDs, sources and costs come straight from the game.
+            -- First attempt (export #35, Naleidea Rivergleam) recorded the NPC and
+            -- zero items: one of the merchant globals errored inside the pcall and
+            -- the error vanished with it. Now the capture records type() of every
+            -- API it leans on, tries the C_MerchantFrame forms first, and keeps the
+            -- first error text, so a failed capture explains itself.
+            do
+                local okM, errM = pcall(function()
+                    if not (MerchantFrame and MerchantFrame:IsShown()) then return end
+                    local CM = C_MerchantFrame
+                    local m = { npc = UnitName("npc"), items = {}, api = {
+                        GetMerchantNumItems     = type(GetMerchantNumItems),
+                        C_GetNumItems           = type(CM and CM.GetNumItems),
+                        GetMerchantItemInfo     = type(GetMerchantItemInfo),
+                        C_GetItemInfo           = type(CM and CM.GetItemInfo),
+                        GetMerchantItemLink     = type(GetMerchantItemLink),
+                        GetMerchantItemCostInfo = type(GetMerchantItemCostInfo),
+                        GetMerchantItemCostItem = type(GetMerchantItemCostItem),
+                    } }
+                    snap.merchant = m
+                    local n = (CM and CM.GetNumItems and CM.GetNumItems())
+                           or (GetMerchantNumItems and GetMerchantNumItems()) or 0
+                    m.count = n
+                    for i = 1, n do
+                        local ok, err = pcall(function()
+                            local e = {}
+                            if CM and CM.GetItemInfo then
+                                local info = CM.GetItemInfo(i)
+                                if type(info) == "table" then
+                                    e.name, e.price, e.qty = info.name, info.price, info.stackCount
+                                    e.currencyID, e.hasExtendedCost = info.currencyID, info.hasExtendedCost
+                                end
+                            end
+                            if not e.name and GetMerchantItemInfo then
+                                local name, _, price, qty = GetMerchantItemInfo(i)
+                                e.name, e.price, e.qty = name, price, qty
+                            end
+                            local link = GetMerchantItemLink and GetMerchantItemLink(i)
+                            e.link = link
+                            e.itemID = link and tonumber(link:match("item:(%d+)"))
+                            -- Export #37: seven of 22 rows came back with no name and
+                            -- no link -- the client had not cached those items yet.
+                            -- Say so, rather than leaving a bare cost.
+                            if not e.name and not link then e.uncached = true end
+                            local nCosts = (GetMerchantItemCostInfo and GetMerchantItemCostInfo(i)) or 0
+                            if nCosts > 0 and GetMerchantItemCostItem then
+                                e.costs = {}
+                                for j = 1, nCosts do
+                                    local _, value, costLink, currencyName = GetMerchantItemCostItem(i, j)
+                                    table.insert(e.costs, { value = value, link = costLink, currency = currencyName })
+                                end
+                            end
+                            table.insert(m.items, e)
+                        end)
+                        if not ok then m.firstError = m.firstError or (i .. ": " .. tostring(err)); break end
+                    end
+                end)
+                if not okM then snap.merchantError = tostring(errM) end
+            end
+
+            -- Last PLAYER_INTERACTION_MANAGER_FRAME_SHOW type seen, to learn the
+            -- delve entrance dialog's real enum value.
+            snap.lastInteractionType = DelveGuide.lastInteractionType
+            snap.pickerEnum = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.DelvesDifficultyPicker
+
+            -- Tier, as the addon currently believes it. Read the stored fields
+            -- rather than calling ApplyDelveTier so the export stays side-effect
+            -- free. Needed to correlate scenarioID against tier: 3580 was seen at
+            -- tier 11 and 3582 at tier 1, and until tier is recorded alongside the
+            -- ID we cannot tell whether scenarioID is per-chamber or per-tier (5.7).
+            pcall(function()
+                snap.tierNum    = DelveGuide.currentDelveTierNum
+                snap.tierManual = DelveGuide.manualDelveTier
+                snap.tierAuto   = DelveGuide.autoDelveTier
+            end)
+
+            -- Reputations, id + name + standing. 12.1.5 adds a "The Labyrinth of
+            -- Kindo'jan" faction; capturing the whole list means its factionID (and
+            -- any future one) is on disk without having to guess or paste it.
+            -- GetNumFactions only enumerates rows that are currently VISIBLE, so
+            -- collapsed headers hide most of the list -- the first attempt at this
+            -- returned 9 factions and missed the new one entirely. Expand every
+            -- header first. NOTE: this leaves the Reputation pane expanded.
+            pcall(function()
+                local guard, again = 0, true
+                while again and guard < 200 do
+                    again, guard = false, guard + 1
+                    for i = 1, (C_Reputation.GetNumFactions() or 0) do
+                        local d = C_Reputation.GetFactionDataByIndex(i)
+                        if d and d.isHeader and d.isCollapsed then
+                            C_Reputation.ExpandFactionHeader(i)
+                            again = true
+                            break
+                        end
+                    end
+                end
+                snap.factions = {}
+                for i = 1, (C_Reputation.GetNumFactions() or 0) do
+                    local d = C_Reputation.GetFactionDataByIndex(i)
+                    if d then
+                        table.insert(snap.factions, {
+                            id = d.factionID, name = d.name, header = d.isHeader or nil,
+                            reaction = d.reaction, standing = d.currentStanding,
+                            nextThreshold = d.nextReactionThreshold,
+                        })
+                    end
+                end
+                snap.factionCount = #snap.factions
+            end)
+
+            -- Taxi network. Labyrinths carry their own in-instance flight map
+            -- (12_15_Labyrinth_Taxi) whose unlocked nodes track how deep the run has
+            -- been cleared -- numeric nodeIDs, and a property of the instance rather
+            -- than the current scenario phase, so unlike criteria it survives the
+            -- mid-run scenario swap. Needs the flight map OPEN to return anything.
+            -- Both the modern and classic APIs are tried; whichever answers, answers.
+            pcall(function()
+                snap.taxiMapID = GetTaxiMapID and GetTaxiMapID() or nil
+                snap.taxiMapOpen = (snap.taxiMapID ~= nil)
+                snap.taxiNodes = {}
+                local nodes = C_TaxiMap and C_TaxiMap.GetAllTaxiNodes
+                    and C_TaxiMap.GetAllTaxiNodes(snap.taxiMapID)
+                if nodes then
+                    for _, n in ipairs(nodes) do
+                        table.insert(snap.taxiNodes, {
+                            id    = n.nodeID,
+                            name  = n.name,
+                            state = n.state,
+                            x     = n.position and n.position.x,
+                            y     = n.position and n.position.y,
+                        })
+                    end
+                end
+                snap.taxiClassic = {}
+                if NumTaxiNodes then
+                    for i = 1, (NumTaxiNodes() or 0) do
+                        table.insert(snap.taxiClassic, {
+                            i    = i,
+                            name = TaxiNodeName and TaxiNodeName(i) or nil,
+                            kind = TaxiNodeGetType and TaxiNodeGetType(i) or nil,
+                        })
+                    end
+                end
+            end)
+
+            table.insert(DelveGuideDB.ptrExports, snap)
+            print(string.format("|cFF00BFFF[DelveGuide]|r Export snapshot |cFF44FF44#%d|r captured (%s). |cFFFFD700/reload|r or logout to write to disk.",
+                #DelveGuideDB.ptrExports, snap.zone or "?"))
+        end,
+    },
+    {
+        name = "exportclear",
+        desc = "Clear export snapshots",
+        handler = function()
+            DelveGuideDB.ptrExports = nil
+            print("|cFF00BFFF[DelveGuide]|r Export snapshots cleared.")
+        end,
+    },
+    {
+        name = "companionscan",
+        desc = "Re-scan for the companion reputation faction",
+        handler = function()
+            if DelveGuideDB then
+                DelveGuideDB.companionFactionID   = nil
+                DelveGuideDB.companionFactionType = nil
+            end
+            print("|cFF00BFFF[DelveGuide]|r Companion faction cache cleared. Open Companion tab to rescan.")
+            if currentTabKey=="companion" then RefreshCurrentTab() end
+        end,
+    },
+    {
+        name = "companionfaction",
+        usage = "<id>",
+        desc = "Manually pin the companion faction ID",
+        handler = function(arg)
+            local val = tonumber(arg)
+            if val and DelveGuideDB then
+                DelveGuideDB.companionFactionID   = val
+                DelveGuideDB.companionFactionType = nil  -- let the renown query auto-detect Major vs Reputation
+                print("|cFF00BFFF[DelveGuide]|r Companion faction ID set to "..val..". Open Companion tab to verify.")
+                if currentTabKey=="companion" then RefreshCurrentTab() end
+            else
+                print("|cFF00BFFF[DelveGuide]|r Usage: /dg companionfaction <factionID>")
+            end
+        end,
+    },
+    {
+        name = "tier",
+        usage = "<1-11>",
+        desc = "Manually set current delve tier",
+        handler = function(arg)
+            local num = tonumber(arg)
+            if num and num >= 1 and num <= 11 then
+                DelveGuide.SetManualDelveTier(num)
+                if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
+                print("|cFF00BFFF[DelveGuide]|r Delve tier set to |cFFCCCCCC" .. num .. "|r |cFF888888(manual override -- /dg tier auto to clear)|r")
+            elseif arg == "auto" or num == 0 then
+                DelveGuide.SetManualDelveTier(nil)
+                if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
+                print("|cFF00BFFF[DelveGuide]|r Manual tier cleared -- back to auto-detection.")
+            else
+                print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg tier 3|r  (1-11), or |cFFFFFF00/dg tier auto|r to clear")
+            end
+        end,
+    },
+    {
+        name = "share",
+        usage = "[channel]",
+        desc = "Share active variants (party/guild/say/raid)",
+        handler = function(arg)
+            local channel = arg:upper()
+            if channel == "" then channel = "PARTY" end
+            local validChannels = {PARTY=true, GUILD=true, SAY=true, RAID=true, INSTANCE_CHAT=true}
+            if not validChannels[channel] then
+                print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg share [party|guild|say|raid]|r")
+                return
+            end
+            -- Group/guild checks, list building, line packing and sending all live
+            -- in one place now (DelveGuide_Widget.lua) -- shared with both buttons.
+            DelveGuide.ShareActiveVariants(channel)
+        end,
+    },
+    {
+        name = "font",
+        usage = "<0.6-2.0>",
+        desc = "Main UI font scale",
+        handler = function(arg)
+            local val=tonumber(arg)
+            if val then DelveGuideDB.fontScale=math.max(0.6,math.min(2.0,val)); RefreshCurrentTab()
+                print(string.format("|cFF00BFFF[DelveGuide]|r Font: %.1fx",DelveGuideDB.fontScale))
+            else print(string.format("|cFF00BFFF[DelveGuide]|r Font: %.1fx (0.6-2.0)",DelveGuideDB.fontScale)) end
+        end,
+    },
+    {
+        name = "widgetfont",
+        usage = "<0.6-2.0>",
+        desc = "Widget-only font scale (independent)",
+        handler = function(arg)
+            local val=tonumber(arg)
+            if val then DelveGuideDB.widgetFontScale=math.max(0.6,math.min(2.0,val))
+                if DelveGuide.RefreshCompactWidgetFonts then DelveGuide.RefreshCompactWidgetFonts() end
+                print(string.format("|cFF00BFFF[DelveGuide]|r Widget font: %.1fx",DelveGuideDB.widgetFontScale))
+            else print(string.format("|cFF00BFFF[DelveGuide]|r Widget font: %.1fx (0.6-2.0)",DelveGuideDB.widgetFontScale)) end
+        end,
+    },
+    {
+        name = "help",
+        desc = "Show this help",
+        handler = function()
+            DelveGuide.PrintHelp()
+        end,
+    },
+
+    -- ---- diagnostics that stay here ---------------------------------
+    -- These two are as entangled with the window internals as the tab
+    -- renderers are: selftest drives TABS/SwitchTab/CreateMainWindow and
+    -- reads mainFrame and currentTabKey, and testrun re-renders the History
+    -- tab in place. Moving them would mean exporting the window's private
+    -- state, which is a bigger change than the move is worth.
+    {
+        name = "selftest",
+        desc = "Run the full pass/fail self-test (paste the output into bug reports)",
+        debug = true,
+        handler = function()
+            -- One command that turns "does this still work on the new patch" into
+            -- a pasteable pass/fail block: every tab rendered under pcall, every
+            -- API the addon leans on probed, the data file's invariants checked,
+            -- and the two widget dumps that settle open questions. Also written to
+            -- DelveGuideDB.lastSelftest so it can be read off disk after /reload.
+            local P = "|cFF00BFFF[DelveGuide]|r "
+            local PASS, FAIL, INFO = "|cFF00FF44PASS|r", "|cFFFF4444FAIL|r", "|cFF888888info|r"
+            local report = { at = date("%Y-%m-%d %H:%M:%S"), build = {GetBuildInfo()}, fails = 0 }
+            local function line(status, text) print(P..status.."  "..text) end
+            local function fail(text) report.fails = report.fails + 1; line(FAIL, text) end
+            print(P.."=== SELF-TEST  "..ADDON_VERSION.."  build "..tostring(report.build[2]).."  iface "..tostring(report.build[4]).." ===")
+
+            -- 1. APIs
+            local api, missing = ProbeAPIs()
+            report.api, report.apiMissing = api, missing
+            if #missing == 0 then line(PASS, "all required APIs present") end
+            for _, m in ipairs(missing) do fail("required API missing: "..m) end
+            for _, pr in ipairs(API_PROBES) do
+                if not pr[4] and api[pr[1]] ~= "function" then line(INFO, pr[1].." = "..tostring(api[pr[1]]).." (optional)") end
+            end
+
+            -- 2. Data invariants
+            report.data = {}
+            do
+                local badGrade, badZone, dupVariant, seen = {}, {}, {}, {}
+                for _, d in ipairs(DelveGuideData.delves or {}) do
+                    if d.ranking ~= "?" and not DelveGuideData.gradeColors[d.ranking] then table.insert(badGrade, d.name..":"..tostring(d.ranking)) end
+                    if not zoneColors[d.zone] then badZone[d.zone or "?"] = true end
+                    if seen[d.variant] then table.insert(dupVariant, d.variant) end
+                    seen[d.variant] = true
+                end
+                if #badGrade == 0 then line(PASS, "every ranking has a colour") else fail("rankings with no colour: "..table.concat(badGrade, ", ")) end
+                local bz = {}; for z in pairs(badZone) do table.insert(bz, z) end
+                if #bz == 0 then line(PASS, "every zone has a colour") else fail("zones with no colour: "..table.concat(bz, ", ")) end
+                if #dupVariant == 0 then line(PASS, "variant names unique") else fail("duplicate variants: "..table.concat(dupVariant, ", ")) end
+                local tr = DelveGuideData.tierRewards or {}
+                local okTier = tr[8] and tr[8].coffer == 295 and tr[8].vault == 302 and tr[11] and tr[11].vault == 305
+                if okTier then line(PASS, "tierRewards: T8 coffer 295 / vault 302, T11 vault 305") else fail("tierRewards no longer match the 295/302/305 the UI text claims") end
+                local badSet = {}
+                for setID, name in pairs(DelveGuideData.widgetSetDelves or {}) do
+                    local found = false
+                    for _, d in ipairs(DelveGuideData.delves or {}) do if d.name == name then found = true; break end end
+                    if not found then table.insert(badSet, setID..":"..name) end
+                end
+                if #badSet == 0 then line(PASS, "every widgetSetDelves entry names a catalogued delve") else fail("widgetSetDelves -> unknown delve: "..table.concat(badSet, ", ")) end
+                local badMap = {}
+                for _, mapID in ipairs(DelveGuideData.zoneMapIDs or {}) do if not (DelveGuideData.zoneNames or {})[mapID] then table.insert(badMap, tostring(mapID)) end end
+                if #badMap == 0 then line(PASS, "every zoneMapID has a zoneName") else fail("zoneMapIDs with no zoneName: "..table.concat(badMap, ", ")) end
+                report.data = { badGrade = badGrade, badZone = bz, dupVariant = dupVariant, tierOK = okTier and true or false, badSet = badSet, badMap = badMap }
+            end
+
+            -- 3. Every tab renders
+            report.tabs = {}
+            do
+                if not mainFrame then CreateMainWindow() end
+                local wasShown, origTab = mainFrame:IsShown(), currentTabKey
+                for _, td in ipairs(TABS) do
+                    -- SwitchTab now contains renderer errors (2.7) and paints a
+                    -- "failed to render" row, so pcall alone would call a broken
+                    -- tab a pass. It records the error; read it back.
+                    DelveGuide.lastRenderError = nil
+                    local ok, err = pcall(SwitchTab, td.key)
+                    local rec = DelveGuide.lastRenderError
+                    if ok and rec and rec.key == td.key then ok, err = false, rec.err end
+                    report.tabs[td.key] = ok and "ok" or tostring(err)
+                    if ok then line(PASS, "tab renders: "..td.label) else fail("tab "..td.label..": "..tostring(err)) end
+                end
+                pcall(SwitchTab, origTab or "delves")   -- never leave the window parked on Debug
+                if not wasShown then mainFrame:Hide() end
+            end
+
+            -- 4. Widget-set metadata for every scanned POI (non-text fields; the
+            --    outdoor variant-key experiment). Needs a scan this session.
+            report.poiMeta = {}
+            if #rawScanResults == 0 then
+                line(INFO, "no POI scan this session -- run /dg scan first for widget metadata")
+            else
+                local seenName = {}   -- the scan records a delve once per map it appears on
+                for _, r in ipairs(rawScanResults) do
+                    if r.widgetMeta and #r.widgetMeta > 0 and not seenName[r.name] then
+                        seenName[r.name] = true
+                        local parts = {}
+                        for _, m in ipairs(r.widgetMeta) do
+                            table.insert(parts, string.format("id=%s t=%s tag=%s kit=%s ord=%s", tostring(m.id), tostring(m.type), tostring(m.tag), tostring(m.kit), tostring(m.order)))
+                        end
+                        line(INFO, string.format("%s set=%s  %s", tostring(r.name), tostring(r.widgetSetID), table.concat(parts, " | ")))
+                        report.poiMeta[tostring(r.name)] = r.widgetMeta
+                    end
+                end
+            end
+
+            -- 5. Objective-tracker widgets (lives: criterion or widget?)
+            do
+                local widgets, setID = DumpObjectiveTrackerWidgets()
+                report.trackerWidgets, report.trackerWidgetSetID = widgets, setID
+                if not setID then
+                    line(INFO, "objective tracker widget set: none (not in a scenario?)")
+                else
+                    line(INFO, "objective tracker widget set "..tostring(setID)..": "..#widgets.." widget(s)")
+                    for _, m in ipairs(widgets) do
+                        line(INFO, string.format("  id=%s type=%s text=[%s] tag=%s kit=%s", tostring(m.id), tostring(m.type), tostring(m.text), tostring(m.tag), tostring(m.kit)))
+                    end
+                end
+            end
+
+            -- 5b. The scenario step's widget set -- where tier and lives should be.
+            do
+                local setID = GetStepWidgetSetID()
+                report.stepWidgetSetID = setID
+                if not setID then
+                    line(INFO, "scenario step widget set: none (not in a scenario?)")
+                else
+                    local widgets = DumpWidgetSet(setID)
+                    report.stepWidgets = widgets
+                    line(INFO, "scenario step widget set "..tostring(setID)..": "..#widgets.." widget(s)")
+                    for _, m in ipairs(widgets) do
+                        local keys = {}
+                        for k in pairs(m) do table.insert(keys, k) end
+                        table.sort(keys)
+                        local function fmt(v)
+                            if type(v) ~= "table" then return tostring(v) end
+                            local items = {}
+                            for kk, vv in pairs(v) do
+                                if type(vv) == "table" then
+                                    local inner = {}
+                                    for k3, v3 in pairs(vv) do table.insert(inner, k3.."="..tostring(v3)) end
+                                    table.sort(inner); table.insert(items, tostring(kk).."{"..table.concat(inner, ",").."}")
+                                else
+                                    table.insert(items, tostring(kk).."="..tostring(vv))
+                                end
+                            end
+                            table.sort(items)
+                            return "{"..table.concat(items, " ").."}"
+                        end
+                        local parts = {}
+                        for _, k in ipairs(keys) do table.insert(parts, k.."="..fmt(m[k])) end
+                        line(INFO, "  "..table.concat(parts, " "))
+                    end
+                end
+            end
+
+            print(P.."=== "..(report.fails == 0 and "|cFF00FF44ALL PASS|r" or ("|cFFFF4444"..report.fails.." FAIL|r")).."  (also saved to DelveGuideDB.lastSelftest) ===")
+            DelveGuideDB.lastSelftest = report
+        end,
+    },
+    {
+        name = "testrun",
+        desc = "DEV: inject a fake completed run and show the victory screen",
+        debug = true,
+        handler = function()
+            -- DEV ONLY: simulate a delve completion for the first delve in the DB
+            local testName = DelveGuideData and DelveGuideData.delves and DelveGuideData.delves[1] and DelveGuideData.delves[1].name or "Test Delve"
+            local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
+            local resetKey = secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
+            local testChar="Unknown"; pcall(function() testChar=UnitName("player") or "Unknown" end)
+            table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar,elapsed=312})
+            print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run - |cFF00FF44"..testName.."|r")
+            -- TRIGGER THE VICTORY SCREEN FOR THE TEST RUN!
+            if DelveGuide.ShowVictoryScreen then
+                DelveGuide.ShowVictoryScreen(testName, "Tier 8", 610, 312)
+            end
+            if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
+        end,
+    },
+}
+
+-- Local alias. The table itself stays reachable as DelveGuide.commands so
+-- DelveGuide_UI_Debug.lua can append to it after this file has loaded.
+local COMMANDS = DelveGuide.commands
+
+-- "  /dg name usage   - description", padded to the column the hand-written
+-- help used so the generated block looks the way players remember it.
+local function HelpLine(c)
+    local label = "/dg " .. c.name .. (c.usage and (" " .. c.usage) or "")
+    return string.format("  |cFFFFFF00%s|r%s- %s", label,
+        string.rep(" ", math.max(1, 23 - #label)), c.desc)
+end
+
+DelveGuide.PrintHelp = function()
+    print("|cFF00BFFF[DelveGuide]|r |cFFFFFFFFv"..ADDON_VERSION.."|r  |cFF888888(include this in bug reports)|r")
+    print("|cFF00BFFF[DelveGuide]|r Commands:")
+    print("  |cFFFFFF00/dg|r                    - Toggle window")
+    local hidden = 0
+    for _, c in ipairs(COMMANDS) do
+        if c.desc and not c.debug then print(HelpLine(c)) end
+        if c.desc and c.debug then hidden = hidden + 1 end
+    end
+    -- Debug entries are listed only when the Debug tab is switched on, which
+    -- is the same Settings checkbox that reveals the tab itself. They still
+    -- RUN either way -- hiding a command a bug report told the player to type
+    -- would be worse than a slightly longer help block.
+    if hidden > 0 then
+        if DelveGuideDB and DelveGuideDB.showDebugTab then
+            print("|cFF888888  Debug / diagnostics:|r")
+            for _, c in ipairs(COMMANDS) do
+                if c.desc and c.debug then print(HelpLine(c)) end
+            end
+        else
+            print(string.format("|cFF888888  (+%d debug commands, hidden -- tick 'Show Debug tab' in Settings to list them)|r", hidden))
+        end
+    end
+end
+
 SLASH_DELVEGUIDE1="/delveguide"; SLASH_DELVEGUIDE2="/dg"
 SlashCmdList["DELVEGUIDE"]=function(msg)
     msg=strtrim(msg:lower())
-    if msg=="hide" then if mainFrame then mainFrame:Hide() end
-    elseif msg=="show" then if not mainFrame then CreateMainWindow() end; mainFrame:Show()
-    elseif msg=="map" then ToggleWorldMap()
-    elseif msg=="scan" then
-        ScanActiveVariants(); RefreshCurrentTab()
-        local vc,dc=0,0
-        for _ in pairs(activeVariants) do vc=vc+1 end
-        for _ in pairs(activeDelves) do dc=dc+1 end
-        print(string.format("|cFF00BFFF[DelveGuide]|r Scan: |cFF44FF44%d|r delves, |cFF44FF44%d|r variants.",dc,vc))
-        if vc>0 then
-            local list={}; for v in pairs(activeVariants) do table.insert(list,v) end
-            print("|cFF00BFFF[DelveGuide]|r Active variants: "..table.concat(list,", "))
-        end
-    elseif msg=="chatdump" then
-        print("|cFF00BFFF[DelveGuide]|r === LOCALIZATION DUMP (share this output) ===")
-        print("Version: "..ADDON_VERSION.."  |  Locale: "..(GetLocale and GetLocale() or "unknown"))
-        if #rawScanResults==0 then
-            print("|cFFFF4444No scan data. Run /dg scan first.|r")
-            print("Checked map IDs: "..table.concat(ALL_ZONE_MAP_IDS,", "))
-        else
-            for _,r in ipairs(rawScanResults) do
-                print(string.format("mapID=%s  poiID=%s  name=[%s]  atlas=[%s]  set=%s",
-                    tostring(r.mapID),tostring(r.poiID),tostring(r.name),tostring(r.atlasName),tostring(r.widgetSetID)))
-                if r.widgetTexts and #r.widgetTexts>0 then
-                    for i,t in ipairs(r.widgetTexts) do
-                        print(string.format("  text[%d]=[%s]",i,t))
-                    end
-                else
-                    print("  (no widget texts)")
-                end
-            end
-        end
-        print("|cFF00BFFF[DelveGuide]|r === END ===")
-    elseif msg=="findplaza" then
-        -- Brute-force scan a range of map IDs looking for Parhelion Plaza's POI.
-        -- Run this if Parhelion Plaza isn't showing in Active Today — report the
-        -- map ID that appears, so it can be added to ALL_ZONE_MAP_IDS.
-        print("|cFF00BFFF[DelveGuide]|r Scanning map IDs 2200-2700 for Parhelion Plaza...")
-        local found = 0
-        for mapID = 2200, 2700 do
-            local ok, poiIDs = pcall(C_AreaPoiInfo.GetDelvesForMap, mapID)
-            if ok and poiIDs and #poiIDs > 0 then
-                for _, poiID in ipairs(poiIDs) do
-                    local okInfo, info = pcall(C_AreaPoiInfo.GetAreaPOIInfo, mapID, poiID)
-                    if okInfo and info and info.name and string.find(info.name, "Parhelion", 1, true) then
-                        print(string.format("|cFF44FF44FOUND: mapID=%d poiID=%d name=[%s] set=%s|r",
-                            mapID, poiID, info.name, tostring(info.tooltipWidgetSet or 0)))
-                        found = found + 1
-                    end
-                end
-            end
-        end
-        print(string.format("|cFF00BFFF[DelveGuide]|r Scan complete. Found %d Parhelion POI(s).", found))
-        if found == 0 then
-            print("|cFFFF4444Not found in 2200-2700. POI may be exposed only when delve is in rotation, or lives on an unusual map ID.|r")
-        end
-    elseif msg=="dump" then
-        print("|cFF00BFFF[DelveGuide]|r === RAW POI FIELD DUMP ===")
-        local found=0
-        for _,mapID in ipairs(ALL_ZONE_MAP_IDS) do
-            local poiIDs=C_AreaPoiInfo.GetDelvesForMap(mapID)
-            if poiIDs and #poiIDs>0 then
-                local info=C_AreaPoiInfo.GetAreaPOIInfo(mapID,poiIDs[1])
-                print(string.format("|cFFFFD700mapID=%-6d  poiID=%d|r",mapID,poiIDs[1]))
-                if info then
-                    for k,v in pairs(info) do
-                        local vs=tostring(v); local c=(vs=="" or vs=="false" or vs=="0") and "|cFF888888" or "|cFF44FF44"
-                        print(string.format("  |cFFCCCCCC%-22s|r = %s%s|r",tostring(k),c,vs))
-                    end; found=found+1
-                else print("  |cFFFF4444(nil)|r") end
-                if found>=2 then break end
-            end
-        end
-        if found==0 then print("|cFFFF4444No delves found.|r") end
-        print("|cFF00BFFF[DelveGuide]|r === END ===")
-    elseif msg=="export" then
-        -- Capture a structured snapshot into SavedVariables so PTR data
-        -- can be pulled from disk instead of copied out of chat. Run it
-        -- inside each delve (and once outside), then /reload to flush.
-        DelveGuideDB.ptrExports = DelveGuideDB.ptrExports or {}
-        local snap = { at = date("%Y-%m-%d %H:%M:%S"), build = {GetBuildInfo()} }
-        pcall(function() snap.zone = GetRealZoneText(); snap.subzone = GetSubZoneText() end)
-        pcall(function()
-            local name, instType, diffID, diffName, _, _, _, instanceID = GetInstanceInfo()
-            snap.instance = {name=name, type=instType, diffID=diffID, diffName=diffName, instanceID=instanceID}
-        end)
-        pcall(function()
-            if C_Scenario and C_Scenario.GetInfo then snap.scenario = {C_Scenario.GetInfo()} end
-            if C_Scenario and C_Scenario.GetStepInfo then snap.scenarioStep = {C_Scenario.GetStepInfo()} end
-        end)
-        pcall(function()
-            local mapID = C_Map.GetBestMapForUnit("player")
-            snap.mapID = mapID
-            if mapID then
-                local info = C_Map.GetMapInfo(mapID)
-                snap.mapName = info and info.name
-                snap.parentMapID = info and info.parentMapID
-                local pos = C_Map.GetPlayerMapPosition(mapID, "player")
-                if pos then snap.pos = {x=pos.x, y=pos.y} end
-            end
-        end)
-        pcall(function()
-            if C_DelvesUI and C_DelvesUI.HasActiveLair then snap.hasActiveLair = C_DelvesUI.HasActiveLair() end
-            if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then snap.companionID = C_DelvesUI.GetCompanionInfoForActivePlayer() end
-        end)
-        pcall(function()
-            local state, count, hasAura, weeklyDone = DelveGuide.GetTroveStatus()
-            snap.troveState  = state
-            snap.bountyAura  = hasAura
-            snap.bountyCount = count
-            snap.troveWeekly = weeklyDone
-        end)
-        pcall(function()
-            snap.delversCallQuests = {}
-            for i = 1, C_QuestLog.GetNumQuestLogEntries() do
-                local q = C_QuestLog.GetInfo(i)
-                if q and not q.isHeader and q.title and q.title:find("Delver") then
-                    table.insert(snap.delversCallQuests, {id=q.questID, title=q.title})
-                end
-            end
-        end)
-        pcall(function()
-            snap.delvePOIs = {}
-            local maps, seen = {}, {}
-            for _, m in ipairs(ALL_ZONE_MAP_IDS) do table.insert(maps, m) end
-            if snap.mapID then table.insert(maps, snap.mapID) end
-            if snap.parentMapID then table.insert(maps, snap.parentMapID) end
-            for _, mapID in ipairs(maps) do
-                if not seen[mapID] then
-                    seen[mapID] = true
-                    local poiIDs = C_AreaPoiInfo.GetDelvesForMap(mapID)
-                    if poiIDs then
-                        for _, poiID in ipairs(poiIDs) do
-                            local info = C_AreaPoiInfo.GetAreaPOIInfo(mapID, poiID)
-                            if info then
-                                table.insert(snap.delvePOIs, {mapID=mapID, poiID=poiID, name=info.name, atlas=info.atlasName, set=info.tooltipWidgetSet})
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-        -- API presence probe, shared with /dg selftest (see ProbeAPIs).
-        pcall(function() snap.api, snap.apiMissing = ProbeAPIs() end)
+    -- Bare /dg still toggles the window, as it always has.
+    if msg=="" then DelveGuide.Toggle(); return end
 
-        -- Objective-tracker widget set: settles whether lives are a criterion
-        -- or a header widget (see DumpObjectiveTrackerWidgets).
-        pcall(function() snap.trackerWidgets, snap.trackerWidgetSetID = DumpObjectiveTrackerWidgets() end)
+    -- Split once, on the first run of whitespace: every argument-taking
+    -- command in the old chain read exactly "the rest after one space".
+    local word, arg = msg:match("^(%S+)%s*(.*)$")
+    if not word then DelveGuide.Toggle(); return end
 
-        -- The scenario step's widget set: tier badge and lives live here.
-        pcall(function()
-            snap.stepWidgetSetID = GetStepWidgetSetID()
-            snap.stepWidgets = DumpWidgetSet(snap.stepWidgetSetID)
-        end)
-
-        -- Scenario criteria, through the 12.1.5-safe helpers.
-        pcall(function()
-            snap.criteria = {}
-            local n = DelveGuide.GetCriteriaCount and DelveGuide.GetCriteriaCount() or 0
-            snap.criteriaCount = n
-            for i = 1, n do
-                local c = DelveGuide.GetCriteria(i)
-                if c then
-                    table.insert(snap.criteria, {
-                        id = c.criteriaID, desc = c.description, qty = c.quantity,
-                        total = c.totalQuantity, qtyStr = c.quantityString,
-                        completed = c.completed, failed = c.failed, assetID = c.assetID,
-                        elapsed = c.elapsed, duration = c.duration,
-                        ctype = c.criteriaType, cflags = c.flags,
-                    })
-                end
-            end
-        end)
-
-        -- Modern scenario structs, which carry named fields the positional
-        -- C_Scenario.GetInfo array does not.
-        pcall(function()
-            if C_ScenarioInfo and C_ScenarioInfo.GetScenarioInfo then
-                local si = C_ScenarioInfo.GetScenarioInfo()
-                if si then
-                    snap.scenarioInfo = {
-                        name = si.name, scenarioID = si.scenarioID, type = si.type,
-                        flags = si.flags, currentStage = si.currentStage,
-                        numStages = si.numStages, isComplete = si.isComplete, area = si.area,
-                    }
-                end
-            end
-            if C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo then
-                local st = C_ScenarioInfo.GetScenarioStepInfo()
-                if st then
-                    snap.scenarioStepInfo = {
-                        title = st.title, description = st.description,
-                        numCriteria = st.numCriteria, stageID = st.stageID,
-                        isComplete = st.isComplete,
-                    }
-                end
-            end
-        end)
-
-        -- Delve tier struct. Returned all zeros inside a Labyrinth on 69594;
-        -- captured in full so the shape can be compared across content types.
-        pcall(function()
-            if C_DelvesUI and C_DelvesUI.GetActiveDelveTier then
-                local t = C_DelvesUI.GetActiveDelveTier()
-                if type(t) == "table" then
-                    snap.delveTier = {
-                        tier = t.tier, unlocked = t.unlocked, difficultyID = t.difficultyID,
-                        suggestedILvl = t.suggestedILvl, tierDescription = t.tierDescription,
-                        modifierUIWidgetSetID = t.modifierUIWidgetSetID,
-                        overrideTooltipSpellID = t.overrideTooltipSpellID,
-                        queueAsLFG = t.queueAsLFG,
-                    }
-                else
-                    snap.delveTier = { raw = tostring(t) }
-                end
-            end
-        end)
-
-        -- Outdoor POI widget texts, so the variant-text question no longer needs
-        -- /dg scan + /dg chatdump pasted into chat. Populated only if a scan has
-        -- run this session.
-        pcall(function()
-            snap.zoneEnglish = localizedToEnglish and localizedToEnglish[GetRealZoneText() or ""] or nil
-            snap.rawScan = {}
-            for _, r in ipairs(rawScanResults or {}) do
-                table.insert(snap.rawScan, {
-                    mapID = r.mapID, poiID = r.poiID, name = r.name,
-                    atlas = r.atlasName, set = r.widgetSetID, texts = r.widgetTexts,
-                    meta = r.widgetMeta,
-                })
-            end
-        end)
-
-        -- Faction ID sweep. GetNumFactions does not enumerate warband
-        -- reputations: "Delves: Season 2" and "The Labyrinth of Kindo'jan" both
-        -- award rep in chat yet neither appears in the list even with every
-        -- header expanded. GetFactionDataByID answers for them directly, so
-        -- sweep the modern ID range and keep whatever returns a name. A first
-        -- pass over 2400-2900 returned 130+ factions but neither target (top hit
-        -- 2838), so the new warband reps sit above that -- widened to 2200-3400.
-        pcall(function()
-            snap.factionSweep = {}
-            if C_Reputation and C_Reputation.GetFactionDataByID then
-                for id = 2200, 3400 do
-                    local d = C_Reputation.GetFactionDataByID(id)
-                    if d and d.name and d.name ~= "" then
-                        table.insert(snap.factionSweep, {
-                            id = id, name = d.name, standing = d.currentStanding,
-                            reaction = d.reaction, nextThreshold = d.nextReactionThreshold,
-                        })
-                    end
-                end
-            end
-        end)
-
-        -- Watched faction. Warband reputations answer to neither GetNumFactions
-        -- nor a GetFactionDataByID sweep of 2200-3400, but GetWatchedFactionData
-        -- returns the factionID of whatever the player is tracking on the XP bar.
-        -- Track "The Labyrinth of Kindo'jan" (or "Delves: Season 2") and export
-        -- to capture its ID directly.
-        pcall(function()
-            if C_Reputation and C_Reputation.GetWatchedFactionData then
-                local w = C_Reputation.GetWatchedFactionData()
-                if w then
-                    snap.watchedFaction = {
-                        id = w.factionID, name = w.name, standing = w.currentStanding,
-                        reaction = w.reaction, nextThreshold = w.nextReactionThreshold,
-                    }
-                end
-            end
-        end)
-
-        -- Direct probe of factionID 2836, which WoWhead lists as "The Labyrinth
-        -- of Kindo'jan". The 2200-3400 sweep already called this ID and kept
-        -- nothing because it filters on a non-empty name; record the raw return
-        -- here so "exists but unnamed client-side" is distinguishable from "nil".
-        pcall(function()
-            if C_Reputation and C_Reputation.GetFactionDataByID then
-                local d = C_Reputation.GetFactionDataByID(2836)
-                snap.faction2836 = d and {
-                    name = d.name, standing = d.currentStanding, reaction = d.reaction,
-                    nextThreshold = d.nextReactionThreshold, isHeader = d.isHeader,
-                    isAccountWide = d.isAccountWide,
-                } or "nil"
-            end
-        end)
-
-        -- Major factions (renown). The new Kindo'jan reputation did not appear
-        -- in the standard C_Reputation list even with every header expanded, so
-        -- it is probably a renown track rather than a classic faction.
-        pcall(function()
-            snap.majorFactions = {}
-            if C_MajorFactions and C_MajorFactions.GetMajorFactionIDs then
-                for _, id in ipairs(C_MajorFactions.GetMajorFactionIDs() or {}) do
-                    local d = C_MajorFactions.GetMajorFactionData(id)
-                    if d then
-                        table.insert(snap.majorFactions, {
-                            id = id, name = d.name, renown = d.renownLevel,
-                            current = d.renownReputationEarned,
-                            needed = d.renownLevelThreshold,
-                            unlocked = d.isUnlocked,
-                        })
-                    end
-                end
-            end
-        end)
-
-        -- Equipped gloves: link, parsed enchant ID, item level. The first export
-        -- taken with a 12.1.5 delve glove enhancement applied gives the enchant
-        -- ID that DelveGuideData.delveGloveEnhancements is keyed on.
-        pcall(function()
-            local link = GetInventoryItemLink("player", INVSLOT_HAND or 10)
-            if link then
-                local ilvl
-                if C_Item and C_Item.GetDetailedItemLevelInfo then
-                    local ok, eff = pcall(C_Item.GetDetailedItemLevelInfo, link)
-                    if ok then ilvl = eff end
-                end
-                snap.gloves = { link = link, enchantID = tonumber(link:match("item:%d+:(%d+):")) or 0, ilvl = ilvl }
-            end
-        end)
-
-        -- Where the player is standing: the map the client considers current
-        -- and the position on it. Replaces a hand-typed /dump with a guessed
-        -- map ID (2512 came back empty at Venomfall Deeps -- wrong map).
-        pcall(function()
-            local mapID = C_Map.GetBestMapForUnit("player")
-            local pos = mapID and C_Map.GetPlayerMapPosition(mapID, "player")
-            local info = mapID and C_Map.GetMapInfo(mapID)
-            snap.playerMap = { mapID = mapID, name = info and info.name,
-                x = pos and pos.x, y = pos and pos.y }
-        end)
-
-        -- A vendor window that is open right now: every item with its price
-        -- and currency. Run /dg export with the delve vendor open and the
-        -- cosmetic rows' IDs, sources and costs come straight from the game.
-        -- First attempt (export #35, Naleidea Rivergleam) recorded the NPC and
-        -- zero items: one of the merchant globals errored inside the pcall and
-        -- the error vanished with it. Now the capture records type() of every
-        -- API it leans on, tries the C_MerchantFrame forms first, and keeps the
-        -- first error text, so a failed capture explains itself.
-        do
-            local okM, errM = pcall(function()
-                if not (MerchantFrame and MerchantFrame:IsShown()) then return end
-                local CM = C_MerchantFrame
-                local m = { npc = UnitName("npc"), items = {}, api = {
-                    GetMerchantNumItems     = type(GetMerchantNumItems),
-                    C_GetNumItems           = type(CM and CM.GetNumItems),
-                    GetMerchantItemInfo     = type(GetMerchantItemInfo),
-                    C_GetItemInfo           = type(CM and CM.GetItemInfo),
-                    GetMerchantItemLink     = type(GetMerchantItemLink),
-                    GetMerchantItemCostInfo = type(GetMerchantItemCostInfo),
-                    GetMerchantItemCostItem = type(GetMerchantItemCostItem),
-                } }
-                snap.merchant = m
-                local n = (CM and CM.GetNumItems and CM.GetNumItems())
-                       or (GetMerchantNumItems and GetMerchantNumItems()) or 0
-                m.count = n
-                for i = 1, n do
-                    local ok, err = pcall(function()
-                        local e = {}
-                        if CM and CM.GetItemInfo then
-                            local info = CM.GetItemInfo(i)
-                            if type(info) == "table" then
-                                e.name, e.price, e.qty = info.name, info.price, info.stackCount
-                                e.currencyID, e.hasExtendedCost = info.currencyID, info.hasExtendedCost
-                            end
-                        end
-                        if not e.name and GetMerchantItemInfo then
-                            local name, _, price, qty = GetMerchantItemInfo(i)
-                            e.name, e.price, e.qty = name, price, qty
-                        end
-                        local link = GetMerchantItemLink and GetMerchantItemLink(i)
-                        e.link = link
-                        e.itemID = link and tonumber(link:match("item:(%d+)"))
-                        -- Export #37: seven of 22 rows came back with no name and
-                        -- no link -- the client had not cached those items yet.
-                        -- Say so, rather than leaving a bare cost.
-                        if not e.name and not link then e.uncached = true end
-                        local nCosts = (GetMerchantItemCostInfo and GetMerchantItemCostInfo(i)) or 0
-                        if nCosts > 0 and GetMerchantItemCostItem then
-                            e.costs = {}
-                            for j = 1, nCosts do
-                                local _, value, costLink, currencyName = GetMerchantItemCostItem(i, j)
-                                table.insert(e.costs, { value = value, link = costLink, currency = currencyName })
-                            end
-                        end
-                        table.insert(m.items, e)
-                    end)
-                    if not ok then m.firstError = m.firstError or (i .. ": " .. tostring(err)); break end
-                end
-            end)
-            if not okM then snap.merchantError = tostring(errM) end
+    for _, c in ipairs(COMMANDS) do
+        if c.name == word then return c.handler(arg) end
+        for _, a in ipairs(c.aliases or {}) do
+            if a == word then return c.handler(arg) end
         end
+    end
 
-        -- Last PLAYER_INTERACTION_MANAGER_FRAME_SHOW type seen, to learn the
-        -- delve entrance dialog's real enum value.
-        snap.lastInteractionType = DelveGuide.lastInteractionType
-        snap.pickerEnum = Enum and Enum.PlayerInteractionType and Enum.PlayerInteractionType.DelvesDifficultyPicker
-
-        -- Tier, as the addon currently believes it. Read the stored fields
-        -- rather than calling ApplyDelveTier so the export stays side-effect
-        -- free. Needed to correlate scenarioID against tier: 3580 was seen at
-        -- tier 11 and 3582 at tier 1, and until tier is recorded alongside the
-        -- ID we cannot tell whether scenarioID is per-chamber or per-tier (5.7).
-        pcall(function()
-            snap.tierNum    = DelveGuide.currentDelveTierNum
-            snap.tierManual = DelveGuide.manualDelveTier
-            snap.tierAuto   = DelveGuide.autoDelveTier
-        end)
-
-        -- Reputations, id + name + standing. 12.1.5 adds a "The Labyrinth of
-        -- Kindo'jan" faction; capturing the whole list means its factionID (and
-        -- any future one) is on disk without having to guess or paste it.
-        -- GetNumFactions only enumerates rows that are currently VISIBLE, so
-        -- collapsed headers hide most of the list -- the first attempt at this
-        -- returned 9 factions and missed the new one entirely. Expand every
-        -- header first. NOTE: this leaves the Reputation pane expanded.
-        pcall(function()
-            local guard, again = 0, true
-            while again and guard < 200 do
-                again, guard = false, guard + 1
-                for i = 1, (C_Reputation.GetNumFactions() or 0) do
-                    local d = C_Reputation.GetFactionDataByIndex(i)
-                    if d and d.isHeader and d.isCollapsed then
-                        C_Reputation.ExpandFactionHeader(i)
-                        again = true
-                        break
-                    end
-                end
-            end
-            snap.factions = {}
-            for i = 1, (C_Reputation.GetNumFactions() or 0) do
-                local d = C_Reputation.GetFactionDataByIndex(i)
-                if d then
-                    table.insert(snap.factions, {
-                        id = d.factionID, name = d.name, header = d.isHeader or nil,
-                        reaction = d.reaction, standing = d.currentStanding,
-                        nextThreshold = d.nextReactionThreshold,
-                    })
-                end
-            end
-            snap.factionCount = #snap.factions
-        end)
-
-        -- Taxi network. Labyrinths carry their own in-instance flight map
-        -- (12_15_Labyrinth_Taxi) whose unlocked nodes track how deep the run has
-        -- been cleared -- numeric nodeIDs, and a property of the instance rather
-        -- than the current scenario phase, so unlike criteria it survives the
-        -- mid-run scenario swap. Needs the flight map OPEN to return anything.
-        -- Both the modern and classic APIs are tried; whichever answers, answers.
-        pcall(function()
-            snap.taxiMapID = GetTaxiMapID and GetTaxiMapID() or nil
-            snap.taxiMapOpen = (snap.taxiMapID ~= nil)
-            snap.taxiNodes = {}
-            local nodes = C_TaxiMap and C_TaxiMap.GetAllTaxiNodes
-                and C_TaxiMap.GetAllTaxiNodes(snap.taxiMapID)
-            if nodes then
-                for _, n in ipairs(nodes) do
-                    table.insert(snap.taxiNodes, {
-                        id    = n.nodeID,
-                        name  = n.name,
-                        state = n.state,
-                        x     = n.position and n.position.x,
-                        y     = n.position and n.position.y,
-                    })
-                end
-            end
-            snap.taxiClassic = {}
-            if NumTaxiNodes then
-                for i = 1, (NumTaxiNodes() or 0) do
-                    table.insert(snap.taxiClassic, {
-                        i    = i,
-                        name = TaxiNodeName and TaxiNodeName(i) or nil,
-                        kind = TaxiNodeGetType and TaxiNodeGetType(i) or nil,
-                    })
-                end
-            end
-        end)
-
-        table.insert(DelveGuideDB.ptrExports, snap)
-        print(string.format("|cFF00BFFF[DelveGuide]|r Export snapshot |cFF44FF44#%d|r captured (%s). |cFFFFD700/reload|r or logout to write to disk.",
-            #DelveGuideDB.ptrExports, snap.zone or "?"))
-    elseif msg=="selftest" then
-        -- One command that turns "does this still work on the new patch" into
-        -- a pasteable pass/fail block: every tab rendered under pcall, every
-        -- API the addon leans on probed, the data file's invariants checked,
-        -- and the two widget dumps that settle open questions. Also written to
-        -- DelveGuideDB.lastSelftest so it can be read off disk after /reload.
-        local P = "|cFF00BFFF[DelveGuide]|r "
-        local PASS, FAIL, INFO = "|cFF00FF44PASS|r", "|cFFFF4444FAIL|r", "|cFF888888info|r"
-        local report = { at = date("%Y-%m-%d %H:%M:%S"), build = {GetBuildInfo()}, fails = 0 }
-        local function line(status, text) print(P..status.."  "..text) end
-        local function fail(text) report.fails = report.fails + 1; line(FAIL, text) end
-        print(P.."=== SELF-TEST  "..ADDON_VERSION.."  build "..tostring(report.build[2]).."  iface "..tostring(report.build[4]).." ===")
-
-        -- 1. APIs
-        local api, missing = ProbeAPIs()
-        report.api, report.apiMissing = api, missing
-        if #missing == 0 then line(PASS, "all required APIs present") end
-        for _, m in ipairs(missing) do fail("required API missing: "..m) end
-        for _, pr in ipairs(API_PROBES) do
-            if not pr[4] and api[pr[1]] ~= "function" then line(INFO, pr[1].." = "..tostring(api[pr[1]]).." (optional)") end
-        end
-
-        -- 2. Data invariants
-        report.data = {}
-        do
-            local badGrade, badZone, dupVariant, seen = {}, {}, {}, {}
-            for _, d in ipairs(DelveGuideData.delves or {}) do
-                if d.ranking ~= "?" and not DelveGuideData.gradeColors[d.ranking] then table.insert(badGrade, d.name..":"..tostring(d.ranking)) end
-                if not zoneColors[d.zone] then badZone[d.zone or "?"] = true end
-                if seen[d.variant] then table.insert(dupVariant, d.variant) end
-                seen[d.variant] = true
-            end
-            if #badGrade == 0 then line(PASS, "every ranking has a colour") else fail("rankings with no colour: "..table.concat(badGrade, ", ")) end
-            local bz = {}; for z in pairs(badZone) do table.insert(bz, z) end
-            if #bz == 0 then line(PASS, "every zone has a colour") else fail("zones with no colour: "..table.concat(bz, ", ")) end
-            if #dupVariant == 0 then line(PASS, "variant names unique") else fail("duplicate variants: "..table.concat(dupVariant, ", ")) end
-            local tr = DelveGuideData.tierRewards or {}
-            local okTier = tr[8] and tr[8].coffer == 295 and tr[8].vault == 302 and tr[11] and tr[11].vault == 305
-            if okTier then line(PASS, "tierRewards: T8 coffer 295 / vault 302, T11 vault 305") else fail("tierRewards no longer match the 295/302/305 the UI text claims") end
-            local badSet = {}
-            for setID, name in pairs(DelveGuideData.widgetSetDelves or {}) do
-                local found = false
-                for _, d in ipairs(DelveGuideData.delves or {}) do if d.name == name then found = true; break end end
-                if not found then table.insert(badSet, setID..":"..name) end
-            end
-            if #badSet == 0 then line(PASS, "every widgetSetDelves entry names a catalogued delve") else fail("widgetSetDelves -> unknown delve: "..table.concat(badSet, ", ")) end
-            local badMap = {}
-            for _, mapID in ipairs(DelveGuideData.zoneMapIDs or {}) do if not (DelveGuideData.zoneNames or {})[mapID] then table.insert(badMap, tostring(mapID)) end end
-            if #badMap == 0 then line(PASS, "every zoneMapID has a zoneName") else fail("zoneMapIDs with no zoneName: "..table.concat(badMap, ", ")) end
-            report.data = { badGrade = badGrade, badZone = bz, dupVariant = dupVariant, tierOK = okTier and true or false, badSet = badSet, badMap = badMap }
-        end
-
-        -- 3. Every tab renders
-        report.tabs = {}
-        do
-            if not mainFrame then CreateMainWindow() end
-            local wasShown, origTab = mainFrame:IsShown(), currentTabKey
-            for _, td in ipairs(TABS) do
-                -- SwitchTab now contains renderer errors (2.7) and paints a
-                -- "failed to render" row, so pcall alone would call a broken
-                -- tab a pass. It records the error; read it back.
-                DelveGuide.lastRenderError = nil
-                local ok, err = pcall(SwitchTab, td.key)
-                local rec = DelveGuide.lastRenderError
-                if ok and rec and rec.key == td.key then ok, err = false, rec.err end
-                report.tabs[td.key] = ok and "ok" or tostring(err)
-                if ok then line(PASS, "tab renders: "..td.label) else fail("tab "..td.label..": "..tostring(err)) end
-            end
-            pcall(SwitchTab, origTab or "delves")   -- never leave the window parked on Debug
-            if not wasShown then mainFrame:Hide() end
-        end
-
-        -- 4. Widget-set metadata for every scanned POI (non-text fields; the
-        --    outdoor variant-key experiment). Needs a scan this session.
-        report.poiMeta = {}
-        if #rawScanResults == 0 then
-            line(INFO, "no POI scan this session -- run /dg scan first for widget metadata")
-        else
-            local seenName = {}   -- the scan records a delve once per map it appears on
-            for _, r in ipairs(rawScanResults) do
-                if r.widgetMeta and #r.widgetMeta > 0 and not seenName[r.name] then
-                    seenName[r.name] = true
-                    local parts = {}
-                    for _, m in ipairs(r.widgetMeta) do
-                        table.insert(parts, string.format("id=%s t=%s tag=%s kit=%s ord=%s", tostring(m.id), tostring(m.type), tostring(m.tag), tostring(m.kit), tostring(m.order)))
-                    end
-                    line(INFO, string.format("%s set=%s  %s", tostring(r.name), tostring(r.widgetSetID), table.concat(parts, " | ")))
-                    report.poiMeta[tostring(r.name)] = r.widgetMeta
-                end
-            end
-        end
-
-        -- 5. Objective-tracker widgets (lives: criterion or widget?)
-        do
-            local widgets, setID = DumpObjectiveTrackerWidgets()
-            report.trackerWidgets, report.trackerWidgetSetID = widgets, setID
-            if not setID then
-                line(INFO, "objective tracker widget set: none (not in a scenario?)")
-            else
-                line(INFO, "objective tracker widget set "..tostring(setID)..": "..#widgets.." widget(s)")
-                for _, m in ipairs(widgets) do
-                    line(INFO, string.format("  id=%s type=%s text=[%s] tag=%s kit=%s", tostring(m.id), tostring(m.type), tostring(m.text), tostring(m.tag), tostring(m.kit)))
-                end
-            end
-        end
-
-        -- 5b. The scenario step's widget set -- where tier and lives should be.
-        do
-            local setID = GetStepWidgetSetID()
-            report.stepWidgetSetID = setID
-            if not setID then
-                line(INFO, "scenario step widget set: none (not in a scenario?)")
-            else
-                local widgets = DumpWidgetSet(setID)
-                report.stepWidgets = widgets
-                line(INFO, "scenario step widget set "..tostring(setID)..": "..#widgets.." widget(s)")
-                for _, m in ipairs(widgets) do
-                    local keys = {}
-                    for k in pairs(m) do table.insert(keys, k) end
-                    table.sort(keys)
-                    local function fmt(v)
-                        if type(v) ~= "table" then return tostring(v) end
-                        local items = {}
-                        for kk, vv in pairs(v) do
-                            if type(vv) == "table" then
-                                local inner = {}
-                                for k3, v3 in pairs(vv) do table.insert(inner, k3.."="..tostring(v3)) end
-                                table.sort(inner); table.insert(items, tostring(kk).."{"..table.concat(inner, ",").."}")
-                            else
-                                table.insert(items, tostring(kk).."="..tostring(vv))
-                            end
-                        end
-                        table.sort(items)
-                        return "{"..table.concat(items, " ").."}"
-                    end
-                    local parts = {}
-                    for _, k in ipairs(keys) do table.insert(parts, k.."="..fmt(m[k])) end
-                    line(INFO, "  "..table.concat(parts, " "))
-                end
-            end
-        end
-
-        print(P.."=== "..(report.fails == 0 and "|cFF00FF44ALL PASS|r" or ("|cFFFF4444"..report.fails.." FAIL|r")).."  (also saved to DelveGuideDB.lastSelftest) ===")
-        DelveGuideDB.lastSelftest = report
-    elseif msg=="exportclear" then
-        DelveGuideDB.ptrExports = nil
-        print("|cFF00BFFF[DelveGuide]|r Export snapshots cleared.")
-    -- Tab aliases OPEN the window; they used to Toggle it, so running one
-    -- twice in a row just closed the guide again.
-    elseif msg=="roster" then
-        if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
-        SwitchTab("roster")
-    elseif msg=="voidforge" or msg=="forge" then
-        if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
-        SwitchTab("voidforge")
-    elseif msg=="quests" or msg=="journey" then
-        if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
-        SwitchTab("quests")
-    elseif msg=="questscan" then
-        if DelveGuide.ScanDelversCallQuests then DelveGuide.ScanDelversCallQuests() end
-    elseif msg=="submit" or msg=="rank" then
-        DelveGuide.ShowSubmitDialog()
-    elseif msg=="minimap" then
-        DelveGuideDB.minimap.hide = not DelveGuideDB.minimap.hide
-        if icon then
-            if DelveGuideDB.minimap.hide then icon:Hide("DelveGuide") else icon:Show("DelveGuide") end
-        end
-        print("|cFF00BFFF[DelveGuide]|r Minimap button: " .. (DelveGuideDB.minimap.hide and "|cFFFF4444hidden|r" or "|cFF44FF44shown|r"))
-    elseif msg=="check" then
-        if DelveGuide.ShowChecklist then DelveGuide.ShowChecklist(true) end
-    elseif msg=="currencydebug" then
-        -- Dump every field of the delve currencies so season-scoped vs lifetime
-        -- totals can be told apart (the in-game tooltip shows both).
-        print("|cFF00BFFF[DelveGuide]|r === Currency Fields ===")
-        local ids = { 3418, 3513, 3310, 3028 }
-        for _, id in ipairs(ids) do
-            local ok, info = pcall(C_CurrencyInfo.GetCurrencyInfo, id)
-            if ok and info then
-                local bits = {}
-                for _, f in ipairs({"name","quantity","totalEarned","maxQuantity","maxWeeklyQuantity",
-                                    "quantityEarnedThisWeek","useTotalEarnedForMaxQty","isAccountWide",
-                                    "isAccountTransferable","discovered"}) do
-                    if info[f] ~= nil then table.insert(bits, f.."="..tostring(info[f])) end
-                end
-                print(string.format("  |cFFFFD700%d|r  %s", id, table.concat(bits, "  ")))
-            else
-                print(string.format("  |cFF888888%d  (no data)|r", id))
-            end
-        end
-        print("|cFF00BFFF[DelveGuide]|r === END ===")
-    elseif msg=="vaultdebug" then
-        -- Dumps the real Great Vault activity data so the reward item levels can
-        -- be read from Blizzard rather than a hardcoded per-tier table.
-        print("|cFF00BFFF[DelveGuide]|r === Great Vault Activities ===")
-        local ok, acts = pcall(C_WeeklyRewards.GetActivities)
-        if not ok or type(acts) ~= "table" then
-            print("  |cFFFF4444GetActivities failed|r")
-        else
-            for _, a in ipairs(acts) do
-                local bits = {}
-                for _, f in ipairs({"id","type","index","level","threshold","progress","claimID"}) do
-                    if a[f] ~= nil then table.insert(bits, f.."="..tostring(a[f])) end
-                end
-                print("  " .. table.concat(bits, "  "))
-                -- Reward item level, if the API will give it to us directly.
-                pcall(function()
-                    local links = C_WeeklyRewards.GetExampleRewardItemHyperlinks and C_WeeklyRewards.GetExampleRewardItemHyperlinks(a.id)
-                    if links then
-                        local ilvl = C_Item and C_Item.GetDetailedItemLevelInfo and C_Item.GetDetailedItemLevelInfo(links)
-                        print("      reward: " .. tostring(links) .. "   ilvl=" .. tostring(ilvl))
-                    end
-                end)
-                pcall(function()
-                    if a.id and C_WeeklyRewards.GetActivityEncounterInfo then
-                        local enc = C_WeeklyRewards.GetActivityEncounterInfo(a.type, a.index)
-                        if enc then for _, e in ipairs(enc) do
-                            print("      encounter: bestDifficulty=" .. tostring(e.bestDifficulty) .. " name=" .. tostring(e.encounterName))
-                        end end
-                    end
-                end)
-            end
-        end
-        print("|cFF00BFFF[DelveGuide]|r === END ===")
-    elseif msg=="tierdebug" then
-        print("|cFF00BFFF[DelveGuide]|r === Tier State ===")
-        local function fmt(v) return v == nil and "|cFF555555nil|r" or ("|cFFFFFFFF"..tostring(v).."|r") end
-        print("  manual (/dg tier):  " .. fmt(DelveGuide.manualDelveTier))
-        print("  auto (detected):    " .. fmt(DelveGuide.autoDelveTier)
-              .. "   |cFF888888via " .. tostring(DelveGuide.autoDetectMethod or "none") .. "|r")
-        print("  --> effective num:  " .. fmt(DelveGuide.currentDelveTierNum))
-        print("  --> effective str:  " .. fmt(DelveGuide.currentDelveTier))
-        local inScen = false; pcall(function() inScen = C_Scenario.IsInScenario() end)
-        local zone = ""; pcall(function() zone = GetRealZoneText() or "" end)
-        print(string.format("  inScenario: %s   zone: |cFFCCCCCC%s|r   runTimer: %s",
-            tostring(inScen), zone, DelveGuide.runStartTime and "running" or "|cFF555555stopped|r"))
-        print("|cFF00BFFF[DelveGuide]|r === Objective Tracker Dump ===")
-        local tracker = _G["ObjectiveTrackerFrame"] or _G["ScenarioObjectiveTracker"]
-        if tracker then
-            local function PrintText(frame, depth)
-                if not frame or frame:IsForbidden() then return end
-                for _, r in ipairs({frame:GetRegions()}) do
-                    if r:GetObjectType() == "FontString" and r:IsShown() then
-                        local txt = r:GetText()
-                        if txt and txt ~= "" then
-                            local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn[%w_]+:", ""):gsub("|r", "")
-                            print("  ["..depth.."] " .. cleanTxt)
-                        end
-                    end
-                end
-                for _, child in ipairs({frame:GetChildren()}) do
-                    PrintText(child, depth + 1)
-                end
-            end
-            PrintText(tracker, 0)
-        else
-            print("  |cFFFF4444No tracker found on screen!|r")
-        end
-        print("|cFF00BFFF[DelveGuide]|r === END ===")
-    elseif msg=="checkdebug" then
-        print("|cFF00BFFF[DelveGuide]|r === Valeera Role Debug ===")
-        local id = C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer and C_DelvesUI.GetCompanionInfoForActivePlayer()
-        print("  companionID: " .. tostring(id))
-        if id and id > 0 then
-            for roleType, roleName in pairs({[0]="DPS",[1]="Heal",[2]="Tank"}) do
-                local node    = C_DelvesUI.GetRoleNodeForCompanion    and C_DelvesUI.GetRoleNodeForCompanion(roleType, id)
-                local subtree = C_DelvesUI.GetRoleSubtreeForCompanion and C_DelvesUI.GetRoleSubtreeForCompanion(roleType, id)
-                print(string.format("  %s: node=%s  subtree=%s", roleName, tostring(node), tostring(subtree)))
-            end
-        end
-        local f = DelvesCompanionConfigurationFrame
-        if f then
-            print("  frame.selectedRole: " .. tostring(f.selectedRole))
-            if f.RoleDropdown then print("  RoleDropdown.selectedValue: " .. tostring(f.RoleDropdown.selectedValue)) end
-        end
-        -- Check active trait configs
-        if C_Traits and C_Traits.GetActiveConfigID then
-            print("  activeConfigID: " .. tostring(C_Traits.GetActiveConfigID()))
-        end
-        print("|cFF00BFFF[DelveGuide]|r === End ===")
-        -- Also scan auras
-        local i = 1
-        while true do
-            local aura = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex and C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
-            if not aura then break end
-            -- tostring() keeps this safe if aura fields come back as secret values (12.1+)
-            print(string.format("  aura[%d] spellID=%s  %s", i, tostring(aura.spellId), tostring(aura.name)))
-            i = i + 1
-        end
-    elseif msg=="huddump" then
-        print("|cFF00BFFF[DelveGuide]|r === HUD DEBUG DUMP (share this output) ===")
-        print("Version: "..ADDON_VERSION.."  |  Locale: "..(GetLocale and GetLocale() or "unknown"))
-        -- Zone info
-        local zone = ""; pcall(function() zone = GetRealZoneText() or "" end)
-        print("GetRealZoneText: ["..zone.."]")
-        -- Instance info
-        pcall(function()
-            local name, instType, diffID, diffName = GetInstanceInfo()
-            print(string.format("GetInstanceInfo: name=[%s]  type=[%s]  diffID=[%s]  diffName=[%s]",
-                tostring(name), tostring(instType), tostring(diffID), tostring(diffName)))
-        end)
-        -- Scenario info
-        pcall(function()
-            if C_Scenario and C_Scenario.GetInfo then
-                local scenName = C_Scenario.GetInfo()
-                print("C_Scenario.GetInfo: ["..tostring(scenName).."]")
-            end
-            if C_Scenario and C_Scenario.GetStepInfo then
-                local stepName = C_Scenario.GetStepInfo()
-                print("C_Scenario.GetStepInfo: ["..tostring(stepName).."]")
-            end
-            local inScenario = C_Scenario.IsInScenario and C_Scenario.IsInScenario()
-            print("IsInScenario: "..tostring(inScenario))
-        end)
-        -- Scenario criteria (lives detection)
-        pcall(function()
-            local numCrit = DelveGuide.GetCriteriaCount()
-            print("Scenario criteria count: "..tostring(numCrit))
-            for i = 1, (numCrit or 0) do
-                local crit = DelveGuide.GetCriteria(i)
-                if crit then
-                    print(string.format("  crit[%d] desc=[%s]  qtyStr=[%s]  qty=%s  total=%s",
-                        i, tostring(crit.description), tostring(crit.quantityString),
-                        tostring(crit.quantity), tostring(crit.totalQuantity)))
-                end
-            end
-        end)
-        -- Localized → English mapping
-        local l10n = DelveGuide.localizedToEnglish or {}
-        local mapped = l10n[zone]
-        print("localizedToEnglish["..zone.."] = "..tostring(mapped))
-        print("|cFF00BFFF[DelveGuide]|r === END ===")
-    elseif msg=="specinfo" then
-        local idx = GetSpecialization and GetSpecialization()
-        if not idx then print("|cFF00BFFF[DelveGuide]|r GetSpecialization() returned nil"); return end
-        local specID, specName = GetSpecializationInfo(idx)
-        print(string.format("|cFF00BFFF[DelveGuide]|r specIndex=%d  specID=%d  specName=%s", idx, specID or -1, specName or "nil"))
-        local rec = DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID]
-        if rec then
-            -- combat/utility were Season 1 curios and are gone from the table.
-            -- Printing them with %s would also error outright, since string.format
-            -- rejects nil for %s.
-            print(string.format("|cFF00BFFF[DelveGuide]|r Rec found: %s (%s)  Valeera=%s",
-                tostring(rec.spec or "?"), tostring(rec.role or "?"), tostring(rec.companion or "?")))
-        else
-            print("|cFF00BFFF[DelveGuide]|r No rec entry for specID "..tostring(specID))
-        end
-    elseif msg=="testrun" then
-        -- DEV ONLY: simulate a delve completion for the first delve in the DB
-        local testName = DelveGuideData and DelveGuideData.delves and DelveGuideData.delves[1] and DelveGuideData.delves[1].name or "Test Delve"
-        local secsUntilReset = C_DateAndTime.GetSecondsUntilWeeklyReset and C_DateAndTime.GetSecondsUntilWeeklyReset()
-        local resetKey = secsUntilReset and (math.floor((time()+secsUntilReset-604800)/3600)*3600) or nil
-        local testChar="Unknown"; pcall(function() testChar=UnitName("player") or "Unknown" end)
-        table.insert(DelveGuideDB.history,1,{name=testName,date=date("%Y-%m-%d %H:%M"),resetKey=resetKey,tier="Tier 8",vaultIlvl=610,char=testChar,elapsed=312})
-        print("|cFF00BFFF[DelveGuide]|r TEST: Injected fake run - |cFF00FF44"..testName.."|r")
-        -- TRIGGER THE VICTORY SCREEN FOR THE TEST RUN!
-        if DelveGuide.ShowVictoryScreen then
-            DelveGuide.ShowVictoryScreen(testName, "Tier 8", 610, 312)
-        end
-        if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end
-    elseif msg=="help" then
-        print("|cFF00BFFF[DelveGuide]|r |cFFFFFFFFv"..ADDON_VERSION.."|r  |cFF888888(include this in bug reports)|r")
-        print("|cFF00BFFF[DelveGuide]|r Commands:")
-        print("  |cFFFFFF00/dg|r                    - Toggle window")
-        print("  |cFFFFFF00/dg scan|r               - Rescan active delve variants")
-        print("  |cFFFFFF00/dg map|r                - Open world map")
-        print("  |cFFFFFF00/dg minimap|r            - Toggle minimap button")
-        print("  |cFFFFFF00/dg hud|r                - Toggle in-run HUD overlay")
-        print("  |cFFFFFF00/dg widget|r             - Toggle compact floating widget")
-        print("  |cFFFFFF00/dg resetwidget|r        - Reset widget position to center")
-        print("  |cFFFFFF00/dg resethud|r           - Reset the in-run HUD position")
-        print("  |cFFFFFF00/dg bountiful|r          - Toggle widget filter to show only bountiful delves")
-        print("  |cFFFFFF00/dg check|r              - Show pre-entry checklist")
-        print("  |cFFFFFF00/dg roster|r             - Open Roster tab")
-        print("  |cFFFFFF00/dg voidforge|r          - Open Voidforge tab (bonus rolls, upgrades, slot priority)")
-        print("  |cFFFFFF00/dg journey|r            - Open the Journey tab: Delver's Journey ranks + Delver's Call quests (alias /dg quests)")
-        print("  |cFFFFFF00/dg submit|r             - Copy your run times to submit for community variant rankings")
-        print("  |cFFFFFF00/dg questscan|r          - Scan quest log for Delver's Call quest IDs")
-        print("  |cFFFFFF00/dg export|r             - Snapshot zone/delve/quest data to SavedVariables (attach to bug reports)")
-        print("  |cFFFFFF00/dg exportclear|r        - Clear export snapshots")
-        print("  |cFFFFFF00/dg companionscan|r      - Re-scan for the companion reputation faction")
-        print("  |cFFFFFF00/dg companionfaction <id>|r - Manually pin the companion faction ID")
-        print("  |cFFFFFF00/dg tier <1-11>|r        - Manually set current delve tier")
-        print("  |cFFFFFF00/dg share [channel]|r    - Share active variants (party/guild/say/raid)")
-        print("  |cFFFFFF00/dg font <0.6-2.0>|r     - Main UI font scale")
-        print("  |cFFFFFF00/dg widgetfont <0.6-2.0>|r - Widget-only font scale (independent)")
-        print("|cFF888888  Debug:|r |cFFCCCCCCdump, chatdump, huddump, tierdebug, checkdebug, specinfo, findplaza|r")
-        print("  |cFFFFFF00/dg help|r               - Show this help")
-    elseif msg:sub(1,5)=="tier " then
-        local arg = msg:sub(6)
-        local num = tonumber(arg)
-        if num and num >= 1 and num <= 11 then
-            DelveGuide.SetManualDelveTier(num)
-            if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
-            print("|cFF00BFFF[DelveGuide]|r Delve tier set to |cFFCCCCCC" .. num .. "|r |cFF888888(manual override -- /dg tier auto to clear)|r")
-        elseif arg == "auto" or num == 0 then
-            DelveGuide.SetManualDelveTier(nil)
-            if DelveGuide.UpdateHUD then DelveGuide.UpdateHUD() end
-            print("|cFF00BFFF[DelveGuide]|r Manual tier cleared -- back to auto-detection.")
-        else
-            print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg tier 3|r  (1-11), or |cFFFFFF00/dg tier auto|r to clear")
-        end
-    elseif msg=="hud" then
-        if DelveGuide.ToggleHUD then DelveGuide.ToggleHUD()
-        else print("|cFF00BFFF[DelveGuide]|r HUD not loaded.") end
-    elseif msg=="widget" then
-        if DelveGuide.ToggleWidget then DelveGuide.ToggleWidget() end
-    elseif msg=="resethud" then
-        -- Parity with /dg resetwidget. Asked for by a user whose HUD kept
-        -- landing at the bottom of the screen (the restore-anchor bug), with
-        -- no way to put it back.
-        DelveGuideDB.hudX = nil
-        DelveGuideDB.hudY = nil
-        local hf = _G["DelveGuideHUDFrame"]
-        if hf then
-            hf:ClearAllPoints()
-            hf:SetPoint("CENTER", UIParent, "CENTER", 450, 100)
-        end
-        print("|cFF00BFFF[DelveGuide]|r In-run HUD position reset. Drag it where you want it and it will stay there.")
-    elseif msg=="resetwidget" then
-        DelveGuideDB.widgetX = nil
-        DelveGuideDB.widgetY = nil
-        local cw = DelveGuide.compactWidget
-        if cw then
-            cw:ClearAllPoints()
-            cw:SetPoint("CENTER", UIParent, "CENTER", 0, 250)
-            cw:Show()
-        end
-        DelveGuideDB.widgetHidden = false
-        print("|cFF00BFFF[DelveGuide]|r Widget position reset to center.")
-    elseif msg:sub(1,16)=="companionfaction" then
-        local val = tonumber(msg:sub(18))
-        if val and DelveGuideDB then
-            DelveGuideDB.companionFactionID   = val
-            DelveGuideDB.companionFactionType = nil  -- let the renown query auto-detect Major vs Reputation
-            print("|cFF00BFFF[DelveGuide]|r Companion faction ID set to "..val..". Open Companion tab to verify.")
-            if currentTabKey=="companion" then RefreshCurrentTab() end
-        else
-            print("|cFF00BFFF[DelveGuide]|r Usage: /dg companionfaction <factionID>")
-        end
-    elseif msg=="companionscan" then
-        if DelveGuideDB then
-            DelveGuideDB.companionFactionID   = nil
-            DelveGuideDB.companionFactionType = nil
-        end
-        print("|cFF00BFFF[DelveGuide]|r Companion faction cache cleared. Open Companion tab to rescan.")
-        if currentTabKey=="companion" then RefreshCurrentTab() end
-    elseif msg=="bountiful" then
-        DelveGuideDB.widgetBountifulOnly = not DelveGuideDB.widgetBountifulOnly
-        local cw = DelveGuide.compactWidget
-        if cw and cw.RefreshBountyBtn then cw.RefreshBountyBtn() end
-        if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end
-        print("|cFF00BFFF[DelveGuide]|r Widget bountiful filter: "
-            ..(DelveGuideDB.widgetBountifulOnly and "|cFFFFD700ON|r (only bountiful delves)" or "|cFF888888OFF|r (all variants)"))
-    elseif msg:sub(1,10)=="widgetfont" then
-        local val=tonumber(msg:sub(12))
-        if val then DelveGuideDB.widgetFontScale=math.max(0.6,math.min(2.0,val))
-            if DelveGuide.RefreshCompactWidgetFonts then DelveGuide.RefreshCompactWidgetFonts() end
-            print(string.format("|cFF00BFFF[DelveGuide]|r Widget font: %.1fx",DelveGuideDB.widgetFontScale))
-        else print(string.format("|cFF00BFFF[DelveGuide]|r Widget font: %.1fx (0.6-2.0)",DelveGuideDB.widgetFontScale)) end
-    elseif msg:sub(1,4)=="font" then
-        local val=tonumber(msg:sub(6))
-        if val then DelveGuideDB.fontScale=math.max(0.6,math.min(2.0,val)); RefreshCurrentTab()
-            print(string.format("|cFF00BFFF[DelveGuide]|r Font: %.1fx",DelveGuideDB.fontScale))
-        else print(string.format("|cFF00BFFF[DelveGuide]|r Font: %.1fx (0.6-2.0)",DelveGuideDB.fontScale)) end
-    elseif msg:sub(1,5)=="share" then
-        local channel = strtrim(msg:sub(7)):upper()
-        if channel == "" then channel = "PARTY" end
-        local validChannels = {PARTY=true, GUILD=true, SAY=true, RAID=true, INSTANCE_CHAT=true}
-        if not validChannels[channel] then
-            print("|cFF00BFFF[DelveGuide]|r Usage: |cFFFFFF00/dg share [party|guild|say|raid]|r")
-            return
-        end
-        -- Group/guild checks, list building, line packing and sending all live
-        -- in one place now (DelveGuide_Widget.lua) -- shared with both buttons.
-        DelveGuide.ShareActiveVariants(channel)
-    else DelveGuide.Toggle() end
+    -- Unknown command prints the usage. It used to fall through to Toggle(),
+    -- so a typo silently opened or closed the window and looked like the
+    -- command had worked.
+    print("|cFF00BFFF[DelveGuide]|r Unknown command: |cFFFFFF00"..word.."|r")
+    DelveGuide.PrintHelp()
 end
 
 -- ============================================================
