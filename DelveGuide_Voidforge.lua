@@ -1,5 +1,5 @@
 -- ============================================================
--- DelveGuide_Voidforge.lua  --  Season 2 bonus-roll & upgrade state
+-- DelveGuide_Voidforge.lua  --  Season 2 transmute-token & upgrade state
 -- ============================================================
 -- One source of truth for the delve reward currencies, shared by the
 -- widget, checklist, Voidforge tab, history tab, and map tooltip.

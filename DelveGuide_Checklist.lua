@@ -140,7 +140,7 @@ local function RunChecklistScan()
     end)
 
     -- (The Season 1 "Building the Voidforge" weekly row was retired in 12.1 --
-    -- Season 2 has no weekly shard quest; bonus rolls / upgrades live in the
+    -- Season 2 has no weekly shard quest; transmutes / upgrades live in the
     -- Voidforge tab instead.)
 
     return results
