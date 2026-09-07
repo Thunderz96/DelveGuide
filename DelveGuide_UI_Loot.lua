@@ -74,8 +74,9 @@ DelveGuide.RenderLoot = function()
     -- Season 2 delve reward currencies
     y = y + 4
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Delve Reward Currencies|r  |cFF888888(Season 2)|r")
-    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888Transmute into powerful equipment after Midnight raid bosses, Mythic+ dungeons, Bountiful Delves, or Nightmare Prey Hunts. One item per difficulty level, until your spec's pool is exhausted.|r")
-    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCAscendant Venomstone|r   |cFF888888Gear-upgrade material (arriving later this season). 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful Delve guarantees one (~1-2).|r") + 6
+    local notes = DelveGuideData.currencyNotes or {}
+    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888" .. (notes.voidcore or "") .. "|r")
+    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCAscendant Venomstone|r   |cFF888888" .. (notes.venomstone or "") .. "|r") + 6
     
     for _, slot in ipairs({"Trinket", "Weapon", "Cosmetic"}) do
         y = y + 4

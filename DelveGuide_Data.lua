@@ -260,10 +260,10 @@ DelveGuideData.nemesisDelves = {
 -- two had already drifted (51.2 31.0 in the tab vs 51.2 30.3 here).
 -- VERIFY IN GAME: stand at the entrance and
 --   /dump C_Map.GetPlayerMapPosition(<mapID>, "player")
--- then replace the value below. Neither has been read off a live client yet.
+-- then replace the value below. Both were read off the PTR client on 2026-09-06.
 DelveGuideData.nemesisEntrances = {
-    { name="Venomfall Deeps", zone="The Coiled Isle", mapID=2512, x=0.512,  y=0.303  },  -- verify in game
-    { name="Torment's Rise",  zone="Voidstorm",       mapID=2405, x=0.6117, y=0.7137 },  -- verify in game
+    { name="Venomfall Deeps", zone="The Coiled Isle", mapID=2512, x=0.5123, y=0.3033 },  -- verified in game 2026-09-06 (/dg export #33)
+    { name="Torment's Rise",  zone="Voidstorm",       mapID=2405, x=0.6117, y=0.7182 },  -- verified in game 2026-09-06 (/dg export #34)
 }
 
 -- Nemesis access item, tracked on the Delves tab's Weekly Items row.
@@ -469,9 +469,24 @@ DelveGuideData.loot = {
 -- ============================================================
 -- SECTION 5: FUTURE / PATCH NOTES
 -- ============================================================
+-- The two Season 2 delve currencies, described once. Every tab that mentions
+-- them reads these (Loot, Voidforge, Future) so the wording cannot drift --
+-- review 1.8 found the Voidcore called a "bonus roll" in three places and a
+-- "transmute" in two. The in-game tooltip (PTR 69594, 2026-09-06) settles it:
+-- "Transmutable into powerful equipment upon defeating powerful foes in
+-- Midnight raids or completing Mythic+ dungeons, Bountiful Delves and Prey
+-- Hunts on Nightmare difficulty. Items may be received once per difficulty
+-- level until all potential items for your current specialization have been
+-- transmuted." It names NO delve tier; Tier 8+ is this addon's gate
+-- (DelveGuide.Voidforge.MIN_VOIDCORE_TIER), not Blizzard's wording.
+DelveGuideData.currencyNotes = {
+    voidcore   = "Transmute into powerful equipment after Midnight raid bosses, Mythic+ dungeons, Bountiful Delves (Tier 8+) or Nightmare Prey Hunts. One item per difficulty level, until your spec's pool is exhausted.",
+    venomstone = "Gear-upgrade material, arriving later this season. 10 upgrade one weapon, trinket or neck; a Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+.",
+}
+
 DelveGuideData.future = {
     -- ── Later in Season 2 (12.1) ────────────────────────────
-    { category="Later in Season 2", note="Ascendant Venomstones arrive later this season -- the gear-upgrade material. 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful Delve is a guaranteed source." },
+    { category="Later in Season 2", note="Ascendant Venomstone: " .. DelveGuideData.currencyNotes.venomstone },
     -- ── Labyrinths (Patch 12.1.5 -- ~Autumn 2026) ───────────
     { category="Labyrinths (Patch 12.1.5)", note="Confirmed for 12.1.5 (~autumn 2026): a larger, mega-dungeon-inspired Delve variant -- pitched as the difficulty ceiling for players who skip raiding." },
     { category="Labyrinths (Patch 12.1.5)", note="Multi-boss, playable solo or in a small group, with progress saved between sessions (not a simple repeatable delve)." },

@@ -60,8 +60,8 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 
 The Voidforge tab tracks Season 2's two delve reward currencies:
 
-- **Nebulous Voidcore** — the bonus-roll token. Spend one to roll for extra loot after a raid boss, M+, Nightmare Prey, or Bountiful Delve. Drops from Tier 8+ Bountiful Delves.
-- **Ascendant Venomstone** — the gear-upgrade material *(arriving later this season)*. 10 upgrade one weapon/trinket/neck, and a Tier 11 Bountiful Delve is a guaranteed source.
+- **Nebulous Voidcore** — the transmute token. Transmute one into equipment after a raid boss, Mythic+ dungeon, Bountiful Delve (Tier 8+) or Nightmare Prey Hunt; one item per difficulty level until your spec's pool is exhausted.
+- **Ascendant Venomstone** — the gear-upgrade material *(arriving later this season)*. 10 upgrade one weapon, trinket or neck; a Tier 11 Bountiful Delve guarantees one (~1-2).
 
 Plus a **slot upgrade priority** scan (weapons & trinkets first, then armor by lowest ilvl) and an **alt stockpile** rollup across your cached characters.
 

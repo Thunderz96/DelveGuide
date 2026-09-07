@@ -2098,25 +2098,60 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
         -- A vendor window that is open right now: every item with its price
         -- and currency. Run /dg export with the delve vendor open and the
         -- cosmetic rows' IDs, sources and costs come straight from the game.
-        pcall(function()
-            if not (MerchantFrame and MerchantFrame:IsShown()) then return end
-            snap.merchant = { npc = UnitName("npc"), items = {} }
-            for i = 1, (GetMerchantNumItems() or 0) do
-                local name, _, price, qty = GetMerchantItemInfo(i)
-                local link = GetMerchantItemLink(i)
-                local entry = { name = name, price = price, qty = qty, link = link,
-                    itemID = link and tonumber(link:match("item:(%d+)")) }
-                local nCosts = GetMerchantItemCostInfo(i) or 0
-                if nCosts > 0 then
-                    entry.costs = {}
-                    for j = 1, nCosts do
-                        local _, value, costLink, currencyName = GetMerchantItemCostItem(i, j)
-                        table.insert(entry.costs, { value = value, link = costLink, currency = currencyName })
-                    end
+        -- First attempt (export #35, Naleidea Rivergleam) recorded the NPC and
+        -- zero items: one of the merchant globals errored inside the pcall and
+        -- the error vanished with it. Now the capture records type() of every
+        -- API it leans on, tries the C_MerchantFrame forms first, and keeps the
+        -- first error text, so a failed capture explains itself.
+        do
+            local okM, errM = pcall(function()
+                if not (MerchantFrame and MerchantFrame:IsShown()) then return end
+                local CM = C_MerchantFrame
+                local m = { npc = UnitName("npc"), items = {}, api = {
+                    GetMerchantNumItems     = type(GetMerchantNumItems),
+                    C_GetNumItems           = type(CM and CM.GetNumItems),
+                    GetMerchantItemInfo     = type(GetMerchantItemInfo),
+                    C_GetItemInfo           = type(CM and CM.GetItemInfo),
+                    GetMerchantItemLink     = type(GetMerchantItemLink),
+                    GetMerchantItemCostInfo = type(GetMerchantItemCostInfo),
+                    GetMerchantItemCostItem = type(GetMerchantItemCostItem),
+                } }
+                snap.merchant = m
+                local n = (CM and CM.GetNumItems and CM.GetNumItems())
+                       or (GetMerchantNumItems and GetMerchantNumItems()) or 0
+                m.count = n
+                for i = 1, n do
+                    local ok, err = pcall(function()
+                        local e = {}
+                        if CM and CM.GetItemInfo then
+                            local info = CM.GetItemInfo(i)
+                            if type(info) == "table" then
+                                e.name, e.price, e.qty = info.name, info.price, info.stackCount
+                                e.currencyID, e.hasExtendedCost = info.currencyID, info.hasExtendedCost
+                            end
+                        end
+                        if not e.name and GetMerchantItemInfo then
+                            local name, _, price, qty = GetMerchantItemInfo(i)
+                            e.name, e.price, e.qty = name, price, qty
+                        end
+                        local link = GetMerchantItemLink and GetMerchantItemLink(i)
+                        e.link = link
+                        e.itemID = link and tonumber(link:match("item:(%d+)"))
+                        local nCosts = (GetMerchantItemCostInfo and GetMerchantItemCostInfo(i)) or 0
+                        if nCosts > 0 and GetMerchantItemCostItem then
+                            e.costs = {}
+                            for j = 1, nCosts do
+                                local _, value, costLink, currencyName = GetMerchantItemCostItem(i, j)
+                                table.insert(e.costs, { value = value, link = costLink, currency = currencyName })
+                            end
+                        end
+                        table.insert(m.items, e)
+                    end)
+                    if not ok then m.firstError = m.firstError or (i .. ": " .. tostring(err)); break end
                 end
-                table.insert(snap.merchant.items, entry)
-            end
-        end)
+            end)
+            if not okM then snap.merchantError = tostring(errM) end
+        end
 
         -- Last PLAYER_INTERACTION_MANAGER_FRAME_SHOW type seen, to learn the
         -- delve entrance dialog's real enum value.

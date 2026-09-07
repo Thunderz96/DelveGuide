@@ -33,7 +33,8 @@ DelveGuide.Voidforge = {
                                      -- S2). Set this when it appears as a currency...
     VENOMSTONE_ITEM_ID      = nil,  -- ...or set this if it turns out to be a bag item instead.
     VENOMSTONE_PER_UPGRADE  = 10,   -- 10 Venomstones upgrade one eligible piece.
-    MIN_VOIDCORE_TIER       = 8,    -- T8+ Bountiful Delves drop Nebulous Voidcores.
+    MIN_VOIDCORE_TIER       = 8,    -- The addon's gate for "this run can award a Voidcore". The currency's
+                                     -- own tooltip says only "Bountiful Delves", no tier (PTR 2026-09-06).
     VENOMSTONE_TIER         = 11,   -- T11 Bountiful Delves guarantee an Ascendant Venomstone.
 }
 
@@ -44,7 +45,7 @@ DelveGuide.GetVoidforgeStatus = function()
     local V = DelveGuide.Voidforge
     local s = {
         configured       = false,
-        cores            = nil,  -- current Nebulous Voidcore (bonus-roll) count
+        cores            = nil,  -- current Nebulous Voidcore (transmute token) count
         coreMax          = nil,  -- weekly or seasonal cap (if the API exposes one)
         venomstones      = nil,  -- Ascendant Venomstone count (nil until it goes live)
         venomstonesPerUp = V.VENOMSTONE_PER_UPGRADE,

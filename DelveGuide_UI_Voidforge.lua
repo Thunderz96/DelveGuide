@@ -2,7 +2,7 @@
 -- DelveGuide_UI_Voidforge.lua  --  Voidforge tracker tab
 -- ============================================================
 -- Surfaces the Season 2 delve reward economy from DelveGuide_Voidforge.lua
--- (Nebulous Voidcore bonus rolls + Ascendant Venomstone upgrades) plus:
+-- (Nebulous Voidcore transmutes + Ascendant Venomstone upgrades) plus:
 --   * lowest-ilvl gear slots (best Venomstone upgrade targets)
 --   * cross-character stockpile rolled up from DelveGuideDB.roster.
 -- ============================================================
@@ -29,18 +29,18 @@ DelveGuide.RenderVoidforge = function()
     local cf = UI.NewContentFrame(); local y = 10
     UI.EnsureFontFiles()
 
-    y = y + UI.CreateHeader(cf, y, "Voidforge  --  Bonus Rolls & Gear Upgrades") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888Season 2 splits the delve reward economy in two: Nebulous Voidcores are bonus-roll tokens (roll for extra loot after a run), and Ascendant Venomstones -- arriving later this season -- upgrade your gear (10 per piece).|r") + 8
+    y = y + UI.CreateHeader(cf, y, "Voidforge  --  Transmutes & Gear Upgrades") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888Season 2 splits the delve reward economy in two: Nebulous Voidcores transmute into equipment after a qualifying run, and Ascendant Venomstones -- arriving later this season -- upgrade the gear you have (10 per piece).|r") + 8
 
     local s = DelveGuide.GetVoidforgeStatus and DelveGuide.GetVoidforgeStatus() or { configured = false }
 
-    -- ---- Bonus Rolls (Nebulous Voidcore) ----
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Bonus Rolls  --  Nebulous Voidcore|r") + 4
+    -- ---- Transmutes (Nebulous Voidcore) ----
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700Transmutes  --  Nebulous Voidcore|r") + 4
     if s.cores then
         local capStr = s.coreMax and ("/" .. s.coreMax) or ""
         y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(transmute into gear after a raid boss / M+ / Bountiful Delve / Nightmare Prey)|r", s.cores, capStr)) + 2
     else
-        y = y + UI.CreateRow(cf, y, "|cFF888888  None yet -- they drop from T8+ Bountiful Delves, M+, and Nightmare Prey. (Populates in-game or after a /reload.)|r") + 2
+        y = y + UI.CreateRow(cf, y, "|cFF888888  None yet -- they come from Tier 8+ Bountiful Delves, Mythic+ and Nightmare Prey Hunts. (Populates in-game or after a /reload.)|r") + 2
     end
     y = y + 6
 
@@ -59,8 +59,8 @@ DelveGuide.RenderVoidforge = function()
     -- ---- Where to Earn ----
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Where to Earn|r") + 4
     local sources = {
-        { tag = "|cFFAA66CCVoidcores|r",   text = "T8+ Bountiful Delves, Mythic+, and Nightmare Prey hunts. Also selectable as a Great Vault consolation." },
-        { tag = "|cFFAA66CCVenomstones|r", text = "Tier 11 Bountiful Delves guarantee one (~1-2); also Heroic/Mythic raid and M+10+. Live later this season." },
+        { tag = "|cFFAA66CCVoidcores|r",   text = (DelveGuideData.currencyNotes and DelveGuideData.currencyNotes.voidcore or "") .. " Also selectable as a Great Vault consolation." },
+        { tag = "|cFFAA66CCVenomstones|r", text = (DelveGuideData.currencyNotes and DelveGuideData.currencyNotes.venomstone or "") },
     }
     for _, src in ipairs(sources) do
         y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. src.tag .. " |r|cFF888888" .. src.text .. "|r") + 2
