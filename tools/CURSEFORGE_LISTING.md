@@ -26,9 +26,16 @@ measured, and refreshed every release.
 companion-loadout changes, no protected-frame hooks, no taint. Your Great Vault credit,
 scenario objectives and companion configuration are untouched.
 
-**Patch 12.1.5 ready.** Recognises the Labyrinth of Kindo'jan and keeps it out of your delve
-history and rankings — a Labyrinth is not a delve, even though it grants delve vault credit.
-Fuller Labyrinth support lands as the content stabilises.
+**Patch 12.1.5 ready** (and still runs on 12.1.0). **Labyrinth support:** DelveGuide
+recognises the Labyrinth of Kindo'jan, keeps it out of your delve rankings — a Labyrinth is
+not a delve — and gives it its own in-run HUD (chamber, tier, lives, objective, chambers
+cleared), its own History rows, and its vault credit in your weekly tallies: one vault slot
+per 3 chambers cleared, at any tier. Blizzard's Labyrinth content is still unfinished, so
+this is support rather than a guide — there are no route tips yet.
+
+**Now translatable.** Every string a player sees goes through a translation table. Copy
+`Locales/TEMPLATE.lua`, translate it and open a pull request; there are no translations yet,
+so nothing changes for English players.
 
 ### What you get
 
@@ -42,18 +49,23 @@ recommendation, lives, and a live timer that survives a `/reload`.
 **Victory screen** — completion time, weekly delve count, vault ilvl unlocked, and how you did
 against your personal best and the community median.
 
-**Pre-entry checklist** — target a delve entrance and it checks your Coffer Key, Trovehunter's
-Bounty state, Valeera's role, and whether your Herald's Flute will still earn this week's map.
+**Pre-entry checklist** — opens by itself with the delve entrance dialog and checks your Coffer
+Key, Trovehunter's Bounty state, Valeera's role, and whether your Herald's Flute will still
+earn this week's map. Draggable, and it remembers where you put it.
 
 **Compact widget** — shards, restored keys, Voidforge progress and today's high-value
 variants in a small always-on panel, with a bountiful-only filter and one-click **Share to
 Chat**.
 
 **Voidforge tab** — Nebulous Voidcores and Ascendant Venomstones: what you have, where they
-come from, what to upgrade first, and your alts' stockpile.
+come from, what to upgrade first, and your alts' stockpile. Voidcores are bonus-roll tokens
+you spend after a boss or a completed run for extra loot — they do not drop from delves, and
+today the Great Vault is the only source. Venomstones upgrade weapons and trinkets only, so
+the priority list is those four slots.
 
-**Companion tab** — Valeera's level and XP anywhere (not just inside a delve), role detection,
-and a live curio-loadout check against the recommendation for your spec.
+**Companion tab** — Valeera's level and XP anywhere (not just inside a delve), plus her live
+role and curios read from the game's own data, checked against the recommendation for your
+spec — in any language, with Blizzard's panel closed.
 
 **History tab** — every run grouped by weekly reset with time, tier, variant and vault ilvl,
 your per-variant medians, and how they compare to the community's.
@@ -63,9 +75,10 @@ your per-variant medians, and how they compare to the community's.
 **Nemesis tab** — the season's Nemesis delve in full (Venomfall Deeps / Azta'rec), with the
 previous season kept as a compact legacy reference.
 
-**Also:** Loot tab by tier · Curios tab by spec · world-map tooltips with grade and variant ·
-LibDataBroker feed for Titan/ElvUI/Bazooka · keybindings · addon compartment entry · ESC >
-Options signpost · in-game changelog.
+**Also:** Loot tab by tier, with a Cosmetics group checked against the vendors' stock · Curios
+tab by spec · world-map tooltips with grade and variant · LibDataBroker feed for
+Titan/ElvUI/Bazooka · keybindings · addon compartment entry · ESC > Options signpost ·
+in-game changelog · `/dg selftest` and `/dg export` for bug reports.
 
 ### Help rank the delves
 
@@ -77,7 +90,8 @@ Contributors are credited on the Settings tab.
 
 No dependencies. Interface 120105 (12.1.5), also loads on 12.1.0. TomTom optional.
 
-`/dg` opens the window · `/dg help` lists every command.
+`/dg` opens the window · `/dg help` lists every command · `/dg findpoi <text>` hunts a missing
+delve pin on the map.
 
 ---
 

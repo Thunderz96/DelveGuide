@@ -33,6 +33,13 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - **Draggable**, **lockable**, and **resizable** — remembers its position between sessions
 - Toggle manually with `/dg hud` (works as a preview outside Delves)
 
+### 🌀 Labyrinths (12.1.5)
+
+- Recognises **the Labyrinth of Kindo'jan**. A Labyrinth is not a Delve, so it no longer starts a Delve timer or files Delve-shaped rows in your History
+- Its own in-run HUD view: **Labyrinth · current chamber · tier · lives · objective progress · chambers cleared · time in**
+- Runs are logged in History and their vault credit counts toward the weekly tallies — **one vault slot per 3 chambers cleared, at any tier**
+- Labyrinth **support**, not a Labyrinth guide: Blizzard's Labyrinth content is still unfinished, so there are no route or chamber tips yet
+
 ### 🏆 Victory Screen
 
 - Animated toast on **Delve completion** with fade in/hold/fade out
@@ -42,7 +49,7 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 
 ### ✅ Pre-Entry Checklist
 
-- Triggers automatically when you **target a Delve entrance**
+- Opens automatically with the **Delve entrance dialog** (the tier picker), above it and out of the way — draggable, and it remembers where you put it
 - Verifies: **Coffer Key** (shard count + Restored Coffer Keys) · **Trovehunter's Bounty** (active / in bags but not activated / already used this week) · **Valeera** and her selected role
 - Also flags a **Scalebound Herald's Flute** in your bags, and tells you whether using it will still earn this week's Bounty map
 - Catches you before you waste a Bountiful run with no key, or enter with your Bounty still sitting unactivated in your bags
@@ -99,7 +106,7 @@ Spec-by-spec curio recommendations for every class and specialization.
 Live status panel for **Valeera Sanguinar**:
 
 - **XP / level bar** — works anywhere, not just inside delves. Reads from her friendship reputation faction so you can check progress between runs.
-- **Role detection** (DPS / Healer / Tank) and **live curio loadout scan** when the Blizzard Companion panel is open
+- **Role detection** (DPS / Healer / Tank) and **live curio loadout scan**, read from the game's own companion data — works in any language and with Blizzard's Companion panel closed
 - Spec-aware curio recommendations with mismatch warnings when your equipped curios don't match the rec
 - Auto-discovery scans for the companion faction on first render and caches the ID per-character (`/dg companionscan` to re-scan, `/dg companionfaction <id>` to pin manually)
 
@@ -139,25 +146,34 @@ Roadmap for upcoming features and planned data additions, kept in-game so you ca
 | Command | Description |
 | --- | --- |
 | `/dg` | Open / close DelveGuide |
+| `/dg show` / `/dg hide` | Open or close the window explicitly |
 | `/dg scan` | Rescan active Delve variants |
 | `/dg map` | Open the world map |
-| `/dg hud` | Toggle the in-run HUD |
+| `/dg hud` | Toggle the in-run HUD (works as a preview outside Delves) |
+| `/dg resethud` | Reset the HUD position |
 | `/dg widget` | Toggle the compact widget |
 | `/dg resetwidget` | Reset widget position to center |
 | `/dg bountiful` | Toggle the widget's bountiful-only filter |
 | `/dg check` | Show the pre-entry checklist |
 | `/dg minimap` | Toggle the minimap button |
 | `/dg roster` | Open the Roster tab |
+| `/dg voidforge` (`forge`) | Open the Voidforge tab |
+| `/dg journey` (`quests`, `quest`) | Open the Journey tab — Delver's Journey ranks and Delver's Call quests |
+| `/dg questscan` | Scan your quest log for Delver's Call quest IDs |
 | `/dg companionscan` | Re-scan for the companion reputation faction |
 | `/dg companionfaction <id>` | Manually pin the companion faction ID |
 | `/dg share [channel]` | Share active variants to chat (party/guild/say/raid) |
-| `/dg submit` | Copy your run times to submit for the community rankings |
+| `/dg submit` (`rank`) | Copy your run times to submit for the community rankings |
+| `/dg export` | Snapshot zone / delve / quest data to SavedVariables for bug reports |
+| `/dg exportclear` | Clear the export snapshots |
 | `/dg tier <1-11>` | Manually set the current Delve tier in the HUD |
 | `/dg font <0.6-2.0>` | Main UI font scale |
 | `/dg widgetfont <0.6-2.0>` | Widget-only font scale (independent from main) |
 | `/dg help` | Show all available commands |
 
-> Debug commands available for bug reports and localization fixes: `dump`, `chatdump`, `huddump`, `tierdebug`, `checkdebug`, `specinfo`, `currencydebug`, `vaultdebug`, `selftest`, `findpoi <text>`. They always run; tick **Show Debug tab** in Settings to have `/dg help` list them too.
+> An unrecognised command prints the help rather than opening or closing the window.
+
+> Debug commands available for bug reports and localization fixes: `selftest`, `dump`, `chatdump`, `huddump`, `tierdebug`, `checkdebug`, `specinfo`, `currencydebug`, `vaultdebug`, `findpoi <text>` (with `findplaza` as a shorthand), `testrun`. They always run; tick **Show Debug tab** in Settings to have `/dg help` list them too.
 
 ---
 
@@ -180,7 +196,7 @@ Every string a player sees goes through a lookup table, so DelveGuide can show y
 ## 📋 Requirements
 
 - **No dependencies required** — works out of the box
-- Compatible with **World of Warcraft: Midnight** — current through **Patch 12.1 "Curse of Ula'tek" / Season 2** (Interface 120100; also loads on 120000 / 120001 / 120005)
+- Compatible with **World of Warcraft: Midnight** — current through **Patch 12.1.5** (Interface 120105; also loads on 120000 / 120001 / 120005 / 120100)
 - TomTom is **optionally supported** for waypoint pins
 
 ---
