@@ -1,4 +1,5 @@
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 
 DelveGuide.RenderCurios = function()
     local cf=UI.NewContentFrame(); local y=10
@@ -8,21 +9,23 @@ DelveGuide.RenderCurios = function()
     -- this file loads BEFORE DelveGuide_UI_Companion.lua, which is where
     -- UI.GetSpecRec is defined, so it only exists by render time.
     local rec, specID = UI.GetSpecRec()
-    y=y+UI.CreateHeader(cf,y,"Curios & Poisons  --  Season 2")+4
-    y=y+UI.CreateRow(cf,y,"|cFF888888Season 2 rotated the curio set -- last season's curios are gone. Rankings show [?] until the meta settles; the description tells you what each does.|r")+6
+    y=y+UI.CreateHeader(cf,y,L["Curios & Poisons  --  Season 2"])+4
+    y=y+UI.CreateRow(cf,y,"|cFF888888"..L["Season 2 rotated the curio set -- last season's curios are gone. Rankings show [?] until the meta settles; the description tells you what each does."].."|r")+6
 
     if rec then
-        y=y+UI.CreateRow(cf,y,string.format("|cFF00BFFFYour Spec:|r |cFFFFFFFF%s|r  |cFF888888(specID %d)|r", rec.spec, specID))
-        y=y+UI.CreateRow(cf,y,string.format("|cFF00FF88Recommended Valeera role:|r |cFF00CFFF%s|r", rec.companion or "--"))
+        y=y+UI.CreateRow(cf,y,string.format("|cFF00BFFF"..L["Your Spec:"].."|r |cFFFFFFFF%s|r  |cFF888888"..L["(specID %d)"].."|r", rec.spec, specID))
+        y=y+UI.CreateRow(cf,y,string.format("|cFF00FF88"..L["Recommended Valeera role:"].."|r |cFF00CFFF%s|r", rec.companion or "--"))
     else
-        y=y+UI.CreateRow(cf,y,"|cFF888888No spec data - enter the world to detect your specialization.|r")
+        y=y+UI.CreateRow(cf,y,"|cFF888888"..L["No spec data - enter the world to detect your specialization."].."|r")
     end
-    y=y+UI.CreateRow(cf,y,"|cFF888888Per-spec curio picks are being rebuilt for Season 2. The most commonly recommended Combat pick so far is |r|cFFFFD700Corrosive Bilespear|r|cFF888888.|r")+8
+    -- The curio name is passed in as the %s so a translation can move it; the
+    -- colour switch back to gold rides along with it and never reaches L.
+    y=y+UI.CreateRow(cf,y,"|cFF888888"..string.format(L["Per-spec curio picks are being rebuilt for Season 2. The most commonly recommended Combat pick so far is %s."],"|r|cFFFFD700Corrosive Bilespear|r|cFF888888").."|r")+8
 
     -- Season 2 curios, grouped by type
     for _,ctype in ipairs({"Combat","Utility"}) do
-        y=y+4; y=y+UI.CreateRow(cf,y,UI.TypeColor(ctype).." Curios")
-        y=y+UI.CreateRow(cf,y,"|cFF888888"..string.format("%-4s  %-26s  %s","Rank","Name","Effect").."|r")
+        y=y+4; y=y+UI.CreateRow(cf,y,UI.TypeColor(ctype).." "..L["Curios"])
+        y=y+UI.CreateRow(cf,y,"|cFF888888"..string.format("%-4s  %-26s  %s",L["Rank"],L["Name"],L["Effect"]).."|r")
         for _,c in ipairs(DelveGuideData.curios) do
             if c.curiotype==ctype then
                 y=y+UI.CreateRow(cf,y,string.format("[%s]  |cFFFFFFFF%-26s|r  |cFF888888%s|r",UI.GradeColor(c.ranking),c.name,c.description))
@@ -31,12 +34,12 @@ DelveGuide.RenderCurios = function()
     end
 
     -- Poisons (new 12.1 choice node -- independent of Valeera's role)
-    y=y+4; y=y+UI.CreateRow(cf,y,"|cFFFFD700Poisons|r  |cFF888888(new in 12.1 -- pick one in Valeera's supplies menu, independent of her role)|r")
+    y=y+4; y=y+UI.CreateRow(cf,y,"|cFFFFD700"..L["Poisons"].."|r  |cFF888888"..L["(new in 12.1 -- pick one in Valeera's supplies menu, independent of her role)"].."|r")
     for _,p in ipairs(DelveGuideData.poisons or {}) do
-        local tag = p.base and "|cFF00FF88[Base] |r" or "|cFFFFD700[Quest]|r"
+        local tag = p.base and "|cFF00FF88"..L["[Base]"].." |r" or "|cFFFFD700"..L["[Quest]"].."|r"
         y=y+UI.CreateRow(cf,y,string.format("%s |cFFAA66CC%s|r  |cFFCCCCCC%s|r  |cFF888888%s|r", tag, p.name, p.effect, p.use))
     end
-    y=y+UI.CreateRow(cf,y,"|cFF00FF88Rule of thumb:|r |cFFCCCCCCBloodcrypt Toxin is the safe default; Frostheart Venom (once unlocked) is a strong all-round defensive pick. Forgotten Master looks strong but drops every stack the moment you take a hit, so it only pays off when you're comfortably out-gearing the tier.|r")+8
+    y=y+UI.CreateRow(cf,y,"|cFF00FF88"..L["Rule of thumb:"].."|r |cFFCCCCCC"..L["Bloodcrypt Toxin is the safe default; Frostheart Venom (once unlocked) is a strong all-round defensive pick. Forgotten Master looks strong but drops every stack the moment you take a hit, so it only pays off when you're comfortably out-gearing the tier."].."|r")+8
 
     cf:SetHeight(y+20)
 end
