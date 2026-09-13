@@ -2922,6 +2922,7 @@ end
 
 -- Compact, form-friendly submission string. Format (version DG1):
 --   DG1;delve~variant~avgTier~avgSec~count;...[|MISSING;delve~locale~text;...]
+--                                              [|LAB;scenarioID~name~tier~elapsedSec;...]
 -- ~ ; and | are stripped from names so the aggregator can split cleanly.
 --
 -- The MISSING section reports variants this client saw but could not identify.
@@ -2950,8 +2951,36 @@ DelveGuide.BuildSubmissionCode = function()
         end
     end
 
+    -- D5: Labyrinth chamber timings. Chamber CONTENT is drawn from a pool and
+    -- re-rolled per run, so how long each chamber takes is only knowable by
+    -- pooling what players saw -- there is no delve-style variant row to hang
+    -- it off. The chamber entries carry no tier of their own, so it comes from
+    -- that day's Labyrinth run record. Entries with no resolvable tier are
+    -- skipped rather than sent as tier 0, which would be indistinguishable
+    -- from a genuine unknown on the receiving end.
+    local labTierByDay = {}
+    for _, run in ipairs(DelveGuideDB and DelveGuideDB.history or {}) do
+        local tn = tonumber(run.tierNum)
+        if run.kind == "labyrinth" and run.date and tn and tn > 0 then
+            local day = tostring(run.date):sub(1, 10)
+            if not labTierByDay[day] or tn > labTierByDay[day] then labTierByDay[day] = tn end
+        end
+    end
+    local lab = {}
+    for _, e in ipairs(DelveGuideDB and DelveGuideDB.labyrinthLog or {}) do
+        local sec = tonumber(e.elapsed)
+        if e.kind == "chamber" and e.scenarioID and sec and sec > 0 then
+            local tier = tonumber(e.tierNum) or labTierByDay[tostring(e.at or ""):sub(1, 10)]
+            if tier and tier > 0 then
+                table.insert(lab, string.format("%d~%s~%d~%d",
+                    e.scenarioID, tostring(e.scenarioName or "?"):gsub("[~;|]", " "),
+                    tier, math.floor(sec + 0.5)))
+            end
+        end
+    end
+
     -- A player with no timed runs can still contribute discoveries.
-    if #parts == 0 and #missing == 0 then return nil end
+    if #parts == 0 and #missing == 0 and #lab == 0 then return nil end
 
     -- Length budget. The code is pasted into a Google Form field, and a code that
     -- will not fit is worth nothing -- one reporter's came out 116,701 characters
@@ -2977,6 +3006,25 @@ DelveGuide.BuildSubmissionCode = function()
         end
         if #kept > 0 then
             code = code .. "|MISSING;" .. table.concat(kept, ";")
+        end
+    end
+
+    -- Appended last, and only when there is something to append, so a client
+    -- that has never been inside a Labyrinth emits a byte-identical code to
+    -- the one it emitted before this section existed.
+    if #lab > 0 then
+        local kept = {}
+        for _, m in ipairs(lab) do
+            local candidate = code .. "|LAB;" .. table.concat(kept, ";")
+                              .. ((#kept > 0) and ";" or "") .. m
+            if #candidate <= MAX_CODE then
+                table.insert(kept, m)
+            else
+                break
+            end
+        end
+        if #kept > 0 then
+            code = code .. "|LAB;" .. table.concat(kept, ";")
         end
     end
 
