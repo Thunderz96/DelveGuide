@@ -8,6 +8,7 @@ Built for **Patch 12.1.5 (Midnight)**; runs on 12.1.0 as well.
 - **DelveGuide recognises the Labyrinth of Kindo'jan.** Inside one, the game reports the same scenario type and difficulty a delve does, so every test the addon ran said "delve": it started a delve timer and wrote a delve-shaped run with no variant and no tier for each chamber cleared. Outdoors, the Labyrinth arrived through the delve POI API and showed up as an unknown-variant row. Neither happens now.
 - **An in-run HUD for Labyrinths** -- which Labyrinth, the current chamber, tier, objective progress, lives, chambers cleared and the vault credit they are worth, and time since you entered.
 - **Labyrinth runs are logged in History** as their own kind of run, and their vault credit counts toward the weekly tallies on the Roster, the History tab and the Victory screen. Credit is **one vault slot per 3 chambers cleared, at any tier** -- so a nine-chamber run is worth three delves, which for the vault it is.
+- **A Labyrinth tab.** This week's runs per character, your standing with the Labyrinth of Kindo'jan, the chambers you have seen with your own median times, the documented rewards (marked unverified until seen in game), and the few tips we can stand behind. `/dg labyrinth` or `/dg lab` opens it.
 - This is Labyrinth **support**, not a Labyrinth guide. Blizzard's Labyrinth content is still unfinished on the PTR -- boss kills are sometimes not credited -- and while the addon works around that, there are no route or chamber tips yet.
 
 ### Added

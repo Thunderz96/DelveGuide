@@ -722,6 +722,7 @@ DelveGuideData.changelog = {
         date    = "2026-09-TBD",
         entries = {
             "Built for patch 12.1.5. It still runs on 12.1.0.",
+            "New Labyrinth tab: this week's runs, your Kindo'jan reputation, the chambers you have seen with your own times, the documented rewards, and a few tips. /dg lab opens it.",
             "Community rankings refreshed from 102 submissions across 40 variants: Calamitous D to C, Stolen Mana B to C, Open Night graded for the first time (S), Caustic Crush C to F. Four new contributors credited in Settings.",
             "Labyrinths: DelveGuide now recognises the Labyrinth of Kindo'jan. It is not a delve, so it no longer starts a delve timer or leaves half-empty rows in your history. It has its own in-run HUD -- chamber, tier, lives, objective and chambers cleared -- and its runs are logged and counted toward the weekly vault, one vault slot for every 3 chambers cleared, at any tier.",
             "Blizzard's Labyrinth content is still unfinished, so this is Labyrinth support rather than a Labyrinth guide. There are no route tips yet.",
