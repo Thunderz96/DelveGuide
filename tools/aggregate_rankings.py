@@ -61,15 +61,25 @@ DEFAULT_PUBLISHED = os.path.normpath(
 
 
 def split_sections(code):
-    """DG1 codes may carry a trailing |MISSING; section of unidentified variants."""
+    """Split a DG1 code into (runs, missing).
+
+    A code may carry any number of trailing "|NAME;" sections after the run
+    data -- |MISSING; (unidentified variants) and, since 2.0.0, |LAB;
+    (Labyrinth chamber timings, which this tool does not rank). Sections are
+    peeled off generically so a section added by a newer client never eats the
+    last run segment: splitting on "|MISSING;" alone left "count|LAB" as the
+    fifth field of the final run and silently dropped that run.
+    """
     code = code.strip()
     if not code.startswith("DG1;"):
         return "", ""
     body = code[4:]
-    if "|MISSING;" in body:
-        runs, missing = body.split("|MISSING;", 1)
-        return runs, missing
-    return body, ""
+    runs, _, tail = body.partition("|")
+    sections = {}
+    for seg in tail.split("|"):
+        name, _, rest = seg.partition(";")
+        sections.setdefault(name.strip().upper(), rest)
+    return runs, sections.get("MISSING", "")
 
 
 def parse_code(code):
