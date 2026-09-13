@@ -31,6 +31,7 @@ DelveGuide_UI_Delves.lua
 DelveGuide_UI_Curios.lua
 DelveGuide_UI_Companion.lua
 DelveGuide_UI_Nemesis.lua
+DelveGuide_UI_Labyrinth.lua
 DelveGuide_UI_Future.lua
 DelveGuide_UI_History.lua
 DelveGuide_UI_Settings.lua

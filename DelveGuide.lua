@@ -33,6 +33,7 @@ local TABS = {
     { label = L["Voidforge"], key = "voidforge" },
     { label = L["Journey"],  key = "quests"   },
     { label = L["Nemesis"],  key = "nemesis"  },
+    { label = L["Labyrinth"], key = "labyrinth" },
     { label = L["History"],  key = "history"  },
     { label = L["Future"],   key = "future"   },
     { label = L["Roster"],   key = "roster"   },
@@ -2022,6 +2023,15 @@ DelveGuide.commands = {
         handler = function()
             if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
             SwitchTab("roster")
+        end,
+    },
+    {
+        name = "labyrinth",
+        aliases = { "lab" },
+        desc = L["Open Labyrinth tab"],
+        handler = function()
+            if not mainFrame or not mainFrame:IsShown() then DelveGuide.Toggle() end
+            SwitchTab("labyrinth")
         end,
     },
     {
