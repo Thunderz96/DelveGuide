@@ -3,7 +3,7 @@
 -- ============================================================
 -- Surfaces the Season 2 delve reward economy from DelveGuide_Voidforge.lua
 -- (Nebulous Voidcore bonus rolls + Ascendant Venomstone upgrades) plus:
---   * the four Venomstone-upgradeable slots (weapons + trinkets) by ilvl
+--   * the five Venomstone-upgradeable slots (weapons + trinkets + neck) by ilvl
 --   * cross-character stockpile rolled up from DelveGuideDB.roster.
 -- ============================================================
 local UI = DelveGuide.UI
@@ -31,7 +31,7 @@ DelveGuide.RenderVoidforge = function()
     UI.EnsureFontFiles()
 
     y = y + UI.CreateHeader(cf, y, L["Voidforge  --  Bonus Rolls & Gear Upgrades"]) + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Season 2 splits the delve reward economy in two: Nebulous Voidcores are bonus-roll tokens (roll for additional loot after a boss or a run), and Ascendant Venomstones -- arriving later this season -- upgrade weapons and trinkets (10 per piece)."] .. "|r") + 8
+    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Season 2 splits the delve reward economy in two: Nebulous Voidcores are bonus-roll tokens (roll for additional loot after a boss or a run), and Ascendant Venomstones -- arriving later this season -- upgrade weapons, trinkets and necks (10 per piece)."] .. "|r") + 8
 
     local s = DelveGuide.GetVoidforgeStatus and DelveGuide.GetVoidforgeStatus() or { configured = false }
 
@@ -71,7 +71,7 @@ DelveGuide.RenderVoidforge = function()
 
     -- ---- Slot Upgrade Priority ----
     y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Upgrade Priority"] .. "|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Venomstones upgrade weapons and trinkets only, so these are the four slots that matter, lowest ilvl first. Hover for tooltip, shift-click to chat-link."] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Venomstones upgrade weapons, trinkets and necks only, so these are the five slots that matter, lowest ilvl first. Hover for tooltip, shift-click to chat-link."] .. "|r") + 4
 
     local slotData = DelveGuide.GetVoidforgeSlotPriority and DelveGuide.GetVoidforgeSlotPriority() or {}
     if #slotData == 0 then

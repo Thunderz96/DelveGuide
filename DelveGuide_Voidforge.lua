@@ -90,8 +90,9 @@ DelveGuide.IsDelveVoidcoreEligible = function(tierNum)
 end
 
 -- Equipment slot scan -- powers the Voidforge tab's "upgrade priority" table.
--- Ascendant Venomstones upgrade weapons and trinkets ONLY (Nick, live,
--- 2026-09-06), so these four are the only slots that belong here. The tab
+-- Ascendant Venomstones upgrade weapons, trinkets and necks ONLY (Blizzard's
+-- 12.1.5 PTR dev notes, 2026-09-03: "weapon/trinket/necklace"; confirmed by
+-- the build-69594 datamining), so these five are the only slots here. The tab
 -- used to list all sixteen with armour marked [low]; that implied armour could
 -- be upgraded at all, which it cannot.
 --
@@ -102,13 +103,14 @@ local SLOT_INFO = {
     { id = 17, label = "Off Hand",  tier = 1 },
     { id = 13, label = "Trinket 1", tier = 1 },
     { id = 14, label = "Trinket 2", tier = 1 },
+    { id = 2,  label = "Neck",      tier = 1 },
 }
 
 DelveGuide.VoidforgeSlots = SLOT_INFO
 
--- Returns a list of {slot, label, tier, ilvl, link, empty} for the four
+-- Returns a list of {slot, label, tier, ilvl, link, empty} for the five
 -- Venomstone-upgradeable slots. Sort order: empty slots first, then ASC by
--- ilvl, so the lowest weapon or trinket is the first upgrade target.
+-- ilvl, so the lowest weapon, trinket or neck is the first upgrade target.
 DelveGuide.GetVoidforgeSlotPriority = function()
     local out = {}
 

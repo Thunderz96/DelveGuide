@@ -542,10 +542,11 @@ DelveGuideData.loot = {
 --     MIN_VOIDCORE_TIER in DelveGuide_Voidforge.lua is only about where a roll
 --     is WORTH spending -- the end-of-run loot pool is max from Tier 8.
 --   * Ascendant Venomstone = the UPGRADE material, and it upgrades weapons and
---     trinkets ONLY -- hence the Voidforge tab's slot list is those four slots.
+--     trinkets and necks ONLY (Blizzard's 12.1.5 dev notes: weapon/trinket/necklace)
+--     -- hence the Voidforge tab's slot list is those five slots.
 DelveGuideData.currencyNotes = {
     voidcore   = L["Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve (any tier -- Tier 8+ has the max loot pool) or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. For now only the Great Vault awards them; a weekly purchase (gold, Voidlight Marl or 80 Veteran Crests) is expected around 12.1.5."],
-    venomstone = L["Gear-upgrade material, arriving later this season. 10 upgrade one weapon or trinket -- the only slots they apply to. A Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+."],
+    venomstone = L["Gear-upgrade material, arriving later this season. 10 upgrade one weapon, trinket or neck -- the only slots they apply to. A Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+."],
 }
 
 DelveGuideData.future = {
@@ -688,7 +689,7 @@ DelveGuideData.changelog = {
             "A reload in the middle of a run no longer loses the run. The timer picks up where it was and the variant is kept, so the run still counts toward the rankings.",
             "The Victory screen now tells you how the run went against your own best for that delve and variant, and against the community median. The same line is printed to chat.",
             "New: keybindings for the window, HUD and widget; an addon compartment entry; a countdown to the daily variant rotation; a native map waypoint when you click a delve; a Cosmetics group on the Loot tab; and an About block in Settings.",
-            "Nebulous Voidcores are bonus-roll tokens you spend after a boss or a completed run for extra loot -- they do not drop from delves at all. Right now the Great Vault is the only source, with a weekly purchase expected around 12.1.5. Ascendant Venomstones upgrade weapons and trinkets only, so the Voidforge priority list is those four slots.",
+            "Nebulous Voidcores are bonus-roll tokens you spend after a boss or a completed run for extra loot -- they do not drop from delves at all. Right now the Great Vault is the only source, with a weekly purchase expected around 12.1.5. Ascendant Venomstones upgrade weapons, trinkets and necks only, so the Voidforge priority list is those four slots.",
             "Fixed: runs finished near the weekly reset could land in the previous week and go missing from your counts; the Loot tab errored on every render on 12.1.5; tier and lives are read from the delve's own header now, so they work in any language and inside a Labyrinth; the Companion tab reads Valeera's live role and curios from game data instead of the panel text.",
             "One grade palette everywhere now, in the tier-list convention: S salmon down to F green. The Debug tab is hidden unless you tick it on in Settings; the debug commands still run.",
             "Every string in the addon can now be translated. Copy Locales/TEMPLATE.lua, translate it, and open a pull request -- there are no translations yet, so English is unchanged.",
