@@ -3101,14 +3101,15 @@ end
 
 -- Is this PLAYER_INTERACTION_MANAGER_FRAME_SHOW/HIDE type the delve entrance
 -- dialog? 79 on build 69594 at a delve entrance and at the Labyrinth's alike
--- (both recorded by /dg export). Enum.PlayerInteractionType has no
--- DelvesDifficultyPicker member there, so the enum is searched for any
--- Delve-named key before falling back to the observed value.
+-- (both recorded by /dg export); the generated constants name it
+-- TieredEntrance (PlayerInteractionManagerConstantsDocumentation.lua, the
+-- enum's MaxValue). Enum.PlayerInteractionType is searched for that name or
+-- any Delve-named key before falling back to the observed value.
 local function IsEntranceDialogType(t)
     local pickerType
     if Enum and Enum.PlayerInteractionType then
         for k, v in pairs(Enum.PlayerInteractionType) do
-            if type(k) == "string" and k:lower():find("delve", 1, true) then pickerType = v; break end
+            if type(k) == "string" and (k == "TieredEntrance" or k:lower():find("delve", 1, true)) then pickerType = v; break end
         end
     end
     return t == (pickerType or 79)
