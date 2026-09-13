@@ -346,6 +346,46 @@ for _, lab in ipairs(DelveGuideData.labyrinths) do
     DelveGuideData.labyrinthWidgetSets[lab.widgetSetID] = lab.name
 end
 
+-- ------------------------------------------------------------
+-- Labyrinth tab content (D4). Two kinds of fact live here:
+--
+--   * numbers we have SEEN: a vault credit every three chambers at any
+--     tier, nine chambers in a full run (achievement 63721), on build
+--     69594. These are what `tips` says.
+--   * rewards nobody here has looted yet. Every row is verified=false and
+--     renders with an "unverified" tag until one is seen in game. Compiled
+--     2026-09-13 from:
+--       https://www.wowhead.com/news/patch-12-1-5-labyrinth-rewards-include-transmog-titles-toys-and-more-382776
+--       https://us.forums.blizzard.com/en/wow/t/midnight-1215-ptr-development-notes/2344395
+--
+-- Reward `name` is game data and stays unwrapped; `source` is prose and is
+-- wrapped, the same split the loot rows use.
+-- ------------------------------------------------------------
+DelveGuideData.labyrinthContent = {
+    verifiedBuild     = 69594,
+    chambersPerRun    = 9,
+    chambersPerCredit = 3,
+    rewards = {
+        { name="Loa-Blessed Wayfarer",              group="Mount",        source=L["solo Kindo'jan kill at Tier 11"],          verified=false },
+        { name="Fabled Vanquisher of Kindo'jan",    group="Titles",       source=L["reported as a Labyrinth title reward"],    verified=false },
+        { name="Lone Raider",                       group="Titles",       source=L["reported as a Labyrinth title reward"],    verified=false },
+        { name="Loa-Blessed",                       group="Titles",       source=L["reported as a Labyrinth title reward"],    verified=false },
+        { name="Trail of Halazzi",                  group="Toys",         source=L["Ancient Chest"],                           verified=false },
+        { name="Nalorakk's Strength Charm",         group="Toys",         source=L["Ancient Chest"],                           verified=false },
+        { name="Feathers of Akil'zon",              group="Toys",         source=L["Ancient Chest"],                           verified=false },
+        { name="Rite of Jan'alai's Flame",          group="Toys",         source=L["Ancient Chest"],                           verified=false },
+        { name="Loa-Blessed Victory",               group="Toys",         source=L["Ancient Chest"],                           verified=false },
+        { name="Troll-themed mini-set",             group="Transmog",     source=L["helm, shoulders and cape"],                verified=false },
+        { name="Amani back piece",                  group="Transmog",     source=L["separate from the mini-set"],              verified=false },
+        { name="Two Mythic-track armor pieces",     group="Weekly quest", source=L["your choice, from a six-step weekly chain"], verified=false },
+    },
+    tips = {
+        L["Vault credit lands every 3 chambers cleared, at any tier -- it is not tied to a boss kill."],
+        L["A full run is 9 chambers, which is three vault credits."],
+        L["On the PTR a boss kill was sometimes not credited, so DelveGuide counts chambers rather than kills."],
+    },
+}
+
 -- ============================================================
 -- SECTION 2: DELVE MAP PINS
 -- ------------------------------------------------------------
