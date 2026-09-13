@@ -244,6 +244,14 @@ aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's
 
 ---
 
+## 8b. Horizon after BlizzCon 2026 (researched 2026-09-13, five Sonnet passes)
+
+- **12.1.5 "The Promise of Tomorrow"**: no live date from Blizzard (Oct 6 is a press cadence guess); still one PTR build (69594, public Sep 3); API surface unchanged (Gethe `ptr2`, zero commits since). Contents that touch us: Labyrinth of Kindo'jan (9 chambers, credit every 3, T11 solo = Loa-Blessed Wayfarer mount, 6-step weekly line = 2 Mythic pieces, faction 2836 now has ranks, titles/toys/transmog documented), Ascendant Venomstones (weapon/trinket/**necklace**; T11 bountiful, Heroic+ raid, M+10+, Nightmare Prey). **No new delves, no second Labyrinth, no delve UI changes.**
+- **12.2 "Eclipse" = Midnight Season 3** ("early 2027"): new Nemesis **Astalor Bloodsworn** (crystal cavern near the Worldcore; Agony Mode capstone), new delve *variations* on existing delves, Valeera cap **100** + new curios, higher delve level cap, raid The Worldcore, dungeon Thraegar's Stand. → the next data-refresh release (rankings restart, curios, Nemesis tab, vendors). Nothing for 2.0.0.
+- **Warcraft Forever** (Nov 4, beta Sep 17): standalone vanilla-era client; no evidence it shares the retail addon API. Out of scope.
+- **Scope decision (Nick, 2026-09-13):** squeeze as much as possible into 2.0.0 → **D4 Labyrinth tab is back in scope**; D5 capture side only. Voidcore weekly-purchase sentence held pending Nick.
+
+---
 ## 9. Progress log
 
 | Date | Done | Notes |
