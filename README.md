@@ -40,6 +40,15 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - Runs are logged in History and their vault credit counts toward the weekly tallies — **one vault slot per 3 chambers cleared, at any tier**
 - Labyrinth **support**, not a Labyrinth guide: Blizzard's Labyrinth content is still unfinished, so there are no route or chamber tips yet
 
+### 🧭 Labyrinth Tab
+
+- **This week** — per character: chambers cleared, vault credits earned, best tier seen, time spent
+- **Reputation** — your standing with *The Labyrinth of Kindo'jan* (faction 2836); says so plainly when the client is too old to have it
+- **Chambers seen** — built from your own runs: how often each chamber came up, its median clear time, and when you last saw it. Chamber content is re-rolled per run, so this is your sample, not a catalogue
+- **Rewards** — mount, titles, toys, transmog and the weekly quest line, each row tagged **unverified** until it is actually seen in game
+- **Tips** — only what has been confirmed: credit every 3 chambers at any tier, 9 chambers to a full run
+- Opens with `/dg labyrinth` (alias `/dg lab`)
+
 ### 🏆 Victory Screen
 
 - Animated toast on **Delve completion** with fade in/hold/fade out

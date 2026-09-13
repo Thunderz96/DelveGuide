@@ -202,6 +202,31 @@ class TestDedup(Fixture):
         self.assertEqual(self.players("Alpha Delve", "Quick Route"), 6)
 
 
+# --- forward compatibility ---------------------------------------------------
+
+class TestUnknownSections(Fixture):
+
+    def test_a_code_with_a_lab_section_still_parses_every_run(self):
+        """2.0.0 clients append a |LAB; section of Labyrinth chamber timings.
+
+        This tool does not rank Labyrinths, so the section is ignored -- but it
+        must not cost the LAST run segment, which is what splitting on
+        "|MISSING;" alone did: "...~1|LAB" is not an integer count, so the
+        segment was dropped and that player's fastest variant vanished.
+        """
+        raw = code(SEGMENTS) + "|LAB;12345~Chamber of Rites~11~300;12346~Halazzi's Lair~11~420"
+        parsed = list(agg.parse_code(raw))
+        self.assertEqual(len(parsed), len(SEGMENTS))
+        self.assertIn(("Alpha Delve", "Shared Route", 10, 1000, 1), parsed)
+        self.assertEqual(list(agg.parse_missing(raw)), [])
+
+        # ...and it survives the whole pipeline, MISSING section included.
+        raw2 = raw.replace("|LAB;", "|MISSING;Gamma Delve~frFR~Voie Inconnue|LAB;", 1)
+        self.write_csv(extra=[("player_f", raw2)])
+        self.run_tool("--write")
+        self.assertEqual(self.players("Alpha Delve", "Quick Route"), 6)
+
+
 # --- player floor ------------------------------------------------------------
 
 class TestPlayerFloor(Fixture):
