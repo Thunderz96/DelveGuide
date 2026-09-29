@@ -609,6 +609,136 @@ adding to the currency model once the ID is known.
 
 ---
 
+## 7. Research pass 2026-09-29 (builds 69848, 69952, 70077)
+
+Six research agents, one day after Blizzard dated the patch. Everything below is
+PTR client data (DB2 via wago.tools, Gethe/wow-ui-source `ptr2`) unless marked
+official. IDs can still move before live; re-check after patch day.
+
+**Release.** Official 2026-09-29: NA **Tue Oct 13**, EU **Wed Oct 14**, "with
+weekly maintenance". Final patch notes not yet published.
+
+**Builds.** 12.1.5 lives only on Gethe `ptr2` (NOT `ptr`, which is 12.1.0/69587 --
+the Sep 5 "identical on ptr and live" checks in API_12.1.5_Research.md compared
+two 12.1.0 trees). 69594 (Sep 3) -> 69848 (Sep 15) -> 69952 (Sep 22) -> 70077
+(Sep 29). TOC 120105. Live 12.1.0 moved to 69933 (Sep 22), nothing we call.
+
+**API.** Unchanged for every function, event and widget field DelveGuide uses,
+69594 -> 70077 (additive only: `Enum.PlayerInteractionType.RewardsShop=80`,
+companion creature-ID constants, `ScenarioDisplayInfo.startSoundKitID`). 79 is
+still `TieredEntrance`. No `Deprecated_12_1_5.lua`; 12.1.5 deletes ten
+`Blizzard_Deprecated*` addons (item, currency, pvp, pet, trade, sound, LFG, glue,
+socket, timer types). Still-live shims likely to go next: `GetSpecialization*`
+(-> `C_SpecializationInfo`), `SendChatMessage` (-> `C_ChatInfo`),
+`ChatFrame_DisplaySystemMessageInPrimary` (-> `ChatFrameUtil`).
+
+### 7.1 Labyrinth of Kindo'jan
+
+- **Chamber names unified (69848).** `C_Scenario.GetInfo()` now names every
+  chamber "The Labyrinth of Kindo'jan"; the content is identified by step title
+  and scenarioID only. "[PH] Soul Jars" became "Spirit Thieves" (3345). Sections
+  4.3, 5.1c, 5.2a and 5.5 above describe 69594 and are superseded on this point.
+- **Chambers (TaxiNodes, 70077).** Chamber of Rites 3300, The Reliquary 3304,
+  Halazzi's Lair 3306, Central Chamber 3308, The Catacombs 3310, The Cave Towers
+  3313, Jan'alai's Refuge 3315, Akil'zon's Roost 3317, Nalorakk's Rest 3319
+  (was "Den"). Hub scenario 3342 "Choose Your Path"; 3721 "Empty Halls" (70077).
+- **Content pool:** 21 families (step titles): Graverobbers, Fools and Curses,
+  Taken Antiquities, Raging Spirits, Soul Survivor, Malicious Masks, Vile
+  Intruders, Reins of the Warlord, The Wandering (69952), Spirit Thieves,
+  Reliquary Ritual, Bear's Burden, Containment Breach, Encroaching Darkness,
+  Returning the Bounty, Ritual Ruination, Setting Things Right, Soul Catcher,
+  Restless Dead, A Foul Presence, A Golden Opportunity. Eight families carry ~9
+  scenario IDs each (one per location, inference). Final boss scenario 3444:
+  Den'Zara (encounter 3556), Kindo'jan (3548). Boss encounters seen: Drill
+  Sergeant 3622, Undead Trollbunal 3632, King of Souls 3648, Grukk 3636, Sullied
+  Revenant 3527, Cynthra Buttonsmasher 3653, Sha'Kuro 3528.
+- **Credit (spell 1314915, unchanged since 69594):** every 3 chambers = 2 extra
+  Heavy Trunks, 1 extra Bountiful Coffer and Great Vault credit, up to 9; Heavy
+  Trunk crests doubled; 3+ chambers unlocks the next tier. **Kindo'jan at Tier 8+
+  gives one more Vault credit plus a Heroic Soul Fragment, once per week per
+  character** (item 285875 text).
+- **Tier ladder achievements** ("3 chambers on Tier N"; reward text unlocks Tier
+  N+1 delves): T1 63863, T2 63864, T3 63865, T4 63846, T5 63847, T6 63848, T7
+  63849, T8 63850, T9 63851, T10 63852, T11 63853. Statistics: 63730 chambers
+  completed, 63731 Kindo'jan kills.
+- **Other achievements:** 63715 Let Me Solo Him (mount), 63716 The First Hash'ey,
+  64039 Fabled Let Me Solo Him (Tier 11 solo before the first reset after launch),
+  64118 One-Champion Army, 63721 nine chambers in one run, 63722 Whose Labyrinth?
+  (9 on Tier 11), 63723 My Labyrinth (100 chambers), 63724 Knock Knock, 63717
+  Discoveries, 63718/63719 Lock and Key (Master), 63720 Happy Hexmask Collector,
+  63727/63728 Mislaid Oddities 10/50, 64186 "[DNT] 3+ chambers in one run".
+- **Rewards.** Key on achievement/item IDs; title IDs renumber every build.
+
+| Reward | Type | ID | Source |
+|---|---|---|---|
+| Loa-Blessed Wayfarer | mount | item 283363, mount 3144 | ach 63715 (Tier 11, solo) |
+| Loa-Blessed | title | via ach 63716 | defeat Kindo'jan |
+| Maze Runner | title | via ach 63722 | 9 chambers, one run, Tier 11 |
+| Treasure Hound | title | via ach 63717 | all Sturdy Chests |
+| Lockpickin' | title | via ach 63719 | hidden locked door 20x |
+| Fabled Vanquisher of The First Hash'ey | title | via ach 64039 | Tier 11 solo before the first reset (renamed in 69848) |
+| Lone Raider | title | via ach 64118 | Tier 11 solo, no lives lost, 9 chambers |
+| of the Labyrinth | title | title 1353 | source not listed (added 69848) |
+| Loa-Blessed Victory | toy | item 280820 | Kindo'jan drop |
+| Trail of Halazzi | toy | item 280821 | Ancient Chest |
+| Nalorakk's Strength Charm | toy | item 280822 | Ancient Chest |
+| Feathers of Akil'zon | toy | item 280823 | Ancient Chest |
+| Rite of Jan'alai's Flame | toy | item 280825 | Ancient Chest |
+| Kinduru's Spiriting Quill | toy | item 286643 | quest in Eversong Woods (added 69848) |
+| Weekly line | storyline 6385 | quests 98951, 98963, 98962, 98961, 98960, 98959 | 2 Myth armor pieces |
+| Kindo'jan's Reward | item | 285875 | Tier 8+ boss, weekly |
+
+  Transmog mini-set and Amani back piece: no item IDs found.
+- **Faction 2836 is a renown/Journey track**, not classic reputation: renown
+  currency 3536 (9 ranks since 69848), journey currency 3537, weekly tracker 3592.
+  Read it like Delver's Journey (`C_MajorFactions`), unverified in game.
+- **Still broken on 70077 (Blizzard forum "Many Labyrinth Bugs", no staff reply):**
+  boss kills not credited (criteria trees unchanged since 69594); leaving resets
+  to room one; Spirit Thieves unfinishable (09-26).
+
+### 7.2 Delve systems
+
+- **Nebulous Voidcores (official 09-29):** from the week of **Oct 6 on live
+  12.1.0**, Orin Straylight trades gold, Voidlight Marl or Veteran Mistcrests
+  (currency 3443) for **one extra Voidcore a week**, after "In the Catalyst's
+  Shadow" (Decimus) -> "Prismatic Potential" (Orin) -> "Umbral Blessings of the
+  Catalyst". Price not published. The Great Vault offer (3+ slots) continues.
+- **Ascendant Venomstone is an item, 280562** (not a currency). Weapon, trinket,
+  necklace; 10 per upgrade; Tier 11 Bountiful is the only delve source. Research
+  quest the week of Oct 13, **drops open the week of Oct 20** with the crest cap
+  lift. Community: Hero +7 ilvl, Myth +6 per upgrade.
+- **Delve glove enhancements** ("Ancient Hash'ey Battle Art", item ilvl cap 334,
+  Warband-bound, source unknown): enchant **8727** Falco Strikes (item 280563),
+  **8728** Ursine's Ironhide (283997), **8729** Heat Wave (283996), **8730** Eye
+  of the Lynx (283998). Identical on 69594 and 70077.
+- **Curios:** existing tooltips unchanged. Missing from our table: **Viperwind
+  Idol** (Combat, item 271133, rank spells 1288794/96/97/98). Dusty Loa Totem has
+  rank spells 1288801/03/04/05.
+- **Unchanged:** coffer keys and shards (100 per key, 600/week), Nemesis
+  (Azta'rec, flute, Trovehunter's Bounty), delve tier rewards, vendors (Wowhead
+  tables look copied from live, so re-run `/dg export` there), Valeera cap 80.
+  No new delves; Labyrinth adds POIs 9035/9036/9037.
+
+### 7.3 Taint (BugGrabber, retail, Aug 23 - Sep 7)
+
+- **Root cause, high confidence:** `SetDelveWaypoint` calls
+  `WorldMapFrame:SetMapID()` and `ToggleWorldMap()` from addon code, stamping
+  `WorldMapFrame.mapID` as tainted; every later `AcquirePin` reads it, so map pins
+  fail `SetPassThroughButtons`/`SetPropagateMouseClicks` in combat and the
+  waypoint pin's shift-click fails `CopyToClipboard`. Regression: 1.2.1 removed
+  map-opening for this exact error; 1.9.0 (#6) re-added it; first error logged
+  the same day. Likely also behind the POI-tooltip `textHeight` error, possibly
+  the objective-tracker MawBuffs one.
+- **Fix:** `C_Map.OpenWorldMap(uiMapID)` (11.1.5+, `HasRestrictions`, fires
+  `WORLD_MAP_OPEN`, which Blizzard handles securely), out of combat, after setting
+  the waypoint with the map closed. Taint-safety is documented on the wiki only;
+  verify with `issecurevariable(WorldMapFrame, "mapID")`. Fallback: no map-opening.
+- **Tooltip injection:** move from `GameTooltip:HookScript("OnUpdate")` to
+  `EventRegistry` callback `AreaPOIPin.MouseOver(owner, pin, tooltipShown,
+  areaPoiID, displayName)`, which Blizzard fires inside `securecallfunction`.
+- **Chat secret-string error (Sep 7): not ours.** Blizzard's censored-message
+  handler over ElvUI's chat wrapper; no DelveGuide line can carry a secret.
+
 ## Appendix: environment
 
 The PTR client hard-crashes on login with **Plater** enabled — `ERROR #110` in

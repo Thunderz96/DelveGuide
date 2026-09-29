@@ -252,6 +252,51 @@ aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's
 - **Scope decision (Nick, 2026-09-13):** squeeze as much as possible into 2.0.0 → **D4 Labyrinth tab is back in scope**; D5 capture side only. Voidcore weekly-purchase sentence held pending Nick.
 
 ---
+## 10. Work before 12.1.5 goes live (Oct 13 NA / Oct 14 EU)
+
+Built from the 2026-09-29 research pass (PTR_12.1.5_Findings.md section 7).
+Nothing below is started; each item waits on Nick's go.
+
+**Live line, 1.11.2 on `main`** (ideally before the Oct 6 Voidcore trade goes live)
+
+1. Loot tab: bare `GetItemInfoInstant` (DelveGuide_UI_Loot.lua:20) is deleted in 12.1.5; the tab errors on patch day. Same one-line fix 2.0.0 already has.
+2. Map opening: replace `ToggleWorldMap()` + `WorldMapFrame:SetMapID()` in `SetDelveWaypoint` and `/dg map` with `C_Map.OpenWorldMap`, out of combat, waypoint set first. Gate on the in-game `issecurevariable` test; if it fails, drop map-opening (the 1.2.1 behaviour).
+3. Voidforge/Loot text still says Voidcores "transmute into" gear and drop from Tier 8+ Bountiful Delves. Correct to bonus roll, Great Vault, plus Orin's weekly trade from Oct 6.
+4. Rankings refresh already committed (1554f37).
+5. `ADDON_VERSION` constant says 1.11.0.
+Then merge `main` into `ptr-12.1.5` (release skill: hotfix while a PTR line is open).
+
+**2.0.0 must-fix before the tag**
+
+6. Labyrinth tab "Chambers seen" groups by scenario name, which is identical for every chamber since 69848, so it collapses to one row. Group by the step title captured during the chamber (at SCENARIO_COMPLETED the step is already torn down, G2).
+7. Labyrinth tab reads faction 2836 as classic reputation; it is a renown/Journey track. Read it through `C_MajorFactions` like the Companion tab does.
+8. Labyrinth rewards list: renamed Fabled title (+ its one-week deadline), Maze Runner, Treasure Hound, Lockpickin', "of the Labyrinth", sixth toy Kinduru's Spiriting Quill; key rows on achievement/item IDs.
+9. `VENOMSTONE_ITEM_ID = 280562` (one line; the item-count path already exists). Drops open the week of Oct 20.
+10. Glove enhancement enchant IDs 8727-8730 into `delveGloveEnhancements`. Decision: the "(None)" row turns into a red reminder for everyone once IDs exist, while the source is still unknown.
+11. Curios: add Viperwind Idol; rank spell-ID sets for Dusty Loa Totem and Viperwind Idol.
+12. The map fix from item 2 arrives through the merge; also set the waypoint while the map is closed.
+
+**2.0.0 should-do (low risk)**
+
+13. Deprecated shims to namespaced forms with fallbacks: `C_SpecializationInfo`, `C_ChatInfo.SendChatMessage`, `ChatFrameUtil.DisplaySystemMessageInPrimary`.
+14. Retire the tracker scrape (HUD Method 3): the header widget is verified at T8, T9 and Labyrinth T11, and the scrape is a taint suspect.
+15. Tooltip injection to the `AreaPOIPin.MouseOver` EventRegistry callback (medium risk; may slip to 2.0.x).
+
+**Candidates to squeeze in**
+
+16. Labyrinth tab: owned/missing rewards (achievement, toy, mount APIs), tier-ladder progress (11 achievements), lifetime chambers and kills (`GetStatistic` 63730/63731).
+17. Count the Kindo'jan Tier 8+ weekly vault credit in the tallies.
+18. Story-variant "still needed" markers (CurseForge request, aleris88, Sep 5, unanswered): needs the Season 2 story achievement IDs.
+
+**In-game checks**
+
+- Retail, before 1.11.2: `/reload`, `/run WorldMapFrame:SetMapID(947)`, `/dump issecurevariable(WorldMapFrame,"mapID")` (expect false), then `/reload`, `/run C_Map.OpenWorldMap(947)`, same dump (true = the fix is safe).
+- PTR 70077: `/dg selftest`; `/dg export` in the hub and mid-chamber; `/dump C_Scenario.GetStepInfo()` mid-chamber (is the step title the content name?); `/dump C_MajorFactions.GetMajorFactionData(2836)`; `/dump select(4, GetBuildInfo())`.
+
+**Patch day:** the `delveguide-release` skill (confirm 120105 on live, merge `ptr-12.1.5` into `main`, stamp dates, tag on Nick's word).
+
+---
+
 ## 9. Progress log
 
 | Date | Done | Notes |
@@ -304,3 +349,5 @@ aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's
 | 2026-09-07 | **Gallery set complete** (8 shots incl. checklist-at-entrance and the fitted Victory toast); `/dg testrun` repeats now beat the previous best. **2.0.0 is release-ready on `ptr-12.1.5`.** Remaining, all on patch day: stamp `2026-09-TBD` dates, tag `v2.0.0`, Nick pastes the listing + uploads the gallery | Listing lead **confirmed by Nick**: delves are the focus, Labyrinths a core feature — rankings lead, Labyrinth support second |
 | 2026-09-13 | **Rankings refreshed** (Sep 13 export: 106/41, nine letters moved, applied to BOTH lines; `main` pushed untagged for Nick's retail test). **Research pass (3 Sonnet agents):** no PTR build after 69594 (public Sep 3; `Aug 28` was its compile stamp); 12.1.5 source is Gethe `ptr2`, NOT `ptr` (which tracks 12.1.0); zero commits since → API surface unchanged; interaction 79 = `TieredEntrance`; no release date (BlizzCon: "currently on the PTR"; Oct 6 is a cadence guess). Content decoding caught up: Labyrinth = 9 chambers (ach. 63721), faction 2836 has ranks, rewards documented | ⚠️ **Two wording checks for Nick in game:** Venomstone tooltip — dev notes + 2 sources say weapon/trinket/**necklace** (we say weapons + trinkets only); Voidcore weekly purchase — sources say the S1 weekly is gone and the Vault offers a Voidcore instead of gear at 3+ slots (we say a weekly purchase is expected) |
 | 2026-09-13 | **Neck back as the 5th Venomstone slot** (Blizzard dev notes). **D4 Labyrinth tab merged** (`DelveGuide_UI_Labyrinth.lua`, `/dg lab`): this week per character, faction 2836 standing, chambers seen + medians from `labyrinthLog`, rewards (all `verified=false`), 3 tips; **D5 capture**: `|LAB;id~name~tier~sec` appended to submit codes only when a timed chamber exists; aggregator now peels any trailing section (old split dropped the last run of such a code — real bug). Changelogs updated | In-game: tab on live shows the not-available reputation line without error; inside Kindo'jan after 2 chambers each row has a time; `/dg submit` tail ends in `|LAB;` only after a chamber; byte-identical code before any Labyrinth |
+
+| 2026-09-29 | **Research pass** (6 Sonnet agents) after Blizzard dated 12.1.5: **NA Oct 13 / EU Oct 14**. Builds 69848/69952/70077 on Gethe `ptr2`; our API surface unchanged; TOC 120105. Labyrinth, delve-system, community and taint findings in PTR_12.1.5_Findings.md section 7; work list in section 10. Listing figures corrected to 106/41 (4325c5e). 1.11.1 approved on CurseForge, 1 unanswered comment | Live 1.11.1 breaks on patch day (Loot tab bare `GetItemInfoInstant`); map-opening taint is a 1.9.0 regression of the 1.2.1 fix |

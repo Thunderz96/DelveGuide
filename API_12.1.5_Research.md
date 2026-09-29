@@ -8,7 +8,7 @@ Labyrinth-specific API surface.
 
 | Source | Branch / build | Reliability |
 |---|---|---|
-| `github.com/Gethe/wow-ui-source` | `ptr` @ `a89e9d0` (12.1.5 / 69594); `live` @ `8ea15b6` (12.1.0 / 69587) | Primary. Every claim re-verified via `raw.githubusercontent.com` (literal bytes or a clean 404) or the Commits API — GitHub directory listings passed through a summariser hallucinated twice during this pass (a non-existent `ScenarioDocumentation.lua`; a fabricated "removed in 11.0.0") and were not trusted alone |
+| `github.com/Gethe/wow-ui-source` | `ptr` @ `a89e9d0` is actually **12.1.0 / 69587**, not 12.1.5 (corrected 2026-09-29: 12.1.5 lives on `ptr2`, 49b6991 = 69594); `live` @ `8ea15b6` (12.1.0 / 69587). Any "identical on ptr and live" claim below compared two 12.1.0 trees; the like-for-like 69594 -> 70077 diff (PTR_12.1.5_Findings.md section 7) found our surface unchanged | Primary. Every claim re-verified via `raw.githubusercontent.com` (literal bytes or a clean 404) or the Commits API — GitHub directory listings passed through a summariser hallucinated twice during this pass (a non-existent `ScenarioDocumentation.lua`; a fabricated "removed in 11.0.0") and were not trusted alone |
 | `warcraft.wiki.gg/wiki/Patch_12.1.5/API_changes` | raw wikitext; auto-generated 12.1.0→12.1.5 diff of the generated-docs tree (TOC 120105, build 69594, Aug 28 2026) | Most authoritative single source found |
 | `townlong-yak.com/framexml/69594` | file index only | diff pages are JS-rendered, unreadable |
 | WoWhead PTR faction page (via search) | — | **Low confidence**, not source-verified; used for one cross-reference only |
