@@ -7,7 +7,7 @@ Chat, `/dg submit`. This file is the replacement, built from README.md after Pha
 it. Paste the **Description** block into the CurseForge project description; the two short
 blocks after it are for the gallery captions and the comment thread.
 
-Figures below (102 players / 40 variants) come from the 2026-09-07 rankings pass and match
+Figures below (106 players / 41 variants) come from the 2026-09-13 rankings pass and match
 `DelveGuideData.rankingStats`. Re-run the aggregator and update both if another form export
 lands before the tag; confirm the Interface line.
 
@@ -18,7 +18,7 @@ lands before the tag; confirm the Interface line.
 **DelveGuide — the in-game reference for Midnight Delves, with rankings measured from real runs.**
 
 Every other delve addon tells you what a variant *is*. DelveGuide tells you how *fast* it is:
-the S–F grades come from **102 players' timed runs across 40 variants**, submitted with one
+the S–F grades come from **106 players' timed runs across 41 variants**, submitted with one
 command and reduced to a median per variant. Not guesswork, not the author's opinion —
 measured, and refreshed every release.
 
