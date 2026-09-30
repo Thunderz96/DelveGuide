@@ -1333,9 +1333,9 @@ local function CacheCurrentChar()
     local specName = "?"
     local specIcon = nil -- NEW: Store the spec icon
     pcall(function()
-        local idx = GetSpecialization()
+        local idx = C_SpecializationInfo.GetSpecialization()
         if idx then
-            local _, sName, _, icon = GetSpecializationInfo(idx)
+            local _, sName, _, icon = C_SpecializationInfo.GetSpecializationInfo(idx)
             if sName then 
                 specName = sName
                 specIcon = icon 
@@ -2802,7 +2802,7 @@ DelveGuide.commands = {
                 local cmp = DelveGuide.GetRunComparison(testName, testVariant, elapsed, 8, testName)
                 if cmp then
                     local msg = "[DelveGuide] "..testName..": "..cmp
-                    if ChatFrame_DisplaySystemMessageInPrimary then ChatFrame_DisplaySystemMessageInPrimary(msg) else print(msg) end
+                    if ChatFrameUtil and ChatFrameUtil.DisplaySystemMessageInPrimary then ChatFrameUtil.DisplaySystemMessageInPrimary(msg) else print(msg) end
                 end
             end
             if DelveGuide.ShowVictoryScreen then
@@ -3181,6 +3181,7 @@ loadFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 loadFrame:RegisterEvent("ENCOUNTER_END")
 loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
 loadFrame:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
+loadFrame:RegisterEvent("SCENARIO_UPDATE"); loadFrame:RegisterEvent("SCENARIO_CRITERIA_UPDATE")
 loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
     if event=="ADDON_LOADED" and arg1==ADDON_NAME then
         InitSavedVars(); SeedLocalizedNames(); if DelveGuideDB.minimap.showInCompartment == nil then DelveGuideDB.minimap.showInCompartment = true end; icon:Register("DelveGuide", DelveGuideLDB, DelveGuideDB.minimap); if DelveGuide.CreateCompactWidget then DelveGuide.CreateCompactWidget() end
@@ -3276,6 +3277,20 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
             DelveGuide.LogLabyrinth({ kind = "encounter", encounterID = arg1, name = arg2,
                 difficultyID = arg3, groupSize = arg4, success = (arg5 == 1) })
         end
+    elseif event=="SCENARIO_UPDATE" or event=="SCENARIO_CRITERIA_UPDATE" then
+        -- G2: by SCENARIO_COMPLETED a chamber's step is already torn down, and
+        -- since build 69848 every chamber's scenario name is the Labyrinth's
+        -- own, so the step title ("Raging Spirits") is the only name a chamber
+        -- has. Catch it while the chamber runs; the chamber record reads it.
+        if DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName() then
+            pcall(function()
+                local title = C_Scenario.GetStepInfo()
+                if title and title ~= "" then
+                    local si = C_ScenarioInfo and C_ScenarioInfo.GetScenarioInfo and C_ScenarioInfo.GetScenarioInfo()
+                    DelveGuide.labyrinthStep = { title = title, scenarioID = si and si.scenarioID or select(13, C_Scenario.GetInfo()) }
+                end
+            end)
+        end
     elseif event=="SCENARIO_COMPLETED" then
         local scenarioName=C_Scenario.GetInfo()
         if not scenarioName then return end
@@ -3302,6 +3317,14 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
                     if si and si.scenarioID then e.scenarioID = si.scenarioID end
                 end
                 e.stepTitle = (C_Scenario.GetStepInfo())
+                -- Torn down by now (G2): use the title caught mid-chamber, when
+                -- it belongs to this same scenario.
+                local cap = DelveGuide.labyrinthStep
+                if (not e.stepTitle or e.stepTitle == "") and cap
+                   and (not e.scenarioID or not cap.scenarioID or cap.scenarioID == e.scenarioID) then
+                    e.stepTitle = cap.title
+                end
+                DelveGuide.labyrinthStep = nil
                 e.subzone   = GetSubZoneText()
                 e.criteria  = {}
                 for i = 1, (DelveGuide.GetCriteriaCount() or 0) do
@@ -3485,7 +3508,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
                 local cmp = DelveGuide.GetRunComparison(runName, runVariant, elapsed, tierNum, engRunName)
                 if cmp then
                     local msg = "[DelveGuide] "..runName..": "..cmp
-                    if ChatFrame_DisplaySystemMessageInPrimary then ChatFrame_DisplaySystemMessageInPrimary(msg) else print(msg) end
+                    if ChatFrameUtil and ChatFrameUtil.DisplaySystemMessageInPrimary then ChatFrameUtil.DisplaySystemMessageInPrimary(msg) else print(msg) end
                 end
             end
             if mainFrame and mainFrame:IsShown() and currentTabKey=="history" then SwitchTab("history") end

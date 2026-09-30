@@ -76,8 +76,8 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 
 The Voidforge tab tracks Season 2's two delve reward currencies:
 
-- **Nebulous Voidcore** — the bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. For now only the Great Vault awards them; a weekly purchase is expected around 12.1.5.
-- **Ascendant Venomstone** — the gear-upgrade material *(arriving later this season)*. 10 upgrade one weapon, trinket or neck, the only slots they apply to; a Tier 11 Bountiful Delve guarantees one (~1-2).
+- **Nebulous Voidcore** — the bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. They don't drop from delves: the Great Vault awards them, and Orin Straylight trades one more a week (gold, Voidlight Marl or Veteran Crests).
+- **Ascendant Venomstone** — the gear-upgrade material *(drops start the week of Oct 20)*. 10 upgrade one weapon, trinket or neck, the only slots they apply to; a Tier 11 Bountiful Delve guarantees one (~1-2).
 
 Plus an **upgrade priority** scan of the five Venomstone slots (weapons, trinkets and neck, lowest ilvl first) and an **alt stockpile** rollup across your cached characters.
 

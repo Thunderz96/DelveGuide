@@ -380,9 +380,9 @@ for _, cmd in ipairs({
         name = "specinfo",
         desc = "Print detected spec ID and curio recommendations",
         handler = function()
-            local idx = GetSpecialization and GetSpecialization()
-            if not idx then print("|cFF00BFFF[DelveGuide]|r GetSpecialization() returned nil"); return end
-            local specID, specName = GetSpecializationInfo(idx)
+            local idx = C_SpecializationInfo.GetSpecialization()
+            if not idx then print("|cFF00BFFF[DelveGuide]|r C_SpecializationInfo.GetSpecialization() returned nil"); return end
+            local specID, specName = C_SpecializationInfo.GetSpecializationInfo(idx)
             print(string.format("|cFF00BFFF[DelveGuide]|r specIndex=%d  specID=%d  specName=%s", idx, specID or -1, specName or "nil"))
             local rec = DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID]
             if rec then

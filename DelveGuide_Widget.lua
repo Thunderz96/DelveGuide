@@ -114,13 +114,13 @@ DelveGuide.ShareActiveVariants = function(channel, opts)
         local bountyTag = (type(ds)=="table" and ds.bountiful) and " [Bountiful]" or ""
         local part = string.format("[%s] %s (%s)%s", e.ranking, e.variant, e.delve, bountyTag)
         if #line + 2 + #part > SHARE_LINE_MAX then
-            SendChatMessage(line, target)
+            C_ChatInfo.SendChatMessage(line, target)
             line = part:sub(1, SHARE_LINE_MAX)
         else
             line = line .. "  " .. part
         end
     end
-    SendChatMessage(line, target)
+    C_ChatInfo.SendChatMessage(line, target)
     print("|cFF00BFFF[DelveGuide]|r " .. string.format(L["Shared %d variants to %s"], #entries, "|cFFFFFF00"..target.."|r"))
 end
 

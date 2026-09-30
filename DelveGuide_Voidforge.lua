@@ -12,8 +12,8 @@
 --       read may be possible -- see /dg currencydebug.
 --   * Ascendant Venomstone -- GEAR-UPGRADE material, arriving later this
 --       season. 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful
---       Delve is a guaranteed source (~1-2 each, unconfirmed). Currency/
---       item ID is unknown until it goes live -- fill it in then.
+--       Delve is a guaranteed source (~1-2 each, unconfirmed). It is a bag
+--       item, 280562, not a currency (build 70077).
 --
 -- The old 12.0.5 "Building the Voidforge" weekly (Elementary Voidcore
 -- Shards) and Ascendant Voidcore upgrade loop are retired.
@@ -29,14 +29,14 @@ DelveGuide.Voidforge = {
                                      -- leftovers, not what you earned this season. If a
                                      -- season-scoped figure is wanted, check whether
                                      -- info.totalEarned matches the tooltip (/dg currencydebug).
-    VENOMSTONE_CURRENCY_ID  = nil,  -- "Ascendant Venomstone" -- not live yet (arrives later in
-                                     -- S2). Set this when it appears as a currency...
-    VENOMSTONE_ITEM_ID      = nil,  -- ...or set this if it turns out to be a bag item instead.
+    VENOMSTONE_CURRENCY_ID  = nil,  -- "Ascendant Venomstone" is a bag item, not a currency:
+    VENOMSTONE_ITEM_ID      = 280562, -- item 280562 (12.1.5 PTR data, build 70077). Drops open
+                                     -- the week of Oct 20; until then the count reads 0.
     VENOMSTONE_PER_UPGRADE  = 10,   -- 10 Venomstones upgrade one eligible piece.
     MIN_VOIDCORE_TIER       = 8,    -- A recommendation, not a rule: the tier from which a Bountiful Delve's
                                      -- end-of-run loot is the max pool (Tiers 9-11 match 8), so a Voidcore
                                      -- bonus roll there draws from the best pool. A roll is ACCEPTED at any
-                                     -- tier (Nick rolled after a Tier 1 on the PTR, 2026-09-06), and
+                                     -- tier (Thunderz rolled after a Tier 1 on the PTR, 2026-09-06), and
                                      -- Voidcores do not drop from delves at all.
     VENOMSTONE_TIER         = 11,   -- T11 Bountiful Delves guarantee an Ascendant Venomstone.
 }

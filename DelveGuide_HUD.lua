@@ -298,10 +298,10 @@ end
 local function AutoDetectDelveTier()
     -- Method 0: the delve header widget's own tierText, read from the scenario
     -- step's widget set (DelveGuide.ReadDelveHeaderWidget). This is the data
-    -- the objective tracker renders; Method 3 below scrapes that rendering.
-    -- Verified on 69594 in Twilight Crypts at Tier 8 across three snapshots.
-    -- Kept ahead of the others, with all of them intact, until a second tier
-    -- and a Labyrinth have confirmed it -- then the scrape can go.
+    -- the objective tracker renders. Confirmed at Tiers 8 and 9 and in a
+    -- Tier 11 Labyrinth, so the old Method 3 -- a scrape of the objective
+    -- tracker's FontStrings, walked once a second -- is gone: it read
+    -- Blizzard's frames from addon code and was a taint suspect.
     do
         local info = DelveGuide.ReadDelveHeaderWidget and DelveGuide.ReadDelveHeaderWidget()
         local n = info and info.tierText and tonumber((tostring(info.tierText):match("(%d+)")))
@@ -344,77 +344,6 @@ local function AutoDetectDelveTier()
         end
     end)
     if scenarioTier then return scenarioTier, "2: scenario/step name" end
-
-    -- Method 3: Objective-tracker scrape.
-    -- The Delves tracker block renders as:
-    --     Delves                       <- generic header
-    --     0/1 <objective text>
-    --     <Delve Name>                 <- strong anchor
-    --     9                            <- TIER (always right after the name)
-    --     5                            <- lives
-    --     2
-    -- So the tier is the first bare number AFTER the delve-name line. Taking
-    -- the first number after the generic "Delves" header instead is what let a
-    -- stale/partial tracker report the previous run's tier, so that stays only
-    -- as a weak fallback.
-    local tracker = _G["ObjectiveTrackerFrame"] or _G["ScenarioObjectiveTracker"]
-    if tracker then
-        local zoneName = GetRealZoneText() or ""
-        -- Only trust the zone name as an anchor when we're actually in a known
-        -- delve (otherwise an overworld zone header could arm the match).
-        local delveAnchor = GetCurrentDelveName() and zoneName or nil
-
-        local foundDelveHeader, afterDelveName = false, false
-        local strongTier, weakTier, explicitTier = nil, nil, nil
-
-        local function SearchForTier(frame)
-            if not frame or frame:IsForbidden() then return end
-
-            for _, r in ipairs({frame:GetRegions()}) do
-                if r:GetObjectType() == "FontString" and r:IsShown() then
-                    local txt = r:GetText()
-                    if txt and txt ~= "" then
-                        -- Clean all color codes and whitespace
-                        local cleanTxt = DelveGuide.StripEscapes(txt):gsub("^%s+", ""):gsub("%s+$", "")
-
-                        -- An explicit "Tier N" always wins outright.
-                        local tier = cleanTxt:match("Tier %s*(%d+)") or cleanTxt:match("Tier: %s*(%d+)") or cleanTxt:match("Difficulty: %s*(%d+)")
-                        if tier then explicitTier = tonumber(tier); return end
-
-                        if delveAnchor and cleanTxt == delveAnchor then
-                            afterDelveName  = true
-                            foundDelveHeader = true
-                        elseif cleanTxt == "Delves" or (scenarioName ~= "" and cleanTxt == scenarioName) then
-                            foundDelveHeader = true
-                        elseif cleanTxt:match("^%d+$") then
-                            local num = tonumber(cleanTxt)
-                            if num and num >= 1 and num <= 11 then
-                                if afterDelveName and not strongTier then
-                                    strongTier = num
-                                    return
-                                elseif foundDelveHeader and not weakTier then
-                                    weakTier = num
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-
-            for _, child in ipairs({frame:GetChildren()}) do
-                SearchForTier(child)
-                if explicitTier or strongTier then return end
-            end
-        end
-
-        SearchForTier(tracker)
-        local result = explicitTier or strongTier or weakTier
-        if result then
-            return result, explicitTier and "3: explicit Tier text"
-                        or strongTier and "3: after delve name"
-                        or "3: under Delves header (weak)"
-        end
-    end
 
     return nil, nil
 end
@@ -617,9 +546,9 @@ local function UpdateHUD()
     -- per-spec Season 2 curio recs exist.
     local curioText = "|cFF888888--|r"
     pcall(function()
-        local specIndex = GetSpecialization()
+        local specIndex = C_SpecializationInfo.GetSpecialization()
         if specIndex then
-            local specID = GetSpecializationInfo(specIndex)
+            local specID = C_SpecializationInfo.GetSpecializationInfo(specIndex)
             local rec = specID and DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID]
             if rec and rec.companion then
                 curioText = "Valeera: |cFF00CFFF" .. rec.companion .. "|r"

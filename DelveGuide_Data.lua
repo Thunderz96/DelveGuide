@@ -321,7 +321,8 @@ DelveGuideData.cofferKeys = {
 -- still placeholder ("[PH]" scenario names), so re-check on the launch build.
 -- Vault credit is granted every three chambers cleared (3 / 6 / 9), at any
 -- tier -- see DelveGuide.LogLabyrinthRun. The Kindo'jan kill at Tier 8+ is a
--- separate reward (Heroic Soul Fragment, once per week) and is not modelled.
+-- separate weekly reward (item 285875: one more vault credit and a Heroic Soul
+-- Fragment, once per week per character); it is a tip, not counted in tallies.
 DelveGuideData.labyrinths = {
     { name = "The Labyrinth of Kindo'jan", instanceID = 3043, widgetSetID = 2316, verifiedBuild = 69594 },
 }
@@ -352,36 +353,49 @@ end
 --   * numbers we have SEEN: a vault credit every three chambers at any
 --     tier, nine chambers in a full run (achievement 63721), on build
 --     69594. These are what `tips` says.
---   * rewards nobody here has looted yet. Every row is verified=false and
---     renders with an "unverified" tag until one is seen in game. Compiled
---     2026-09-13 from:
---       https://www.wowhead.com/news/patch-12-1-5-labyrinth-rewards-include-transmog-titles-toys-and-more-382776
---       https://us.forums.blizzard.com/en/wow/t/midnight-1215-ptr-development-notes/2344395
+--   * rewards, keyed by the game IDs they come from (client data, build
+--     70077, PTR_12.1.5_Findings.md 7.1), so the tab can ask the game which
+--     ones this account already has: achievementID (titles, and the tier
+--     ladder), itemID (toys), mountID. Title IDs are NOT used: they
+--     renumbered between PTR builds, the achievements did not. Rows with no
+--     ID (the transmog, not found in the data) stay verified=false and
+--     render with an "unverified" tag.
 --
 -- Reward `name` is game data and stays unwrapped; `source` is prose and is
 -- wrapped, the same split the loot rows use.
 -- ------------------------------------------------------------
 DelveGuideData.labyrinthContent = {
-    verifiedBuild     = 69594,
+    verifiedBuild     = 70077,
     chambersPerRun    = 9,
     chambersPerCredit = 3,
+    -- "3 chambers on Tier N" for N = 1..11, in tier order; each one unlocks
+    -- the next tier. The IDs are not contiguous (Tiers 1-3 were added later).
+    tierAchievements  = { 63863, 63864, 63865, 63846, 63847, 63848, 63849, 63850, 63851, 63852, 63853 },
+    statChambers      = 63730,   -- statistic: Labyrinth chambers completed
+    statKills         = 63731,   -- statistic: Kindo'jan defeated
     rewards = {
-        { name="Loa-Blessed Wayfarer",              group="Mount",        source=L["solo Kindo'jan kill at Tier 11"],          verified=false },
-        { name="Fabled Vanquisher of Kindo'jan",    group="Titles",       source=L["reported as a Labyrinth title reward"],    verified=false },
-        { name="Lone Raider",                       group="Titles",       source=L["reported as a Labyrinth title reward"],    verified=false },
-        { name="Loa-Blessed",                       group="Titles",       source=L["reported as a Labyrinth title reward"],    verified=false },
-        { name="Trail of Halazzi",                  group="Toys",         source=L["Ancient Chest"],                           verified=false },
-        { name="Nalorakk's Strength Charm",         group="Toys",         source=L["Ancient Chest"],                           verified=false },
-        { name="Feathers of Akil'zon",              group="Toys",         source=L["Ancient Chest"],                           verified=false },
-        { name="Rite of Jan'alai's Flame",          group="Toys",         source=L["Ancient Chest"],                           verified=false },
-        { name="Loa-Blessed Victory",               group="Toys",         source=L["Ancient Chest"],                           verified=false },
+        { name="Loa-Blessed Wayfarer",              group="Mount",        mountID=3144, achievementID=63715, source=L["Kindo'jan solo on Tier 11 (Let Me Solo Him)"] },
+        { name="Loa-Blessed",                       group="Titles",       achievementID=63716, source=L["defeat Kindo'jan"] },
+        { name="Maze Runner",                       group="Titles",       achievementID=63722, source=L["9 chambers in one run on Tier 11"] },
+        { name="Treasure Hound",                    group="Titles",       achievementID=63717, source=L["find every Sturdy Chest"] },
+        { name="Lockpickin'",                       group="Titles",       achievementID=63719, source=L["open the hidden locked door 20 times"] },
+        { name="Lone Raider",                       group="Titles",       achievementID=64118, source=L["Tier 11 solo: 9 chambers, no lives lost"] },
+        { name="Fabled Vanquisher of The First Hash'ey", group="Titles",  achievementID=64039, source=L["Kindo'jan solo on Tier 11 before the first weekly reset after 12.1.5 -- a one-week window"] },
+        { name="of the Labyrinth",                  group="Titles",       source=L["source not listed yet"] },
+        { name="Loa-Blessed Victory",               group="Toys",         itemID=280820, source=L["Kindo'jan drop"] },
+        { name="Trail of Halazzi",                  group="Toys",         itemID=280821, source=L["Ancient Chest"] },
+        { name="Nalorakk's Strength Charm",         group="Toys",         itemID=280822, source=L["Ancient Chest"] },
+        { name="Feathers of Akil'zon",              group="Toys",         itemID=280823, source=L["Ancient Chest"] },
+        { name="Rite of Jan'alai's Flame",          group="Toys",         itemID=280825, source=L["Ancient Chest"] },
+        { name="Kinduru's Spiriting Quill",         group="Toys",         itemID=286643, source=L["quest in Eversong Woods"] },
         { name="Troll-themed mini-set",             group="Transmog",     source=L["helm, shoulders and cape"],                verified=false },
         { name="Amani back piece",                  group="Transmog",     source=L["separate from the mini-set"],              verified=false },
-        { name="Two Mythic-track armor pieces",     group="Weekly quest", source=L["your choice, from a six-step weekly chain"], verified=false },
+        { name="Two Mythic-track armor pieces",     group="Weekly quest", source=L["your choice, from a six-step weekly chain"] },
     },
     tips = {
         L["Vault credit lands every 3 chambers cleared, at any tier -- it is not tied to a boss kill."],
         L["A full run is 9 chambers, which is three vault credits."],
+        L["Kindo'jan on Tier 8 or higher also pays out once a week per character: one more vault credit and a Heroic Soul Fragment."],
         L["On the PTR a boss kill was sometimes not credited, so DelveGuide counts chambers rather than kills."],
     },
 }
@@ -570,23 +584,23 @@ DelveGuideData.loot = {
 -- ============================================================
 -- The two Season 2 delve currencies, described once. Every tab that mentions
 -- them reads these (Loot, Voidforge, Future) so the wording cannot drift
--- (review 1.8). What they are, from Nick's live play (2026-09-06), which
+-- (review 1.8). What they are, from Thunderz's live play (2026-09-06), which
 -- outranks the tooltip's flavour text ("transmutable into powerful
 -- equipment ... once per difficulty level"):
 --   * Nebulous Voidcore = a BONUS-ROLL token: after a boss or a completed
 --     run you spend one to roll for additional loot. It does NOT drop from
---     delves at any tier -- right now the Great Vault is the only source, and
---     a weekly quest to buy them (gold, Voidlight Marl or 80 Veteran Crests)
---     is expected around 12.1.5. A roll can be used after a Bountiful Delve
---     of ANY tier (Nick rolled after a Tier 1, PTR 2026-09-06), so
+--     delves at any tier -- the Great Vault awards them, and from the week of
+--     Oct 6 Orin Straylight trades one more a week for gold, Voidlight Marl or
+--     Veteran crests (Blizzard, 2026-09-29). A roll can be used after a Bountiful Delve
+--     of ANY tier (Thunderz rolled after a Tier 1, PTR 2026-09-06), so
 --     MIN_VOIDCORE_TIER in DelveGuide_Voidforge.lua is only about where a roll
 --     is WORTH spending -- the end-of-run loot pool is max from Tier 8.
 --   * Ascendant Venomstone = the UPGRADE material, and it upgrades weapons and
 --     trinkets and necks ONLY (Blizzard's 12.1.5 dev notes: weapon/trinket/necklace)
 --     -- hence the Voidforge tab's slot list is those five slots.
 DelveGuideData.currencyNotes = {
-    voidcore   = L["Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve (any tier -- Tier 8+ has the max loot pool) or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. For now only the Great Vault awards them; a weekly purchase (gold, Voidlight Marl or 80 Veteran Crests) is expected around 12.1.5."],
-    venomstone = L["Gear-upgrade material, arriving later this season. 10 upgrade one weapon, trinket or neck -- the only slots they apply to. A Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+."],
+    voidcore   = L["Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve (any tier -- Tier 8+ has the max loot pool) or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. They don't drop from delves: the Great Vault awards them, and Orin Straylight trades one more a week (gold, Voidlight Marl or Veteran Crests)."],
+    venomstone = L["Gear-upgrade material; drops start the week of Oct 20. 10 upgrade one weapon, trinket or neck -- the only slots they apply to. A Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+."],
 }
 
 DelveGuideData.future = {
@@ -703,7 +717,7 @@ DelveGuideData.specCurioRecs = {
 -- The one grade palette (Delves tab, Curios, HUD, widget, Settings). The
 -- tier-list convention players already know, warm at the top and cool at the
 -- bottom: S is the only salmon, so it never reads as D or F, and the warm top
--- grades stay visible over the HUD's green highlight (Nick, 2026-09-07 --
+-- grades stay visible over the HUD's green highlight (Thunderz, 2026-09-07 --
 -- replaced two disagreeing palettes whose S was orange next to an orange D).
 DelveGuideData.gradeColors = {
     S = "|cFFFF7F7F",
@@ -730,7 +744,7 @@ DelveGuideData.changelog = {
             "A reload in the middle of a run no longer loses the run. The timer picks up where it was and the variant is kept, so the run still counts toward the rankings.",
             "The Victory screen now tells you how the run went against your own best for that delve and variant, and against the community median. The same line is printed to chat.",
             "New: keybindings for the window, HUD and widget; an addon compartment entry; a countdown to the daily variant rotation; a native map waypoint when you click a delve; a Cosmetics group on the Loot tab; and an About block in Settings.",
-            "Nebulous Voidcores are bonus-roll tokens you spend after a boss or a completed run for extra loot -- they do not drop from delves at all. Right now the Great Vault is the only source, with a weekly purchase expected around 12.1.5. Ascendant Venomstones upgrade weapons, trinkets and necks only, so the Voidforge priority list is those four slots.",
+            "Nebulous Voidcores are bonus-roll tokens you spend after a boss or a completed run for extra loot -- they do not drop from delves at all. The Great Vault awards them, and Orin Straylight trades one more a week. Ascendant Venomstones upgrade weapons, trinkets and necks only, so the Voidforge priority list is those five slots; their drops start the week of Oct 20.",
             "Fixed: runs finished near the weekly reset could land in the previous week and go missing from your counts; the Loot tab errored on every render on 12.1.5; tier and lives are read from the delve's own header now, so they work in any language and inside a Labyrinth; the Companion tab reads Valeera's live role and curios from game data instead of the panel text.",
             "One grade palette everywhere now, in the tier-list convention: S salmon down to F green. The Debug tab is hidden unless you tick it on in Settings; the debug commands still run.",
             "Every string in the addon can now be translated. Copy Locales/TEMPLATE.lua, translate it, and open a pull request -- there are no translations yet, so English is unchanged.",

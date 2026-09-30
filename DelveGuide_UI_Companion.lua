@@ -5,9 +5,9 @@ local UI = DelveGuide.UI
 local L = DelveGuide.L
 
 local function GetSpecRec()
-    local idx = GetSpecialization and GetSpecialization()
+    local idx = C_SpecializationInfo.GetSpecialization()
     if not idx then return nil end
-    local specID = select(1, GetSpecializationInfo(idx))
+    local specID = select(1, C_SpecializationInfo.GetSpecializationInfo(idx))
     if not specID then return nil end
     return DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID], specID
 end

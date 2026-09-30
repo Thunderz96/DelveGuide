@@ -157,7 +157,7 @@ local function CreateDelveRow(parent, y, d, index)
         row.fill:ClearAllPoints(); row.fill:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))
         row.fill:SetSize(rowW-4,rH+2)
         -- 0.35 read as too intense under the salmon/orange top grades; 0.22
-        -- vanished on Nick's screen. 0.30 is the middle (2026-09-07).
+        -- vanished on Thunderz's screen. 0.30 is the middle (2026-09-07).
         row.fill:SetGradient("HORIZONTAL",CreateColor(0,0.7,0.15,0.30),CreateColor(0,0.7,0.15,0))
         row.fill:Show()
         row.bar:ClearAllPoints(); row.bar:SetPoint("TOPLEFT",parent,"TOPLEFT",2,-(y-1))

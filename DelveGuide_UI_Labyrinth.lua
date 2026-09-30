@@ -4,9 +4,10 @@
 -- The Labyrinth of Kindo'jan is not a Delve, but it feeds the same Great
 -- Vault: three chambers cleared is one delve vault credit. This tab reports
 -- what the addon has actually RECORDED (history rows with kind="labyrinth",
--- and the DelveGuideDB.labyrinthLog observation entries) alongside the
--- reward list from DelveGuideData.labyrinthContent, which is still
--- guide-site sourced and tagged unverified.
+-- and the DelveGuideDB.labyrinthLog observation entries), what the GAME
+-- records (renown, the tier-ladder achievements, lifetime statistics), and
+-- the reward list from DelveGuideData.labyrinthContent, marked earned or
+-- collected where the game can say.
 -- ============================================================
 local UI = DelveGuide.UI
 local L = DelveGuide.L
@@ -69,37 +70,104 @@ local function RenderThisWeek(cf, y)
 end
 
 -- ------------------------------------------------------------
--- 3. REPUTATION
--- Warband reputations do not show up in GetNumFactions at all (see
--- PTR_12.1.5_Findings.md 5.10), so this is the ID form only. On a live
--- 12.1.0 client the ID is simply not there yet, which is a normal answer
--- and not an error.
+-- 3. RENOWN
+-- Faction 2836 is a renown track like Delver's Journey, not a classic
+-- reputation: C_Reputation.GetFactionDataByID returns nil for it, which is
+-- why this section only ever said "not available". C_MajorFactions reads it
+-- (PTR /dg export, 2026-09-07: renown 1, 2120 / 4200). On a live 12.1.0
+-- client the faction does not exist, which is a normal answer, not an error.
 -- ------------------------------------------------------------
 local function RenderReputation(cf, y)
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Reputation"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Renown"] .. "|r") + 4
 
-    local d
+    local d, atMax
     pcall(function()
-        if C_Reputation and C_Reputation.GetFactionDataByID then
-            d = C_Reputation.GetFactionDataByID(LAB_FACTION)
+        if C_MajorFactions and C_MajorFactions.GetMajorFactionData then
+            d = C_MajorFactions.GetMajorFactionData(LAB_FACTION)
+            atMax = C_MajorFactions.HasMaximumRenown and C_MajorFactions.HasMaximumRenown(LAB_FACTION)
         end
     end)
     if not (d and d.name and d.name ~= "") then
         return y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Not available on this client yet -- the Kindo'jan reputation only exists on 12.1.5."] .. "|r") + 8
     end
 
-    local rank
-    pcall(function()
-        if d.reaction then rank = _G["FACTION_STANDING_LABEL" .. d.reaction] end
-    end)
-    local cur  = tonumber(d.currentStanding) or 0
-    local base = tonumber(d.currentReactionThreshold) or 0
-    local nxt  = tonumber(d.nextReactionThreshold) or 0
-    y = y + UI.CreateRow(cf, y, "  |cFF00BFFF" .. d.name .. "|r  |cFFFFD700" .. (rank or "?") .. "|r")
-    if nxt > base then
-        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. string.format(L["%d / %d to the next rank"], cur - base, nxt - base) .. "|r")
-    else
+    local level = tonumber(d.renownLevel) or 0
+    local cur   = tonumber(d.renownReputationEarned) or 0
+    local need  = tonumber(d.renownLevelThreshold) or 0
+    y = y + UI.CreateRow(cf, y, "  |cFF00BFFF" .. d.name .. "|r  |cFFFFD700" .. string.format(L["Renown %d"], level) .. "|r")
+    if d.isUnlocked == false then
+        y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Not unlocked yet."] .. "|r")
+    elseif atMax or need <= 0 then
         y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Maximum rank."] .. "|r")
+    else
+        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. string.format(L["%d / %d to the next rank"], cur, need) .. "|r")
+    end
+    return y + 8
+end
+
+-- true / false when the game can answer, nil when it cannot (an ID this
+-- client does not know, e.g. a 12.1.0 client).
+local function AchievementDone(id)
+    local ok, aid, _, _, completed = pcall(GetAchievementInfo, id)
+    if not ok or not aid then return nil end
+    return completed and true or false
+end
+
+local function RewardStatus(r)
+    if r.mountID and C_MountJournal and C_MountJournal.GetMountInfoByID then
+        -- isCollected is the 11th return
+        local ok, name, _, _, _, _, _, _, _, _, _, isCollected = pcall(C_MountJournal.GetMountInfoByID, r.mountID)
+        if ok and name then return isCollected and true or false end
+    end
+    if r.itemID and C_ToyBox and C_ToyBox.GetToyInfo and PlayerHasToy then
+        -- PlayerHasToy says false for an item the client does not know as a
+        -- toy at all, so ask the toy box first; an unknown ID stays unmarked.
+        local ok, known = pcall(C_ToyBox.GetToyInfo, r.itemID)
+        if ok and known then return PlayerHasToy(r.itemID) and true or false end
+    end
+    if r.achievementID then return AchievementDone(r.achievementID) end
+    return nil
+end
+
+-- ------------------------------------------------------------
+-- 3b. PROGRESS
+-- The tier ladder is eleven achievements, "3 chambers on Tier N", each
+-- unlocking the next tier, so the highest one earned is how far up the
+-- ladder the account is. Lifetime counts are the game's own statistics.
+-- Hidden on a client that knows none of the achievements.
+-- ------------------------------------------------------------
+local function Statistic(id)
+    local ok, v = pcall(GetStatistic, id)
+    if not ok or v == nil or v == "" then return nil end
+    v = tostring(v)
+    return (v == "--") and "0" or v
+end
+
+local function RenderProgress(cf, y, content)
+    local ladder = content.tierAchievements or {}
+    local top, known = 0, false
+    for tier, id in ipairs(ladder) do
+        local done = AchievementDone(id)
+        if done ~= nil then known = true end
+        if done then top = tier end
+    end
+    if not known then return y end
+
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Progress"] .. "|r") + 4
+    local ladderText
+    if top == 0 then
+        ladderText = L["Tier ladder: nothing cleared yet. 3 chambers on Tier 1 starts it."]
+    elseif top >= #ladder then
+        ladderText = string.format(L["Tier ladder: complete (3 chambers on Tier %d)."], top)
+    else
+        ladderText = string.format(L["Tier ladder: 3 chambers cleared on Tier %d. Next: 3 on Tier %d."], top, top + 1)
+    end
+    y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. ladderText .. "|r")
+
+    local ch    = content.statChambers and Statistic(content.statChambers)
+    local kills = content.statKills and Statistic(content.statKills)
+    if ch or kills then
+        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. string.format(L["This character, lifetime: %s chambers cleared, Kindo'jan defeated %s time(s)."], ch or "?", kills or "?") .. "|r")
     end
     return y + 8
 end
@@ -112,12 +180,17 @@ end
 -- ------------------------------------------------------------
 local function RenderChambers(cf, y)
     y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Chambers Seen"] .. "|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["recorded from your own runs on PTR build 69594; chamber names may still change"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["recorded from your own runs: one row per chamber objective"] .. "|r") + 4
 
     local seen, order = {}, {}
     for _, e in ipairs((DelveGuideDB and DelveGuideDB.labyrinthLog) or {}) do
         if e.kind == "chamber" then
-            local key = e.scenarioName
+            -- A chamber is named by its step title: since build 69848 every
+            -- chamber's scenario name is the Labyrinth's own, so keying on it
+            -- folded the whole list into one row. Entries logged before the
+            -- step title was captured still carry the content in scenarioName.
+            local key = e.stepTitle
+            if not key or key == "" then key = (e.scenarioName ~= e.labyrinth) and e.scenarioName or nil end
             if not key or key == "" then key = e.scenarioID and ("#" .. tostring(e.scenarioID)) or nil end
             if key then
                 local s = seen[key]
@@ -180,7 +253,7 @@ local GROUP_HEADING = {
 local function RenderRewards(cf, y)
     local content = DelveGuideData and DelveGuideData.labyrinthContent or {}
     y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Rewards"] .. "|r") + 2
-    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Rows marked unverified came from guide sites and have not been seen in game yet."] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Earned and collected marks come from your achievements, toys and mounts. Rows marked unverified have no game ID yet."] .. "|r") + 4
 
     for _, group in ipairs(REWARD_GROUPS) do
         local any = false
@@ -190,8 +263,15 @@ local function RenderRewards(cf, y)
                     any = true
                     y = y + UI.CreateRow(cf, y, "  |cFF00CFFF" .. (GROUP_HEADING[group] or group) .. "|r") + 2
                 end
+                local have = RewardStatus(r)
+                local mark = ""
+                if have == true then
+                    mark = "  |cFF00FF44" .. ((r.achievementID and not r.mountID) and L["earned"] or L["collected"]) .. "|r"
+                elseif have == false then
+                    mark = "  |cFF666666" .. L["not yet"] .. "|r"
+                end
                 y = y + UI.CreateRow(cf, y, "    |cFFCCCCCC" .. r.name .. "|r  |cFF888888-- " .. (r.source or "") .. "|r"
-                    .. (r.verified == false and ("  |cFFFF8800" .. L["unverified"] .. "|r") or ""))
+                    .. (r.verified == false and ("  |cFFFF8800" .. L["unverified"] .. "|r") or "") .. mark)
             end
         end
         if any then y = y + 4 end
@@ -211,6 +291,7 @@ DelveGuide.RenderLabyrinth = function()
 
     y = RenderThisWeek(cf, y)
     y = RenderReputation(cf, y)
+    y = RenderProgress(cf, y, content)
     y = RenderChambers(cf, y)
     y = RenderRewards(cf, y)
 

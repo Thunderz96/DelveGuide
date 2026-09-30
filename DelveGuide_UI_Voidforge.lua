@@ -42,7 +42,7 @@ DelveGuide.RenderVoidforge = function()
         y = y + UI.CreateRow(cf, y, "|cFFAA66CC  " .. L["Nebulous Voidcores:"] .. "|r |cFFFFFFFF" .. s.cores .. capStr
             .. "|r |cFF888888" .. L["(bonus roll after a raid boss / M+ / Bountiful Delve / Nightmare Prey)"] .. "|r") + 2
     else
-        y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["None yet -- for now the Great Vault is the only source. (Populates in-game or after a /reload.)"] .. "|r") + 2
+        y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["None yet -- the Great Vault awards them, and Orin Straylight trades one more a week. (Populates in-game or after a /reload.)"] .. "|r") + 2
     end
     y = y + 6
 
