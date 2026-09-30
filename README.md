@@ -43,10 +43,11 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 ### 🧭 Labyrinth Tab
 
 - **This week** — per character: chambers cleared, vault credits earned, best tier seen, time spent
-- **Reputation** — your standing with *The Labyrinth of Kindo'jan* (faction 2836); says so plainly when the client is too old to have it
-- **Chambers seen** — built from your own runs: how often each chamber came up, its median clear time, and when you last saw it. Chamber content is re-rolled per run, so this is your sample, not a catalogue
-- **Rewards** — mount, titles, toys, transmog and the weekly quest line, each row tagged **unverified** until it is actually seen in game
-- **Tips** — only what has been confirmed: credit every 3 chambers at any tier, 9 chambers to a full run
+- **Renown** — your renown with *The Labyrinth of Kindo'jan* (faction 2836, a renown track like Delver's Journey); says so plainly when the client is too old to have it
+- **Progress** — how far up the tier ladder you are (the eleven "3 chambers on Tier N" achievements), plus lifetime chambers cleared and Kindo'jan kills
+- **Chambers seen** — built from your own runs, one row per chamber objective: how often it came up, its median clear time, and when you last saw it. Chamber content is re-rolled per run, so this is your sample, not a catalogue
+- **Rewards** — mount, titles, toys, transmog and the weekly quest line, each marked **earned**, **collected** or **not yet** from your own account (rows with no game ID yet are tagged **unverified**)
+- **Tips** — only what the game data confirms: credit every 3 chambers at any tier, 9 chambers to a full run, Kindo'jan's weekly Tier 8+ reward, what renown unlocks
 - Opens with `/dg labyrinth` (alias `/dg lab`)
 
 ### 🏆 Victory Screen
