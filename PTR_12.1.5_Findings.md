@@ -739,6 +739,77 @@ socket, timer types). Still-live shims likely to go next: `GetSpecialization*`
 - **Chat secret-string error (Sep 7): not ours.** Blizzard's censored-message
   handler over ElvUI's chat wrapper; no DelveGuide line can carry a secret.
 
+### 7.4 Research pass 2, same day (build 70077 client data via wago.tools; Gethe `ptr2`)
+
+- **Glove enhancements are Labyrinth renown rewards** (RenownRewards track 55,
+  "Sturdy Chests beyond [loa]'s Seals"): 8727 Falco Strikes at renown 3
+  (Akil'zon), 8729 Heat Wave at 5 (Jan'alai), 8728 Ursine's Ironhide at 7
+  (Nalorakk), 8730 Eye of the Lynx at 9 (Halazzi). On 69594 the levels were
+  2/4/3/5, so the tab does not print them. The items (280563, 283997, 283996,
+  283998) apply the enchant through use spells 1314402/1315082/1315083/1315084
+  (Effect 53). Delves only, about 2 procs a minute, 1s internal cooldown;
+  gloves ilvl 334 or below, item needs level 90; Epic, Warband-bound, not
+  consumed. Effects: Falco -- Nature strike, 20% chance to strike again;
+  Ursine -- absorb, 15s; Heat Wave -- flames for 20s, Fire every 4s split
+  among nearby enemies; Lynx -- Haste and Leech for 15s on you and a random
+  nearby ally. Amounts are level-scaled coefficients.
+- **Every curio gains a Rank 5 in 12.1.5** (absent on live 69933, where the
+  others read "Rank N/4"; Rank 1-4 IDs unchanged). Rank 5 drops from
+  Bountiful Coffers and Hidden Troves in Tier 8+ Labyrinths (renown 1 text).
+  Combat node 110786, Utility node 110785 (`Enum.CurioType` Combat=0,
+  Utility=1). Spell ID order is not monotonic by rank.
+
+| Curio | Type | R1 | R2 | R3 | R4 | R5 |
+|---|---|---|---|---|---|---|
+| Corrosive Bilespear | Combat | 1248878 | 1248877 | 1248876 | 1248875 | 1315061 |
+| Ouroboric Curse | Combat | 1248856 | 1248858 | 1248859 | 1248860 | 1315060 |
+| Essence Trap | Combat | 1288788 | 1288789 | 1288790 | 1288791 | 1315062 |
+| Viperwind Idol | Combat | 1288794 | 1288796 | 1288797 | 1288798 | 1314570 |
+| Soul-Cracking Dreamcatcher | Utility | 1248899 | 1248898 | 1248897 | 1248896 | 1315064 |
+| Dundun's Favor | Utility | 1248895 | 1248894 | 1248893 | 1248892 | 1315063 |
+| Venom Infusion | Utility | 1288782 | 1288783 | 1288785 | 1288786 | 1315065 |
+| Dusty Loa Totem | Utility | 1288801 | 1288803 | 1288804 | 1288805 | 1314978 |
+
+  Leftover "Rank 1/4" helper spells 1288787, 1288795, 1288802 are not trait
+  spells. **Viperwind Idol** is player-triggered (about 1 proc a minute): a
+  venom vortex for 15s, Nature damage every 0.5s, damage taken reduced 10% to
+  50% by rank, the trail explodes afterwards; Rank 5 adds a pull of enemies
+  beyond 8 yds (each at most once per 4s).
+- **Labyrinth achievements confirmed** (W = account-wide flag 0x20000):
+  63715 Let Me Solo Him: Kindo'jan, mount (character); 63716 The First
+  Hash'ey, "Loa-Blessed %s" (character); 63717 Discoveries, "Treasure Hound
+  %s" (W); 63718 Lock and Key (W); 63719 Lock and Key Master, "Lockpickin' %s"
+  (W); 63721 nine chambers in a run (W); 63722 Whose Labyrinth?, "Maze Runner
+  %s" (character); 63723 My Labyrinth, 100 chambers (W); 64039 Fabled Let Me
+  Solo Him, "%s, Fabled Vanquisher of The First Hash'ey" (W, "before the first
+  reset following his introduction" -- no date in the data; Oct 20 NA / Oct 21
+  EU is the likely cutoff); 64118 One-Champion Army, "Lone Raider %s" (W).
+  Tier ladder T1 63863 ... T11 63853, all W, "Complete 3 chambers ... on Tier
+  N"; reward text "Unlock: Tier N+1 delves in Midnight Season 2" for T1-T8
+  (T9-T11 repeat their own number, likely a typo). Statistics 63730 "Total
+  Kindo'jan's Labyrinth Chambers completed", 63731 "Total Kindo'jan Kills".
+- **"of the Labyrinth"** (CharTitles 1353) is Labyrinth renown 9 ("Halazzi's
+  Favor", RenownRewards 1926); no achievement grants it.
+- **Kinduru's Spiriting Quill** (286643) comes from the quest "...Is
+  Sometimes the Way Back"; it ends your run and moves the party to the
+  treasure room (10s cooldown).
+- **Story variants, for the 2.0.1 "still needed" markers** (aleris88, Sep 5):
+  every delve has a "<Delve> Stories" achievement (5 points, account-wide).
+  61724-61733 cover the Season 1 delves (3 variants each; seven gain a 4th in
+  Season 2: Fungal Pharmacon, Caustic Crush, Academic Antitoxin, Infiltrate
+  and Ameliorate, Venomous Vapors, Why'd it Have to Be Snakes?, Basilisk
+  Blitz); 63436 The Ring of Glory Stories (Open Night, Game Day,
+  Adopt-a-thon); 63437 Gnarldor Isle Stories (Olds and Ends, Minchi's
+  Osseous Adventure, Speaking Their Language). Meta 61741 "Delve Loremaster:
+  Midnight" lists all twelve. Criteria are a map plus a WorldStateExpression
+  (locale-free); the criteria strings are variant names, but not always the
+  POI's spelling ("Academic Antitoxin" vs our "An Elementary Antidote", "Why'd
+  it" vs "Why Did it", "Basilisk" vs "Basalisk"), so match by criterion, not
+  by name.
+- **Checks for the PTR session:** `/dump C_DelvesUI.GetCurioNodeForCompanion(Enum.CurioType.Combat)`
+  -> 110786; `/dump C_Spell.GetSpellSubtext(1314570)` -> "Rank 5/5";
+  `/dump GetAchievementCriteriaInfo(63436,1)` -> "Open Night".
+
 ## Appendix: environment
 
 The PTR client hard-crashes on login with **Plater** enabled — `ERROR #110` in

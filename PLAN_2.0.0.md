@@ -254,46 +254,100 @@ aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's
 ---
 ## 10. Work before 12.1.5 goes live (Oct 13 NA / Oct 14 EU)
 
-Built from the 2026-09-29 research pass (PTR_12.1.5_Findings.md section 7).
-Nothing below is started; each item waits on Nick's go.
+Built from the 2026-09-29 research passes (PTR_12.1.5_Findings.md sections 7
+and 7.4). **Status 2026-09-29 (evening):** Nick said go on 1.11.2 and on the
+2.0.0 fixes, gloves stay quiet with a note that they exist, and the Labyrinth
+progress feature goes into 2.0.0. Everything below is in code; nothing is
+tagged.
 
-**Live line, 1.11.2 on `main`** (ideally before the Oct 6 Voidcore trade goes live)
+**Live line, 1.11.2 on `main`** -- done (7caebed), date TBD, not tagged
 
-1. Loot tab: bare `GetItemInfoInstant` (DelveGuide_UI_Loot.lua:20) is deleted in 12.1.5; the tab errors on patch day. Same one-line fix 2.0.0 already has.
-2. Map opening: replace `ToggleWorldMap()` + `WorldMapFrame:SetMapID()` in `SetDelveWaypoint` and `/dg map` with `C_Map.OpenWorldMap`, out of combat, waypoint set first. Gate on the in-game `issecurevariable` test; if it fails, drop map-opening (the 1.2.1 behaviour).
-3. Voidforge/Loot text still says Voidcores "transmute into" gear and drop from Tier 8+ Bountiful Delves. Correct to bonus roll, Great Vault, plus Orin's weekly trade from Oct 6.
-4. Rankings refresh already committed (1554f37).
-5. `ADDON_VERSION` constant says 1.11.0.
-Then merge `main` into `ptr-12.1.5` (release skill: hotfix while a PTR line is open).
+1. Loot tab: `C_Item.GetItemInfoInstant` fallback. Done.
+2. Map opening: `C_Map.OpenWorldMap` behind `CanOpenWorldMap` (combat, plus
+   the encounter / keystone / PvP-match / map restrictions from
+   `C_RestrictedActions`); otherwise a chat line, and the waypoint is still set.
+   `/dg map` opens (no longer toggles). **Gated on the retail test below.**
+3. Voidcore text: Loot, Voidforge, the map tooltip line (removed), History
+   ("max-ilvl loot"), README. Done.
+4. Rankings (1554f37) in both changelogs: twelve letters, incl. Calamitous
+   D->C, which the commit message missed; stale HELD tag removed. Done.
+5. `ADDON_VERSION` 1.11.2. Done.
 
-**2.0.0 must-fix before the tag**
+Reviewed by an independent agent: no Lua errors and no other 12.1.5 breakage
+(every global of the ten deleted `Blizzard_Deprecated*` addons, every
+documented function and event, live 69933 vs ptr2 70077). Its findings were
+fixed: restriction guard, `/dg map` pcall + message, README claims, changelog
+counts, the HELD tag, attribution in a shipped comment. Merged into
+`ptr-12.1.5` (5db9247).
 
-6. Labyrinth tab "Chambers seen" groups by scenario name, which is identical for every chamber since 69848, so it collapses to one row. Group by the step title captured during the chamber (at SCENARIO_COMPLETED the step is already torn down, G2).
-7. Labyrinth tab reads faction 2836 as classic reputation; it is a renown/Journey track. Read it through `C_MajorFactions` like the Companion tab does.
-8. Labyrinth rewards list: renamed Fabled title (+ its one-week deadline), Maze Runner, Treasure Hound, Lockpickin', "of the Labyrinth", sixth toy Kinduru's Spiriting Quill; key rows on achievement/item IDs.
-9. `VENOMSTONE_ITEM_ID = 280562` (one line; the item-count path already exists). Drops open the week of Oct 20.
-10. Glove enhancement enchant IDs 8727-8730 into `delveGloveEnhancements`. Decision: the "(None)" row turns into a red reminder for everyone once IDs exist, while the source is still unknown.
-11. Curios: add Viperwind Idol; rank spell-ID sets for Dusty Loa Totem and Viperwind Idol.
-12. The map fix from item 2 arrives through the merge; also set the waypoint while the map is closed.
+**2.0.0 must-fix** -- all done (d0b7c86, 0aae976)
 
-**2.0.0 should-do (low risk)**
+6. Chambers named by the step title caught mid-chamber (SCENARIO_UPDATE /
+   SCENARIO_CRITERIA_UPDATE); older entries still group by scenario name.
+7. Renown via `C_MajorFactions` (the Sep 7 PTR export shows renown 1,
+   2120/4200; `C_Reputation` returned nil).
+8. Rewards keyed on achievement / toy / mount IDs, marked earned, collected
+   or not yet; "of the Labyrinth" from renown 9.
+9. `VENOMSTONE_ITEM_ID = 280562`.
+10. Gloves: checklist shows one green line when an enhancement is applied,
+    nothing otherwise; the Loot tab lists the four with effects, the 334 cap
+    and the source (Labyrinth renown).
+11. Curios: Viperwind Idol; Rank 1-5 spell IDs for all eight (12.1.5 adds a
+    Rank 5 to every curio).
+12. Map fix through the merge; the `/dg map` command-table entry ported.
 
-13. Deprecated shims to namespaced forms with fallbacks: `C_SpecializationInfo`, `C_ChatInfo.SendChatMessage`, `ChatFrameUtil.DisplaySystemMessageInPrimary`.
-14. Retire the tracker scrape (HUD Method 3): the header widget is verified at T8, T9 and Labyrinth T11, and the scrape is a taint suspect.
-15. Tooltip injection to the `AreaPOIPin.MouseOver` EventRegistry callback (medium risk; may slip to 2.0.x).
+**Should-do**
 
-**Candidates to squeeze in**
+13. Namespaced spec / chat / system-message APIs. Done.
+14. HUD tracker scrape (Method 3) retired. Done.
+15. Tooltip hook to `AreaPOIPin.MouseOver`: **deferred to 2.0.x.** The
+    callback only fires for world-map POI pins, so moving to it would drop
+    the minimap and in-world entrance tooltips, and it needs in-game testing.
 
-16. Labyrinth tab: owned/missing rewards (achievement, toy, mount APIs), tier-ladder progress (11 achievements), lifetime chambers and kills (`GetStatistic` 63730/63731).
-17. Count the Kindo'jan Tier 8+ weekly vault credit in the tallies.
-18. Story-variant "still needed" markers (CurseForge request, aleris88, Sep 5, unanswered): needs the Season 2 story achievement IDs.
+**Candidates**
 
-**In-game checks**
+16. Labyrinth progress: done in 2.0.0 (tier ladder, lifetime chambers and
+    kills, reward marks).
+17. Kindo'jan's weekly Tier 8+ reward: a tip, not counted in the tallies.
+18. Story-variant "still needed" markers: 2.0.1. The achievements are known
+    (Findings 7.4); match by criterion, not by name.
 
-- Retail, before 1.11.2: `/reload`, `/run WorldMapFrame:SetMapID(947)`, `/dump issecurevariable(WorldMapFrame,"mapID")` (expect false), then `/reload`, `/run C_Map.OpenWorldMap(947)`, same dump (true = the fix is safe).
-- PTR 70077: `/dg selftest`; `/dg export` in the hub and mid-chamber; `/dump C_Scenario.GetStepInfo()` mid-chamber (is the step title the content name?); `/dump C_MajorFactions.GetMajorFactionData(2836)`; `/dump select(4, GetBuildInfo())`.
+**Retail session (Nick), before tagging 1.11.2.** Out of combat, world map
+closed. `/reload` first: the junction means retail is already running 1.11.2.
 
-**Patch day:** the `delveguide-release` skill (confirm 120105 on live, merge `ptr-12.1.5` into `main`, stamp dates, tag on Nick's word).
+- A. `/run WorldMapFrame:SetMapID(947)` then
+  `/dump issecurevariable(WorldMapFrame,"mapID")`: expect `false` and a
+  name. `/reload`.
+- B. `/run C_Map.OpenWorldMap(947)` (the map opens), then the same dump.
+  `true` = the map fix is safe. `false`, or a "blocked" popup = not safe.
+  `/reload`.
+- C. Open the map (M), click a delve in the DelveGuide widget with the map
+  still open, then
+  `/run for p in WorldMapFrame:EnumeratePinsByTemplate("WaypointLocationPinTemplate") do print(issecurevariable(p,"owningMap")) end`:
+  `true` = safe.
+- D. Smoke test: the What's New popup shows 1.11.2; a delve click sets the
+  waypoint and opens its zone; `/dg map` opens the map; the Loot tab shows
+  icons and the new Voidcore line; Voidforge says Great Vault + Orin; a delve's
+  map tooltip has no Voidcore line; BugSack stays empty.
+- If B or C fails: drop map-opening (the 1.2.1 behaviour) and skip
+  `SetUserWaypoint` while the map is open (chat hint instead), on both lines.
+
+**PTR session (Nick), one, before 2.0.0.** `/dg selftest`;
+`/dump select(4, GetBuildInfo())` -> 120105; in a Labyrinth chamber,
+`/dump C_Scenario.GetStepInfo()` (expect the objective name) and clear it,
+then `/dg lab` (Chambers Seen shows that name, Renown shows "Renown N",
+Progress shows the ladder, rewards carry marks); Loot tab glove block;
+Companion tab curios; a delve click in and out of combat; `/dg export` in
+the hub and mid-chamber. Optional: the three `/dump` checks in Findings 7.4.
+
+**Open decision for Nick:** `PLAN_2.0.0.md`, `PTR_12.1.5_Findings.md` and
+`API_12.1.5_Research.md` are tracked on this branch, so the packager would
+put them in the 2.0.0 zip. They are now in `.pkgmeta`'s ignore list; the
+`docs/` move is still yours to decide.
+
+**Patch day:** the `delveguide-release` skill (confirm 120105 on live, merge
+`ptr-12.1.5` into `main`, stamp dates, tag on Nick's word). If 1.11.2 has not
+shipped by then, its changelog entry folds into 2.0.0.
 
 ---
 
@@ -351,3 +405,4 @@ Then merge `main` into `ptr-12.1.5` (release skill: hotfix while a PTR line is o
 | 2026-09-13 | **Neck back as the 5th Venomstone slot** (Blizzard dev notes). **D4 Labyrinth tab merged** (`DelveGuide_UI_Labyrinth.lua`, `/dg lab`): this week per character, faction 2836 standing, chambers seen + medians from `labyrinthLog`, rewards (all `verified=false`), 3 tips; **D5 capture**: `|LAB;id~name~tier~sec` appended to submit codes only when a timed chamber exists; aggregator now peels any trailing section (old split dropped the last run of such a code — real bug). Changelogs updated | In-game: tab on live shows the not-available reputation line without error; inside Kindo'jan after 2 chambers each row has a time; `/dg submit` tail ends in `|LAB;` only after a chamber; byte-identical code before any Labyrinth |
 
 | 2026-09-29 | **Research pass** (6 Sonnet agents) after Blizzard dated 12.1.5: **NA Oct 13 / EU Oct 14**. Builds 69848/69952/70077 on Gethe `ptr2`; our API surface unchanged; TOC 120105. Labyrinth, delve-system, community and taint findings in PTR_12.1.5_Findings.md section 7; work list in section 10. Listing figures corrected to 106/41 (4325c5e). 1.11.1 approved on CurseForge, 1 unanswered comment | Live 1.11.1 breaks on patch day (Loot tab bare `GetItemInfoInstant`); map-opening taint is a 1.9.0 regression of the 1.2.1 fix |
+| 2026-09-29 | **Build day** (Nick: go on 1.11.2 and the 2.0.0 fixes). 1.11.2 on `main` (7caebed): Loot tab `C_Item`, map opening via `C_Map.OpenWorldMap` behind a combat + `C_RestrictedActions` guard, Voidcore wording, version drift; independent review, findings fixed; merged into ptr (5db9247). 2.0.0 (d0b7c86, 0aae976): chamber names from the step title, renown via `C_MajorFactions`, Labyrinth progress + reward marks, Venomstone item, glove enhancements (quiet checklist, Loot note), curio Rank 1-5 IDs + Viperwind Idol, namespaced APIs, tracker scrape retired. Verified: real Lua 5.1 parse, Lua 5.1 harnesses for the waypoint/map paths, Labyrinth tab, gloves and curio matching; CI tools green | Tag 1.11.2 only after the retail test (section 10); tooltip-hook move deferred to 2.0.x |

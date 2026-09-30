@@ -7,7 +7,7 @@ Chat, `/dg submit`. This file is the replacement, built from README.md after Pha
 it. Paste the **Description** block into the CurseForge project description; the two short
 blocks after it are for the gallery captions and the comment thread.
 
-Figures below (106 players / 41 variants) come from the 2026-09-13 rankings pass and match
+Figures below (106 submissions / 41 variants) come from the 2026-09-13 rankings pass and match
 `DelveGuideData.rankingStats`. Re-run the aggregator and update both if another form export
 lands before the tag; confirm the Interface line.
 
@@ -18,7 +18,7 @@ lands before the tag; confirm the Interface line.
 **DelveGuide — the in-game reference for Midnight Delves, with rankings measured from real runs.**
 
 Every other delve addon tells you what a variant *is*. DelveGuide tells you how *fast* it is:
-the S–F grades come from **106 players' timed runs across 41 variants**, submitted with one
+the S–F grades come from **106 submissions of timed runs across 41 variants**, submitted with one
 command and reduced to a median per variant. Not guesswork, not the author's opinion —
 measured, and refreshed every release.
 
@@ -30,8 +30,9 @@ scenario objectives and companion configuration are untouched.
 recognises the Labyrinth of Kindo'jan, keeps it out of your delve rankings — a Labyrinth is
 not a delve — and gives it its own in-run HUD (chamber, tier, lives, objective, chambers
 cleared), its own History rows, and its vault credit in your weekly tallies: one vault slot
-per 3 chambers cleared, at any tier. Blizzard's Labyrinth content is still unfinished, so
-this is support rather than a guide — there are no route tips yet.
+per 3 chambers cleared, at any tier. A Labyrinth tab shows your renown, your progress up the
+tier ladder, the chambers you have seen, and which of the mount, titles and toys you already
+have. This is support rather than a guide — there are no route tips yet.
 
 **Now translatable.** Every string a player sees goes through a translation table. Copy
 `Locales/TEMPLATE.lua`, translate it and open a pull request; there are no translations yet,
@@ -59,9 +60,10 @@ Chat**.
 
 **Voidforge tab** — Nebulous Voidcores and Ascendant Venomstones: what you have, where they
 come from, what to upgrade first, and your alts' stockpile. Voidcores are bonus-roll tokens
-you spend after a boss or a completed run for extra loot — they do not drop from delves, and
-today the Great Vault is the only source. Venomstones upgrade weapons and trinkets only, so
-the priority list is those four slots.
+you spend after a boss or a completed run for extra loot — they do not drop from delves: the
+Great Vault awards them, and Orin Straylight trades one more a week. Venomstones (drops start
+the week of Oct 20) upgrade weapons, trinkets and necks only, so the priority list is those
+five slots.
 
 **Companion tab** — Valeera's level and XP anywhere (not just inside a delve), plus her live
 role and curios read from the game's own data, checked against the recommendation for your
@@ -75,7 +77,8 @@ your per-variant medians, and how they compare to the community's.
 **Nemesis tab** — the season's Nemesis delve in full (Venomfall Deeps / Azta'rec), with the
 previous season kept as a compact legacy reference.
 
-**Also:** Loot tab by tier, with a Cosmetics group checked against the vendors' stock · Curios
+**Also:** Loot tab by tier, with a Cosmetics group checked against the vendors' stock and the
+four delve glove enhancements · Curios
 tab by spec · world-map tooltips with grade and variant · LibDataBroker feed for
 Titan/ElvUI/Bazooka · keybindings · addon compartment entry · ESC > Options signpost ·
 in-game changelog · `/dg selftest` and `/dg export` for bug reports.
