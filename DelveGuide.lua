@@ -4,7 +4,7 @@
 DelveGuide = {}
 
 local ADDON_NAME       = "DelveGuide"
-local ADDON_VERSION    = "1.11.0"
+local ADDON_VERSION    = "1.11.2"
 local WINDOW_W         = 700
 local WINDOW_H         = 500
 local TAB_HEIGHT       = 28
@@ -493,6 +493,20 @@ local function TypeColor(t) return (typeColors[t] or "|cFFFFFFFF")..t.."|r" end
 -- UID of the waypoint WE set, so we can clear it before setting the next one.
 local lastWaypointUID = nil
 
+-- C_Map.OpenWorldMap is a restricted call (HasRestrictions). Besides combat,
+-- 12.x has encounter, keystone, PvP-match and map restrictions that
+-- InCombatLockdown() does not see, so skip the map while any is active.
+local function CanOpenWorldMap()
+    if not C_Map.OpenWorldMap or InCombatLockdown() then return false end
+    local R, T = C_RestrictedActions, Enum and Enum.AddOnRestrictionType
+    if R and R.IsAddOnRestrictionActive and T then
+        for _, name in ipairs({ "Encounter", "ChallengeMode", "PvPMatch", "Map" }) do
+            if T[name] and R.IsAddOnRestrictionActive(T[name]) then return false end
+        end
+    end
+    return true
+end
+
 local function SetDelveWaypoint(pin)
     if not pin or not pin.mapID then return end
 
@@ -521,15 +535,18 @@ local function SetDelveWaypoint(pin)
         print("|cFF00BFFF[DelveGuide]|r Waypoint set: |cFFFFD700"..pin.name.."|r")
     end
 
-    -- Actually open the map. Both the widget and the Delves tab have always
-    -- advertised "Click to open map & set waypoint", but nothing here ever
-    -- opened it -- the tooltip was simply wrong for every user. (GitHub #6)
-    pcall(function()
-        if WorldMapFrame then
-            if not WorldMapFrame:IsShown() then ToggleWorldMap() end
-            if WorldMapFrame.SetMapID then WorldMapFrame:SetMapID(pin.mapID) end
-        end
-    end)
+    -- Open the map on the delve's zone (the tooltip promises it, GitHub #6).
+    -- C_Map.OpenWorldMap hands the job to Blizzard's own map code. Calling
+    -- ToggleWorldMap() and WorldMapFrame:SetMapID() from here tainted
+    -- WorldMapFrame.mapID, after which map pins failed SetPassThroughButtons in
+    -- combat and the waypoint pin's shift-click was blocked (1.2.1 dropped
+    -- map-opening for exactly this; 1.9.0 brought it back). The call is
+    -- restricted, so the map only opens when CanOpenWorldMap says so.
+    if CanOpenWorldMap() then
+        pcall(C_Map.OpenWorldMap, pin.mapID)
+    else
+        print("|cFF00BFFF[DelveGuide]|r |cFF888888The map can't open right now (combat or restricted content); the waypoint is set.|r")
+    end
 end
 
 local function FindPinByName(name)
@@ -1093,7 +1110,9 @@ SlashCmdList["DELVEGUIDE"]=function(msg)
     msg=strtrim(msg:lower())
     if msg=="hide" then if mainFrame then mainFrame:Hide() end
     elseif msg=="show" then if not mainFrame then CreateMainWindow() end; mainFrame:Show()
-    elseif msg=="map" then ToggleWorldMap()
+    elseif msg=="map" then -- not ToggleWorldMap: taint, see SetDelveWaypoint
+        if CanOpenWorldMap() then pcall(C_Map.OpenWorldMap)
+        else print("|cFF00BFFF[DelveGuide]|r |cFF888888The map can't open right now (combat or restricted content).|r") end
     elseif msg=="scan" then
         ScanActiveVariants(); RefreshCurrentTab()
         local vc,dc=0,0
@@ -2005,8 +2024,8 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1)
             -- name would fragment community rankings into per-language buckets).
             -- `locName` keeps the player's own language for display.
             local locName = (runName ~= engRunName) and runName or nil
-            -- Bountiful status decides Voidcore eligibility, so record it with
-            -- the run instead of inferring "T8+ therefore eligible" later.
+            -- Bountiful status decides max-ilvl loot, so record it with
+            -- the run instead of inferring "T8+ therefore max loot" later.
             local runBountiful = nil
             do
                 local st = activeDelves and activeDelves[engRunName]
@@ -2090,9 +2109,6 @@ local function InjectDelveData(self)
 
         local gradeText = DelveGuide.UI and DelveGuide.UI.GradeColor(ranking) or ("|cFFFFFFFF" .. ranking .. "|r")
         self:AddLine("Speed Grade: " .. gradeText .. "  " .. flags)
-
-        local minT = (DelveGuide.Voidforge and DelveGuide.Voidforge.MIN_VOIDCORE_TIER) or 8
-        self:AddLine(string.format("|cFFAA66CCT%d+: drops Nebulous Voidcore|r", minT))
 
         self:Show()
     end

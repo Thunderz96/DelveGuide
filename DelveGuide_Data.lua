@@ -48,7 +48,7 @@ DelveGuideData.delves = {
     -- ── Shadowguard Point ─────────────────────────────────
     { name="Shadowguard Point",     zone="Voidstorm",   variant="Stolen Mana",                  ranking="C", mountable=true,  hasBug=false, isBestRoute=true , medianSec=1008, players=14 },  -- 16m 48s, 14 players
     { name="Shadowguard Point",     zone="Voidstorm",   variant="Capture Wildlife",             ranking="B", mountable=true,  hasBug=false, isBestRoute=false, medianSec=909, players=14 },  -- 15m 09s, 14 players
-    { name="Shadowguard Point",     zone="Voidstorm",   variant="Calamitous",                   ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=969, players=18 },  -- 16m 09s, 18 players -- HELD (would be C)
+    { name="Shadowguard Point",     zone="Voidstorm",   variant="Calamitous",                   ranking="C", mountable=true,  hasBug=false, isBestRoute=false, medianSec=969, players=18 },  -- 16m 09s, 18 players
     -- ── Sunkiller Sanctum ─────────────────────────────────
     { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="The Gravitational Effect",     ranking="S", mountable=false, hasBug=true,  isBestRoute=true , medianSec=706, players=22 },  -- 11m 46s, 22 players
     { name="Sunkiller Sanctum",     zone="Voidstorm",   variant="Not What I Expected",          ranking="S", mountable=false, hasBug=false, isBestRoute=false, medianSec=740, players=11 },  -- 12m 20s, 11 players -- HELD (would be A)
@@ -501,6 +501,16 @@ DelveGuideData.gradeColors = {
 -- SECTION 8: CHANGELOG
 -- ============================================================
 DelveGuideData.changelog = {
+    {
+        version = "1.11.2",
+        date    = "TBD",
+        entries = {
+            "Ready for patch 12.1.5: the Loot tab no longer errors after the patch removes an old item function.",
+            "Clicking a delve opens the world map through Blizzard's own map code. The old way could leave map pins blocked in combat. The map only opens outside combat and restricted content; the waypoint is always set.",
+            "Nebulous Voidcores are described correctly: bonus-roll tokens that don't drop from delves. For now the Great Vault awards them, and from the week of Oct 6 Orin Straylight trades one a week. The map tooltip's \"drops Nebulous Voidcore\" line is gone.",
+            "Rankings updated from the Sep 13 pass: 106 submissions across 41 variants.",
+        }
+    },
     {
         version = "1.11.1",
         date    = "2026-09-05",

@@ -38,9 +38,9 @@ DelveGuide.RenderVoidforge = function()
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Bonus Rolls  --  Nebulous Voidcore|r") + 4
     if s.cores then
         local capStr = s.coreMax and ("/" .. s.coreMax) or ""
-        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(transmute into gear after a raid boss / M+ / Bountiful Delve / Nightmare Prey)|r", s.cores, capStr)) + 2
+        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(bonus roll after a raid boss / M+ / Bountiful Delve / Nightmare Prey)|r", s.cores, capStr)) + 2
     else
-        y = y + UI.CreateRow(cf, y, "|cFF888888  None yet -- they drop from T8+ Bountiful Delves, M+, and Nightmare Prey. (Populates in-game or after a /reload.)|r") + 2
+        y = y + UI.CreateRow(cf, y, "|cFF888888  None yet -- the Great Vault awards them, plus a weekly trade with Orin Straylight from the week of Oct 6. (Populates in-game or after a /reload.)|r") + 2
     end
     y = y + 6
 
@@ -59,7 +59,7 @@ DelveGuide.RenderVoidforge = function()
     -- ---- Where to Earn ----
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Where to Earn|r") + 4
     local sources = {
-        { tag = "|cFFAA66CCVoidcores|r",   text = "T8+ Bountiful Delves, Mythic+, and Nightmare Prey hunts. Also selectable as a Great Vault consolation." },
+        { tag = "|cFFAA66CCVoidcores|r",   text = "The Great Vault. From the week of Oct 6, Orin Straylight also trades one a week (gold, Voidlight Marl or Veteran Crests)." },
         { tag = "|cFFAA66CCVenomstones|r", text = "Tier 11 Bountiful Delves guarantee one (~1-2); also Heroic/Mythic raid and M+10+. Live later this season." },
     }
     for _, src in ipairs(sources) do

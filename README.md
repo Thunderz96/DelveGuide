@@ -23,7 +23,7 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - Highlights your current best routes and known bugs/quirks
 - **Share to Chat** — send today's active variants to Party or Guild with one click
 - **"What are Delves?"** tooltip (hover the **?** icon) for new players
-- **World Map Tooltips** — hover active Delves on the map to see their Speed Grade and Variant. Tier 8+ delves are flagged as Voidcore-eligible.
+- **World Map Tooltips** — hover active Delves on the map to see their Speed Grade and Variant.
 
 ### 🎯 In-Run HUD
 
@@ -59,7 +59,7 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 
 The Voidforge tab tracks Season 2's two delve reward currencies:
 
-- **Nebulous Voidcore** — the bonus-roll token. Spend one to roll for extra loot after a raid boss, M+, Nightmare Prey, or Bountiful Delve. Drops from Tier 8+ Bountiful Delves.
+- **Nebulous Voidcore** — the bonus-roll token. Spend one to roll for extra loot after a raid boss, M+, Nightmare Prey, or a Bountiful Delve of any tier. They don't drop from delves: the Great Vault awards them, and from the week of Oct 6 Orin Straylight trades one more a week.
 - **Ascendant Venomstone** — the gear-upgrade material *(arriving later this season)*. 10 upgrade one weapon/trinket/neck, and a Tier 11 Bountiful Delve is a guaranteed source.
 
 Plus a **slot upgrade priority** scan (weapons & trinkets first, then armor by lowest ilvl) and an **alt stockpile** rollup across your cached characters.
@@ -110,7 +110,7 @@ Delve loot reference organized by tier — know what drops before you go in. Inc
 
 - Run log grouped by **weekly reset** — timestamps, character names, variant details
 - **Completion times** displayed per run
-- Per-week count of **Tier 8+ runs** (Voidcore-eligible)
+- Per-week count of **bountiful Tier 8+ runs** (max-ilvl loot)
 
 ### 🔮 Future Tab
 

@@ -5,7 +5,7 @@
 -- widget, checklist, Voidforge tab, history tab, and map tooltip.
 --
 -- Season 2 (12.1) model:
---   * Nebulous Voidcore (3418) -- confirmed in game. Transmuted into gear
+--   * Nebulous Voidcore (3418) -- confirmed in game. Spent on bonus rolls
 --       after Midnight raid bosses, M+, Bountiful Delves and Nightmare Prey.
 --       One item per difficulty level until the spec's pool is exhausted.
 --       Blizzard's own tooltip lists per-character totals, so an account-wide
@@ -33,7 +33,11 @@ DelveGuide.Voidforge = {
                                      -- S2). Set this when it appears as a currency...
     VENOMSTONE_ITEM_ID      = nil,  -- ...or set this if it turns out to be a bag item instead.
     VENOMSTONE_PER_UPGRADE  = 10,   -- 10 Venomstones upgrade one eligible piece.
-    MIN_VOIDCORE_TIER       = 8,    -- T8+ Bountiful Delves drop Nebulous Voidcores.
+    MIN_VOIDCORE_TIER       = 8,    -- A recommendation, not a rule: the tier from which a Bountiful Delve's
+                                     -- end-of-run loot is the max pool (Tiers 9-11 match 8), so a Voidcore
+                                     -- bonus roll there draws from the best pool. A roll is ACCEPTED at any
+                                     -- tier (Thunderz rolled after a Tier 1 on the PTR, 2026-09-06), and
+                                     -- Voidcores do not drop from delves at all.
     VENOMSTONE_TIER         = 11,   -- T11 Bountiful Delves guarantee an Ascendant Venomstone.
 }
 

@@ -17,7 +17,16 @@ local function CreateLootRow(parent, y, item)
     iconTex:SetSize(rH + 2, rH + 2)
     iconTex:SetPoint("LEFT", btn, "LEFT", 0, 0)
     if item.id then
-        local _, _, _, _, icon = GetItemInfoInstant(item.id)
+        -- 12.1.5 deletes the deprecated global GetItemInfoInstant; the tab errored
+        -- on every render on the 12.1.5 PTR. C_Item's form has the same
+        -- returns. Kept as an if, not `f and f()`, because `and` truncates a call
+        -- to its first return and the icon is the fifth.
+        local icon
+        local getInstant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
+        if getInstant then
+            local _, _, _, _, ic = getInstant(item.id)
+            icon = ic
+        end
         iconTex:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
     end
     
@@ -65,7 +74,7 @@ DelveGuide.RenderLoot = function()
     -- Season 2 delve reward currencies
     y = y + 4
     y = y + UI.CreateRow(cf, y, "|cFFFFD700Delve Reward Currencies|r  |cFF888888(Season 2)|r")
-    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888Transmute into powerful equipment after Midnight raid bosses, Mythic+ dungeons, Bountiful Delves, or Nightmare Prey Hunts. One item per difficulty level, until your spec's pool is exhausted.|r")
+    y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve (any tier -- Tier 8+ has the max loot pool) or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. For now the Great Vault awards them; from the week of Oct 6, Orin Straylight also trades one a week (gold, Voidlight Marl or Veteran Crests).|r")
     y = y + UI.CreateRow(cf, y, "  |cFFAA66CCAscendant Venomstone|r   |cFF888888Gear-upgrade material (arriving later this season). 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful Delve guarantees one (~1-2).|r") + 6
     
     for _, slot in ipairs({"Trinket", "Weapon"}) do
