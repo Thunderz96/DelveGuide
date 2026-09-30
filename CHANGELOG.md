@@ -60,6 +60,17 @@ Built for **Patch 12.1.5 (Midnight)**; runs on 12.1.0 as well.
 - **The slash commands are one table and `/dg help` is generated from it**, so a command cannot exist undocumented or stay documented after it is removed.
 - **Every release now has to pass a Lua 5.1 parse and lint check** before it can be built.
 
+## [1.11.2] - TBD
+
+### Fixed
+- **Loot tab on Patch 12.1.5.** 12.1.5 deletes the deprecated global `GetItemInfoInstant` (the `Blizzard_DeprecatedItemScript` shim is gone), and the Loot tab called it bare on every row, so the tab would have errored from patch day. It now uses `C_Item.GetItemInfoInstant`, the same fix the 2.0.0 line carries. A sweep of every global the ten deleted `Blizzard_Deprecated*` addons defined, and of every documented function and event this build calls (Gethe `live` 12.1.0/69933 against `ptr2` 12.1.5/70077), found nothing else that breaks; `GetDetailedItemLevelInfo` in the Voidforge slot scan is already a guarded fallback behind `C_Item`.
+- **Map-opening taint.** Clicking a delve (Delves tab or widget) and `/dg map` opened the map with `ToggleWorldMap()` and `WorldMapFrame:SetMapID()` from addon code, which tainted `WorldMapFrame.mapID`. Every map pin created afterwards then failed `SetPassThroughButtons`/`SetPropagateMouseClicks` in combat, and the waypoint pin's shift-click failed `CopyToClipboard` (BugGrabber, retail, Aug 23 - Sep 7). This was a regression: 1.2.1 removed map-opening for the same error and 1.9.0 (GitHub #6) brought it back. The map now opens through `C_Map.OpenWorldMap`, which hands the job to Blizzard's own `WORLD_MAP_OPEN` handler. The call is restricted, so the map only opens when neither combat nor an encounter, keystone, PvP-match or map restriction (`C_RestrictedActions`) is active; otherwise a chat line says so and the waypoint is still set. `/dg map` now only opens the map (on your current zone); close it with your usual key.
+- **Nebulous Voidcore wording.** The Loot and Voidforge tabs said Voidcores "transmute into gear" and drop from Tier 8+ Bountiful Delves, M+ and Nightmare Prey. They are bonus-roll tokens, a roll is accepted after a Bountiful Delve of any tier, and they do not drop from delves: for now the Great Vault awards them, and from the week of Oct 6 Orin Straylight trades one more a week (gold, Voidlight Marl or Veteran Crests; Blizzard, 2026-09-29). The map tooltip's "T8+: drops Nebulous Voidcore" line is removed, and the History tab's per-character count reads "max-ilvl loot (bountiful T8+)" instead of "Voidcore-eligible".
+- **Version string.** The window title, `/dg help` and the `/dg chatdump`/`/dg huddump` reports showed a hardcoded `1.11.0` that had drifted from the TOC. The What's New popup keys off the same string, so players updating from 1.11.0 never saw the 1.11.1 notes. It now reads `1.11.2`.
+
+### Rankings
+- Refreshed from the **2026-09-13** form export (**106 submissions, 41 variants, 3003 runs**), the same pass the 2.0.0 line carries; 1.11.1 never received the Sep 7 refresh. Twelve letters move: *Calamitous* D->C, *Capture Wildlife*, *Holding the Line* and *March of the Arcane Brigade* C->B, *Caustic Crush* C->D, *Descent of the Haranir* F->D, *Eggsplosive Growth* A->B, *Ritual Interrupted* S->A, *Stolen Mana* B->C, *Totem Annihilation* B->A, and first grades for *Open Night* (S) and *Venomous Vapors* (C). Contributors synced.
+
 ## [1.11.1] - 2026-09-05
 
 ### Fixed

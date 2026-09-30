@@ -23,7 +23,7 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - Highlights your current best routes and known bugs/quirks
 - **Share to Chat** — send today's active variants to Party or Guild with one click
 - **"What are Delves?"** tooltip (hover the **?** icon) for new players
-- **World Map Tooltips** — hover active Delves on the map to see their Speed Grade and Variant. Tier 8+ delves are flagged as max-ilvl loot, worth a Voidcore bonus roll.
+- **World Map Tooltips** — hover active Delves on the map to see their Speed Grade and Variant.
 
 ### 🎯 In-Run HUD
 
@@ -127,7 +127,7 @@ Delve loot reference organized by tier — know what drops before you go in. Inc
 
 - Run log grouped by **weekly reset** — timestamps, character names, variant details
 - **Completion times** displayed per run
-- Per-week count of **Tier 8+ runs** (max-ilvl loot)
+- Per-week count of **bountiful Tier 8+ runs** (max-ilvl loot)
 
 ### 🔮 Future Tab
 

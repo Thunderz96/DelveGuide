@@ -157,7 +157,7 @@ DelveGuide.RenderHistory = function()
                 local count=0
                 for _,run in ipairs(runs) do count=count+(run.vaultCredits or 1) end
 
-                -- Voidcore eligibility needs a BOUNTIFUL run at T8+, not just
+                -- Max-ilvl end-of-run loot needs a BOUNTIFUL run at T8+, not just
                 -- any T8+ run. Runs logged before we recorded that flag are
                 -- counted separately rather than silently assumed eligible.
                 local coreRuns, unknownCore = 0, 0

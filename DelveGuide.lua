@@ -1008,6 +1008,20 @@ local function TypeColor(t) return (typeColors[t] or "|cFFFFFFFF")..t.."|r" end
 -- UID of the waypoint WE set, so we can clear it before setting the next one.
 local lastWaypointUID = nil
 
+-- C_Map.OpenWorldMap is a restricted call (HasRestrictions). Besides combat,
+-- 12.x has encounter, keystone, PvP-match and map restrictions that
+-- InCombatLockdown() does not see, so skip the map while any is active.
+local function CanOpenWorldMap()
+    if not C_Map.OpenWorldMap or InCombatLockdown() then return false end
+    local R, T = C_RestrictedActions, Enum and Enum.AddOnRestrictionType
+    if R and R.IsAddOnRestrictionActive and T then
+        for _, name in ipairs({ "Encounter", "ChallengeMode", "PvPMatch", "Map" }) do
+            if T[name] and R.IsAddOnRestrictionActive(T[name]) then return false end
+        end
+    end
+    return true
+end
+
 local function SetDelveWaypoint(pin)
     if not pin or not pin.mapID then return end
 
@@ -1052,15 +1066,18 @@ local function SetDelveWaypoint(pin)
         end
     end
 
-    -- Actually open the map. Both the widget and the Delves tab have always
-    -- advertised "Click to open map & set waypoint", but nothing here ever
-    -- opened it -- the tooltip was simply wrong for every user. (GitHub #6)
-    pcall(function()
-        if WorldMapFrame then
-            if not InCombatLockdown() and not WorldMapFrame:IsShown() then ToggleWorldMap() end
-            if WorldMapFrame.SetMapID then WorldMapFrame:SetMapID(pin.mapID) end
-        end
-    end)
+    -- Open the map on the delve's zone (the tooltip promises it, GitHub #6).
+    -- C_Map.OpenWorldMap hands the job to Blizzard's own map code. Calling
+    -- ToggleWorldMap() and WorldMapFrame:SetMapID() from here tainted
+    -- WorldMapFrame.mapID, after which map pins failed SetPassThroughButtons in
+    -- combat and the waypoint pin's shift-click was blocked (1.2.1 dropped
+    -- map-opening for exactly this; 1.9.0 brought it back). The call is
+    -- restricted, so the map only opens when CanOpenWorldMap says so.
+    if CanOpenWorldMap() then
+        pcall(C_Map.OpenWorldMap, pin.mapID)
+    else
+        print("|cFF00BFFF[DelveGuide]|r |cFF888888" .. L["The map can't open right now (combat or restricted content)."] .. "|r")
+    end
 end
 
 local function FindPinByName(name)
@@ -1933,7 +1950,9 @@ DelveGuide.commands = {
         name = "map",
         desc = L["Open world map"],
         handler = function()
-            ToggleWorldMap()
+            -- Not ToggleWorldMap: addon code opening the map taints it (see SetDelveWaypoint).
+            if CanOpenWorldMap() then pcall(C_Map.OpenWorldMap)
+            else print("|cFF00BFFF[DelveGuide]|r |cFF888888" .. L["The map can't open right now (combat or restricted content)."] .. "|r") end
         end,
     },
     {
@@ -3471,8 +3490,8 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
             -- name would fragment community rankings into per-language buckets).
             -- `locName` keeps the player's own language for display.
             local locName = (runName ~= engRunName) and runName or nil
-            -- Bountiful status decides Voidcore eligibility, so record it with
-            -- the run instead of inferring "T8+ therefore eligible" later.
+            -- Bountiful status decides max-ilvl loot, so record it with
+            -- the run instead of inferring "T8+ therefore max loot" later.
             local runBountiful = nil
             do
                 local st = activeDelves and activeDelves[engRunName]
@@ -3589,7 +3608,6 @@ local function InjectDelveData(self)
 
         local gradeText = DelveGuide.UI and DelveGuide.UI.GradeColor(ranking) or ("|cFFFFFFFF" .. ranking .. "|r")
         self:AddLine(L["Speed Grade:"] .. " " .. gradeText .. "  " .. flags)
-
 
         self:Show()
     end
