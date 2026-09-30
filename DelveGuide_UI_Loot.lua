@@ -86,6 +86,23 @@ DelveGuide.RenderLoot = function()
     local notes = DelveGuideData.currencyNotes or {}
     y = y + UI.CreateRow(cf, y, "  |cFFAA66CCNebulous Voidcore|r   |cFF888888" .. (notes.voidcore or "") .. "|r")
     y = y + UI.CreateRow(cf, y, "  |cFFAA66CCAscendant Venomstone|r   |cFF888888" .. (notes.venomstone or "") .. "|r") + 6
+
+    -- Delve glove enhancements. The pre-entry checklist only mentions one
+    -- once it is applied, so this is where a player learns they exist.
+    local gloves, gloveIDs = DelveGuideData.delveGloveEnhancements or {}, {}
+    for id in pairs(gloves) do gloveIDs[#gloveIDs + 1] = id end
+    table.sort(gloveIDs)
+    if #gloveIDs > 0 then
+        y = y + 4
+        y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Delve Glove Enhancements"] .. "|r  |cFF888888" .. L["(Season 2)"] .. "|r")
+        y = y + UI.CreateRow(cf, y, "  |cFF888888" .. string.format(L["A permanent bonus inside delves (about two procs a minute), for gloves of item level %d or below. They are Labyrinth of Kindo'jan renown rewards."],
+            DelveGuideData.DELVE_GLOVE_ENHANCEMENT_MAX_ILVL or 334) .. "|r")
+        for _, id in ipairs(gloveIDs) do
+            local g = gloves[id]
+            y = y + UI.CreateRow(cf, y, "  |cFFAA66CC" .. g.name .. "|r" .. (g.effect and ("   |cFF888888" .. g.effect .. "|r") or ""))
+        end
+        y = y + 6
+    end
     
     for _, slot in ipairs({"Trinket", "Weapon", "Cosmetic"}) do
         y = y + 4

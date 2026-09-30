@@ -126,6 +126,10 @@ local function RewardStatus(r)
         if ok and known then return PlayerHasToy(r.itemID) and true or false end
     end
     if r.achievementID then return AchievementDone(r.achievementID) end
+    if r.renown and C_MajorFactions and C_MajorFactions.GetMajorFactionData then
+        local ok, d = pcall(C_MajorFactions.GetMajorFactionData, LAB_FACTION)
+        if ok and d and d.renownLevel then return d.renownLevel >= r.renown end
+    end
     return nil
 end
 
@@ -266,7 +270,7 @@ local function RenderRewards(cf, y)
                 local have = RewardStatus(r)
                 local mark = ""
                 if have == true then
-                    mark = "  |cFF00FF44" .. ((r.achievementID and not r.mountID) and L["earned"] or L["collected"]) .. "|r"
+                    mark = "  |cFF00FF44" .. (r.group == "Titles" and L["earned"] or L["collected"]) .. "|r"
                 elseif have == false then
                     mark = "  |cFF666666" .. L["not yet"] .. "|r"
                 end

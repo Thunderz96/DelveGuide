@@ -104,40 +104,20 @@ local function RunChecklistScan()
         tip   = not valeeraOk and L["Open the companion panel to configure Valeera."] or nil,
     })
 
-    -- Delve glove enhancement (12.1.5). Says something only when it can be
-    -- definite: the gloves are above the 334 cap and cannot take one, or --
-    -- once DelveGuideData.delveGloveEnhancements has IDs -- one is present or
-    -- absent. With the table empty and the gloves under the cap it stays quiet
-    -- rather than guess. The enchant ID is field 2 of the item link.
+    -- Delve glove enhancement (12.1.5). Quiet by design (Thunderz,
+    -- 2026-09-29): one green line when an enhancement is applied, nothing
+    -- otherwise -- no red "missing" or "gloves too high" row. The Loot tab
+    -- says they exist and where they come from. The enchant ID is field 2 of
+    -- the item link.
     pcall(function()
         local link = GetInventoryItemLink("player", INVSLOT_HAND or 10)
         if not link then return end
         local enchantID = tonumber(link:match("item:%d+:(%d+):")) or 0
-        local ilvl = 0
-        if C_Item and C_Item.GetDetailedItemLevelInfo then
-            local ok, eff = pcall(C_Item.GetDetailedItemLevelInfo, link)
-            if ok and type(eff) == "number" then ilvl = eff end
-        end
-        local known = (DelveGuideData and DelveGuideData.delveGloveEnhancements) or {}
-        local cap = (DelveGuideData and DelveGuideData.DELVE_GLOVE_ENHANCEMENT_MAX_ILVL) or 334
-        local hasKnown = next(known) ~= nil
-        local name = known[enchantID]
-        if name then
+        local g = DelveGuideData and DelveGuideData.delveGloveEnhancements and DelveGuideData.delveGloveEnhancements[enchantID]
+        if g then
             table.insert(results, {
-                label = L["Delve glove enhancement"] .. "  |cFF00FF44(" .. name .. ")|r",
+                label = L["Delve glove enhancement"] .. "  |cFF00FF44(" .. g.name .. ")|r",
                 ok    = true,
-            })
-        elseif ilvl > cap then
-            table.insert(results, {
-                label = L["Delve glove enhancement"] .. "  |cFFFF4444" .. string.format(L["(gloves are ilvl %d)"], ilvl) .. "|r",
-                ok    = false,
-                tip   = string.format(L["The 12.1.5 glove enhancements only apply to gloves of item level %d or below. Yours cannot take one."], cap),
-            })
-        elseif hasKnown then
-            table.insert(results, {
-                label = L["Delve glove enhancement"] .. "  |cFFFF4444" .. L["(None)"] .. "|r",
-                ok    = false,
-                tip   = L["A permanent bonus inside delve content. Apply one to your gloves before entering."],
             })
         end
     end)

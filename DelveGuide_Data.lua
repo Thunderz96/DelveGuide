@@ -326,16 +326,21 @@ DelveGuideData.cofferKeys = {
 DelveGuideData.labyrinths = {
     { name = "The Labyrinth of Kindo'jan", instanceID = 3043, widgetSetID = 2316, verifiedBuild = 69594 },
 }
--- Delve glove enhancements (12.1.5). Wowhead datamined four on the PTR:
--- permanent bonuses that apply "while inside delve content", and only to
--- gloves of item level 334 or below. Names, effects and enchant IDs are not
--- yet known here, and how they are obtained is not known anywhere -- the
--- article says so. Keyed by the enchant ID that appears in the gloves' item
--- link (item:itemID:ENCHANT:...), which is what the checklist can read
--- outside a delve. Fill from a /dg export taken with one applied: the export
--- records the gloves link and its parsed enchant ID.
+-- Delve glove enhancements (12.1.5, "Ancient Hash'ey Battle Art"): permanent
+-- bonuses that only work inside delves (about two procs a minute), for gloves
+-- of item level 334 or below. Warband-bound items, not consumed; they are
+-- Labyrinth of Kindo'jan renown rewards (renown 3/5/7/9 on build 70077 --
+-- the levels moved once already, so they are not shown). Enchant IDs, names
+-- and effects from client data (PTR_12.1.5_Findings.md 7.4). Keyed by the
+-- enchant ID in the gloves' item link (item:itemID:ENCHANT:...), which is
+-- what the checklist reads. The checklist only ever shows the green
+-- "applied" line (Thunderz, 2026-09-29: no red reminder); the Loot tab
+-- lists them.
 DelveGuideData.delveGloveEnhancements = {
-    -- [enchantID] = "Name",
+    [8727] = { name = "Falco Strikes",     effect = L["Strikes a nearby enemy for Nature damage; each strike has a 20% chance to strike again."] },
+    [8728] = { name = "Ursine's Ironhide", effect = L["A damage-absorbing shield for 15s."] },
+    [8729] = { name = "Heat Wave",         effect = L["Flames for 20s, dealing Fire damage every 4s split among nearby enemies."] },
+    [8730] = { name = "Eye of the Lynx",   effect = L["Haste and Leech for 15s, for you and a random nearby ally."] },
 }
 DelveGuideData.DELVE_GLOVE_ENHANCEMENT_MAX_ILVL = 334
 
@@ -381,7 +386,7 @@ DelveGuideData.labyrinthContent = {
         { name="Lockpickin'",                       group="Titles",       achievementID=63719, source=L["open the hidden locked door 20 times"] },
         { name="Lone Raider",                       group="Titles",       achievementID=64118, source=L["Tier 11 solo: 9 chambers, no lives lost"] },
         { name="Fabled Vanquisher of The First Hash'ey", group="Titles",  achievementID=64039, source=L["Kindo'jan solo on Tier 11 before the first weekly reset after 12.1.5 -- a one-week window"] },
-        { name="of the Labyrinth",                  group="Titles",       source=L["source not listed yet"] },
+        { name="of the Labyrinth",                  group="Titles",       renown=9, source=L["Labyrinth renown 9"] },
         { name="Loa-Blessed Victory",               group="Toys",         itemID=280820, source=L["Kindo'jan drop"] },
         { name="Trail of Halazzi",                  group="Toys",         itemID=280821, source=L["Ancient Chest"] },
         { name="Nalorakk's Strength Charm",         group="Toys",         itemID=280822, source=L["Ancient Chest"] },
@@ -396,6 +401,7 @@ DelveGuideData.labyrinthContent = {
         L["Vault credit lands every 3 chambers cleared, at any tier -- it is not tied to a boss kill."],
         L["A full run is 9 chambers, which is three vault credits."],
         L["Kindo'jan on Tier 8 or higher also pays out once a week per character: one more vault credit and a Heroic Soul Fragment."],
+        L["Labyrinth renown unlocks Rank 5 curios (from Bountiful Coffers and Hidden Troves in Tier 8+ Labyrinths) and the delve glove enhancements listed on the Loot tab."],
         L["On the PTR a boss kill was sometimes not credited, so DelveGuide counts chambers rather than kills."],
     },
 }
@@ -460,20 +466,25 @@ DelveGuideData.companionFactionID = 2744
 -- ============================================================
 -- Season 2 (12.1) curio set. Season 1's curios were retired at the season
 -- flip. Confirmed via wowhead / in-game (Aug 2026). ranking "?" until the
--- meta settles; id = wowhead spell ID (reference only -- curios match by name).
+-- meta settles. id / ids are the curio's spell IDs, one per rank, Rank 1 to
+-- Rank 5 (build 70077, PTR_12.1.5_Findings.md 7.4): the Companion tab
+-- matches a socketed curio by them, and by English name only as a last
+-- resort, so a missing rank means no match on a non-English client. 12.1.5
+-- adds a Rank 5 to every curio (from Tier 8+ Labyrinth coffers).
 DelveGuideData.curios = {
     -- ── Combat ──
-    { name="Corrosive Bilespear",        id=1248877, ids={1248875, 1248877}, description=L["Chance in combat for your companion to impale the highest- and lowest-health nearby targets for tremendous Nature damage."], curiotype="Combat",  ranking="?" },
-    { name="Ouroboric Curse",            id=1248856, description=L["At <50% HP: Horrify nearby enemies 6s; you gain +20% primary & +50% leech/avoid/speed for 20s (2 min cd)."],                                          curiotype="Combat",  ranking="?" },
-    { name="Essence Trap",               id=1288788, description=L["In combat your companion may place a trap. An enemy within 3 yds triggers it: slows 20% for 5s, then detonates for moderate Nature damage and stuns for 5s."], curiotype="Combat",  ranking="?" },
+    { name="Corrosive Bilespear",        id=1248877, ids={1248878, 1248877, 1248876, 1248875, 1315061}, description=L["Chance in combat for your companion to impale the highest- and lowest-health nearby targets for tremendous Nature damage."], curiotype="Combat",  ranking="?" },
+    { name="Ouroboric Curse",            id=1248856, ids={1248856, 1248858, 1248859, 1248860, 1315060}, description=L["At <50% HP: Horrify nearby enemies 6s; you gain +20% primary & +50% leech/avoid/speed for 20s (2 min cd)."],                                          curiotype="Combat",  ranking="?" },
+    { name="Essence Trap",               id=1288788, ids={1288788, 1288789, 1288790, 1288791, 1315062}, description=L["In combat your companion may place a trap. An enemy within 3 yds triggers it: slows 20% for 5s, then detonates for moderate Nature damage and stuns for 5s."], curiotype="Combat",  ranking="?" },
+    { name="Viperwind Idol",             id=1288794, ids={1288794, 1288796, 1288797, 1288798, 1314570}, description=L["Your spells can turn you into a venom vortex for 15s: nearby enemies take Nature damage every 0.5s, you take less damage (up to 50%), and your venom trail explodes afterwards. Rank 5 also pulls in enemies beyond 8 yds."], curiotype="Combat",  ranking="?" },
     -- ── Utility ──
-    { name="Soul-Cracking Dreamcatcher", id=1248899, description=L["When a party member interrupts or crowd-controls an Elite, that enemy takes +15% damage for 10s (stacks up to 1)."],                                     curiotype="Utility", ranking="?" },
-    { name="Dundun's Favor",             id=1248894, description=L["In combat a Mislaid Spirit may appear; walking over a Mislaid Curiosity/Spirit fires 4 Volatile Sprites at random enemies. Curiosity contents auto-loot."], curiotype="Utility", ranking="?" },
-    { name="Venom Infusion",             id=1288782, description=L["On entering combat the party is Poisoned: 1% current HP/min as Nature, but +1% move & +1% haste per 5% HP missing (reversed for the first 6s)."],       curiotype="Utility", ranking="?" },
+    { name="Soul-Cracking Dreamcatcher", id=1248899, ids={1248899, 1248898, 1248897, 1248896, 1315064}, description=L["When a party member interrupts or crowd-controls an Elite, that enemy takes +15% damage for 10s (stacks up to 1)."],                                     curiotype="Utility", ranking="?" },
+    { name="Dundun's Favor",             id=1248894, ids={1248895, 1248894, 1248893, 1248892, 1315063}, description=L["In combat a Mislaid Spirit may appear; walking over a Mislaid Curiosity/Spirit fires 4 Volatile Sprites at random enemies. Curiosity contents auto-loot."], curiotype="Utility", ranking="?" },
+    { name="Venom Infusion",             id=1288782, ids={1288782, 1288783, 1288785, 1288786, 1315065}, description=L["On entering combat the party is Poisoned: 1% current HP/min as Nature, but +1% move & +1% haste per 5% HP missing (reversed for the first 6s)."],       curiotype="Utility", ranking="?" },
     -- Read off Valeera's trait node on the PTR (2026-09-07, /dg export #2/#3):
     -- spell 1288805, entry 137816. Description from C_Spell.GetSpellDescription,
     -- markup stripped.
-    { name="Dusty Loa Totem",            id=1288805, ranking="?", description=L["On entering combat, and every 60s, gain Might of the Loa (+20% max health, +12% Strength) or Grace of the Loa (+20% Speed, +12% Haste) for 30s."], curiotype="Utility" },
+    { name="Dusty Loa Totem",            id=1288805, ids={1288801, 1288803, 1288804, 1288805, 1314978}, ranking="?", description=L["On entering combat, and every 60s, gain Might of the Loa (+20% max health, +12% Strength) or Grace of the Loa (+20% Speed, +12% Haste) for 30s."], curiotype="Utility" },
 }
 
 -- ============================================================
