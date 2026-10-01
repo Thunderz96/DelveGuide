@@ -492,7 +492,14 @@ def main():
         # up with its own data. Cap a hold at a single band.
         if abs(LETTERS.index(old) - LETTERS.index(fresh)) > 1:
             return fresh, None
-        gap = min(abs(sec - e) for e in band_edges)
+        # The line that matters is the one BETWEEN the published band and the
+        # fresh one -- the edge the time actually crossed. This used to take
+        # the nearest edge of any band, so a variant that had drifted right
+        # across its new band and sat seconds from the FAR edge was held as
+        # "boundary noise": Olds and Ends stayed S at 13m 29s, 94 seconds past
+        # the S line and slower than four A's and a B (2026-10-01 pass).
+        crossed = band_edges[min(LETTERS.index(old), LETTERS.index(fresh))]
+        gap = abs(sec - crossed)
         if gap < args.hysteresis:
             return old, f"held {old} (would be {fresh}, only {int(gap)}s past the line)"
         return fresh, None

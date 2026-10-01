@@ -281,6 +281,29 @@ class TestHysteresis(Fixture):
         self.assertEqual(self.grade("Alpha Delve", "Shared Route"), "A")
         self.assertEqual(self.grade("Beta Delve", "Shared Route"), "B")
 
+    def test_the_hold_is_measured_against_the_edge_that_was_crossed(self):
+        """Two variants published S that now measure A. The S/A edge is 820s.
+        830s is 10s past it: boundary noise, held. 920s is 100s past it and has
+        crossed the whole A band -- but it sits 10s from the A/B edge at 930,
+        and the hold used to measure the NEAREST edge of any band, so it kept
+        an S that was slower than real A's (Olds and Ends, 2026-10-01 pass)."""
+        row = ('    {{ name="Alpha Delve", zone="Zone A", variant="{0}", ranking="S", mountable=true,  '
+               'hasBug=false, isBestRoute=false, medianSec=800, players=4 }},  -- 13m 20s, 4 players\n')
+        marker = "    -- ── Beta Delve"
+        self.assertEqual(DATA_LUA.count(marker), 1)
+        self.write_lua(DATA_LUA.replace(
+            marker, row.format("Near Edge Route") + row.format("Far Edge Route") + marker))
+        # Four more players who ran only these two; the median variant stays 1000s.
+        self.write_csv([(f"edge_{i}", code([("Alpha Delve", "Near Edge Route", 10, 830, 1),
+                                           ("Alpha Delve", "Far Edge Route", 10, 920, 1)]))
+                        for i in range(4)])
+        self.run_tool("--write")   # the default 30s
+        self.assertEqual(self.grade("Alpha Delve", "Near Edge Route"), "S")
+        self.assertIn("-- HELD (would be A)",
+                      self.written()[("Alpha Delve", "Near Edge Route")][1])
+        self.assertEqual(self.grade("Alpha Delve", "Far Edge Route"), "A")
+        self.assertNotIn("HELD", self.written()[("Alpha Delve", "Far Edge Route")][1])
+
 
 # --- 1.2 published path ------------------------------------------------------
 

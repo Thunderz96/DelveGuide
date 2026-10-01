@@ -188,9 +188,23 @@ every release teaches players to ignore the letter.
    also be self-perpetuating: the held letter is what gets written back into the
    data file, and the next run reads that as its baseline, so the row would
    never catch up with its own data.
-4. Otherwise measure the new time's distance to the **nearest band edge**. Under
-   `--hysteresis` seconds, keep the published letter. That is the hold.
+4. Otherwise measure the new time's distance to **the edge it crossed** — the
+   boundary between the published band and the fresh one. Under `--hysteresis`
+   seconds, keep the published letter. That is the hold.
 5. Over it, the grade moves.
+
+**The edge it crossed, not the nearest edge.** Until the 2026-10-01 pass step 4
+took the nearest edge of *any* band. The two are the same line for a variant
+that has just tipped over a boundary, but not for one that has drifted right
+across its new band and sits seconds from the far side: that variant was held
+as "boundary noise" for being close to an edge it had not reached. *Olds and
+Ends* stayed **S** at 13m 29s that way — 95 seconds past the S line, slower than
+four A-graded variants — and *Speaking Their Language* stayed **D** 81 seconds
+inside C. A hold like that also never ends by itself: the next band over is two
+away from the published letter, so the row would have sat on the wrong grade
+until it jumped two letters at once. `test_the_hold_is_measured_against_the_edge_that_was_crossed`
+pins it. A cheap cross-check after any pass: no variant should be slower than
+one graded two letters below it.
 
 **Held grades are never silent.** Every run prints them with the distance
 involved, and the row written into `DelveGuide_Data.lua` carries a trailing
