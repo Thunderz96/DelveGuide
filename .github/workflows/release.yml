@@ -14,12 +14,15 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        # Pinned to the commits that built and uploaded 1.11.1 (run 34153060090),
+        # the same pins the 2.0.0 line carries. packager@v2 has since moved to
+        # v2.6.1, which has never released this project.
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
       - name: Package and upload
-        uses: BigWigsMods/packager@v2
+        uses: BigWigsMods/packager@6d50adb6e8517eefef63f4afb16a6518166a6b28 # v2.5.1
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
