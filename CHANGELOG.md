@@ -49,7 +49,7 @@ Built for **Patch 12.1.5 (Midnight)**; runs on 12.1.0 as well.
 - **Packaging:** the LICENSE ships with the addon, and the library folder's casing matches disk, so a build cannot lose its libraries on a case-sensitive builder.
 
 ### Changed
-- **Community rankings** are the 2026-09-13 pass -- 106 submissions across 41 graded variants -- the same data 1.11.2 carries. Eight contributors from the September form exports are credited in Settings.
+- **Community rankings** are the 2026-10-01 pass -- 115 submissions across 42 graded variants -- the same data 1.11.2 carries. Twelve contributors from the September and October form exports are credited in Settings.
 - **One grade palette everywhere**, in the tier-list convention players already know -- S salmon through F green. The Delves tab, Curios, the HUD, the compact widget and Settings all agree; S no longer reads like a D or an F on one screen and not another.
 - **The Debug tab is hidden by default.** Tick *Show Debug tab* in Settings to bring it back. The debug slash commands always run, so following a bug-report instruction never needs the tab.
 - **Season 1 Nemesis rewards are marked as no longer obtainable**, and both Nemesis entrance coordinates were re-read in game.
