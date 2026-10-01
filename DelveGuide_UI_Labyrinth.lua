@@ -290,7 +290,7 @@ DelveGuide.RenderLabyrinth = function()
 
     y = y + UI.CreateHeader(cf, y, L["Labyrinth of Kindo'jan"]) + 4
     y = y + UI.CreateRow(cf, y, "|cFF888888" .. string.format(
-        L["Not a delve, but every %d chambers cleared is a delve vault credit -- and progress persists between sessions."],
+        L["Not a delve, but every %d chambers cleared is a delve vault credit."],
         content.chambersPerCredit or 3) .. "|r") + 8
 
     y = RenderThisWeek(cf, y)

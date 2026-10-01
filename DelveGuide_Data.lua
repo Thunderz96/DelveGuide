@@ -402,7 +402,6 @@ DelveGuideData.labyrinthContent = {
         L["A full run is 9 chambers, which is three vault credits."],
         L["Kindo'jan on Tier 8 or higher also pays out once a week per character: one more vault credit and a Heroic Soul Fragment."],
         L["Labyrinth renown unlocks Rank 5 curios (from Bountiful Coffers and Hidden Troves in Tier 8+ Labyrinths) and the delve glove enhancements listed on the Loot tab."],
-        L["On the PTR a boss kill was sometimes not credited, so DelveGuide counts chambers rather than kills."],
     },
 }
 
@@ -617,13 +616,8 @@ DelveGuideData.currencyNotes = {
 DelveGuideData.future = {
     -- ── Later in Season 2 (12.1) ────────────────────────────
     { category=L["Later in Season 2"], note=string.format(L["Ascendant Venomstone: %s"], DelveGuideData.currencyNotes.venomstone) },
-    -- ── Labyrinths (Patch 12.1.5 -- ~Autumn 2026) ───────────
-    { category=L["Labyrinths (Patch 12.1.5)"], note=L["Confirmed for 12.1.5 (~autumn 2026): a larger, mega-dungeon-inspired Delve variant -- pitched as the difficulty ceiling for players who skip raiding."] },
-    { category=L["Labyrinths (Patch 12.1.5)"], note=L["Multi-boss, playable solo or in a small group, with progress saved between sessions (not a simple repeatable delve)."] },
-    { category=L["Labyrinths (Patch 12.1.5)"], note=L["Different reward structure than Delves: Hero-track gear at mid-to-high difficulty, plus a separate currency track for housing & seasonal vendors."] },
-    { category=L["Labyrinths (Patch 12.1.5)"], note=L["Exact difficulty tiers, lockouts, and Great Vault interaction are still on the PTR -- details may change."] },
-    -- ── Also in Patch 12.1.5 ────────────────────────────────
-    { category=L["Also in 12.1.5"], note=L["A new raid arrives alongside Labyrinths."] },
+    -- The pre-launch Labyrinth notes that sat here (written before the PTR,
+    -- some since contradicted) went with 2.0.0: the Labyrinth tab covers it.
 }
 
 -- ============================================================
@@ -752,7 +746,7 @@ DelveGuideData.changelog = {
             "Loot tab: the four delve glove enhancements, what they do and where they come from. The checklist shows a green line when one is on your gloves.",
             "Curios: Viperwind Idol added, and Rank 5 curios (new in 12.1.5) are recognised in any language.",
             "Labyrinths: DelveGuide now recognises the Labyrinth of Kindo'jan. It is not a delve, so it no longer starts a delve timer or leaves half-empty rows in your history. It has its own in-run HUD -- chamber, tier, lives, objective and chambers cleared -- and its runs are logged and counted toward the weekly vault, one vault slot for every 3 chambers cleared, at any tier.",
-            "Blizzard's Labyrinth content is still unfinished, so this is Labyrinth support rather than a Labyrinth guide. There are no route tips yet.",
+            "This is Labyrinth support rather than a Labyrinth guide: there are no route or chamber tips yet.",
             "The pre-entry checklist finally opens by itself, with the delve entrance dialog. It never fired automatically before: it was watching your target, and a delve entrance is not something you can target. You can drag it, and it remembers where you put it.",
             "A reload in the middle of a run no longer loses the run. The timer picks up where it was and the variant is kept, so the run still counts toward the rankings.",
             "The Victory screen now tells you how the run went against your own best for that delve and variant, and against the community median. The same line is printed to chat.",

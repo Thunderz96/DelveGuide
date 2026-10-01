@@ -387,6 +387,10 @@ local function UpdateLabyrinthHUD(name)
     local scen, step = "", ""
     pcall(function() scen = C_Scenario.GetInfo() or "" end)
     pcall(function() step = C_Scenario.GetStepInfo() or "" end)
+    -- Since build 69848 every chamber's scenario is named after the Labyrinth
+    -- itself, which the row above already shows; the step title is then the
+    -- chamber's only name, so it takes the Chamber row.
+    if scen == name then scen, step = step, "" end
     -- Between chambers the hub reports the generic "Delves" scenario.
     if scen == "" or scen == "Delves" then scen = "|cFF888888" .. L["Choose your path"] .. "|r" end
     rows.variant:SetText(scen)

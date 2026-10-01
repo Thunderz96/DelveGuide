@@ -566,6 +566,13 @@ local API_PROBES = {
     { "C_TaxiMap.GetAllTaxiNodes",                   "C_TaxiMap",      "GetAllTaxiNodes",                  false },
     { "C_Map.SetUserWaypoint",                       "C_Map",          "SetUserWaypoint",                  true  },
     { "C_SuperTrack.SetSuperTrackedUserWaypoint",    "C_SuperTrack",   "SetSuperTrackedUserWaypoint",      false },
+    { "C_Map.OpenWorldMap",                          "C_Map",          "OpenWorldMap",                     false }, -- guarded: no map-opening without it
+    { "C_UIWidgetManager.GetScenarioHeaderDelvesWidgetVisualizationInfo", "C_UIWidgetManager", "GetScenarioHeaderDelvesWidgetVisualizationInfo", true }, -- tier and lives
+    { "C_SpecializationInfo.GetSpecialization",      "C_SpecializationInfo", "GetSpecialization",          true  },
+    { "C_SpecializationInfo.GetSpecializationInfo",  "C_SpecializationInfo", "GetSpecializationInfo",      true  },
+    { "C_ChatInfo.SendChatMessage",                  "C_ChatInfo",     "SendChatMessage",                  true  }, -- /dg share
+    { "ChatFrameUtil.DisplaySystemMessageInPrimary", "ChatFrameUtil",  "DisplaySystemMessageInPrimary",    false },
+    { "C_MajorFactions.GetMajorFactionData",         "C_MajorFactions","GetMajorFactionData",              false }, -- Labyrinth renown
 }
 -- Returns { [label] = "function"|"nil"|... } and a list of REQUIRED labels that
 -- came back nil -- those are the ones that would silently break the addon.
@@ -937,7 +944,10 @@ DelveGuide.TrackLabyrinthPresence = function()
             DelveGuide.labyrinthEnteredAt = GetTime()
             DelveGuide.LogLabyrinth({ kind = "enter", labyrinth = now, epoch = time() })
         end
-        DelveGuide.labyrinthChamberStart = GetTime()
+        -- A resumed visit (a /reload) cannot time the chamber in progress: the
+        -- clock would restart mid-chamber and record a time that is too short.
+        -- Leave that one untimed; its completion restarts the clock.
+        DelveGuide.labyrinthChamberStart = (not resumed) and GetTime() or nil
     else
         DelveGuide.labyrinthEnteredAt    = nil
         DelveGuide.labyrinthChamberStart = nil
@@ -2991,8 +3001,11 @@ DelveGuide.BuildSubmissionCode = function()
         if e.kind == "chamber" and e.scenarioID and sec and sec > 0 then
             local tier = tonumber(e.tierNum) or labTierByDay[tostring(e.at or ""):sub(1, 10)]
             if tier and tier > 0 then
+                -- The step title is the chamber's name: since build 69848 the
+                -- scenario name is the Labyrinth's own for every chamber.
+                local label = (e.stepTitle and e.stepTitle ~= "") and e.stepTitle or e.scenarioName or "?"
                 table.insert(lab, string.format("%d~%s~%d~%d",
-                    e.scenarioID, tostring(e.scenarioName or "?"):gsub("[~;|]", " "),
+                    e.scenarioID, tostring(label):gsub("[~;|]", " "),
                     tier, math.floor(sec + 0.5)))
             end
         end

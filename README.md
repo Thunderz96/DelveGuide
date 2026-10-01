@@ -38,7 +38,7 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - Recognises **the Labyrinth of Kindo'jan**. A Labyrinth is not a Delve, so it no longer starts a Delve timer or files Delve-shaped rows in your History
 - Its own in-run HUD view: **Labyrinth · current chamber · tier · lives · objective progress · chambers cleared · time in**
 - Runs are logged in History and their vault credit counts toward the weekly tallies — **one vault slot per 3 chambers cleared, at any tier**
-- Labyrinth **support**, not a Labyrinth guide: Blizzard's Labyrinth content is still unfinished, so there are no route or chamber tips yet
+- Labyrinth **support**, not a Labyrinth guide: there are no route or chamber tips yet
 
 ### 🧭 Labyrinth Tab
 

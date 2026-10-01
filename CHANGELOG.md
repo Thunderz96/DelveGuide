@@ -10,7 +10,8 @@ Built for **Patch 12.1.5 (Midnight)**; runs on 12.1.0 as well.
 - **Labyrinth runs are logged in History** as their own kind of run, and their vault credit counts toward the weekly tallies on the Roster, the History tab and the Victory screen. Credit is **one vault slot per 3 chambers cleared, at any tier** -- so a nine-chamber run is worth three delves, which for the vault it is.
 - **A Labyrinth tab.** This week's runs per character; your renown with the Labyrinth of Kindo'jan; your progress up the tier ladder (the eleven "3 chambers on Tier N" achievements) with lifetime chambers cleared and Kindo'jan kills; the chambers you have seen, named by their objective, with your own median times; the rewards -- mount, titles, toys -- each marked earned, collected or not yet from your own account; and the few tips we can stand behind. `/dg labyrinth` or `/dg lab` opens it.
 - **Chambers are named by their objective.** From PTR build 69848 every chamber reports the same scenario name, "The Labyrinth of Kindo'jan", so the addon now catches each chamber's step title while it runs (by the time a chamber completes, the step is gone).
-- This is Labyrinth **support**, not a Labyrinth guide. Blizzard's Labyrinth content is still unfinished on the PTR -- boss kills are sometimes not credited -- and while the addon works around that, there are no route or chamber tips yet.
+- **Run submissions carry chamber times.** `/dg submit` adds a Labyrinth section (chamber, tier, seconds) once you have timed a chamber. A code from a client that has never been inside a Labyrinth is unchanged.
+- This is Labyrinth **support**, not a Labyrinth guide: there are no route or chamber tips yet.
 
 ### Added
 - **The pre-entry checklist now opens by itself.** It never fired automatically before 2.0.0: it watched your target, and a delve entrance is a game object, not something you can target -- so the only way to see it was `/dg check`. It now opens with the entrance dialog, sits just above the tier picker, can be dragged, remembers where you put it, and closes with ESC or when the dialog does.
@@ -52,9 +53,10 @@ Built for **Patch 12.1.5 (Midnight)**; runs on 12.1.0 as well.
 - **One grade palette everywhere**, in the tier-list convention players already know -- S salmon through F green. The Delves tab, Curios, the HUD, the compact widget and Settings all agree; S no longer reads like a D or an F on one screen and not another.
 - **The Debug tab is hidden by default.** Tick *Show Debug tab* in Settings to bring it back. The debug slash commands always run, so following a bug-report instruction never needs the tab.
 - **Season 1 Nemesis rewards are marked as no longer obtainable**, and both Nemesis entrance coordinates were re-read in game.
+- **The Future tab drops its pre-launch Labyrinth notes.** They were written before the PTR and some had since been contradicted; the Labyrinth tab covers what is known.
 
 ### Localization
-- **Every string a player sees now goes through a translation table**, so DelveGuide can be translated without a code change: copy `Locales/TEMPLATE.lua`, translate the right-hand side of each line, add the file to the TOC and open a pull request. About 730 phrases are in the template.
+- **Every string a player sees now goes through a translation table**, so DelveGuide can be translated without a code change: copy `Locales/TEMPLATE.lua`, translate the right-hand side of each line, add the file to the TOC and open a pull request. About 720 phrases are in the template.
 - **There are no translations yet** -- every phrase falls back to its English text, so nothing changes for English players. Delve and variant names were already localized separately in the data file and are unaffected.
 - CurseForge's translation platform is not available to this project, which is why translations are repository files contributed by pull request.
 
