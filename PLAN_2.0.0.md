@@ -381,8 +381,9 @@ already running 1.11.2.
   `*** ForceTaint_Strong ***`; B `true`; C `true` (the `/run` form; the
   widget click printed nothing, TomTom); D the in-combat click printed the
   chat line. BugGrabber's log for those sessions has no DelveGuide entry and
-  no blocked action. 1.11.2 is dated 2026-10-01 on `main` (535b82c) and
-  merged into this branch; the tag waits for Nick's go on the summary.
+  no blocked action. **1.11.2 was released the same evening**: tag `v1.11.2`
+  on `main` 89b08aa, run 36940897294, CurseForge upload and GitHub release
+  both succeeded, merged into this branch.
 - B or D fails: drop map-opening (the 1.2.1 behaviour) on both lines.
   C fails: also skip `SetUserWaypoint` while the map is open (chat hint).
 
@@ -426,9 +427,38 @@ has not shipped by then, its changelog entry folds into 2.0.0.
 
 **Decided 2026-10-01 (Nick):** go on 1.11.2; 2.0.0 runs on the retail client
 until patch day; the Future tab previews Eclipse / Season 3 (done, Blizzard's
-own statements only, section 8b); a fresh rankings export comes before
-launch (wanted by Sun Oct 11, so the refresh is in the build a day before
-the tag); the release rehearsal was left to me, below.
+own statements only, section 8b); the rankings export arrived the same
+evening and went into 1.11.2 and this line (below; another pass before
+Oct 13 is optional); the release rehearsal was left to me, below.
+
+**Rankings, 2026-10-01 pass (both lines, identical letters).** 115
+submissions, 42 graded variants, 3466 runs; four contributors credited.
+Against the Sep 13 pass seven letters move, two of them because of a fix
+Nick approved: the hold (hysteresis) measured the nearest edge of any band
+instead of the edge the grade had crossed, which kept *Olds and Ends* at S
+(13m 29s, 95s past the S line, slower than four A's) and *Speaking Their
+Language* at D (81s inside C). Fixed in `tools/aggregate_rankings.py` with a
+regression test; `tools/RANKING.md` step 4 says so. Twelve grades held.
+`rankingStats.mostRun` / `fastest` / `slowest` had not been regenerated since
+1.11.0 (the History tab named Adopt-a-thon fastest while the table had
+Bombing Run minutes ahead); they are now, as min / max `medianSec` of the
+graded rows and the all-tier run count. One earlier slip found: the Sep 13
+pass left one spelling of a repeat submitter's handle un-unified, so that
+player counted twice then. Not done yet: 12 ruRU variant names reported by
+clients (first Russian coverage) and a `--stats` mode so the headline figures
+cannot go stale again.
+
+**The retail client runs 2.0.0 since 2026-10-01.** `_retail_\Interface\AddOns\DelveGuide`
+now links to this worktree, so BOTH game clients load this folder on every
+`/reload`: never leave it mid-merge or half-edited. Do merges and multi-step
+edits in a temporary worktree (`git worktree add <dir> -b <tmp> ptr-12.1.5`)
+and fast-forward this one. The old link was moved, not deleted, to
+`_retail_\Interface\DelveGuide-live-1.11.2-link` (still pointing at the
+`main` worktree); the pre-2.0.0 SavedVariables are in
+`Programs\WoW\_backups\retail-DelveGuide-SavedVariables-2026-10-01`. Undo,
+with WoW closed: move the current link out, move the old one back to
+`AddOns\DelveGuide`, restore the backup (2.0.0 snaps week keys from Tue 14:00
+to 15:00 UTC, which 1.11.x does not read back).
 
 **Release rehearsal, done 2026-10-01.** `release.yml` on this branch (lint
 gate through `workflow_call`, pinned packager) had never run; its first run
@@ -515,3 +545,4 @@ if `lua5.1` is not packaged there, `lint.yml` needs a pin before 2.0.1.
 | 2026-09-29 | **Build day** (Nick: go on 1.11.2 and the 2.0.0 fixes). 1.11.2 on `main` (7caebed): Loot tab `C_Item`, map opening via `C_Map.OpenWorldMap` behind a combat + `C_RestrictedActions` guard, Voidcore wording, version drift; independent review, findings fixed; merged into ptr (5db9247). 2.0.0 (d0b7c86, 0aae976): chamber names from the step title, renown via `C_MajorFactions`, Labyrinth progress + reward marks, Venomstone item, glove enhancements (quiet checklist, Loot note), curio Rank 1-5 IDs + Viperwind Idol, namespaced APIs, tracker scrape retired. Verified: real Lua 5.1 parse, Lua 5.1 harnesses for the waypoint/map paths, Labyrinth tab, gloves and curio matching; CI tools green | Tag 1.11.2 only after the retail test (section 10); tooltip-hook move deferred to 2.0.x |
 | 2026-10-01 | **Pre-flight** (Nick: what do I need to test and do before launch). Read the branch as it would ship: Future tab's stale Labyrinth rows removed, the unverified "progress persists" claim and the PTR tip gone, `/dg submit` `|LAB;` and the Labyrinth HUD name chambers by step title, a reload no longer times the chamber in progress, selftest probes the namespaced APIs, "still unfinished" / "no taint" wording dropped. Checked: no 12.1.5-only API in 2.0.0 (76 names vs Gethe live 69933); the SavedVariables upgrade on a copy of the live retail DB (79 rows, 12 weeks kept; keys +1h by design). Retail has TomTom, so the taint test's waypoint step is a `/run` | Section 10 holds the three sessions: retail (gates 1.11.2), 2.0.0 on retail until patch day (Nick's call), one PTR session |
 | 2026-10-01 | **Retail taint test passed** (Nick): `C_Map.OpenWorldMap` leaves `WorldMapFrame.mapID` secure, a waypoint set from insecure code leaves the pin's `owningMap` secure, the in-combat guard fires. **1.11.2 dated and pushed on `main`** (535b82c, release workflow pinned to the commits that shipped 1.11.1), merged here. **Release rehearsal:** `release-dryrun.yml` built the 2.0.0 package through the lint gate and the pinned packager without uploading (run 36937770832, green). **CurseForge changelog** is now `RELEASE_NOTES.md` (the top CHANGELOG section) instead of 230 commit messages. **Future tab** previews Eclipse / Season 3 from Blizzard's own statements; the Sep 13 notes on a Nemesis lair, Agony Mode and a delve tier cap did not survive the re-check | Tag `v1.11.2` on Nick's go. Then: retail junction to this worktree (WoW closed, SavedVariables backed up), the PTR session, a rankings export by Oct 11 |
+| 2026-10-01 | **1.11.2 RELEASED** (tag `v1.11.2` on `main` 89b08aa, run 36940897294: CurseForge upload and GitHub release succeeded; the curated notes went up as the changelog). It carries the **Oct 1 rankings pass** (115 submissions, 42 variants; 19 letters differ from 1.11.1) and the **hold-rule fix** Nick approved (Olds and Ends S to A, Speaking Their Language D to C). Same pass and fix on this line (2d882cd, CI green), which contains `main` again. **Retail now runs 2.0.0**: the `_retail_` link points at this worktree, SavedVariables backed up | Both game clients load this folder: no half-done edits here, use a temporary worktree. Open: Nick's PTR session; ruRU variant names (12); a `--stats` mode for the headline figures |
