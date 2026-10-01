@@ -69,7 +69,7 @@ Built for **Patch 12.1.5 (Midnight)**; runs on 12.1.0 as well.
 - **Nothing reads the objective tracker's text any more.** The last scrape of it (a tier fallback walked once a second) is gone; the header widget is confirmed at Tiers 8 and 9 and in a Tier 11 Labyrinth.
 - **Current APIs instead of Blizzard's deprecation shims** for the spec, chat and system-message calls (`C_SpecializationInfo`, `C_ChatInfo`, `ChatFrameUtil`), so the addon does not depend on the shims staying loaded.
 
-## [1.11.2] - TBD
+## [1.11.2] - 2026-10-01
 
 ### Fixed
 - **Loot tab on Patch 12.1.5.** 12.1.5 deletes the deprecated global `GetItemInfoInstant` (the `Blizzard_DeprecatedItemScript` shim is gone), and the Loot tab called it bare on every row, so the tab would have errored from patch day. It now uses `C_Item.GetItemInfoInstant`, the same fix the 2.0.0 line carries. A sweep of every global the ten deleted `Blizzard_Deprecated*` addons defined, and of every documented function and event this build calls (Gethe `live` 12.1.0/69933 against `ptr2` 12.1.5/70077), found nothing else that breaks; `GetDetailedItemLevelInfo` in the Voidforge slot scan is already a guarded fallback behind `C_Item`.

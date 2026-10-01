@@ -760,7 +760,7 @@ DelveGuideData.changelog = {
     },
     {
         version = "1.11.2",
-        date    = "TBD",
+        date    = "2026-10-01",
         entries = {
             "Ready for patch 12.1.5: the Loot tab no longer errors after the patch removes an old item function.",
             "Clicking a delve opens the world map through Blizzard's own map code. The old way could leave map pins blocked in combat. The map only opens outside combat and restricted content; the waypoint is always set.",
