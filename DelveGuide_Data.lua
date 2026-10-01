@@ -776,7 +776,7 @@ DelveGuideData.changelog = {
             "Ready for patch 12.1.5: the Loot tab no longer errors after the patch removes an old item function.",
             "Clicking a delve opens the world map through Blizzard's own map code. The old way could leave map pins blocked in combat. The map only opens outside combat and restricted content; the waypoint is always set.",
             "Nebulous Voidcores are described correctly: bonus-roll tokens that don't drop from delves. For now the Great Vault awards them, and from the week of Oct 6 Orin Straylight trades one a week. The map tooltip's \"drops Nebulous Voidcore\" line is gone.",
-            "Rankings updated from the Sep 13 pass: 106 submissions across 41 variants.",
+            "Rankings updated from the Oct 1 pass: 115 submissions across 42 variants. Open Night (S), Venomous Vapors (C) and Fungal Pharmacon (D) are graded for the first time.",
         }
     },
     {
