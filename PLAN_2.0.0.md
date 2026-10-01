@@ -312,42 +312,120 @@ counts, the HELD tag, attribution in a shipped comment. Merged into
 18. Story-variant "still needed" markers: 2.0.1. The achievements are known
     (Findings 7.4); match by criterion, not by name.
 
-**Retail session (Nick), before tagging 1.11.2.** Out of combat, world map
-closed. `/reload` first: the junction means retail is already running 1.11.2.
+**Pre-flight, 2026-10-01.** Nothing has run in game since Sep 7 (PTR) and
+Sep 23 (retail), so everything from the Labyrinth tab (Sep 13) onward is
+proven by parse, CI and Lua 5.1 harnesses only. A read of the branch as it
+would ship found launch-day leftovers, all fixed the same day:
 
-- A. `/run WorldMapFrame:SetMapID(947)` then
+- The Future tab still described Labyrinths as upcoming ("still on the PTR",
+  "progress saved between sessions", "a new raid arrives"). Those five rows
+  are gone; the Venomstone row stays.
+- The Labyrinth tab's subtitle claimed progress persists between sessions:
+  unverified, and contradicted on 69594 (section 2). Removed. The tip about
+  PTR boss kills is gone too.
+- Since 69848 a chamber's scenario name is the Labyrinth's own. The tab was
+  fixed on Sep 29; `/dg submit`'s `|LAB;` section and the Labyrinth HUD's
+  Chamber row still used the scenario name. Both now use the step title.
+- A `/reload` inside a Labyrinth restarted the chamber clock mid-chamber, so
+  that chamber logged a time that was too short (the delve version of this is
+  the bug E4 fixed). The chamber in progress at a reload is now left untimed.
+- `/dg selftest` did not probe the APIs the Sep 29 pass moved to
+  (`C_SpecializationInfo`, `C_ChatInfo.SendChatMessage`, the header-widget
+  getter, `C_Map.OpenWorldMap`, `C_MajorFactions.GetMajorFactionData`). Added.
+- Wording: "Blizzard's Labyrinth content is still unfinished" (changelogs,
+  README) and "no taint" (listing) are gone.
+
+Checked, no change needed:
+
+- **2.0.0 on a 12.1.0 client.** EU patches a day after NA and TW/KR two days
+  after, so 2.0.0 will run on 12.1.0 for real players. Of the 76 game API
+  names `ptr-12.1.5` uses and `main` does not, none exists only on 12.1.5
+  (Gethe live 69933 vs ptr2 70077); every Labyrinth read is pcall-guarded and
+  answers "not available" there.
+- **The SavedVariables upgrade on real data.** MIGRATIONS 2-5 run on a copy
+  of the live retail DB (79 history rows, 12 weeks, 5 roster characters):
+  every row kept, every week key moved +1h onto the true reset hour (live
+  1.11.x floors them to Tue 14:00 UTC; 2.0.0 rounds to 15:00), 12 week groups
+  before and after, 11 realm-less rows stamped, idempotent. Going BACK from
+  2.0.0 to 1.11.x therefore needs the SavedVariables backup restored.
+- The retail client has TomTom, so a delve click there takes the TomTom
+  branch and never calls `C_Map.SetUserWaypoint`; step C below is a `/run`
+  for that reason.
+
+**Retail session (Nick, ~10 min), gates the 1.11.2 tag.** Outdoors, out of
+combat, world map closed. `/reload` first: the junction means retail is
+already running 1.11.2.
+
+- A, the control. `/run WorldMapFrame:SetMapID(947)` then
   `/dump issecurevariable(WorldMapFrame,"mapID")`: expect `false` and a
-  name. `/reload`.
-- B. `/run C_Map.OpenWorldMap(947)` (the map opens), then the same dump.
-  `true` = the map fix is safe. `false`, or a "blocked" popup = not safe.
-  `/reload`.
-- C. Open the map (M), click a delve in the DelveGuide widget with the map
-  still open, then
+  name. It proves the check can see taint. `/reload`.
+- B, the fix. `/run C_Map.OpenWorldMap(947)` (the map opens on Azeroth),
+  close it with Esc, then the same dump. `true` = safe. `false`, or a
+  "blocked" popup = not safe. `/reload`.
+- C, the waypoint path players without TomTom take. Open the map (M), then
+  `/run local m=WorldMapFrame:GetMapID() C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(m,.5,.5))`
+  (a pin appears mid-map), then
   `/run for p in WorldMapFrame:EnumeratePinsByTemplate("WaypointLocationPinTemplate") do print(issecurevariable(p,"owningMap")) end`:
-  `true` = safe.
-- D. Smoke test: the What's New popup shows 1.11.2; a delve click sets the
-  waypoint and opens its zone; `/dg map` opens the map; the Loot tab shows
-  icons and the new Voidcore line; Voidforge says Great Vault + Orin; a delve's
-  map tooltip has no Voidcore line; BugSack stays empty.
-- If B or C fails: drop map-opening (the 1.2.1 behaviour) and skip
-  `SetUserWaypoint` while the map is open (chat hint instead), on both lines.
+  `true` = safe; nothing printed = that map cannot hold a pin, try another
+  zone. `/run C_Map.ClearUserWaypoint()`, `/reload`.
+- D, real use. Click a delve in the widget: "TomTom waypoint set" and the map
+  opens on its zone. Pull a mob, open the map in combat and drag it around:
+  no "blocked" message. Click a delve while in combat: the chat line, no
+  map. `/dg map` opens the map. Loot tab shows icons and the new Voidcore
+  line; Voidforge says Great Vault + Orin; a delve's map tooltip has no
+  Voidcore line; the What's New popup said 1.11.2. Log out; BugGrabber's
+  saved log is then read off disk for DelveGuide or blocked-action entries.
+- B, C and D clean: stamp the 1.11.2 date, pre-tag summary, tag on Nick's
+  word, merge `main` back into `ptr-12.1.5`.
+- B or D fails: drop map-opening (the 1.2.1 behaviour) on both lines.
+  C fails: also skip `SetUserWaypoint` while the map is open (chat hint).
 
-**PTR session (Nick), one, before 2.0.0.** `/dg selftest`;
-`/dump select(4, GetBuildInfo())` -> 120105; in a Labyrinth chamber,
-`/dump C_Scenario.GetStepInfo()` (expect the objective name) and clear it,
-then `/dg lab` (Chambers Seen shows that name, Renown shows "Renown N",
-Progress shows the ladder, rewards carry marks); Loot tab glove block;
-Companion tab curios; a delve click in and out of combat; `/dg export` in
-the hub and mid-chamber. Optional: the three `/dump` checks in Findings 7.4.
+**Then, Nick's call: run 2.0.0 on the retail client until patch day.** With
+WoW closed: back up `WTF\Account\QUICKNICK2\SavedVariables\DelveGuide.lua`,
+point the `_retail_` junction at the `DelveGuide-PTR` worktree. First login:
+`/dg selftest` (expect ALL PASS on iface 120100), then play as usual. Every
+delve run is then a test of 2.0.0 on live data and on 12.1.0, which nothing
+else covers. To undo: WoW closed, junction back, backup restored.
 
-**Open decision for Nick:** `PLAN_2.0.0.md`, `PTR_12.1.5_Findings.md` and
-`API_12.1.5_Research.md` are tracked on this branch, so the packager would
-put them in the 2.0.0 zip. They are now in `.pkgmeta`'s ignore list; the
-`docs/` move is still yours to decide.
+**PTR session (Nick, one, ~40 min).** Client is already on 70077. Keep the
+chat open; `/dg export` snapshots and the logs are read off disk, so nothing
+needs pasting.
 
-**Patch day:** the `delveguide-release` skill (confirm 120105 on live, merge
-`ptr-12.1.5` into `main`, stamp dates, tag on Nick's word). If 1.11.2 has not
-shipped by then, its changelog entry folds into 2.0.0.
+1. Anywhere: `/dump select(4, GetBuildInfo())` -> 120105; `/dg selftest`
+   -> `ALL PASS`.
+2. `/dg lab`: screenshot the tab (top and Rewards). Loot tab: screenshot the
+   "Delve glove enhancements" block. Companion tab: role and both curios.
+3. Outdoors: click a delve out of combat (map opens) and in combat (chat
+   line, no map); `/dg map`; `/dg share say`.
+4. Labyrinth, any tier (Tier 1 is quickest): `/dg export` in the hub; in a
+   chamber `/dg export` and a HUD screenshot (Chamber should be the
+   objective's name, not the Labyrinth's); clear three chambers ("Logged
+   Labyrinth ... 3 chambers, 1 vault credit"); `/dg lab` screenshot
+   (Chambers Seen named by objective, This Week has the row); `/dg export`.
+   A chamber that cannot be finished is a Blizzard bug: note it and move on,
+   one finished chamber proves the naming.
+5. One delve, no need to finish: HUD shows tier and lives; `/dg export`.
+6. `/reload`, look at BugSack, say done.
+
+**Patch day (Tue Oct 13 NA).** The `delveguide-release` skill. Nick: log in
+after maintenance, `/dump select(4, GetBuildInfo())` -> 120105. Then the
+merge (`main` is an ancestor of `ptr-12.1.5`, so it cannot conflict and the
+merged tree is the tested one), dates stamped, CI green, `ptr-12.1.5`
+fast-forwarded so a junction on either worktree runs the tagged tree. Nick:
+restart the client, `/dg selftest`, a look at the Labyrinth tab, and one
+chamber if the Labyrinth is open (the IDs can still move at launch). Pre-tag
+summary, tag on Nick's word. Nick afterwards: paste
+`tools/CURSEFORGE_LISTING.md`, check the gallery, answer aleris88. If 1.11.2
+has not shipped by then, its changelog entry folds into 2.0.0.
+
+**Open decisions for Nick:** a rankings refresh before 2.0.0 (needs a fresh
+form export; otherwise it ships the Sep 13 pass); a 12.2 / Season 3 preview
+on the Future tab (one Venomstone row today); the `docs/` move for
+`PLAN_2.0.0.md`, `PTR_12.1.5_Findings.md` and `API_12.1.5_Research.md`
+(already out of the zip via `.pkgmeta`).
+
+**After launch:** GitHub's `ubuntu-latest` moves to Ubuntu 26 from Oct 19;
+if `lua5.1` is not packaged there, `lint.yml` needs a pin before 2.0.1.
 
 ---
 
@@ -406,3 +484,4 @@ shipped by then, its changelog entry folds into 2.0.0.
 
 | 2026-09-29 | **Research pass** (6 Sonnet agents) after Blizzard dated 12.1.5: **NA Oct 13 / EU Oct 14**. Builds 69848/69952/70077 on Gethe `ptr2`; our API surface unchanged; TOC 120105. Labyrinth, delve-system, community and taint findings in PTR_12.1.5_Findings.md section 7; work list in section 10. Listing figures corrected to 106/41 (4325c5e). 1.11.1 approved on CurseForge, 1 unanswered comment | Live 1.11.1 breaks on patch day (Loot tab bare `GetItemInfoInstant`); map-opening taint is a 1.9.0 regression of the 1.2.1 fix |
 | 2026-09-29 | **Build day** (Nick: go on 1.11.2 and the 2.0.0 fixes). 1.11.2 on `main` (7caebed): Loot tab `C_Item`, map opening via `C_Map.OpenWorldMap` behind a combat + `C_RestrictedActions` guard, Voidcore wording, version drift; independent review, findings fixed; merged into ptr (5db9247). 2.0.0 (d0b7c86, 0aae976): chamber names from the step title, renown via `C_MajorFactions`, Labyrinth progress + reward marks, Venomstone item, glove enhancements (quiet checklist, Loot note), curio Rank 1-5 IDs + Viperwind Idol, namespaced APIs, tracker scrape retired. Verified: real Lua 5.1 parse, Lua 5.1 harnesses for the waypoint/map paths, Labyrinth tab, gloves and curio matching; CI tools green | Tag 1.11.2 only after the retail test (section 10); tooltip-hook move deferred to 2.0.x |
+| 2026-10-01 | **Pre-flight** (Nick: what do I need to test and do before launch). Read the branch as it would ship: Future tab's stale Labyrinth rows removed, the unverified "progress persists" claim and the PTR tip gone, `/dg submit` `|LAB;` and the Labyrinth HUD name chambers by step title, a reload no longer times the chamber in progress, selftest probes the namespaced APIs, "still unfinished" / "no taint" wording dropped. Checked: no 12.1.5-only API in 2.0.0 (76 names vs Gethe live 69933); the SavedVariables upgrade on a copy of the live retail DB (79 rows, 12 weeks kept; keys +1h by design). Retail has TomTom, so the taint test's waypoint step is a `/run` | Section 10 holds the three sessions: retail (gates 1.11.2), 2.0.0 on retail until patch day (Nick's call), one PTR session |

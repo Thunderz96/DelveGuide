@@ -22,9 +22,8 @@ the S–F grades come from **106 submissions of timed runs across 41 variants**,
 command and reduced to a median per variant. Not guesswork, not the author's opinion —
 measured, and refreshed every release.
 
-**Display-only, by design.** DelveGuide reads Blizzard's delve UI and never writes to it — no
-companion-loadout changes, no protected-frame hooks, no taint. Your Great Vault credit,
-scenario objectives and companion configuration are untouched.
+**Display-only, by design.** DelveGuide reads Blizzard's delve UI and never changes it. Your
+Great Vault credit, scenario objectives and companion configuration are untouched.
 
 **Patch 12.1.5 ready** (and still runs on 12.1.0). **Labyrinth support:** DelveGuide
 recognises the Labyrinth of Kindo'jan, keeps it out of your delve rankings — a Labyrinth is
