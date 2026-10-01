@@ -616,6 +616,15 @@ DelveGuideData.currencyNotes = {
 DelveGuideData.future = {
     -- ── Later in Season 2 (12.1) ────────────────────────────
     { category=L["Later in Season 2"], note=string.format(L["Ascendant Venomstone: %s"], DelveGuideData.currencyNotes.venomstone) },
+    -- ── Eclipse (Patch 12.2) and Season 3 ───────────────────
+    -- BlizzCon 2026, checked 2026-10-01 against Blizzard's "What's Next" panel
+    -- recap and roadmap graphic. Only what Blizzard itself said: its text
+    -- gives no level number for Valeera (press reports 100) and no delve tier
+    -- change, and Agony Mode is a Prey difficulty, not a delve one.
+    { category=L["Eclipse (Patch 12.2) and Season 3"], note=L["Announced at BlizzCon 2026 for early 2027. Season 3 starts shortly after the patch; Blizzard's timing and details can still change."] },
+    { category=L["Eclipse (Patch 12.2) and Season 3"], note=L["A new Nemesis, Astalor Bloodsworn, arrives with Season 3 and brings optional challenges."] },
+    { category=L["Eclipse (Patch 12.2) and Season 3"], note=L["More variations for the existing delves. Blizzard's roadmap also lists new delves, with no details yet."] },
+    { category=L["Eclipse (Patch 12.2) and Season 3"], note=L["Valeera's level cap rises again, and there are new curios to find."] },
     -- The pre-launch Labyrinth notes that sat here (written before the PTR,
     -- some since contradicted) went with 2.0.0: the Labyrinth tab covers it.
 }
