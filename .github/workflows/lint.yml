@@ -18,7 +18,10 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    # Pinned, like the actions below: ubuntu-latest moves to Ubuntu 26 from
+    # 2026-10-19, and this gate must not change under a launch-week hotfix.
+    # Move it deliberately, after checking `lua5.1` still installs there.
+    runs-on: ubuntu-24.04
     env:
       # Same reason as the release workflow: actions/checkout v4 is a node20
       # action and node20 is being removed from the runners.

@@ -14,7 +14,7 @@ jobs:
 
   release:
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # pinned with lint.yml; see the note there
     permissions:
       contents: write
     env:
