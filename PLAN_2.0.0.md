@@ -247,7 +247,7 @@ aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's
 ## 8b. Horizon after BlizzCon 2026 (researched 2026-09-13, five Sonnet passes)
 
 - **12.1.5 "The Promise of Tomorrow"**: no live date from Blizzard (Oct 6 is a press cadence guess); still one PTR build (69594, public Sep 3); API surface unchanged (Gethe `ptr2`, zero commits since). Contents that touch us: Labyrinth of Kindo'jan (9 chambers, credit every 3, T11 solo = Loa-Blessed Wayfarer mount, 6-step weekly line = 2 Mythic pieces, faction 2836 now has ranks, titles/toys/transmog documented), Ascendant Venomstones (weapon/trinket/**necklace**; T11 bountiful, Heroic+ raid, M+10+, Nightmare Prey). **No new delves, no second Labyrinth, no delve UI changes.**
-- **12.2 "Eclipse" = Midnight Season 3** ("early 2027"): new Nemesis **Astalor Bloodsworn** (crystal cavern near the Worldcore; Agony Mode capstone), new delve *variations* on existing delves, Valeera cap **100** + new curios, higher delve level cap, raid The Worldcore, dungeon Thraegar's Stand. → the next data-refresh release (rankings restart, curios, Nemesis tab, vendors). Nothing for 2.0.0.
+- **12.2 "Eclipse"** ("early 2027", Season 3 starting shortly after it): new Nemesis **Astalor Bloodsworn** with optional challenges, more *variations* on existing delves (Blizzard's roadmap also says "new delves"), a higher level cap and new curios for Valeera, raid The Worldcore, dungeon Thraegar's Stand. → the next data-refresh release (rankings restart, curios, Nemesis tab, vendors). **Re-checked 2026-10-01 against Blizzard's panel recap and roadmap, and three Sep 13 claims did not survive:** the "crystal cavern" Nemesis lair (one outlet describing a slide), Agony Mode (it is the final *Prey* difficulty, not a delve one), and a higher delve tier cap (the only "level cap" sentence is Valeera's; "100" is press, not Blizzard). A 12.1.7 "Echoes of the Worldcore" sits in between with no delve content listed; nothing announced for Labyrinths after 12.1.5. The Future tab carries only the surviving claims.
 - **Warcraft Forever** (Nov 4, beta Sep 17): standalone vanilla-era client; no evidence it shares the retail addon API. Out of scope.
 - **Scope decision (Nick, 2026-09-13):** squeeze as much as possible into 2.0.0 → **D4 Labyrinth tab is back in scope**; D5 capture side only. Voidcore weekly-purchase sentence held pending Nick.
 
@@ -377,6 +377,12 @@ already running 1.11.2.
   saved log is then read off disk for DelveGuide or blocked-action entries.
 - B, C and D clean: stamp the 1.11.2 date, pre-tag summary, tag on Nick's
   word, merge `main` back into `ptr-12.1.5`.
+- **Result, 2026-10-01 (Nick, retail 12.1.0):** A `false` /
+  `*** ForceTaint_Strong ***`; B `true`; C `true` (the `/run` form; the
+  widget click printed nothing, TomTom); D the in-combat click printed the
+  chat line. BugGrabber's log for those sessions has no DelveGuide entry and
+  no blocked action. 1.11.2 is dated 2026-10-01 on `main` (535b82c) and
+  merged into this branch; the tag waits for Nick's go on the summary.
 - B or D fails: drop map-opening (the 1.2.1 behaviour) on both lines.
   C fails: also skip `SetUserWaypoint` while the map is open (chat hint).
 
@@ -418,11 +424,34 @@ summary, tag on Nick's word. Nick afterwards: paste
 `tools/CURSEFORGE_LISTING.md`, check the gallery, answer aleris88. If 1.11.2
 has not shipped by then, its changelog entry folds into 2.0.0.
 
-**Open decisions for Nick:** a rankings refresh before 2.0.0 (needs a fresh
-form export; otherwise it ships the Sep 13 pass); a 12.2 / Season 3 preview
-on the Future tab (one Venomstone row today); the `docs/` move for
-`PLAN_2.0.0.md`, `PTR_12.1.5_Findings.md` and `API_12.1.5_Research.md`
-(already out of the zip via `.pkgmeta`).
+**Decided 2026-10-01 (Nick):** go on 1.11.2; 2.0.0 runs on the retail client
+until patch day; the Future tab previews Eclipse / Season 3 (done, Blizzard's
+own statements only, section 8b); a fresh rankings export comes before
+launch (wanted by Sun Oct 11, so the refresh is in the build a day before
+the tag); the release rehearsal was left to me, below.
+
+**Release rehearsal, done 2026-10-01.** `release.yml` on this branch (lint
+gate through `workflow_call`, pinned packager) had never run; its first run
+would have been the 2.0.0 tag. `.github/workflows/release-dryrun.yml` now
+runs the same gate and the same packager with `-d` (no upload, no keys),
+lists the zip and fails if a TOC file is missing with exact case or an
+ignored file got in. First run green (36937770832): 39 files, 26 TOC
+entries, no planning docs. A beta tag was the alternative; it would have
+published 2.0.0 before the patch for no extra coverage, since the upload
+path is the one 1.11.1 used (packager v2.5.1, now pinned on `main` too:
+`@v2` has moved to v2.6.1).
+
+**CurseForge "Changes" text.** The packager's default is every commit
+message since the previous tag: for 2.0.0, 230 developer notes, nine of them
+using Nick's first name. `.pkgmeta` now sets `manual-changelog` to
+`RELEASE_NOTES.md`, the top `CHANGELOG.md` section written by
+`tools/release_notes.py`; the lint gate fails when the two disagree, so
+**after stamping the release date, run `python tools/release_notes.py`.**
+1.11.2 ships from `main` with the old behaviour (four commits, no name).
+
+**Still open for Nick:** the `docs/` move for `PLAN_2.0.0.md`,
+`PTR_12.1.5_Findings.md` and `API_12.1.5_Research.md` (already out of the
+zip via `.pkgmeta`).
 
 **After launch:** GitHub's `ubuntu-latest` moves to Ubuntu 26 from Oct 19;
 if `lua5.1` is not packaged there, `lint.yml` needs a pin before 2.0.1.
@@ -485,3 +514,4 @@ if `lua5.1` is not packaged there, `lint.yml` needs a pin before 2.0.1.
 | 2026-09-29 | **Research pass** (6 Sonnet agents) after Blizzard dated 12.1.5: **NA Oct 13 / EU Oct 14**. Builds 69848/69952/70077 on Gethe `ptr2`; our API surface unchanged; TOC 120105. Labyrinth, delve-system, community and taint findings in PTR_12.1.5_Findings.md section 7; work list in section 10. Listing figures corrected to 106/41 (4325c5e). 1.11.1 approved on CurseForge, 1 unanswered comment | Live 1.11.1 breaks on patch day (Loot tab bare `GetItemInfoInstant`); map-opening taint is a 1.9.0 regression of the 1.2.1 fix |
 | 2026-09-29 | **Build day** (Nick: go on 1.11.2 and the 2.0.0 fixes). 1.11.2 on `main` (7caebed): Loot tab `C_Item`, map opening via `C_Map.OpenWorldMap` behind a combat + `C_RestrictedActions` guard, Voidcore wording, version drift; independent review, findings fixed; merged into ptr (5db9247). 2.0.0 (d0b7c86, 0aae976): chamber names from the step title, renown via `C_MajorFactions`, Labyrinth progress + reward marks, Venomstone item, glove enhancements (quiet checklist, Loot note), curio Rank 1-5 IDs + Viperwind Idol, namespaced APIs, tracker scrape retired. Verified: real Lua 5.1 parse, Lua 5.1 harnesses for the waypoint/map paths, Labyrinth tab, gloves and curio matching; CI tools green | Tag 1.11.2 only after the retail test (section 10); tooltip-hook move deferred to 2.0.x |
 | 2026-10-01 | **Pre-flight** (Nick: what do I need to test and do before launch). Read the branch as it would ship: Future tab's stale Labyrinth rows removed, the unverified "progress persists" claim and the PTR tip gone, `/dg submit` `|LAB;` and the Labyrinth HUD name chambers by step title, a reload no longer times the chamber in progress, selftest probes the namespaced APIs, "still unfinished" / "no taint" wording dropped. Checked: no 12.1.5-only API in 2.0.0 (76 names vs Gethe live 69933); the SavedVariables upgrade on a copy of the live retail DB (79 rows, 12 weeks kept; keys +1h by design). Retail has TomTom, so the taint test's waypoint step is a `/run` | Section 10 holds the three sessions: retail (gates 1.11.2), 2.0.0 on retail until patch day (Nick's call), one PTR session |
+| 2026-10-01 | **Retail taint test passed** (Nick): `C_Map.OpenWorldMap` leaves `WorldMapFrame.mapID` secure, a waypoint set from insecure code leaves the pin's `owningMap` secure, the in-combat guard fires. **1.11.2 dated and pushed on `main`** (535b82c, release workflow pinned to the commits that shipped 1.11.1), merged here. **Release rehearsal:** `release-dryrun.yml` built the 2.0.0 package through the lint gate and the pinned packager without uploading (run 36937770832, green). **CurseForge changelog** is now `RELEASE_NOTES.md` (the top CHANGELOG section) instead of 230 commit messages. **Future tab** previews Eclipse / Season 3 from Blizzard's own statements; the Sep 13 notes on a Nemesis lair, Agony Mode and a delve tier cap did not survive the re-check | Tag `v1.11.2` on Nick's go. Then: retail junction to this worktree (WoW closed, SavedVariables backed up), the PTR session, a rankings export by Oct 11 |
