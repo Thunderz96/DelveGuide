@@ -29,9 +29,10 @@ jobs:
           fetch-depth: 0
 
       - name: Package and upload
-        # Same reasoning. This is the commit the BigWigsMods/packager v2 tag
-        # currently resolves to (v2 -> v2.5.1 -> this commit). Bump it
-        # deliberately when you want a newer packager.
+        # Same reasoning. This is v2.5.1, the packager that shipped 1.11.1 and
+        # that the live line is pinned to as well; the moving v2 tag has since
+        # gone on to v2.6.1. Bump it deliberately, and run the release dry run
+        # (release-dryrun.yml) first.
         uses: BigWigsMods/packager@6d50adb6e8517eefef63f4afb16a6518166a6b28 # v2.5.1
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}

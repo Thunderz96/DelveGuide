@@ -1,5 +1,13 @@
 package-as: DelveGuide
 
+# What CurseForge shows as a release's "Changes". Without this the packager
+# builds that text from every commit message since the previous tag.
+# RELEASE_NOTES.md is the top CHANGELOG.md section, written by
+# tools/release_notes.py and kept in step by the lint gate.
+manual-changelog:
+  filename: RELEASE_NOTES.md
+  markup-type: markdown
+
 ignore:
   - .github
   - .gitignore
@@ -7,6 +15,7 @@ ignore:
   - .claude
   - .gitattributes
   - CHANGELOG.md
+  - RELEASE_NOTES.md
   - README.md
   - tools
   - Locales/TEMPLATE.lua

@@ -75,6 +75,10 @@ jobs:
         run: python3 tools/validate_locales.py
       - name: Python unit tests (aggregate, extractor)
         run: python3 -m unittest discover -s tools
+      - name: Release notes match the top CHANGELOG section
+        # .pkgmeta publishes RELEASE_NOTES.md as the release's "Changes" text on
+        # CurseForge. It is generated, so a stale copy ships the wrong notes.
+        run: python3 tools/release_notes.py --check
       - name: Every L[] is indexed by a string literal
         run: python3 tools/extract_locale_phrases.py --check
 
