@@ -894,6 +894,13 @@ DelveGuide.LogLabyrinth = function(entry)
     DelveGuideDB.labyrinthLog = DelveGuideDB.labyrinthLog or {}
     entry.at = date("%Y-%m-%d %H:%M:%S")
     entry.labyrinth = entry.labyrinth or DelveGuide.GetLabyrinthName()
+    -- What the GAME has counted, on every entry: its own lifetime "chambers
+    -- completed" statistic. The addon counts completion events, and on the PTR
+    -- one fired for a chamber the game then did not count (2026-10-01). With
+    -- this the log shows such a disagreement without a player having to say so.
+    pcall(function()
+        entry.counted = tonumber((GetStatistic(DelveGuideData.labyrinthContent.statChambers)))
+    end)
     table.insert(DelveGuideDB.labyrinthLog, entry)
     while #DelveGuideDB.labyrinthLog > LAB_LOG_MAX do table.remove(DelveGuideDB.labyrinthLog, 1) end
 end
@@ -3430,6 +3437,9 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
                 end
                 if DelveGuide.labyrinthChamberStart then e.elapsed = GetTime() - DelveGuide.labyrinthChamberStart end
                 DelveGuide.labyrinthChamberStart = GetTime()
+                -- The Great Vault's World progress as this chamber ends: what a
+                -- chamber is finally worth. Its own pcall, so it cannot cost the entry.
+                pcall(function() e.vault = (GetWeeklyVaultData()) end)
                 DelveGuide.LogLabyrinth(e)
             end)
             -- D2: vault credit lands every third chamber; upsert the run record.
