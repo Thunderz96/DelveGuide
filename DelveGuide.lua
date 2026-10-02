@@ -942,10 +942,25 @@ DelveGuide.TrackLabyrinthPresence = function()
                     -- the epoch field existed still resumes the chamber count,
                     -- just with a fresh clock; one older than three hours is a
                     -- visit that never logged its leave, and is not resumed.
+                    -- Nor is another character's: the log is account-wide, and
+                    -- logging out inside leaves a visit open for an alt to find.
                     local age = e.epoch and (time() - e.epoch) or nil
-                    if age == nil or (age >= 0 and age < 3 * 60 * 60) then
+                    if (e.char == nil or e.char == UnitName("player"))
+                       and (age == nil or (age >= 0 and age < 3 * 60 * 60)) then
                         resumed = true
                         DelveGuide.labyrinthEnteredAt = age and (GetTime() - age) or GetTime()
+                        -- GetTime() is the moment the current frame began, and
+                        -- for the frame a /reload finishes in that is before the
+                        -- loading screen: restored here alone, the clock ran 9
+                        -- seconds fast (PTR, 2026-10-01). Take it again a frame
+                        -- later, when GetTime() is current.
+                        if age then
+                            C_Timer.After(0, function()
+                                if DelveGuide.currentLabyrinth == now then
+                                    DelveGuide.labyrinthEnteredAt = GetTime() - (time() - e.epoch)
+                                end
+                            end)
+                        end
                     end
                     break
                 end
@@ -953,7 +968,7 @@ DelveGuide.TrackLabyrinthPresence = function()
         end
         if not resumed then
             DelveGuide.labyrinthEnteredAt = GetTime()
-            DelveGuide.LogLabyrinth({ kind = "enter", labyrinth = now, epoch = time() })
+            DelveGuide.LogLabyrinth({ kind = "enter", labyrinth = now, epoch = time(), char = UnitName("player") })
         end
         -- A resumed visit (a /reload) cannot time the chamber in progress: the
         -- clock would restart mid-chamber and record a time that is too short.
@@ -1294,10 +1309,10 @@ end
 -- count as up to three delves -- which for the vault it is.
 DelveGuide.LogLabyrinthRun = function(name)
     if not (DelveGuideDB and DelveGuideDB.history and DelveGuideDB.labyrinthLog) then return end
-    local chambers = 0
+    local chambers, enterEpoch = 0, nil
     for i = #DelveGuideDB.labyrinthLog, 1, -1 do
         local e = DelveGuideDB.labyrinthLog[i]
-        if e.kind == "enter" and e.labyrinth == name then break end
+        if e.kind == "enter" and e.labyrinth == name then enterEpoch = e.epoch; break end
         if e.kind == "chamber" then chambers = chambers + 1 end
     end
     local credits = math.floor(chambers / 3)
@@ -1318,17 +1333,21 @@ DelveGuide.LogLabyrinthRun = function(name)
     end)
 
     if not row then
-        -- After a /reload the in-memory reference is gone. If history[1] is this
-        -- visit's row (same Labyrinth, character and week, started within the
-        -- last three hours), reattach rather than open a second row.
+        -- After a /reload the in-memory reference is gone. history[1] is this
+        -- visit's row only if this visit opened it: a row is stamped with its
+        -- visit's "enter" time, so the two must be equal. The test used to be
+        -- "same Labyrinth, character and week, started in the last three
+        -- hours", which is also true of the NEXT run: three runs back to back
+        -- shared one row, and 12 chambers and 4 vault credits were recorded as
+        -- 6 and 2 (PTR, 2026-10-01).
         local h1 = DelveGuideDB.history[1]
         if h1 and h1.kind == "labyrinth" and h1.name == name and h1.char == charName
-           and h1.resetKey == resetKey and h1.startedEpoch and (time() - h1.startedEpoch) < 3 * 60 * 60 then
+           and enterEpoch and h1.startedEpoch == enterEpoch then
             row = h1
             DelveGuide.labyrinthCreditsAnnounced = row.vaultCredits or 0
         else
             row = { kind = "labyrinth", name = name, date = date("%Y-%m-%d %H:%M"), resetKey = resetKey,
-                    startedEpoch = time() - math.floor(elapsed or 0), tier = "?", tierNum = nil,
+                    startedEpoch = enterEpoch or (time() - math.floor(elapsed or 0)), tier = "?", tierNum = nil,
                     char = charName, realm = charRealm, chambers = 0, vaultCredits = 0 }
             table.insert(DelveGuideDB.history, 1, row)
             if #DelveGuideDB.history > 200 then table.remove(DelveGuideDB.history) end
