@@ -275,7 +275,7 @@ local function RenderRewards(cf, y)
                     mark = "  |cFF666666" .. L["not yet"] .. "|r"
                 end
                 y = y + UI.CreateRow(cf, y, "    |cFFCCCCCC" .. r.name .. "|r  |cFF888888-- " .. (r.source or "") .. "|r"
-                    .. (r.verified == false and ("  |cFFFF8800" .. L["unverified"] .. "|r") or "") .. mark)
+                    .. (r.verified == false and ("  |cFFFF8800" .. L["unverified"] .. "|r") or "") .. mark) + 2
             end
         end
         if any then y = y + 4 end

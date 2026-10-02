@@ -910,9 +910,20 @@ DelveGuide.TrackLabyrinthPresence = function()
         local ran = DelveGuide.labyrinthEnteredAt and (GetTime() - DelveGuide.labyrinthEnteredAt) or nil
         DelveGuide.LogLabyrinth({ kind = "leave", labyrinth = was, elapsed = ran })
         -- Settle the run record's elapsed time; it was created mid-run.
-        if DelveGuide.LogLabyrinthRun then DelveGuide.LogLabyrinthRun(was) end
+        local chambers, credits
+        if DelveGuide.LogLabyrinthRun then chambers, credits = DelveGuide.LogLabyrinthRun(was) end
+        -- Leaving ends the run, so this is the one moment to say what it came
+        -- to. The per-credit chat line was easy to miss, and a run that ended
+        -- said nothing at all (PTR, 2026-10-01). Contained: this runs inside
+        -- PLAYER_ENTERING_WORLD and must not be able to stop that handler.
+        if chambers and chambers > 0 then
+            local row = DelveGuide.currentLabyrinthRow
+            pcall(DelveGuide.AnnounceLabyrinthRun, was, chambers, credits or 0, ran,
+                  DelveGuide.labyrinthTierNum, row and row.vaultIlvl)
+        end
         DelveGuide.currentLabyrinthRow      = nil
         DelveGuide.labyrinthCreditsAnnounced = nil
+        DelveGuide.labyrinthTierNum          = nil
     end
     if now then
         -- A /reload inside a Labyrinth arrives here with no "was". If the log's
@@ -1291,7 +1302,7 @@ DelveGuide.LogLabyrinthRun = function(name)
     end
     local credits = math.floor(chambers / 3)
     local row = DelveGuide.currentLabyrinthRow
-    if credits < 1 and not row then return end
+    if credits < 1 and not row then return chambers, 0 end
 
     local resetKey = DelveGuide.GetResetKey()
     local charName, charRealm = "Unknown", nil
@@ -1327,8 +1338,9 @@ DelveGuide.LogLabyrinthRun = function(name)
 
     row.chambers     = math.max(row.chambers or 0, chambers)
     row.vaultCredits = math.max(row.vaultCredits or 0, credits)
-    -- Tier from the header widget (read by the HUD's Labyrinth view). Kept as
-    -- both tierNum and the display string the History tab expects.
+    -- Tier from the header widget, caught while a chamber runs (the scenario
+    -- event handler; the HUD's Labyrinth view reads it too). Kept as both
+    -- tierNum and the display string the History tab expects.
     if DelveGuide.labyrinthTierNum then
         row.tierNum = DelveGuide.labyrinthTierNum
         row.tier    = "Tier " .. DelveGuide.labyrinthTierNum
@@ -1344,6 +1356,27 @@ DelveGuide.LogLabyrinthRun = function(name)
         -- mainFrame / currentTabKey are declared further down the file, so from
         -- here they would resolve as globals; go through the exported UI table.
         if DelveGuide.UI and DelveGuide.UI.RefreshCurrentTab then DelveGuide.UI.RefreshCurrentTab() end
+    end
+    return chambers, row.vaultCredits
+end
+
+-- What a Labyrinth run came to, said once as the player leaves: a chat line
+-- and the Victory toast. chambers > 0 is the caller's test, so a look inside
+-- that cleared nothing stays silent. vaultIlvl is nil below three chambers.
+DelveGuide.AnnounceLabyrinthRun = function(name, chambers, credits, elapsed, tierNum, vaultIlvl)
+    local parts = {
+        string.format(L["%d chamber%s"], chambers, chambers == 1 and "" or "s"),
+        string.format(L["%d vault credit%s"], credits, credits == 1 and "" or "s"),
+    }
+    if tierNum then table.insert(parts, string.format(L["Tier %d"], tierNum)) end
+    if elapsed then
+        table.insert(parts, string.format(L["%dm %02ds"], math.floor(elapsed / 60), math.floor(elapsed % 60)))
+    end
+    print("|cFF00BFFF[DelveGuide]|r " .. L["Labyrinth run complete:"] .. " |cFFCCCCCC"
+        .. table.concat(parts, "  |cFF555555\194\183|r  ") .. "|r")
+    if DelveGuide.ShowVictoryScreen then
+        DelveGuide.ShowVictoryScreen(name, tierNum and ("Tier " .. tierNum) or nil, vaultIlvl, elapsed,
+            nil, tierNum, nil, { chambers = chambers, credits = credits })
     end
 end
 
@@ -3321,6 +3354,14 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
                     local si = C_ScenarioInfo and C_ScenarioInfo.GetScenarioInfo and C_ScenarioInfo.GetScenarioInfo()
                     DelveGuide.labyrinthStep = { title = title, scenarioID = si and si.scenarioID or select(13, C_Scenario.GetInfo()) }
                 end
+                -- The tier too, and here rather than only in the HUD: the HUD's
+                -- Labyrinth view is not drawn with the overlay switched off, and
+                -- the run record and the chamber timings both need the tier (the
+                -- same trap the delve tier fell into before 1.8.7). Positive
+                -- reads only; leaving the Labyrinth clears it.
+                local info = DelveGuide.ReadDelveHeaderWidget and DelveGuide.ReadDelveHeaderWidget()
+                local t = info and info.tierText and tonumber((tostring(info.tierText):match("(%d+)")))
+                if t then DelveGuide.labyrinthTierNum = t end
             end)
         end
     elseif event=="SCENARIO_COMPLETED" then
@@ -3348,6 +3389,7 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
                     local si = C_ScenarioInfo.GetScenarioInfo()
                     if si and si.scenarioID then e.scenarioID = si.scenarioID end
                 end
+                e.tierNum = DelveGuide.labyrinthTierNum   -- /dg submit's chamber timings need it
                 e.stepTitle = (C_Scenario.GetStepInfo())
                 -- Torn down by now (G2): use the title caught mid-chamber, when
                 -- it belongs to this same scenario.

@@ -401,7 +401,7 @@ DelveGuideData.labyrinthContent = {
     },
     tips = {
         L["Vault credit lands every 3 chambers cleared, at any tier -- it is not tied to a boss kill."],
-        L["A full run is 9 chambers, which is three vault credits."],
+        L["A run is up to 9 chambers, which is three vault credits."],
         L["Kindo'jan on Tier 8 or higher also pays out once a week per character: one more vault credit and a Heroic Soul Fragment."],
         L["Labyrinth renown unlocks Rank 5 curios (from Bountiful Coffers and Hidden Troves in Tier 8+ Labyrinths) and the delve glove enhancements listed on the Loot tab."],
     },
@@ -756,7 +756,7 @@ DelveGuideData.changelog = {
             "Community rankings are the Oct 1 pass: 115 submissions across 42 variants.",
             "Loot tab: the four delve glove enhancements, what they do and where they come from. The checklist shows a green line when one is on your gloves.",
             "Curios: Viperwind Idol added, and Rank 5 curios (new in 12.1.5) are recognised in any language.",
-            "Labyrinths: DelveGuide now recognises the Labyrinth of Kindo'jan. It is not a delve, so it no longer starts a delve timer or leaves half-empty rows in your history. It has its own in-run HUD -- chamber, tier, lives, objective and chambers cleared -- and its runs are logged and counted toward the weekly vault, one vault slot for every 3 chambers cleared, at any tier.",
+            "Labyrinths: DelveGuide now recognises the Labyrinth of Kindo'jan. It is not a delve, so it no longer starts a delve timer or leaves half-empty rows in your history. It has its own in-run HUD -- chamber, tier, lives, objective and chambers cleared -- and its runs are logged and counted toward the weekly vault, one vault slot for every 3 chambers cleared, at any tier. When you leave, a summary says what the run came to.",
             "This is Labyrinth support rather than a Labyrinth guide: there are no route or chamber tips yet.",
             "The pre-entry checklist finally opens by itself, with the delve entrance dialog. It never fired automatically before: it was watching your target, and a delve entrance is not something you can target. You can drag it, and it remembers where you put it.",
             "A reload in the middle of a run no longer loses the run. The timer picks up where it was and the variant is kept, so the run still counts toward the rankings.",

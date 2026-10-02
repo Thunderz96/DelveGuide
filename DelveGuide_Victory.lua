@@ -54,7 +54,10 @@ end
 
 -- variant, tierNum and engName are optional (the dev /dg testrun omits them);
 -- without them the comparison line simply does not render.
-DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, variant, tierNum, engName)
+-- lab = { chambers = n, credits = n } turns it into the Labyrinth run summary
+-- (DelveGuide.AnnounceLabyrinthRun): nothing was "defeated", and the line
+-- under the title is what the run was worth.
+DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, variant, tierNum, engName, lab)
     -- Stop immediately if the user disabled the popup in settings
     if DelveGuideDB and DelveGuideDB.victoryEnabled == false then return end
     if not victoryFrame then        
@@ -159,10 +162,19 @@ DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, 
     victoryFrame:EnableMouse(DelveGuideDB and DelveGuideDB.victoryUnlocked == true)
 
     -- 2. Populate the Text
-    victoryFrame.Title:SetText("|cFFFFD700" .. string.format(L["%s Defeated!"], delveName or L["Unknown Delve"]) .. "|r")
-    
-    local tStr = tierStr and tostring(tierStr):gsub("Tier ", "") or "?"
-    victoryFrame.Tier:SetText(string.format(L["Tier %s Completed"], "|cFF00FF44" .. tStr .. "|r"))
+    if lab then
+        victoryFrame.Title:SetText("|cFFFFD700" .. L["Labyrinth Run Complete"] .. "|r")
+        local parts = {}
+        if tonumber(tierNum) then table.insert(parts, string.format(L["Tier %d"], tonumber(tierNum))) end
+        table.insert(parts, string.format(L["%d chamber%s"], lab.chambers, lab.chambers == 1 and "" or "s"))
+        table.insert(parts, "|cFF00FF44" .. string.format(L["%d vault credit%s"], lab.credits, lab.credits == 1 and "" or "s") .. "|r")
+        victoryFrame.Tier:SetText(table.concat(parts, "  |cFF555555\194\183|r  "))
+    else
+        victoryFrame.Title:SetText("|cFFFFD700" .. string.format(L["%s Defeated!"], delveName or L["Unknown Delve"]) .. "|r")
+
+        local tStr = tierStr and tostring(tierStr):gsub("Tier ", "") or "?"
+        victoryFrame.Tier:SetText(string.format(L["Tier %s Completed"], "|cFF00FF44" .. tStr .. "|r"))
+    end
 
     if elapsed then
         local mins = math.floor(elapsed / 60)
@@ -176,7 +188,9 @@ DelveGuide.ShowVictoryScreen = function(delveName, tierStr, vaultIlvl, elapsed, 
 
     victoryFrame.Runs:SetText(L["Weekly Delves Completed:"] .. " |cFF00BFFF" .. trueDelveCount .. "|r")
 
-    if vaultIlvl and vaultIlvl > 0 then
+    if lab and lab.credits == 0 then
+        victoryFrame.Vault:SetText("|cFF888888" .. L["No vault credit yet -- that takes 3 chambers."] .. "|r")
+    elseif vaultIlvl and vaultIlvl > 0 then
         victoryFrame.Vault:SetText(L["Great Vault Unlock:"] .. " |cFFFFD700" .. string.format(L["%d ilvl"], vaultIlvl) .. "|r")
     else
         victoryFrame.Vault:SetText("|cFF888888" .. L["Great Vault progress updated."] .. "|r")

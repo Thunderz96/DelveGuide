@@ -116,6 +116,25 @@ end
 
 -- ── build ────────────────────────────────────────────────────
 
+-- The value column starts just past the widest label and runs to the right
+-- edge. The labels used to sit in a fixed 76px box, which a wider UI font
+-- overflowed ("Compani..." on the PTR, 2026-10-01), and the two views use
+-- different label sets, so this runs on build, on resize and on a view change.
+local function LayoutRows()
+    if not (hudFrame and hudFrame.rows and hudFrame.labels) then return end
+    local widest = 0
+    for _, lbl in pairs(hudFrame.labels) do
+        widest = math.max(widest, lbl:GetStringWidth() or 0)
+    end
+    local x = math.max(88, math.ceil(widest) + 16)
+    local w = math.max(40, hudFrame:GetWidth() - x - 8)
+    for _, val in pairs(hudFrame.rows) do
+        val:ClearAllPoints()
+        val:SetPoint("TOPLEFT", hudFrame, "TOPLEFT", x, val.yOff)
+        val:SetWidth(w)
+    end
+end
+
 local function BuildHUD()
     if hudFrame then return end
 
@@ -235,15 +254,17 @@ local function BuildHUD()
         lbl:SetFont(fontFile, rSize)
         lbl:SetPoint("TOPLEFT", hudFrame, "TOPLEFT", 10, yOff)
         lbl:SetText("|cFF666666" .. label .. ":|r")
-        lbl:SetWidth(76)
         lbl:SetJustifyH("LEFT")
 
         local val = hudFrame:CreateFontString(nil, "OVERLAY")
         val:SetFont(fontFile, rSize)
-        val:SetPoint("TOPLEFT", hudFrame, "TOPLEFT", 88, yOff)
-        val:SetWidth(startW - 96)
         val:SetJustifyH("LEFT")
+        -- One line per row, always. Rows sit 18px apart, and a value that
+        -- wrapped printed straight over the row below it (the Labyrinth view
+        -- on the PTR, 2026-10-01). Too long now truncates instead.
+        val:SetWordWrap(false)
         val:SetText("|cFF888888--|r")
+        val.yOff = yOff    -- LayoutRows places the value column
         rows[key] = val
         lbl.default = label
         labels[key] = lbl
@@ -261,15 +282,10 @@ local function BuildHUD()
 
     hudFrame.rows = rows
     hudFrame.labels = labels
+    LayoutRows()
 
     -- Dynamically stretch row text widths when dragged!
-    hudFrame:HookScript("OnSizeChanged", function(self, width, height)
-        if self.rows then
-            for _, val in pairs(self.rows) do
-                val:SetWidth(width - 96)
-            end
-        end
-    end)
+    hudFrame:HookScript("OnSizeChanged", LayoutRows)
 
     -- Tick the timer display once per second (OnUpdate only fires when frame is shown)
     local timerElapsed = 0
@@ -356,9 +372,13 @@ local LAB_LABELS = {
 }
 local function ApplyLabels(overrides)
     if not (hudFrame and hudFrame.labels) then return end
+    -- Called on every refresh; only a change of view needs any work.
+    if hudFrame.labelSet == (overrides or false) then return end
+    hudFrame.labelSet = overrides or false
     for key, lbl in pairs(hudFrame.labels) do
         lbl:SetText("|cFF666666" .. ((overrides and overrides[key]) or lbl.default or key) .. ":|r")
     end
+    LayoutRows()
 end
 
 -- Chambers completed since this run's "enter" entry in the observation log.
@@ -384,8 +404,9 @@ local function UpdateLabyrinthHUD(name)
     local rows = hudFrame.rows
     rows.delve:SetText("|cFFFFD700" .. name .. "|r")
 
-    local scen, step = "", ""
-    pcall(function() scen = C_Scenario.GetInfo() or "" end)
+    local scen, step, stage, stages = "", "", nil, nil
+    pcall(function() scen, stage, stages = C_Scenario.GetInfo() end)
+    scen = scen or ""
     pcall(function() step = C_Scenario.GetStepInfo() or "" end)
     -- Since build 69848 every chamber's scenario is named after the Labyrinth
     -- itself, which the row above already shows; the step title is then the
@@ -394,6 +415,9 @@ local function UpdateLabyrinthHUD(name)
     -- Between chambers the hub reports the generic "Delves" scenario.
     if scen == "" or scen == "Delves" then scen = "|cFF888888" .. L["Choose your path"] .. "|r" end
     rows.variant:SetText(scen)
+    -- A chamber is several stages under one title ("A Foul Presence" was four,
+    -- PTR 2026-10-01). With the title on the row above, this row counts them.
+    if step == "" and stage and stages and stages > 1 then step = stage .. " / " .. stages end
     rows.grade:SetText(step ~= "" and step or "|cFF888888--|r")
 
     local parts = {}
@@ -417,18 +441,24 @@ local function UpdateLabyrinthHUD(name)
 
     local cleared = CountChambersThisRun()
     local credits = math.floor(cleared / 3)
-    rows.curio:SetText(string.format("|cFF00FF44%d|r |cFF888888%s|r  %s", cleared, L["this run"],
-        credits > 0 and ("|cFFFFD700" .. string.format(L["%d vault credit%s"], credits, credits == 1 and "" or "s") .. "|r")
-                     or ("|cFF888888" .. L["(3 for vault credit)"] .. "|r")))
-    rows.nemesis:SetText("|cFF888888" .. L["Vault credit every 3 chambers (3 / 6 / 9)"] .. "|r")
+    -- Both rows are kept short: the HUD can be 250px wide, and what did not fit
+    -- used to wrap over the rows below.
+    rows.curio:SetText(string.format("|cFF00FF44%d|r |cFF888888%s|r", cleared, L["this run"])
+        .. (credits > 0 and ("  |cFFFFD700" .. string.format(L["%d vault credit%s"], credits, credits == 1 and "" or "s") .. "|r") or ""))
+    rows.nemesis:SetText("|cFF888888" .. L["Vault credit every 3 chambers"] .. "|r")
     -- The Labyrinth's tier IS readable: the same header widget carried
     -- tierText = "11" inside Kindo'jan on 69594. Read it directly here since
     -- the delve tier machinery is bypassed in a Labyrinth (A2).
     do
         local info = DelveGuide.ReadDelveHeaderWidget and DelveGuide.ReadDelveHeaderWidget()
         local t = info and info.tierText and tonumber((tostring(info.tierText):match("(%d+)")))
+        -- Never clear it on a failed read: the widget is gone for a moment as
+        -- each chamber completes, which is exactly when the run record is
+        -- written -- the row came out as tier "?" (PTR, 2026-10-01). Leaving
+        -- the Labyrinth clears it (TrackLabyrinthPresence).
+        if t then DelveGuide.labyrinthTierNum = t end
+        t = DelveGuide.labyrinthTierNum
         rows.bountiful:SetText(t and ("|cFF00FF44" .. t .. "|r") or "|cFF888888--|r")
-        DelveGuide.labyrinthTierNum = t
     end
     rows.lives:SetText(ReadLivesText() or "|cFF888888--|r")
     if DelveGuide.labyrinthEnteredAt then
