@@ -931,6 +931,7 @@ DelveGuide.TrackLabyrinthPresence = function()
         -- keep counting chambers from its "enter" and restore the clock from the
         -- wall time stored on it (the same trick DelveGuideDB.activeRun uses for
         -- delves). GetTime() is session uptime and would otherwise restart at 0.
+        local me = UnitName("player")
         local resumed = false
         local log = DelveGuideDB and DelveGuideDB.labyrinthLog or {}
         for i = #log, 1, -1 do
@@ -945,7 +946,7 @@ DelveGuide.TrackLabyrinthPresence = function()
                     -- Nor is another character's: the log is account-wide, and
                     -- logging out inside leaves a visit open for an alt to find.
                     local age = e.epoch and (time() - e.epoch) or nil
-                    if (e.char == nil or e.char == UnitName("player"))
+                    if (e.char == nil or e.char == me)
                        and (age == nil or (age >= 0 and age < 3 * 60 * 60)) then
                         resumed = true
                         DelveGuide.labyrinthEnteredAt = age and (GetTime() - age) or GetTime()
@@ -968,7 +969,7 @@ DelveGuide.TrackLabyrinthPresence = function()
         end
         if not resumed then
             DelveGuide.labyrinthEnteredAt = GetTime()
-            DelveGuide.LogLabyrinth({ kind = "enter", labyrinth = now, epoch = time(), char = UnitName("player") })
+            DelveGuide.LogLabyrinth({ kind = "enter", labyrinth = now, epoch = time(), char = me })
         end
         -- A resumed visit (a /reload) cannot time the chamber in progress: the
         -- clock would restart mid-chamber and record a time that is too short.

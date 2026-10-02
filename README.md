@@ -9,7 +9,7 @@
 
 DelveGuide is a World of Warcraft addon built for players who want to get the most out of Midnight's Delve system. Whether you're farming vault slots across multiple alts, hunting Bountiful Delves, optimizing your curio loadout, or preparing to face the Season 2 Nemesis Azta'rec — DelveGuide has you covered.
 
-> 🆕 **Patch 12.1 "Curse of Ula'tek" / Season 2 ready** — The Coiled Isle, the new **Ring of Glory** and **Gnarldor Isle** delves, venom variants on existing delves, and a full **Venomfall Deeps** (Azta'rec) Nemesis guide. *(Bountiful Delves, Coffer Keys, and the seasonal Great Vault unlock with Season 2 on Aug 18.)*
+> 🆕 **Patch 12.1.5 ready** — support for the **Labyrinth of Kindo'jan** (its own HUD, History rows, vault credit and a Labyrinth tab), **delve glove enhancements**, **Rank 5 curios** and **Ascendant Venomstones**. Everything for Season 2 is still here: The Coiled Isle, the **Ring of Glory** and **Gnarldor Isle** delves, and a full **Venomfall Deeps** (Azta'rec) Nemesis guide.
 
 ---
 
@@ -37,7 +37,7 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 
 - Recognises **the Labyrinth of Kindo'jan**. A Labyrinth is not a Delve, so it no longer starts a Delve timer or files Delve-shaped rows in your History
 - Its own in-run HUD view: **Labyrinth · current chamber · tier · lives · objective progress · chambers cleared · time in**
-- Runs are logged in History and their vault credit counts toward the weekly tallies — **one vault slot per 3 chambers cleared, at any tier**
+- Runs are logged in History and their vault credit counts toward the weekly tallies — **one vault credit per 3 chambers cleared, at any tier**, the same credit a Delve gives
 - Labyrinth **support**, not a Labyrinth guide: there are no route or chamber tips yet
 
 ### 🧭 Labyrinth Tab

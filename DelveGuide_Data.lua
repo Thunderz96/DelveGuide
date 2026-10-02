@@ -754,9 +754,10 @@ DelveGuideData.changelog = {
             "Built for patch 12.1.5. It still runs on 12.1.0.",
             "New Labyrinth tab: this week's runs, your renown, how far up the tier ladder you are, the chambers you have seen with your own times, the rewards with the ones you already have marked, and a few tips. /dg lab opens it.",
             "Community rankings are the Oct 1 pass: 115 submissions across 42 variants.",
+            "Russian clients: the first 12 delve variant names are recognised, from a player's /dg submit report.",
             "Loot tab: the four delve glove enhancements, what they do and where they come from. The checklist shows a green line when one is on your gloves.",
             "Curios: Viperwind Idol added, and Rank 5 curios (new in 12.1.5) are recognised in any language.",
-            "Labyrinths: DelveGuide now recognises the Labyrinth of Kindo'jan. It is not a delve, so it no longer starts a delve timer or leaves half-empty rows in your history. It has its own in-run HUD -- chamber, tier, lives, objective and chambers cleared -- and its runs are logged and counted toward the weekly vault, one vault slot for every 3 chambers cleared, at any tier. When you leave, a summary says what the run came to.",
+            "Labyrinths: DelveGuide now recognises the Labyrinth of Kindo'jan. It is not a delve, so it no longer starts a delve timer or leaves half-empty rows in your history. It has its own in-run HUD -- chamber, tier, lives, objective and chambers cleared -- and its runs are logged and counted toward the weekly vault, one vault credit for every 3 chambers cleared, at any tier. When you leave, a summary says what the run came to.",
             "This is Labyrinth support rather than a Labyrinth guide: there are no route or chamber tips yet.",
             "The pre-entry checklist finally opens by itself, with the delve entrance dialog. It never fired automatically before: it was watching your target, and a delve entrance is not something you can target. You can drag it, and it remembers where you put it.",
             "A reload in the middle of a run no longer loses the run. The timer picks up where it was and the variant is kept, so the run still counts toward the rankings.",
@@ -1657,4 +1658,20 @@ DelveGuideData.localeVariants = {
     ["堅守陣線"] = "Holding the Line",           -- Parhelion Plaza
     ["秘法兵團行軍"] = "March of the Arcane Brigade", -- Parhelion Plaza
     ["轟炸任務"] = "Bombing Run",                -- Parhelion Plaza
+
+    -- Русский (ruRU) -- first Russian coverage: one variant of each delve, from the
+    -- MISSING section of a /dg submit report (2026-10-01 form export). Each is a
+    -- direct translation of a variant of the delve it was reported on.
+    ["В глубины за харанирами"]    = "Descent of the Haranir",      -- The Gulf of Memory
+    ["Ключевой матч"]              = "Game Day",                    -- The Ring of Glory
+    ["Факультет страха"]           = "Faculty of Fear",             -- Collegiate Calamity
+    ["Василиск-блиц"]              = "Basalisk Blitz",              -- Shadowguard Point
+    ["Понятным им языком"]         = "Speaking Their Language",     -- Gnarldor Isle
+    ["Прерванный ритуал"]          = "Ritual Interrupted",          -- Atal'Aman
+    ["Освобожденные лоа"]          = "Loosed Loa",                  -- Twilight Crypts
+    ["Гнусная Гнилоножка"]         = "Dastardly Rotstalk",          -- The Grudge Pit
+    ["Марш чародейской дружины"]   = "March of the Arcane Brigade", -- Parhelion Plaza
+    ["Проникай, совершенствуй"]    = "Infiltrate and Ameliorate",   -- The Shadow Enclave
+    ["Сердечник проблемы"]         = "Core of the Problem",         -- Sunkiller Sanctum
+    ["Техник силовых линий"]       = "Leyline Technician",          -- The Darkway
 }

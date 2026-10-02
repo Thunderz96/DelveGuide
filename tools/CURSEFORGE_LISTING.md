@@ -28,7 +28,7 @@ Great Vault credit, scenario objectives and companion configuration are untouche
 **Patch 12.1.5 ready** (and still runs on 12.1.0). **Labyrinth support:** DelveGuide
 recognises the Labyrinth of Kindo'jan, keeps it out of your delve rankings — a Labyrinth is
 not a delve — and gives it its own in-run HUD (chamber, tier, lives, objective, chambers
-cleared), its own History rows, and its vault credit in your weekly tallies: one vault slot
+cleared), its own History rows, and its vault credit in your weekly tallies: one vault credit
 per 3 chambers cleared, at any tier. A Labyrinth tab shows your renown, your progress up the
 tier ladder, the chambers you have seen, and which of the mount, titles and toys you already
 have. This is support rather than a guide — there are no route tips yet.
