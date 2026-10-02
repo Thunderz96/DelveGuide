@@ -277,5 +277,13 @@ variant names reported by non-English clients, and the regenerated
 `DelveGuide_Data.lua` — it replaces exactly that block and leaves the rest of the
 file, line endings included, byte-for-byte. Diff it before committing.
 
+`--write` also sets the headline figures in `DelveGuideData.rankingStats`
+(submissions, graded variants, runs at every tier, the most-run variant, and the
+fastest and slowest graded rows of the table it just wrote). They used to be
+typed in by hand and went stale for three releases. `updated` becomes today's
+date when the pass changes anything; `--updated YYYY-MM-DD` sets it outright.
+What is still by hand: the contributors list, and the figures quoted in the
+changelogs and `tools/CURSEFORGE_LISTING.md`.
+
 `tools/responses.csv` and `tools/rankings.txt` are **gitignored** — they contain
 contributor handles.

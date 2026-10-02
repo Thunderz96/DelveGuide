@@ -409,5 +409,70 @@ class TestEmitter(Fixture):
         self.assertIn("players=3", line)
 
 
+# --- the headline figures -----------------------------------------------------
+
+STATS_LUA = """
+DelveGuideData.rankingStats = {
+    submissions = 1,   -- total submissions in this data pass
+    variants    = 1,
+    runs        = 1,  -- every timed run submitted (all tiers)
+    updated     = "2026-01-01",
+    -- a comment inside the block
+    mostRun     = "Nothing",
+    mostRunRuns = 1,
+    fastest     = "Nothing",
+    fastestSec  = 1,
+    slowest     = "Nothing",
+    slowestSec  = 1,
+}
+"""
+
+
+class TestHeadlineStats(Fixture):
+
+    def setUp(self):
+        super().setUp()
+        self.write_lua(DATA_LUA + STATS_LUA)
+
+    def stats(self):
+        text = read(self.lua)
+        block = text[text.index(agg.STATS_OPEN):]
+        return {k: v.strip('"') for k, v in re.findall(r'^\s*(\w+)\s*=\s*("[^"]*"|\d+),', block, re.M)}
+
+    def test_the_figures_come_from_the_run_and_the_written_table(self):
+        # A sixth player whose runs are all below Tier 8: they count toward the
+        # run total and the most-run variant, and toward no grade.
+        low = [("Beta Delve", "Shared Route", 4, 2000, 9)]
+        self.write_csv(extra=[("player_f", code(low))])
+        self.run_tool("--write", "--updated", "2026-10-01")
+        s = self.stats()
+        self.assertEqual(s["submissions"], "6")
+        self.assertEqual(s["runs"], str(5 * 5 + 3 * 2 + 9))        # five routes x5, the thin one 3x2, the low-tier nine
+        self.assertEqual((s["mostRun"], s["mostRunRuns"]), ("Shared Route", "14"))   # Beta's: 5 + 9, not Alpha's 5
+        self.assertEqual(s["variants"], "6")                       # five graded now, one kept as published
+        self.assertEqual((s["fastest"], s["fastestSec"]), ("Quick Route", "600"))
+        self.assertEqual((s["slowest"], s["slowestSec"]), ("Slow Route", "1400"))
+        self.assertEqual(s["updated"], "2026-10-01")
+        self.assertIn("-- a comment inside the block", read(self.lua))
+        self.assertIn("submissions = 6,   -- total submissions in this data pass", read(self.lua))
+
+    def test_a_second_run_of_the_same_pass_changes_nothing(self):
+        self.run_tool("--write", "--updated", "2026-10-01")
+        once = read(self.lua, "rb")
+        out = self.run_tool("--write")                    # no --updated: today's date must not creep in
+        self.assertEqual(once, read(self.lua, "rb"))
+        self.assertIn("No change", out)
+
+    def test_a_data_file_without_the_block_is_reported_not_broken(self):
+        self.write_lua(DATA_LUA)
+        out = self.run_tool("--write")
+        self.assertIn("rankingStats left alone", out)
+        self.assertEqual(self.players("Alpha Delve", "Quick Route"), 5)   # the table was still written
+
+    def test_a_missing_key_is_an_error_not_a_silent_skip(self):
+        with self.assertRaises(ValueError):
+            agg.render_stats_block(STATS_LUA.replace("    mostRunRuns = 1,\n", ""), {"mostRunRuns": 2})
+
+
 if __name__ == "__main__":
     unittest.main()

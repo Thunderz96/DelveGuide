@@ -31,6 +31,7 @@ import re
 import csv
 import sys
 import argparse
+import datetime
 import statistics
 from collections import defaultdict
 
@@ -250,6 +251,69 @@ def render_delves_block(src, fresh):
     return new_src, block, changed, untouched, added
 
 
+# ---------------------------------------------------------------------------
+# The headline figures, DelveGuideData.rankingStats.
+#
+# They used to be typed in after each pass, and three of them were not: the
+# History tab named Adopt-a-thon the fastest variant for three releases while
+# the table beside it had Bombing Run minutes ahead (found 2026-10-01). They
+# are derived from the same run now and written with the delves block.
+# ---------------------------------------------------------------------------
+
+STATS_OPEN = "DelveGuideData.rankingStats = {"
+
+
+def headline_stats(block, submissions, all_runs):
+    """rankingStats values for a rendered delves block and this pass's codes.
+
+    `all_runs` maps (delve, variant) -> runs at EVERY tier: the run total and
+    the most-run variant are not Tier 8+ figures. fastest / slowest are the
+    graded rows of the block itself, so they cannot disagree with the table.
+    """
+    timed = []
+    for line in block.splitlines():
+        m = ROW_RE.match(line)
+        fields = m.group("fields") if m else ""
+        sec = re.search(r"\bmedianSec=(\d+)", fields)
+        if row_key(fields) and sec and 'ranking="?"' not in fields:
+            timed.append((int(sec.group(1)), row_key(fields)[1]))
+    stats = {"submissions": submissions, "variants": len(timed), "runs": sum(all_runs.values())}
+    if all_runs:
+        key = max(all_runs, key=all_runs.get)
+        stats["mostRun"], stats["mostRunRuns"] = key[1], all_runs[key]
+    if timed:
+        stats["fastestSec"], stats["fastest"] = min(timed)
+        stats["slowestSec"], stats["slowest"] = max(timed)
+    return stats
+
+
+def render_stats_block(src, stats):
+    """Set `stats` inside the rankingStats block of `src`, one `key = value,`
+    line each, leaving the comments and the layout alone. Returns (new_src,
+    changed_keys). Raises ValueError if the block or one of the keys is missing.
+    """
+    nl = "\r\n" if "\r\n" in src else "\n"
+    lines = src.split(nl)
+    try:
+        start = next(i for i, l in enumerate(lines) if l.startswith(STATS_OPEN))
+        end = next(i for i in range(start + 1, len(lines)) if lines[i].rstrip() == "}")
+    except StopIteration:
+        raise ValueError(f"no {STATS_OPEN!r} ... '}}' block found")
+    left, changed = dict(stats), []
+    for i in range(start + 1, end):
+        m = re.match(r'^(\s*)(\w+)(\s*=\s*)("[^"]*"|\d+)(,.*)$', lines[i])
+        if not m or m.group(2) not in left:
+            continue
+        value = left.pop(m.group(2))
+        text = f'"{value}"' if isinstance(value, str) else str(value)
+        if text != m.group(4):
+            changed.append(m.group(2))
+            lines[i] = m.group(1) + m.group(2) + m.group(3) + text + m.group(5)
+    if left:
+        raise ValueError(f"rankingStats has no line for {', '.join(sorted(left))}")
+    return nl.join(lines), changed
+
+
 def main():
     # The data file and the unidentified-variant reports both carry non-ASCII
     # (box-drawing rules in the comments, localized variant names), and a
@@ -280,6 +344,9 @@ def main():
                     help="data file read for the currently published grades, which hysteresis "
                          "is measured against. Ignored if --hysteresis 0. Defaults to the copy "
                          "next to the script, so it works from any directory.")
+    ap.add_argument("--updated", default=None, metavar="YYYY-MM-DD",
+                    help="Date written to rankingStats.updated. Default: today, and only when "
+                         "this pass changes something, so re-running a pass is a no-op.")
     ap.add_argument("--write", action="store_true",
                     help="write the regenerated delves block back into --published, replacing "
                          "exactly that block and leaving the rest of the file (and its line "
@@ -301,6 +368,7 @@ def main():
     tot_runs = defaultdict(int)    # sum of count
     tot_tier = defaultdict(float)  # sum of avg_tier * count
     submitters = defaultdict(set)  # distinct submissions contributing to each variant
+    all_runs = defaultdict(int)    # runs at EVERY tier, for the headline figures
     samples = defaultdict(list)    # per-variant (avg_sec, count) from each submitter
 
     unidentified = defaultdict(lambda: {"count": 0, "locales": set()})
@@ -368,6 +436,7 @@ def main():
             rec["count"] += 1
             rec["locales"].add(locale)
         for delve, variant, avg_tier, avg_sec, count in parse_code(code):
+            all_runs[(delve, variant)] += count
             if avg_tier < args.min_tier:
                 continue
             key = (delve, variant)
@@ -564,15 +633,31 @@ def main():
         print(f"   no data this pass, row kept as published: {d} / {v}")
     print()
 
+    stats = headline_stats(block, submissions, all_runs)
+    try:
+        new_src, stats_changed = render_stats_block(new_src, stats)
+        # The date moves only with the data (or when asked for), so a second
+        # run of the same pass still ends in "No change".
+        if args.updated or new_src != pub_src:
+            stats["updated"] = args.updated or datetime.date.today().isoformat()
+            new_src, dated = render_stats_block(new_src, {"updated": stats["updated"]})
+            stats_changed += dated
+        print(f"---- DelveGuideData.rankingStats ({len(stats_changed)} value(s) changed) ----")
+        for key, value in stats.items():
+            print(f"   {key:<12}= {value}{'   <- changed' if key in stats_changed else ''}")
+    except ValueError as err:
+        print(f"!! rankingStats left alone: {err} in {pub_path}.")
+    print()
+
     if args.write:
         if new_src == pub_src:
             print(f"No change -- {pub_path} already matches this data pass.")
         else:
             with open(pub_path, "w", encoding="utf-8", newline="") as fh:
                 fh.write(new_src)
-            print(f"Wrote the delves block into {pub_path} "
+            print(f"Wrote the delves block and rankingStats into {pub_path} "
                   f"({len(changed)} row(s) changed, {len(added)} added).")
-            print("   Everything outside the block, and the file's line endings, are untouched.")
+            print("   Everything outside those two blocks, and the file's line endings, are untouched.")
             print("   Diff it before committing.")
     else:
         print(block)
