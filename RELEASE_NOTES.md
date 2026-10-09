@@ -46,7 +46,7 @@ Built for **Patch 12.1.5 (Midnight)**; runs on 12.1.0 as well.
 - **The checklist's rows stay on one line**, with their tips on hover, so the flute row can no longer spill over the dismiss checkbox. Clicking the X now only closes the checklist; it used to suppress it for the rest of the session.
 - **Refreshing a tab keeps your scroll position** -- a POI update or a font change no longer yanks the list back to the top.
 - **Nebulous Voidcores were described as dropping from Tier 8+ delves.** They do not drop from delves at all. A Voidcore is a **bonus-roll token**, spent after a boss or a completed run to roll for additional loot. The Great Vault awards them, and from the week of Oct 6 Orin Straylight trades one more a week for gold, Voidlight Marl or Veteran crests. A roll is accepted after a Bountiful Delve at any tier; Tier 8+ is only where end-of-run loot reaches the maximum pool, which is what makes spending one there worth it. (Also in 1.11.2.)
-- **Ascendant Venomstones upgrade weapons, trinkets and necks only.** The Voidforge upgrade priority is now those five slots, and the comparison against armour is gone.
+- **Ascendant Venomstones upgrade weapons, trinkets and necks only.** The Voidforge upgrade priority is now those five slots, and the comparison against armour is gone. A stone only goes into a fully upgraded Hero or Myth piece (or a max-quality Tidal Crafted one), and a Tier 11 Bountiful Delve is one of their sources, no longer described as a guaranteed drop: Blizzard's notes list the sources and promise no quantity.
 - **Packaging:** the LICENSE ships with the addon, and the library folder's casing matches disk, so a build cannot lose its libraries on a case-sensitive builder.
 
 ### Changed

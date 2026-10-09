@@ -54,7 +54,7 @@ DelveGuide.RenderVoidforge = function()
         y = y + UI.CreateRow(cf, y, "|cFFAA66CC  " .. L["Ascendant Venomstones:"] .. "|r |cFFFFFFFF" .. s.venomstones .. "|r |cFF888888"
             .. string.format(L["(%d/%d toward the next upgrade -- %d ready)"], s.venomstones % perUp, perUp, ready) .. "|r") + 2
     else
-        y = y + UI.CreateRow(cf, y, "|cFF888888  " .. string.format(L["Arriving later this season. %d upgrade one weapon / trinket / neck; a Tier 11 Bountiful Delve is a guaranteed source (~1-2 each). Your count appears here once it goes live."], perUp) .. "|r") + 2
+        y = y + UI.CreateRow(cf, y, "|cFF888888  " .. string.format(L["Arriving later this season. %d raise one fully upgraded Hero or Myth weapon / trinket / neck; Tier 11 Bountiful Delves are one source. Your count appears here once it goes live."], perUp) .. "|r") + 2
     end
     y = y + 6
 
@@ -71,7 +71,7 @@ DelveGuide.RenderVoidforge = function()
 
     -- ---- Slot Upgrade Priority ----
     y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Upgrade Priority"] .. "|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Venomstones upgrade weapons, trinkets and necks only, so these are the five slots that matter, lowest ilvl first. Hover for tooltip, shift-click to chat-link."] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Venomstones upgrade weapons, trinkets and necks only, so these are the five slots that matter, lowest ilvl first. A stone only goes into a fully upgraded Hero or Myth piece (or a max-quality Tidal Crafted one), so finish its normal upgrades first. Hover for tooltip, shift-click to chat-link."] .. "|r") + 4
 
     local slotData = DelveGuide.GetVoidforgeSlotPriority and DelveGuide.GetVoidforgeSlotPriority() or {}
     if #slotData == 0 then

@@ -609,10 +609,13 @@ DelveGuideData.loot = {
 --     is WORTH spending -- the end-of-run loot pool is max from Tier 8.
 --   * Ascendant Venomstone = the UPGRADE material, and it upgrades weapons and
 --     trinkets and necks ONLY (Blizzard's 12.1.5 dev notes: weapon/trinket/necklace)
---     -- hence the Voidforge tab's slot list is those five slots.
+--     -- hence the Voidforge tab's slot list is those five slots. The 12.1.5
+--     content update notes add: only a FULLY UPGRADED Season 2 Hero or Myth
+--     piece (or a max-quality Tidal Crafted one) takes them, and they list the
+--     sources without promising a drop or a quantity -- so the note does not.
 DelveGuideData.currencyNotes = {
     voidcore   = L["Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve (any tier -- Tier 8+ has the max loot pool) or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. They don't drop from delves: the Great Vault awards them, and Orin Straylight trades one more a week (gold, Voidlight Marl or Veteran Crests)."],
-    venomstone = L["Gear-upgrade material; drops start the week of Oct 20. 10 upgrade one weapon, trinket or neck -- the only slots they apply to. A Tier 11 Bountiful Delve guarantees one (~1-2), as do Heroic/Mythic raid and M+10+."],
+    venomstone = L["Gear-upgrade material, from the week of Oct 20 (after Orin Straylight's quest 'Ascending with Venomstones'). 10 raise one fully upgraded Hero or Myth weapon, trinket or neck (or a max-quality Tidal Crafted one) -- the only slots they apply to. Sources: Tier 11 Bountiful Delves, Heroic/Mythic raid bosses, Mythic+ 10 and up, Nightmare Prey Hunt Champion gear chests."],
 }
 
 DelveGuideData.future = {

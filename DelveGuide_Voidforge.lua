@@ -11,9 +11,10 @@
 --       Blizzard's own tooltip lists per-character totals, so an account-wide
 --       read may be possible -- see /dg currencydebug.
 --   * Ascendant Venomstone -- GEAR-UPGRADE material, arriving later this
---       season. 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful
---       Delve is a guaranteed source (~1-2 each, unconfirmed). It is a bag
---       item, 280562, not a currency (build 70077).
+--       season. 10 raise one fully upgraded Hero/Myth weapon/trinket/neck;
+--       Tier 11 Bountiful Delves are the delve source (Blizzard lists the
+--       sources, with no guarantee and no quantity). It is a bag item,
+--       280562, not a currency (build 70077).
 --
 -- The old 12.0.5 "Building the Voidforge" weekly (Elementary Voidcore
 -- Shards) and Ascendant Voidcore upgrade loop are retired.
@@ -38,7 +39,7 @@ DelveGuide.Voidforge = {
                                      -- bonus roll there draws from the best pool. A roll is ACCEPTED at any
                                      -- tier (Thunderz rolled after a Tier 1 on the PTR, 2026-09-06), and
                                      -- Voidcores do not drop from delves at all.
-    VENOMSTONE_TIER         = 11,   -- T11 Bountiful Delves guarantee an Ascendant Venomstone.
+    VENOMSTONE_TIER         = 11,   -- T11 Bountiful Delves are the delve source of Ascendant Venomstones.
 }
 
 -- Returns a snapshot of current Voidforge state. Any field can be nil
