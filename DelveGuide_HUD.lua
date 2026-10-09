@@ -384,11 +384,15 @@ end
 -- Chambers completed since this run's "enter" entry in the observation log.
 local function CountChambersThisRun()
     local n = 0
+    local me = UnitName("player")
     local log = DelveGuideDB and DelveGuideDB.labyrinthLog or {}
     for i = #log, 1, -1 do
         local e = log[i]
-        if e.kind == "enter" then break end
-        if e.kind == "chamber" then n = n + 1 end
+        -- The log is account-wide: this character's entries only.
+        if e.char == nil or e.char == me then
+            if e.kind == "enter" then break end
+            if e.kind == "chamber" then n = n + 1 end
+        end
     end
     return n
 end

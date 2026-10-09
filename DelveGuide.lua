@@ -894,6 +894,9 @@ DelveGuide.LogLabyrinth = function(entry)
     DelveGuideDB.labyrinthLog = DelveGuideDB.labyrinthLog or {}
     entry.at = date("%Y-%m-%d %H:%M:%S")
     entry.labyrinth = entry.labyrinth or DelveGuide.GetLabyrinthName()
+    -- The log is account-wide, so every entry says whose it is: the scans
+    -- that count "this run" must not stop at, or count, an alt's entries.
+    entry.char = entry.char or UnitName("player")
     -- What the GAME has counted, on every entry: its own lifetime "chambers
     -- completed" statistic. The addon counts completion events, and on the PTR
     -- one fired for a chamber the game then did not count (2026-10-01). With
@@ -912,6 +915,10 @@ end
 DelveGuide.TrackLabyrinthPresence = function()
     local now = DelveGuide.GetLabyrinthName()
     local was = DelveGuide.currentLabyrinth
+    -- Only a session that began inside (a /reload, or logging in where the
+    -- character logged out) can be continuing a visit. Once this session has
+    -- stood outside, an entry is a new run -- see the resume test below.
+    if not now and not IsInInstance() then DelveGuide.labyrinthSeenOutside = true end
     if now == was then return end
     if was then
         local ran = DelveGuide.labyrinthEnteredAt and (GetTime() - DelveGuide.labyrinthEnteredAt) or nil
@@ -943,7 +950,7 @@ DelveGuide.TrackLabyrinthPresence = function()
         local log = DelveGuideDB and DelveGuideDB.labyrinthLog or {}
         for i = #log, 1, -1 do
             local e = log[i]
-            if e.labyrinth == now then
+            if e.labyrinth == now and (e.char == nil or e.char == me) then
                 if e.kind == "leave" then break end
                 if e.kind == "enter" then
                     -- Same visit if the entry is recent. An entry written before
@@ -952,8 +959,12 @@ DelveGuide.TrackLabyrinthPresence = function()
                     -- visit that never logged its leave, and is not resumed.
                     -- Nor is another character's: the log is account-wide, and
                     -- logging out inside leaves a visit open for an alt to find.
+                    -- Nor one this session walked into from outside: logging
+                    -- out inside and starting a fresh run within the three
+                    -- hours used to continue the old visit, and two runs of 4
+                    -- and 5 chambers became one row of 9 with 3 vault credits.
                     local age = e.epoch and (time() - e.epoch) or nil
-                    if (e.char == nil or e.char == me)
+                    if not DelveGuide.labyrinthSeenOutside
                        and (age == nil or (age >= 0 and age < 3 * 60 * 60)) then
                         resumed = true
                         DelveGuide.labyrinthEnteredAt = age and (GetTime() - age) or GetTime()
@@ -1318,10 +1329,14 @@ end
 DelveGuide.LogLabyrinthRun = function(name)
     if not (DelveGuideDB and DelveGuideDB.history and DelveGuideDB.labyrinthLog) then return end
     local chambers, enterEpoch = 0, nil
+    local me = UnitName("player")
     for i = #DelveGuideDB.labyrinthLog, 1, -1 do
         local e = DelveGuideDB.labyrinthLog[i]
-        if e.kind == "enter" and e.labyrinth == name then enterEpoch = e.epoch; break end
-        if e.kind == "chamber" then chambers = chambers + 1 end
+        -- This character's entries only (entries older than the char field count).
+        if e.char == nil or e.char == me then
+            if e.kind == "enter" and e.labyrinth == name then enterEpoch = e.epoch; break end
+            if e.kind == "chamber" then chambers = chambers + 1 end
+        end
     end
     local credits = math.floor(chambers / 3)
     local row = DelveGuide.currentLabyrinthRow
@@ -1411,6 +1426,20 @@ end
 -- Called ONCE on PLAYER_ENTERING_WORLD — no polling, no OnUpdate.
 -- Only caches characters level 80+ (current expansion).
 local function CacheCurrentChar()
+    -- Schema 5 stamped the realm onto realm-less history rows, but only for
+    -- the character logged in when it ran, so every other character's old
+    -- rows went on showing as a second character in History. Each character
+    -- finishes its own rows as it logs in; a no-op once they are stamped.
+    do
+        local me, realm
+        pcall(function() me = UnitName("player") end)
+        pcall(function() realm = GetRealmName() end)
+        if me and realm and realm ~= "" then
+            for _, run in ipairs(DelveGuideDB.history or {}) do
+                if run.realm == nil and run.char == me then run.realm = realm end
+            end
+        end
+    end
     if (UnitLevel("player") or 0) < 80 then return end
 
     local name  = UnitName("player") or "Unknown"
@@ -1810,7 +1839,7 @@ local function CreateMainWindow()
                         local curs = C_QuestLog.GetQuestRewardCurrencies(q.questID)
                         if curs then
                             for _, c in ipairs(curs) do
-                                if c.currencyID == COFFER_KEY_SHARD_ID then
+                                if c.currencyID == CK.SHARD_CURRENCY_ID then
                                     wqCount = wqCount + 1
                                 end
                             end
@@ -1949,7 +1978,7 @@ local function UpdateLDBText()
     table.insert(parts, string.format(L["Keys: %d/%d"], shards, DelveGuideData.cofferKeys.SHARD_WEEKLY_CAP))
     if bestVariant then
         local gradeLetter = "?"
-        for letter, order in pairs(rankOrder) do if order == bestRank then gradeLetter = letter; break end end
+        for letter, order in pairs(RANK_ORDER) do if order == bestRank then gradeLetter = letter; break end end
         table.insert(parts, string.format("[%s] %s", gradeLetter, bestVariant))
     end
     table.insert(parts, string.format(L["Vault: %d/%d"], vaultProgress, maxThreshold > 0 and maxThreshold or 8))
@@ -3285,6 +3314,15 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
         local inInst, instType = IsInInstance()
         if not inInst then
             DelveGuide.inDelveInstance = false
+            -- A persisted run start that outlived its run must not be resumed.
+            -- Logging out or losing the connection inside never reaches the
+            -- HUD's leave cleanup, and the record is account-wide and matched
+            -- on the instance alone: the next run of that delve inside three
+            -- hours, on this character or an alt, took the old start, and a
+            -- 6-minute run was logged (and submitted) as 31 minutes. Out in
+            -- the world there is no run to resume. A /reload inside never
+            -- comes through here, so that resume is untouched.
+            DelveGuideDB.activeRun = nil
             C_Timer.After(0, function()
                 ScanActiveVariants()
                 if DelveGuide.UpdateCompactWidget then DelveGuide.UpdateCompactWidget() end
@@ -3403,6 +3441,12 @@ loadFrame:SetScript("OnEvent",function(self,event,arg1,arg2,arg3,arg4,arg5)
         -- have broken test (d) for real delves.
         local labName = DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName()
         if labName then
+            -- SCENARIO_COMPLETED can fire twice for one completion (the delve
+            -- branch below guards the same way). Counted twice, two chambers
+            -- read as three and a vault credit the game never gave was
+            -- announced. Five seconds cannot collide with a second chamber.
+            if DelveGuide.lastChamberLoggedAt and (GetTime() - DelveGuide.lastChamberLoggedAt) < 5 then return end
+            DelveGuide.lastChamberLoggedAt = GetTime()
             -- D3: record the chamber first. Fires once per cleared chamber. If
             -- scenario info is already torn down at this event, scenarioID and
             -- stepTitle land as nil -- which itself answers whether completion
