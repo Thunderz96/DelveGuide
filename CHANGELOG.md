@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0] - 2026-09-TBD
+## [2.0.0] - 2026-10-13
 
 Built for **Patch 12.1.5 (Midnight)**; runs on 12.1.0 as well.
 

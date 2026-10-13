@@ -755,7 +755,7 @@ DelveGuideData.gradeColors = {
 DelveGuideData.changelog = {
     {
         version = "2.0.0",
-        date    = "2026-09-TBD",
+        date    = "2026-10-13",
         entries = {
             "Built for patch 12.1.5. It still runs on 12.1.0.",
             "New Labyrinth tab: this week's runs, your renown, how far up the tier ladder you are, the chambers you have seen with your own times, the rewards with the ones you already have marked, and a few tips. /dg lab opens it.",
