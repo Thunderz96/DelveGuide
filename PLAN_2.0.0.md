@@ -1,0 +1,558 @@
+# DelveGuide 2.0.0 — integration plan
+
+**Written 2026-09-05** on branch `ptr-12.1.5`, after the first PTR session against build 69594.
+
+This reconciles three documents into one release:
+
+| Input | What it is | Where |
+|---|---|---|
+| **Review Plan** | 14-reviewer static analysis of 1.11.0 against 12.1.0: 215 verified findings, phases 0–5 | `~/Downloads/DelveGuide_Review_Plan.md` |
+| **2.0 Sequencing Plan** | Nick's scope decision (Labyrinths + Venomstone) and the argument for pooling + ID identity as prerequisites | scratchpad `DelveGuide_2.0_Plan.md` (session 37f2989e) |
+| **PTR Findings** | What the running 12.1.5 client actually returned | `PTR_12.1.5_Findings.md` (this branch) |
+
+Both source docs should move into `docs/` in the repo so this file's references stop
+pointing at a Downloads folder and an ephemeral scratchpad. That is Nick's call — the Review
+Plan is 120 KB and the repo is public.
+
+---
+
+## 1. What changed since the sequencing plan was written
+
+The sequencing plan's thesis holds: pooling and ID-based identity stop being cleanup and
+become prerequisites the moment Labyrinths are in scope. The PTR session changed **how much
+Labyrinth work is possible in 2.0.0** and **what the ID work can and cannot key on**.
+
+Three facts drive every change below.
+
+**The content is placeholder.** A chamber scenario is literally named `[PH] Soul Jars`; two
+distinct Blizzard bugs left every run unfinishable; the map name is `12_15_Labyrinth_A`.
+IDs, names and mechanics may all move before launch. A Labyrinth *guide* cannot be written
+against this build. A Labyrinth *guard* can and must be.
+
+**Labyrinths look like Delves on every cheap signal.** Scenario type 8, `diffID` 208,
+`diffName` "Delves", and scenario `flags` 18 in the hub — identical to a real Delve. Every
+detection test the addon runs today says "delve", so the HUD starts a run timer and a
+completed chamber logs a delve-shaped history row with `variant` absent and `tier = "?"`.
+Observed, not inferred (Findings §1). The only stable discriminator is **instanceID**
+(3043, constant across tiers 11, 1 and 8).
+
+**One assumed API win is gone.** `C_DelvesUI.GetActiveDelveTier()` returns an all-zero
+struct in Delves *and* Labyrinths (Findings §3). The every-two-seconds tracker scrape the
+Review Plan hoped to retire (Phase 3.3) stays.
+
+And one thing the static review could not see: **12.1.5 removed `C_Scenario.GetNumCriteria`
+and `GetCriteriaInfo`** (Findings §4.6). Six `pcall`-wrapped call sites failed silently — no
+error, no BugSack entry — and the HUD would have quietly stopped showing lives on patch day.
+Fixed on this branch and verified in-game in both content types.
+
+---
+
+## 2. Corrections to the Review Plan, item by item
+
+Everything not listed here proceeds exactly as the Review Plan wrote it.
+
+| Review item | Status after PTR | Evidence |
+|---|---|---|
+| **Phase 3.3** — `GetActiveDelveTier` as Method 0, retire the scrape | **DROP.** Protocol row 16 failed: empty struct at tier 8 in Atal'Aman while the scrape correctly read 8 | Findings §3 |
+| **Phase 3.1** — scenarioID as locale-free run identity | **Keep for Delves, gated; exclude Labyrinths explicitly.** Rows 13 and 14 are still unrun for Delves. Inside a Labyrinth scenarioID keys *chamber content*, re-rolled per run — a per-run fact, not an identity | Findings §5.7; §5 below |
+| **Phase 1.10 / H5** — companion faction by ID (2744) | **Corroborated.** Faction 2744 present in the 12.1.5 sweep; `companionID = 12` resolved inside both content types. Proceed | Findings §5 |
+| **Phase 0.10** — soften the "do NOT key on poiID" comment | **Corroborated, and now urgent for a different reason** — see A3 below. widgetSetID is stable across three maps; poiID varies per map | Findings §2 |
+| **Phase 4 item 6** — `/dg selftest` | **~60% already built** as the `/dg export` expansion: API presence probe, criteria dump, both scenario structs, the tier struct, taxi, factions. Selftest = export + render-every-tab `xpcall` + data invariants + the objective-tracker widget dump | this branch, commits 4552f33…d8948bd |
+| **Phase 5 `hud-victory#7`** — lives are probably a header widget | **Confirmed 2026-09-06 (G3):** a T8 delve's criteria mid-run held no lives entry. Lives are a widget; expected in the header widget's tables — next capture shows which | Findings §3.1 |
+| **Phase 5 `hud-victory#17`** — extract `ReadLivesText()` | **Pull forward into Track A.** Both duplicate sites were just edited for the namespace fix; extracting now is a few lines while the code is warm | `DelveGuide_HUD.lua:456`, `:549` |
+| **Phase 4 item 4** — reload-safe run record | **Add a Labyrinth clause.** `SCENARIO_COMPLETED` fires per chamber, so the record must know it is inside a multi-scenario run or it dedupes wrongly | Findings §1, §5.2a |
+| **§7.4** — "no locale-free variant ID outdoors" | **Confirmed, and worse for Labyrinths:** widget set 2316 yields no usable text at all, so the outdoor scan quarantines Kindo'jan as `[Missing Translation] Unknown Variant Text` | Findings §4.2 |
+| **§7.4** — datamined delve instance IDs (2933…) | **Corroborated:** Collegiate Calamity returned 2933 live | Findings §2 |
+| **§7.4 speculative** — non-text widget fields as an outdoor variant key | **Unchanged, still worth the experiment.** The export now records `widgetTexts`; add `widgetTag`/`textureKit`/`orderIndex` in the same place | — |
+| **2.0 Plan Stage 0 item 3** — prune the Future tab | **Now has specific corrections.** `Data.lua:384` says "progress saved between sessions" — the path resets every run (taxi nodes unlock, but the run restarts at Chamber of Rites). "Small group" unverified (solo only observed). Hero-track gear confirmed (Heroic Soul Fragment, Hero 2/6); "housing & vendor currency" unverified (Corrosive Coin exists, purpose unknown) | Findings §5.1, §5.2, §5.10 |
+| **2.0 Plan §2** — "scenarioID is an exact (delve, variant) key" | **Holds for Delves only, pending rows 13/14.** Explicitly false for Labyrinths | Findings §5.7 |
+
+---
+
+## 3. New work the review could not see — Track A
+
+These exist because the review was static analysis against 12.1.0. They are **time-bound by
+Blizzard's patch date**, which nothing else in 2.0.0 is.
+
+| # | Item | Status | Effort | Test |
+|---|---|---|---|---|
+| A1 | Criteria namespace fix: `DelveGuide.GetCriteriaCount()` / `GetCriteria(i)` with both paths, so one build serves 12.1.0 and 12.1.5 | **Done, verified** (`41e5336`) | — | `/dg huddump` in a Delve and a Labyrinth: `count 1+`, `crit[]` lines — both passed |
+| A2 | **Labyrinth guard.** ✅ **Done** (see commit log) — `DelveGuideData.labyrinthInstances = { [3043] = "The Labyrinth of Kindo'jan" }`. When `select(8, GetInstanceInfo())` is in it: the HUD does not start a delve run timer and shows a neutral Labyrinth state; `SCENARIO_COMPLETED` does **not** write a delve-shaped history row. Runs are cheap to detect and expensive to un-log | **New** | S | Enter Kindo'jan, clear one chamber: no `Logged:` line, no history row, HUD not showing a delve tier |
+| A3 | **Filter Labyrinth POIs out of the rotational scan.** ✅ **Done** — `C_AreaPoiInfo.GetDelvesForMap` returns Kindo'jan on maps 2437, 2395, 2537 (set 2316, atlas `overworld-active-64x64`). Without a filter the Delves tab and widget show a quarantined junk row **on live patch day**. Exclude by `labyrinthWidgetSets = { [2316] = true }`; optionally also by atlas not starting `delves-`. The set allowlist is the existing idiom (`widgetSetDelves`) and is precise; the atlas check catches an uncatalogued Labyrinth B generically but its safety depends on bountiful delves also using a `delves-*` atlas, which is **not yet verified** | **New** | S | `/dg scan` in Eversong: 12 delves, 12 variants, no `[Missing Translation]` line |
+| A4 | `.toc` Interface 120105 | **Done** (`e2f3800`) | — | verified `select(4, GetBuildInfo())` |
+| A5 | Extract `ReadLivesText()` (`hud-victory#17`) — both duplicates were just touched | ✅ **Done** | S | lives row unchanged in a Tier 4+ Delve |
+| A6 | **Retail check** (G4 below): does live 12.1.0 still have `C_Scenario.GetNumCriteria`? | ✅ **Done 2026-09-05** — `nil` on retail; shipped as 1.11.1 on 2026-09-07 | one command | — |
+
+**Track A can and should ship before 12.1.5 goes live**, independent of the rest of 2.0.0.
+A1 is safe on 12.1.0 today by construction. If 2.0.0 is not ready by patch day, Track A
+goes out alone as 1.12.0 and 2.0.0 follows. Nothing else in this document is on Blizzard's
+clock.
+
+---
+
+## 4. The shape of 2.0.0
+
+Five tracks. Track A is ordered first by the calendar; B and C are ordered by the Review
+Plan's own dependencies; D and E are reorderable.
+
+### Track B — Review Plan Phases 0, 1a, 1b (unchanged)
+
+Docs and metadata (0.1–0.12), the aggregator (1.1–1.6, before the next rankings refresh),
+and the user-visible bug batch (1.7–1.17). One evening without the game, one Python session,
+one Delve session. Nothing here touched by the PTR except the Future-tab corrections folded
+into 0.x and the H5 corroboration.
+
+### Track C — Foundation (2.0 Plan Stage 1 = Review Phases 2 + 3.1/3.2/3.5)
+
+| Item | Note |
+|---|---|
+| 2.1a–f hygiene | as written. 2.1d (`EvaluateDelveState` early-out) is unaffected by Labyrinths since `inDelveInstance` will be false there after A2 |
+| 2.2–2.4 pooling | as written. This is the L item and the one where an **Opus review agent** earns its keep before merge — 27 re-render sites, 114 creation sites |
+| 2.6 schema + migrations | as written; add a migration that re-tags any history row with `name` in `labyrinthInstances` values and no `variant` as `suspect = "labyrinth"` rather than deleting it |
+| 2.7 error containment, 2.8 HUD gating | as written |
+| 3.5 CI gate on **Lua 5.1 / LuaJIT** | as written; the local `luac` is 5.4.6 and passed every change on this branch, which is exactly the blind spot |
+| 3.1 scenarioID identity — **Delves only** | gated on G1 and G2. Design addition: `GetDelveByScenarioID` must return nil for any scenarioID observed inside a `labyrinthInstances` instance, so a chamber scenario can never resolve to a delve |
+| 3.2 learn `scenarioID -> variant` | as written; same Labyrinth exclusion |
+| 3.3 tier API — **revived via a different API** | `GetActiveDelveTier` stays dead, but the delve header widget's `tierText` is the tier as data (Findings §3.1). Wired as Method 0 (commit on 2026-09-06). Retire the scrape after a second tier + the Labyrinth confirm |
+| 3.4, 3.6–3.10 | as written, independent |
+
+### Track D — Labyrinths: aware now, guided shell now, content as it stabilises
+
+**Decision (Nick, 2026-09-05):** both aware and guided are wanted. Labyrinths are not Delves
+and are not treated as equals — but they grant delve vault credit and broadly the same
+rewards, so the addon should help where it can: easiest rooms, tips, progression. Much is
+unknown; the structure ships in 2.0.0 and the content fills in as the PTR matures.
+
+**The structural insight that makes this tractable.** Chamber content is drawn from a pool
+and re-rolled per run, and each content has its own scenarioID when instantiated ("Soul King"
+appeared at two nodes; Chamber of Rites hosted two different contents on two runs). So a
+chamber's *content* recurs across runs and is the rankable unit — exactly as a variant is
+for a Delve. "Easiest rooms" is the existing community-timing pipeline (`/dg submit` ->
+aggregator -> grade letters) pointed at chamber content instead of variants.
+
+| # | Item | Effort | Ships in 2.0.0 as |
+|---|---|---|---|
+| D1 | **Detection** by `labyrinthInstances` allowlist (3043 verified across tiers 11/1/8) | S | code |
+| D2 | **Labyrinth run record** — its own shape, not a delve row: `{ instanceID, name, date, resetKey, char, realm, tierNum (nil until readable), vaultIlvl, chambersCleared, chambers = {...}, completed, elapsed }`. Written on leaving the instance or on the final completion, **not** per chamber. **Counts toward the Roster's weekly vault tally** — a T8+ Labyrinth is a delve vault slot. `vaultIlvl` via the existing `GetWeeklyVaultData` fallback, which read 305 correctly last night | M | code |
+| D3 | **Chamber observation log** per `SCENARIO_COMPLETED` inside a Labyrinth: `{ scenarioID, scenarioName, stepTitle, criteria, encounterIDs, subzone, taxiNodeID, elapsed }`, bounded. Feeds D2's `chambers[]` and is the raw material for chamber timings | M | code |
+| D4 | **Labyrinth tab shell**, built pooled from day one — a *new* tab is where the pooling pattern (Track C 2.2–2.4) gets established rather than retrofitted. Sections: this week's status (cleared / vault credit), chamber list keyed on content with grade + median time (empty until data), tips per chamber (empty until written), progression (taxi nodes unlocked, from D3). Every content row carries `source` and `verifiedBuild` so `[PH]`-era entries are visibly provisional | M–L | code, mostly empty |
+| D5 | **Chamber timings in `/dg submit`** — a `|LAB;` section carrying `(contentScenarioID, chamberName, elapsed, tier)` per cleared chamber, aggregated alongside variants | M | code |
+| D6 | **HUD Labyrinth state**: chamber name + objective progress (both criteria shapes: count and percentage) instead of a delve tier it cannot read | S | code |
+| D7 | Future tab corrections from evidence | S | content |
+| D8 | Chamber tips, easiest-room guidance, reputation and Corrosive Coin tracking | — | **content, added as PTR builds stabilise**; blocked today on `[PH]` names, unimplemented faction, unknown currency ID |
+
+**What is known well enough to build against now:** instanceID; the per-chamber scenario
+structure; two criteria shapes; taxi node IDs as progression; encounter events on boss
+chambers; that completion grants vault credit. **What is not:** any chamber's final name or
+ID, tier readability, the faction, the currency, group play. D1–D7 depend only on the first
+list. D8 depends on the second and waits.
+
+**Rewrite risk, stated plainly:** chamber content IDs observed on 69594 may change. D4's
+content rows are keyed on them, so a later build may orphan early entries. `verifiedBuild`
+on each row makes that visible rather than silent, and the log (D3) re-collects for free.
+
+### Track E — Features (Review Phase 4)
+
+As written, with two notes. Item 6 (`/dg selftest`) starts from the export code rather than
+from zero. Item 4 (reload-safe run record) gains the per-chamber clause from §2.
+
+Recommended for 2.0.0: items 1 (listing), 2 (waypoint), 3 (parity release), 4 (run record),
+5 (Victory toast), 6 (selftest). Items 7–10 and Phase 5 go to 2.1 unless a Delve session
+frees up. That is a scope recommendation, not a decision — see §7.
+
+---
+
+## 5. Verification gates — one command each
+
+Every unproven assumption that gates code, with the single cheapest capture that settles it.
+
+| # | Gate | Gates | Command | Pass |
+|---|---|---|---|---|
+| G1 | scenarioID invariant across tier and bountiful for **one Delve** (protocol row 13) | 3.1, 3.2 | `/dg export` in the same delve at two tiers + once bountiful, read `scenarioInfo.scenarioID` off disk | identical all three times. **If it moves, 3.1's design is wrong** |
+| G2 | scenarioID readable inside the `SCENARIO_COMPLETED` handler (row 14) | 3.1 capture design | — | **✅ answered for Labyrinth chambers 2026-09-06 (D3 log):** name + scenarioID readable; step and criteria torn down. Capture the ID at completion, step-level data earlier. Delve confirmation still cheap: one completed delve with D3-style logging |
+| G3 | lives criterion shape in a Tier 4+ Delve mid-run | `hud-victory#7`, A5 | — | **✅ answered 2026-09-06: none.** Lives are a widget (header widget, type 29). The criteria scan is dead code for lives; replace with the widget read once the field is identified |
+| G4 | live 12.1.0 still has the old criteria API | **A1's urgency** | — | **✅ answered 2026-09-05: `nil function` on retail.** Live 1.11.0's lives counter is silently broken today. A1 ships as hotfix **1.11.1** from `main` (cherry-picked `41e5336` + `e2f3800`), ahead of 2.0.0 |
+| G5 | Nemesis lair scenarioID (row 13 tail; expect 3395) | 3.1 | `/dg export` inside Venomfall Deeps | 3395 |
+| G6 | bountiful delve POI atlas name | A3's atlas option | `/dg export` on a day with a bountiful delve up, read `delvePOIs[].atlas` | starts with `delves-` |
+| G7 | instanceID stable across Labyrinth tiers | A2 | — | **✅ verified** — 3043 at tiers 11, 1, 8 |
+| G8 | `GetActiveDelveTier` populated in a Delve (row 16) | 3.3 | — | **✅ answered: no** — 3.3 dropped |
+
+G4 is a single line typed into the retail client and it decides whether Track A is a
+release or a hotfix. It should be the first thing done.
+
+---
+
+## 6. Recommendation
+
+**Track A is now two releases.** G4 came back `nil function` on retail, so A1 + A4 ship
+immediately as **1.11.1** from `main` — the lives counter has been silently dead on live
+12.1.0. A2, A3 and A5 are Labyrinth-facing and stay on Blizzard's calendar for 12.1.5; they
+ship with 2.0.0 or as 1.12.0 if patch day arrives first.
+
+**Then Track B in the Review Plan's order**, because the aggregator miscount is live and the
+Phase 0 docs are the paste source for the CurseForge listing.
+
+**Then Track C**, with 3.1 held until G1 and G2 are run in one Delve session. Pooling
+(2.2–2.4) is the L item and the place to spend an Opus review pass.
+
+**Track D stays minimal** until a non-placeholder PTR build. D2 costs one evening and makes
+the next build's session self-documenting.
+
+**Track E items 1–6 in 2.0.0, 7–10 in 2.1.** The listing refresh (E1) is the highest-scored
+item in the whole review and needs no code; it should not wait on anything.
+
+On the sequencing plan's §6 naming question: unchanged. Middle option — keep the name, add
+"Delves and Labyrinths" to the TOC Notes. One line, no identity cost.
+
+---
+
+## 7. Decisions that are Nick's, not mine
+
+1. ~~**Is 2.0.0 one release or a train?**~~ **Decided:** one release. 1.11.1 shipped 2026-09-07; everything else is 2.0.0 on patch day.
+2. ~~**Track D scope.**~~ **Decided:** aware + guided shell in 2.0.0, content as builds
+   stabilise. See Track D.
+3. ~~**Track E cut line.**~~ **Decided:** items 1–6 in 2.0.0; 7–10 and Phase 5 in 2.1.
+4. **Move the two source documents into `docs/`.** Keeps the plan's references stable; puts a
+   120 KB internal review in a public repo.
+5. **A3's filter** — set allowlist only (precise, misses Labyrinth B until catalogued) or
+   allowlist + atlas check (generic, depends on G6).
+
+---
+
+## 8. 12.1.5 API surface research — done
+
+Full report: `API_12.1.5_Research.md`. What it changes here:
+
+- **Track A is complete as listed.** No other documented removal in 12.1.5 touches the addon;
+  the whole patch removed exactly one Global API (`C_TableUtil.FindIndexedMismatch`, unused).
+  `C_DelvesUI` is byte-identical between 12.1.0 and 12.1.5.
+- **The criteria removal is invisible to Blizzard's tooling** — `C_Scenario` has never had a
+  generated-docs file, so no diff can show it. The in-game test is the only evidence. That is
+  a reason to run G4 on retail rather than a reason to doubt A1.
+- **Phase 3.3's drop is source-grounded, not just observed.** `GetActiveDelveTier`'s own doc
+  string still reads *"Assumes only Delves use this type for now,"* and `TieredEntranceType`
+  has no Labyrinth value. Labyrinths are not a first-class tiered-entrance type on 69594.
+- **Track D's deferral is source-grounded too.** No `C_LabyrinthInfo`, no Labyrinth-named
+  function anywhere in the generated docs. There is no API to build a guide against yet.
+- **Faction lead:** WoWhead lists factionID **2836** for the Kindo'jan reputation. The sweep
+  already called that ID and kept nothing (name filter), so `/dg export` now records its raw
+  return. If it comes back as a table with an empty name, Findings §5.10's "exists but not
+  client-side" reading is confirmed and the ID can be pre-seeded in `DelveGuideData`.
+
+Confidence limit carried over from the report: most "unchanged" verdicts rest on the
+aggregate 12.1.0→12.1.5 diff, not per-function inspection of every namespace's doc file.
+
+---
+
+## 8b. Horizon after BlizzCon 2026 (researched 2026-09-13, five Sonnet passes)
+
+- **12.1.5 "The Promise of Tomorrow"**: no live date from Blizzard (Oct 6 is a press cadence guess); still one PTR build (69594, public Sep 3); API surface unchanged (Gethe `ptr2`, zero commits since). Contents that touch us: Labyrinth of Kindo'jan (9 chambers, credit every 3, T11 solo = Loa-Blessed Wayfarer mount, 6-step weekly line = 2 Mythic pieces, faction 2836 now has ranks, titles/toys/transmog documented), Ascendant Venomstones (weapon/trinket/**necklace**; T11 bountiful, Heroic+ raid, M+10+, Nightmare Prey). **No new delves, no second Labyrinth, no delve UI changes.**
+- **12.2 "Eclipse"** ("early 2027", Season 3 starting shortly after it): new Nemesis **Astalor Bloodsworn** with optional challenges, more *variations* on existing delves (Blizzard's roadmap also says "new delves"), a higher level cap and new curios for Valeera, raid The Worldcore, dungeon Thraegar's Stand. → the next data-refresh release (rankings restart, curios, Nemesis tab, vendors). **Re-checked 2026-10-01 against Blizzard's panel recap and roadmap, and three Sep 13 claims did not survive:** the "crystal cavern" Nemesis lair (one outlet describing a slide), Agony Mode (it is the final *Prey* difficulty, not a delve one), and a higher delve tier cap (the only "level cap" sentence is Valeera's; "100" is press, not Blizzard). A 12.1.7 "Echoes of the Worldcore" sits in between with no delve content listed; nothing announced for Labyrinths after 12.1.5. The Future tab carries only the surviving claims.
+- **Warcraft Forever** (Nov 4, beta Sep 17): standalone vanilla-era client; no evidence it shares the retail addon API. Out of scope.
+- **Scope decision (Nick, 2026-09-13):** squeeze as much as possible into 2.0.0 → **D4 Labyrinth tab is back in scope**; D5 capture side only. Voidcore weekly-purchase sentence held pending Nick.
+
+---
+## 10. Work before 12.1.5 goes live (Oct 13 NA / Oct 14 EU)
+
+Built from the 2026-09-29 research passes (PTR_12.1.5_Findings.md sections 7
+and 7.4). **Status 2026-09-29 (evening):** Nick said go on 1.11.2 and on the
+2.0.0 fixes, gloves stay quiet with a note that they exist, and the Labyrinth
+progress feature goes into 2.0.0. Everything below is in code; nothing is
+tagged.
+
+**Live line, 1.11.2 on `main`** -- done (7caebed), date TBD, not tagged
+
+1. Loot tab: `C_Item.GetItemInfoInstant` fallback. Done.
+2. Map opening: `C_Map.OpenWorldMap` behind `CanOpenWorldMap` (combat, plus
+   the encounter / keystone / PvP-match / map restrictions from
+   `C_RestrictedActions`); otherwise a chat line, and the waypoint is still set.
+   `/dg map` opens (no longer toggles). **Gated on the retail test below.**
+3. Voidcore text: Loot, Voidforge, the map tooltip line (removed), History
+   ("max-ilvl loot"), README. Done.
+4. Rankings (1554f37) in both changelogs: twelve letters, incl. Calamitous
+   D->C, which the commit message missed; stale HELD tag removed. Done.
+5. `ADDON_VERSION` 1.11.2. Done.
+
+Reviewed by an independent agent: no Lua errors and no other 12.1.5 breakage
+(every global of the ten deleted `Blizzard_Deprecated*` addons, every
+documented function and event, live 69933 vs ptr2 70077). Its findings were
+fixed: restriction guard, `/dg map` pcall + message, README claims, changelog
+counts, the HELD tag, attribution in a shipped comment. Merged into
+`ptr-12.1.5` (5db9247).
+
+**2.0.0 must-fix** -- all done (d0b7c86, 0aae976)
+
+6. Chambers named by the step title caught mid-chamber (SCENARIO_UPDATE /
+   SCENARIO_CRITERIA_UPDATE); older entries still group by scenario name.
+7. Renown via `C_MajorFactions` (the Sep 7 PTR export shows renown 1,
+   2120/4200; `C_Reputation` returned nil).
+8. Rewards keyed on achievement / toy / mount IDs, marked earned, collected
+   or not yet; "of the Labyrinth" from renown 9.
+9. `VENOMSTONE_ITEM_ID = 280562`.
+10. Gloves: checklist shows one green line when an enhancement is applied,
+    nothing otherwise; the Loot tab lists the four with effects, the 334 cap
+    and the source (Labyrinth renown).
+11. Curios: Viperwind Idol; Rank 1-5 spell IDs for all eight (12.1.5 adds a
+    Rank 5 to every curio).
+12. Map fix through the merge; the `/dg map` command-table entry ported.
+
+**Should-do**
+
+13. Namespaced spec / chat / system-message APIs. Done.
+14. HUD tracker scrape (Method 3) retired. Done.
+15. Tooltip hook to `AreaPOIPin.MouseOver`: **deferred to 2.0.x.** The
+    callback only fires for world-map POI pins, so moving to it would drop
+    the minimap and in-world entrance tooltips, and it needs in-game testing.
+
+**Candidates**
+
+16. Labyrinth progress: done in 2.0.0 (tier ladder, lifetime chambers and
+    kills, reward marks).
+17. Kindo'jan's weekly Tier 8+ reward: a tip, not counted in the tallies.
+18. Story-variant "still needed" markers: 2.0.1. The achievements are known
+    (Findings 7.4); match by criterion, not by name.
+
+**Pre-flight, 2026-10-01.** Nothing has run in game since Sep 7 (PTR) and
+Sep 23 (retail), so everything from the Labyrinth tab (Sep 13) onward is
+proven by parse, CI and Lua 5.1 harnesses only. A read of the branch as it
+would ship found launch-day leftovers, all fixed the same day:
+
+- The Future tab still described Labyrinths as upcoming ("still on the PTR",
+  "progress saved between sessions", "a new raid arrives"). Those five rows
+  are gone; the Venomstone row stays.
+- The Labyrinth tab's subtitle claimed progress persists between sessions:
+  unverified, and contradicted on 69594 (section 2). Removed. The tip about
+  PTR boss kills is gone too.
+- Since 69848 a chamber's scenario name is the Labyrinth's own. The tab was
+  fixed on Sep 29; `/dg submit`'s `|LAB;` section and the Labyrinth HUD's
+  Chamber row still used the scenario name. Both now use the step title.
+- A `/reload` inside a Labyrinth restarted the chamber clock mid-chamber, so
+  that chamber logged a time that was too short (the delve version of this is
+  the bug E4 fixed). The chamber in progress at a reload is now left untimed.
+- `/dg selftest` did not probe the APIs the Sep 29 pass moved to
+  (`C_SpecializationInfo`, `C_ChatInfo.SendChatMessage`, the header-widget
+  getter, `C_Map.OpenWorldMap`, `C_MajorFactions.GetMajorFactionData`). Added.
+- Wording: "Blizzard's Labyrinth content is still unfinished" (changelogs,
+  README) and "no taint" (listing) are gone.
+
+Checked, no change needed:
+
+- **2.0.0 on a 12.1.0 client.** EU patches a day after NA and TW/KR two days
+  after, so 2.0.0 will run on 12.1.0 for real players. Of the 76 game API
+  names `ptr-12.1.5` uses and `main` does not, none exists only on 12.1.5
+  (Gethe live 69933 vs ptr2 70077); every Labyrinth read is pcall-guarded and
+  answers "not available" there.
+- **The SavedVariables upgrade on real data.** MIGRATIONS 2-5 run on a copy
+  of the live retail DB (79 history rows, 12 weeks, 5 roster characters):
+  every row kept, every week key moved +1h onto the true reset hour (live
+  1.11.x floors them to Tue 14:00 UTC; 2.0.0 rounds to 15:00), 12 week groups
+  before and after, 11 realm-less rows stamped, idempotent. Going BACK from
+  2.0.0 to 1.11.x therefore needs the SavedVariables backup restored.
+- The retail client has TomTom, so a delve click there takes the TomTom
+  branch and never calls `C_Map.SetUserWaypoint`; step C below is a `/run`
+  for that reason.
+
+**Retail session (Nick, ~10 min), gates the 1.11.2 tag.** Outdoors, out of
+combat, world map closed. `/reload` first: the junction means retail is
+already running 1.11.2.
+
+- A, the control. `/run WorldMapFrame:SetMapID(947)` then
+  `/dump issecurevariable(WorldMapFrame,"mapID")`: expect `false` and a
+  name. It proves the check can see taint. `/reload`.
+- B, the fix. `/run C_Map.OpenWorldMap(947)` (the map opens on Azeroth),
+  close it with Esc, then the same dump. `true` = safe. `false`, or a
+  "blocked" popup = not safe. `/reload`.
+- C, the waypoint path players without TomTom take. Open the map (M), then
+  `/run local m=WorldMapFrame:GetMapID() C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(m,.5,.5))`
+  (a pin appears mid-map), then
+  `/run for p in WorldMapFrame:EnumeratePinsByTemplate("WaypointLocationPinTemplate") do print(issecurevariable(p,"owningMap")) end`:
+  `true` = safe; nothing printed = that map cannot hold a pin, try another
+  zone. `/run C_Map.ClearUserWaypoint()`, `/reload`.
+- D, real use. Click a delve in the widget: "TomTom waypoint set" and the map
+  opens on its zone. Pull a mob, open the map in combat and drag it around:
+  no "blocked" message. Click a delve while in combat: the chat line, no
+  map. `/dg map` opens the map. Loot tab shows icons and the new Voidcore
+  line; Voidforge says Great Vault + Orin; a delve's map tooltip has no
+  Voidcore line; the What's New popup said 1.11.2. Log out; BugGrabber's
+  saved log is then read off disk for DelveGuide or blocked-action entries.
+- B, C and D clean: stamp the 1.11.2 date, pre-tag summary, tag on Nick's
+  word, merge `main` back into `ptr-12.1.5`.
+- **Result, 2026-10-01 (Nick, retail 12.1.0):** A `false` /
+  `*** ForceTaint_Strong ***`; B `true`; C `true` (the `/run` form; the
+  widget click printed nothing, TomTom); D the in-combat click printed the
+  chat line. BugGrabber's log for those sessions has no DelveGuide entry and
+  no blocked action. **1.11.2 was released the same evening**: tag `v1.11.2`
+  on `main` 89b08aa, run 36940897294, CurseForge upload and GitHub release
+  both succeeded, merged into this branch.
+- B or D fails: drop map-opening (the 1.2.1 behaviour) on both lines.
+  C fails: also skip `SetUserWaypoint` while the map is open (chat hint).
+
+**Then, Nick's call: run 2.0.0 on the retail client until patch day.** With
+WoW closed: back up `WTF\Account\QUICKNICK2\SavedVariables\DelveGuide.lua`,
+point the `_retail_` junction at the `DelveGuide-PTR` worktree. First login:
+`/dg selftest` (expect ALL PASS on iface 120100), then play as usual. Every
+delve run is then a test of 2.0.0 on live data and on 12.1.0, which nothing
+else covers. To undo: WoW closed, junction back, backup restored.
+
+**PTR session (Nick, one, ~40 min).** Client is already on 70077. Keep the
+chat open; `/dg export` snapshots and the logs are read off disk, so nothing
+needs pasting.
+
+1. Anywhere: `/dump select(4, GetBuildInfo())` -> 120105; `/dg selftest`
+   -> `ALL PASS`.
+2. `/dg lab`: screenshot the tab (top and Rewards). Loot tab: screenshot the
+   "Delve glove enhancements" block. Companion tab: role and both curios.
+3. Outdoors: click a delve out of combat (map opens) and in combat (chat
+   line, no map); `/dg map`; `/dg share say`.
+4. Labyrinth, any tier (Tier 1 is quickest): `/dg export` in the hub; in a
+   chamber `/dg export` and a HUD screenshot (Chamber should be the
+   objective's name, not the Labyrinth's); clear three chambers ("Logged
+   Labyrinth ... 3 chambers, 1 vault credit"); `/dg lab` screenshot
+   (Chambers Seen named by objective, This Week has the row); `/dg export`.
+   A chamber that cannot be finished is a Blizzard bug: note it and move on,
+   one finished chamber proves the naming.
+5. One delve, no need to finish: HUD shows tier and lives; `/dg export`.
+6. `/reload`, look at BugSack, say done.
+
+**Patch day (Tue Oct 13 NA).** The `delveguide-release` skill. Nick: log in
+after maintenance, `/dump select(4, GetBuildInfo())` -> 120105. Then the
+merge (`main` is an ancestor of `ptr-12.1.5`, so it cannot conflict and the
+merged tree is the tested one), dates stamped, CI green, `ptr-12.1.5`
+fast-forwarded so a junction on either worktree runs the tagged tree. Nick:
+restart the client, `/dg selftest`, a look at the Labyrinth tab, and one
+chamber if the Labyrinth is open (the IDs can still move at launch). Pre-tag
+summary, tag on Nick's word. Check that exactly ONE `Release` run started
+(the 776343b push on 2026-10-01 started three identical `Lint` runs from one
+push event; a doubled release run would upload twice: cancel the extras at
+once). Nick afterwards: paste
+`tools/CURSEFORGE_LISTING.md`, check the gallery, answer aleris88. If 1.11.2
+has not shipped by then, its changelog entry folds into 2.0.0.
+
+**Decided 2026-10-01 (Nick):** go on 1.11.2; 2.0.0 runs on the retail client
+until patch day; the Future tab previews Eclipse / Season 3 (done, Blizzard's
+own statements only, section 8b); the rankings export arrived the same
+evening and went into 1.11.2 and this line (below; another pass before
+Oct 13 is optional); the release rehearsal was left to me, below.
+
+**Rankings, 2026-10-01 pass (both lines, identical letters).** 115
+submissions, 42 graded variants, 3466 runs; four contributors credited.
+Against the Sep 13 pass seven letters move, two of them because of a fix
+Nick approved: the hold (hysteresis) measured the nearest edge of any band
+instead of the edge the grade had crossed, which kept *Olds and Ends* at S
+(13m 29s, 95s past the S line, slower than four A's) and *Speaking Their
+Language* at D (81s inside C). Fixed in `tools/aggregate_rankings.py` with a
+regression test; `tools/RANKING.md` step 4 says so. Twelve grades held.
+`rankingStats.mostRun` / `fastest` / `slowest` had not been regenerated since
+1.11.0 (the History tab named Adopt-a-thon fastest while the table had
+Bombing Run minutes ahead); they are now, as min / max `medianSec` of the
+graded rows and the all-tier run count. One earlier slip found: the Sep 13
+pass left one spelling of a repeat submitter's handle un-unified, so that
+player counted twice then. Both follow-ups landed the same evening: the 12
+ruRU variant names reported by clients (first Russian coverage, c917e48), and
+`--write` now derives `rankingStats` from the run, so the headline figures
+cannot go stale again (on the Oct 1 export it reproduces the published
+figures exactly).
+
+**The retail client runs 2.0.0 since 2026-10-01.** `_retail_\Interface\AddOns\DelveGuide`
+now links to this worktree, so BOTH game clients load this folder on every
+`/reload`: never leave it mid-merge or half-edited. Do merges and multi-step
+edits in a temporary worktree (`git worktree add <dir> -b <tmp> ptr-12.1.5`)
+and fast-forward this one. The old link was moved, not deleted, to
+`_retail_\Interface\DelveGuide-live-1.11.2-link` (still pointing at the
+`main` worktree); the pre-2.0.0 SavedVariables are in
+`Programs\WoW\_backups\retail-DelveGuide-SavedVariables-2026-10-01`. Undo,
+with WoW closed: move the current link out, move the old one back to
+`AddOns\DelveGuide`, restore the backup (2.0.0 snaps week keys from Tue 14:00
+to 15:00 UTC, which 1.11.x does not read back).
+
+**Release rehearsal, done 2026-10-01.** `release.yml` on this branch (lint
+gate through `workflow_call`, pinned packager) had never run; its first run
+would have been the 2.0.0 tag. `.github/workflows/release-dryrun.yml` now
+runs the same gate and the same packager with `-d` (no upload, no keys),
+lists the zip and fails if a TOC file is missing with exact case or an
+ignored file got in. First run green (36937770832): 39 files, 26 TOC
+entries, no planning docs. A beta tag was the alternative; it would have
+published 2.0.0 before the patch for no extra coverage, since the upload
+path is the one 1.11.1 used (packager v2.5.1, now pinned on `main` too:
+`@v2` has moved to v2.6.1).
+
+**CurseForge "Changes" text.** The packager's default is every commit
+message since the previous tag: for 2.0.0, 230 developer notes, nine of them
+using Nick's first name. `.pkgmeta` now sets `manual-changelog` to
+`RELEASE_NOTES.md`, the top `CHANGELOG.md` section written by
+`tools/release_notes.py`; the lint gate fails when the two disagree, so
+**after stamping the release date, run `python tools/release_notes.py`.**
+1.11.2 ships from `main` with the old behaviour (four commits, no name).
+
+**Still open for Nick:** the `docs/` move for `PLAN_2.0.0.md`,
+`PTR_12.1.5_Findings.md` and `API_12.1.5_Research.md` (already out of the
+zip via `.pkgmeta`).
+
+**After launch:** GitHub's `ubuntu-latest` moves to Ubuntu 26 from Oct 19;
+if `lua5.1` is not packaged there, `lint.yml` needs a pin before 2.0.1.
+
+---
+
+## 9. Progress log
+
+| Date | Done | Notes |
+|---|---|---|
+| 2026-09-05 | **1.11.1** staged on `main` (untagged) | criteria API hotfix for live |
+| 2026-09-05 | **A1, A2, A3, A4, A5** | Track A complete; A2/A3 await PTR check |
+| 2026-09-05 | **E2** native waypoint, **E5** Victory comparison row, **D3** Labyrinth observation log | E5 hides its row below tier 8 or with no median |
+| 2026-09-05 | **Phase 0** merged (branch `phase0`, 9 commits) | review's "~15 missing changelog versions" was 3; 0.12 found no fifth Atal'Aman variant; `.pkgmeta` `manual-changelog` decision still Nick's |
+| 2026-09-05 | **E4** reload-safe run record, dedupe guard, per-player median; **D2 scaffold** (gated on `finalEncounterID`, unknown on `[PH]`) | Labyrinth rows count toward the weekly vault tally via `history` |
+| 2026-09-05 | **Phase 1a** merged (branch `phase1a`, 8 commits, 23 tests) | ⚠️ 4 grade moves NOT applied — Nick's call; below-floor rows kept verbatim (agent's non-destructive reading of RANKING.md step 5) — Nick's call |
+| 2026-09-05 | **E6** `/dg selftest`; export gains tracker-widget dump + POI widget metadata | Debug-tab Settings gate waits for `e3-parity` to merge |
+| 2026-09-05 | **E1** listing text at `tools/CURSEFORGE_LISTING.md` | Nick pastes; 4 screenshots still needed (HUD, Voidforge, History, Victory); fill «N»/«V» from `rankingStats` |
+| 2026-09-05 | **D6** Labyrinth HUD view | chamber / step / objective (both criteria shapes) / cleared / time; tier shown as not readable |
+| 2026-09-05 | **E3** merged (branch `e3-parity`, 6 commits) | grades tooltip, ESC>Options signpost, 3 keybinds, compartment, rotation countdown, About block; ⚠️ glance at widget countdown fit at font scale 0.6 |
+| 2026-09-05 | **E6 complete** — Debug tab gated behind a Settings checkbox (default hidden) | **Track E items 1–6 all done** |
+| 2026-09-06 | **PTR verification** (Nick): A3 ✅ 12/12 no quarantine · E2 ✅ · E3 tooltip + keybinds ✅ · E6 gate ✅ · all invariants ✅ · **selftest caught a real 12.1.5 break** (Loot tab: global `GetItemInfoInstant` deleted) → fixed | Widget-meta experiment closed negative (Findings §5.1b); tracker-widget dump still needed *inside* a T4+ delve for the lives question |
+| 2026-09-06 | **D6 verified live** (chamber, step, both criteria shapes, cleared count); **D2 corrected** — vault credit every 3 chambers (Nick), not a boss kill; record now created at chamber 3, tallies sum credits | Kindo'jan T8+ kill = Soul Fragment, separate, not modelled |
+| 2026-09-06 | Selftest ALL PASS after Loot fix; **G2 answered** (ID survives to SCENARIO_COMPLETED, step/criteria do not); bug mechanism captured to the second (Findings 5.5 Case C); export/selftest now dump the **step widget set (842)** | Next capture: step widgets inside a delve and the Labyrinth — may expose tier/lives as fields |
+| 2026-09-06 | **Tier source found** — header widget `tierText` (type 29, step widget set 842); wired as HUD Method 0 with fallbacks intact; **G3 answered**: lives are a widget, not a criterion | Confirm at a 2nd tier and in the Labyrinth, then retire the scrape; identify the lives field from the deeper dump |
+| 2026-09-06 | **Checklist trigger fixed** (never fired automatically — entrances aren't targetable; now opens with the entrance dialog); **D8 started**: glove-enhancement checklist row + export capture, IDs pending | Verify at an entrance on the PTR; `snap.lastInteractionType` shows the real enum value |
+| 2026-09-06 | **Tier source confirmed at T8, T9 and Labyrinth T11** → Phase 3.3 achieved via the header widget (scrape kept as fallback for 2.0.0); **lives field found** (`currencies`, spell 458103) → `hud-victory#7/#17` closed; **Labyrinth tier readable** (5.8 reversed); entrance dialog = interaction **79** | Checklist popup still to be seen firing; Labyrinth HUD should show Tier 11 and Lives 3 |
+| 2026-09-06 | **E4 verified** (17m 10s across a mid-run reload, `resumed=true`); **checklist fired automatically for the first time** (Labyrinth entrance) → now anchored above the dialog, draggable, ESC; **variant-on-reload hole plugged** via `activeRun.variant` | E5 still needs two completed T8+ runs of one variant (today's rows had no variant) |
+| 2026-09-06 | Checklist: anchor + drag verified by Nick; now hides when the entrance dialog closes; X no longer suppresses for the session | — |
+| 2026-09-06 | **E5 verified** — Victory toast: "New personal best! (was 8m 16s) · Community median: 13m 31s" on Collegiate Calamity T8; variant present in rows after the reload fix | **Track E 1–6 built and PTR-verified** (E1 pending Nick's paste; E3 tooltip/keybinds seen, compartment/countdown/About/ESC-signpost not yet eyeballed) |
+| 2026-09-06 | **Checklist fully verified** (anchor, drag, closes with dialog, X re-fires); run comparison also printed to chat as a system message | — |
+| 2026-09-06 | **Track C merged**: CI gate (3.5), schema+migrations (2.6), containment (2.7), HUD gating (2.8), 2.1a–f hygiene, **pooling (2.2–2.4: 65 → 0 per-render creation sites)** | Needs one PTR session — pooling protocol (resize ×15, all tabs, font scale, badges, Roster, Settings, `/reload`, repeat), `dbVersion` → 3, `/dg hud` preview, HUD stays hidden after completion; CI verified on first push |
+| 2026-09-06 | **Pooling verified on the PTR** (Nick): `/dg` clean after the resetter fix, every tab resized and spammed, widget font scaled, stable FPS. Review H1 closed | Still to eyeball: `dbVersion` → 3, `/dg hud` preview, HUD hidden after completion |
+| 2026-09-06 | **Phase 1b merged, A+B** (`p1b-a`: 1.7 checklist rows one-line + hover tips, 1.13 off-hand behind two-handers; `p1b-b`: 1.9 scroll kept on refresh, 1.11 share guards + one packed sender, 1.12 aliases open the window, 1.14 widget tier filter vs `[?]` fallback) | 1.14 tracks what the filter *rejected*, not a match count — also fixes a partial-untick leak; 1.9 reads the scroll range right after render (may land a hair short if WoW recalcs a frame late); **1.8 blocked on the Voidcore tooltip text**; 1.17 needs the Venomfall coordinate |
+| 2026-09-06 | **Phase 1b merged, C** (`p1b-c`: 1.10 companion faction by ID, sweep once per session; 1.17 Nemesis spec advice shared, entrances in `nemesisEntrances` + clickable, S1 rewards dated; 1.16a/b loot rows carry `season`/`source`, 9 S2 cosmetics added `verified=false`) | ⚠️ **Nick's call:** Arcanovoid Construct / Nullaeus Domaneye / "the Ominous" moved to *No longer obtainable* on aggregator evidence only (comment names the line to move back); the 9 cosmetic rows render nowhere until the Loot tab draws a Cosmetic group; **1.16c (Venomstone sentence ×4) deferred to land with 1.8** — same lines; both entrance pins say "verify in game" |
+| 2026-09-06 | **Phase 1b PTR pass** (Nick): checklist tips ✅, off-hand ✅, scroll ✅, share guards ✅, Nemesis waypoints ✅; S1 reward move **confirmed**; widget `[?]` with all ranks unticked was the *catalogued unranked* path, not the fallback → fixed (unranked shows only while a rank is ticked); Loot tab gains a **Cosmetic** group; Bounty tip mentions the flute; `/dg export` now records `playerMap` (map + position) and `merchant` (open vendor's stock + costs) | Ophidian Patagia seen at Naleidea Rivergleam for 2500 → `verified=true`; 2512 was the wrong map for Venomfall (dump empty) — export at the entrance replaces the guess; **1.8 + 1.16c still wait on the Voidcore tooltip** |
+| 2026-09-06 | **1.8 + 1.16c done** — Voidcore tooltip (PTR) says *transmutable into equipment*, no tier: every "bonus roll" → transmute; the two currency descriptions live once in `DelveGuideData.currencyNotes` (Loot, Voidforge ×2, Future read it); T8+ kept as the addon's own gate, labelled so. **Nemesis pins verified** from exports #33/#34 (Venomfall matched to 3 dp; Torment's Rise y 0.7137→0.7182). Widget all-unticked ✅, Cosmetic group ✅ (Nick) | Vendor capture (#35) got NPC + 0 items → merchant API probably moved to `C_MerchantFrame`; capture now records API types + first error. **Phase 1b complete.** Open: is T8+ the real Voidcore threshold on live? |
+| 2026-09-06 | **1.8 corrected by Nick (live knowledge beats tooltip flavour):** Voidcores are **bonus-roll** tokens, do NOT drop from delves (Great Vault only for now; weekly purchase for gold / Voidlight Marl / 80 Veteran Crests expected ~12.1.5); Venomstones upgrade **weapons + trinkets only** → Voidforge slot list cut to Main Hand / Off Hand / Trinket ×2, `[priority]/[low]` split removed; every "drops from T8+" claim reworded to "max-ilvl loot, worth a bonus roll". **Vendor capture works** (export #36: 40 items, Undercoin) → 18 verified cosmetic rows added; `GetMerchantItemInfo` global gone on 12.1.5 (Findings 4.7b) | T8+ gate kept as "where a roll is worth spending"; ask Nick whether a Bountiful Delve bonus roll is usable at any tier |
+| 2026-09-06 | **Answered:** a Voidcore roll is accepted after a **Tier 1** Bountiful Delve → T8+ is a recommendation (max loot pool), never a gate; wording + comments say so. **Export #37** (Telemancer Astrandis, 22 items, Voidlight Marl) verifies Effigy of Dundun + Corroded Soul Crusher (10 Marl each) and adds Corrosive Reticule + Delve-O-Bot Update Chip | 7 of his rows were uncached (no name/link) → export now flags `uncached`; re-export after paging his window. 6 guide-site cosmetic rows still unverified (Apophic ×2, Arcane Golem, Giganto Manis, Corroded Patagia, Corrosive Victory) |
+| 2026-09-06 | Export #38 named Astrandis' seven uncached rows (all 500-Marl housing chests — nothing for the Loot tab). **Phase 3 wave 1 started** off 4c25002: `p3-a` = 3.7 helpers; `p3-b` = 3.8 slash table + 3.10 target handler; `p3-c` = 3.9 companion node reads + 3.6 LibDBIcon | 3.4 (L[] localization) runs as wave 2 after these merge — it touches every UI string; 3.1/3.2 stay gated on G1 (one delve at two tiers + bountiful) |
+| 2026-09-06 | **p3-c merged** — 3.9 Companion reads role/curios from trait nodes (IDs, not English text; scrape kept as fallback; `/dump DelveGuide.ReadCompanionLoadout()`); 3.6 LibDBIcon 55→56 (WoWAce trunk), registration order checked sound. Review's 3.9 signatures were wrong: `GetRoleNodeForCompanion(companionID)` and `GetCurioNodeForCompanion(curioType, companionID)` | ⚠️ **Follow-ups after A+B merge (DelveGuide.lua, in agents' regions now):** (1) `/dg checkdebug` calls `GetRoleNodeForCompanion(roleType, id)` — wrong arg order, pre-existing; (2) `minimap.showInCompartment = true` forced on every load, so removing the button from the compartment never sticks — likely the unresolved minimap thread; (3) dead `DEFAULTS.minimapHidden`. In-game: `ReadCompanionLoadout()` non-nil with panel closed; `roleLabel` non-nil; `curios.Combat.spellID` matches a `curios[*].id`; minimap button alone + full addon set |
+| 2026-09-06 | **p3-a merged** — 3.7: `GetResetKey()` rounds (6 copies → 1), `cofferKeys` block, `StripEscapes` (union of 5), `UI.RANK_ORDER`, HUD grade colour via `UI.GradeColor`, Curios uses shared `GetSpecRec`. `BuildWidgetEntries` skipped: the widget's `anyTier`/`tierFiltered`/fallback path can't merge with the share builder without changing one of them | Two grade palettes kept on purpose (`gradeColors` = Delves/Curios/HUD; `RANK_COLORS` = widget/Settings) — Nick's call if one should win. Leftover copies in the slash handler / LDB text (`Keys: %d/600`, `rankOrder`, tierdebug gsub, currencydebug list) → fix after p3-b merges. In-game: `/dg testrun` ×3 → Roster/Victory/History agree and no old run vanished; HUD grade colour; Curios spec line |
+| 2026-09-06 | **p3-b merged** (one conflict: old chain vs p3-a's testrun edit → resolved toward the table) — 3.8 command table, generated `/dg help` (debug entries listed only with the Debug tab on), 36 commands covered, `findpoi <text>`, unknown/`tier` print usage instead of toggling, prefix matching gone; 3.10 `delveNameSet` + `issecretvalue` early-out, pcall kept. **Follow-up commit:** LDB copies → `cofferKeys`/`RANK_ORDER`, tierdebug → `StripEscapes`, currencydebug IDs from constants, `checkdebug` arg order fixed, **`showInCompartment` only defaulted when unset** (likely the minimap thread). **Phase 3 wave 1 complete.** | `OnTargetChanged` is almost certainly dead (entrances are objects) — remove with its event registration once the type-79 trigger is confirmed in the field. Wave 2 = 3.4 localization table |
+| 2026-09-06 | **3.4 groundwork** (fed8659): `DelveGuide_Locale.lua` loads first; `L[key]` defaults to its English key; CurseForge `@localization@` blocks per locale (`lua_additive_table`, unlocalized ignored); `DelveGuide.lua:4` no longer wipes the addon table. **Wave 2 started** off fed8659: `l10n-a` = core/Widget/HUD/Checklist/Victory + `tools/extract_locale_phrases.py`; `l10n-b` = Delves/Roster/History/Loot/Voidforge/Future/Quests + zone display names via `C_Map.GetMapInfo`; `l10n-c` = Nemesis/Settings/Companion/Curios + Data content strings | Debug/export output stays English by design. **Nick's action after merge:** enable Localization on the CurseForge project and import `tools/locale_phrases.lua`; translators fill phrases between releases |
+| 2026-09-06 | **l10n-a merged** — 250 `L[]` sites in core/HUD/widget/checklist/Victory; `tools/extract_locale_phrases.py` (+11 tests, `--check` gate) and the first `tools/locale_phrases.lua` (225 phrases, partial until b/c merge) | Kept as the agent chose: share header localised to sender; tab labels wrapped in `TABS` (selftest lines localise on non-enUS); time units unwrapped; English plural `%s` suffixes flagged as untranslatable — reword in 2.1. Eyeball in game: Victory title/tier line, tracker strip, `/dg scan` line, ranking popup |
+| 2026-09-06 | **l10n-b + l10n-c merged; 3.4 complete.** 763 `L[]` sites, **669 phrases** in `tools/locale_phrases.lua`; zone display via `UI.ZoneDisplayName` (4 of 6 zones — the two grouping labels stay English so enUS is byte-identical); data prose wrapped (currency notes, future, loot notes/sources, curio descriptions, poison effect/use, Delver's Journey rows, Future categories). Both agents proved enUS output byte-identical with harnesses | ⚠️ 5453e34's message overclaims — the data wrapping landed in the next commit. Known 2.1 items: English plural `%s` suffixes; role labels (`Damage Dealer`/`Healer`/`Tank`, `Unknown`) stay English because they are compared — needs a label→L display map. **Nick: enable Localization on CurseForge (project 1481287) and import `tools/locale_phrases.lua`.** **Phase 3 done except 3.1/3.2 (gated on G1).** Next: release prep |
+| 2026-09-06 | **Correction:** CurseForge's localization platform does NOT exist for this project (new-portal project; no Localization page on authors.curseforge.com, legacy + WoWAce return Not found — checked in Nick's browser). `@localization@` markers removed (they would have failed the packager). Translations = `Locales/<locale>.lua` files by PR; extractor now writes `Locales/TEMPLATE.lua` (669 phrases, excluded from the package); README gains a Translating section | The esMX/esES/zhTW commenters who already send variant fixes are the natural first translators |
+| 2026-09-07 | **PTR command sweep passed** (Nick): all 40 commands act or print usage; `/dg quest` added as an alias. **3.6 minimap thread root-caused: EllesmereUI 8.9.8 bug**, not ours — its button bag's Show hook (EllesmereUIMinimap.lua:1196-1205) zeroes alpha on any Show() while the bag is closed, and `ShowFlyoutPanel` (639) only restores alpha on the first build; reproduces on live 1.11.0 with LibDBIcon 55, our button is shown/textured/18px at alpha 0 | Bug report with two suggested fixes (hook guard on `GetParent() ~= flyoutPanel`; re-assert alpha on every open) filed by Nick as [EllesmereGaming/EllesmereUI#2008](https://github.com/EllesmereGaming/EllesmereUI/issues/2008) (bug unchanged on their main / 9.1.6; no duplicate existed). Workaround: EUI's ungrouped-buttons list. Nothing to change in DelveGuide |
+| 2026-09-07 | **PTR round 4** (Nick): `ReadCompanionLoadout()` → nil (now `(true)` traces each API step); History showed *Week of Sep 01* twice (old floored keys vs new rounded, 1h apart) → **schema 4** snaps every row's `resetKey` to the reset grid, runner honours a deferred migration; `/dg testrun` rows lacked `realm` → counted as a 2nd character → fixed; map-tooltip Voidcore line removed (Nick); **grade palette decided**: keep both, widget/Settings S takes the Delves orange (the HUD's green highlight was why the gradient existed) | Next: `/reload` → History one week group, `/run DelveGuide.ReadCompanionLoadout(true)` output |
+| 2026-09-07 | Round 4 results: schema 4 ✅ (one week group); localization ✅ (Nick: no issues); widget S orange ✅ but **reads like D/F** — colour choice pending; companion trace: tree = 0 with the panel closed (Blizzard's frame reads it in OnShow only) → **config now cached once seen** (`DelveGuideDB.companionConfig`); Settings gains **Show in the addon compartment** (the earlier test was impossible without it); **schema 5** stamps the realm onto realm-less rows (old testruns) | Next: trace with the companion panel OPEN, then `/reload` + trace closed; compartment checkbox off → reload → stays out; S colour pick |
+| 2026-09-07 | **Companion node read WORKS**: `GetTraitTreeForCompanion(nil)` → 1223 (the ID form is never right; Blizzard's frame passes nil too) → no-ID first everywhere; role node 110817 / subTree 142; curios by spell ID (Bilespear rank ID 1248875 ≠ data 1248877 → `ids` sets; **Dusty Loa Totem missing from data**); export now captures the loadout + descriptions. **Palette decided: one palette, tier-list convention** (S FF7F7F … F 7FFF7F) across every surface. Compartment checkbox ✅ (Nick) | Next: `/dg export` → add Dusty Loa Totem row; `.role.roleLabel` check; eyeball the new palette |
+| 2026-09-07 | `roleLabel` ✅ (Healer); palette ✅ (active-row wash softened 0.35→0.22); **Dusty Loa Totem** added from exports 2/3; **rankings refreshed** from the 2026-09-07 form export (102 submissions, 40 variants; Calamitous D→C, Stolen Mana B→C, Open Night new S, Caustic Crush C→F on a 10th player; 6 held); one player's 3 handle spellings unified to the credited one; 5 itIT variant names mapped from the form; 4 contributors credited. **Release docs merged** (`release-2.0.0`): toc 2.0.0, CHANGELOG + in-game 2.0.0 entry, README, listing | Dates in both changelogs are `2026-09-TBD` until tag time; listing keeps its «N»/«V» placeholders. **Not yet pushed or tagged.** Nick's calls: Caustic Crush F vs stepping to D; first push to exercise CI |
+| 2026-09-07 | Fixes after Nick's reload: version now read from the TOC (title + what's-new said 1.11.0), `GradeColor` nil-safe, Dusty Loa Totem `ranking="?"` (Curios tab errored), active wash 0.30. **Caustic Crush stays F** (Nick). **`ptr-12.1.5` pushed** — first CI gate run green (34152956916). **1.11.1 RELEASED**: `main` pushed, `v1.11.1` tagged on bbab0cc, Release run green (34153060090). 15 merged agent branches deleted locally | `ptr-12.1.5` contains `main`; 2.0.0 tag waits for patch day (its TOC still lists 12.1.0) |
+| 2026-09-07 | **1.11.1 uploaded to CurseForge** (under review). `rankingStats` → 102/40/2688 (2026-09-07); listing «N»/«V» filled. **Gallery screenshots received** (Delves, Voidforge, History, widget ×2, Companion, HUD); `/dg testrun` now stages the Victory comparison row for the eighth | Nick uploads the gallery himself; caption order goes with the Victory shot. Old branches `ptr-12.1.5-pre-rebase` / `season2` await his call |
+| 2026-09-07 | Old branches deleted (pre-rebase: all 23 patches equivalent in `ptr-12.1.5`; `season2` fully merged). Victory toast widens to fit the comparison line (overran 340px on the testrun shot) | — |
+| 2026-09-07 | **Gallery set complete** (8 shots incl. checklist-at-entrance and the fitted Victory toast); `/dg testrun` repeats now beat the previous best. **2.0.0 is release-ready on `ptr-12.1.5`.** Remaining, all on patch day: stamp `2026-09-TBD` dates, tag `v2.0.0`, Nick pastes the listing + uploads the gallery | Listing lead **confirmed by Nick**: delves are the focus, Labyrinths a core feature — rankings lead, Labyrinth support second |
+| 2026-09-13 | **Rankings refreshed** (Sep 13 export: 106/41, nine letters moved, applied to BOTH lines; `main` pushed untagged for Nick's retail test). **Research pass (3 Sonnet agents):** no PTR build after 69594 (public Sep 3; `Aug 28` was its compile stamp); 12.1.5 source is Gethe `ptr2`, NOT `ptr` (which tracks 12.1.0); zero commits since → API surface unchanged; interaction 79 = `TieredEntrance`; no release date (BlizzCon: "currently on the PTR"; Oct 6 is a cadence guess). Content decoding caught up: Labyrinth = 9 chambers (ach. 63721), faction 2836 has ranks, rewards documented | ⚠️ **Two wording checks for Nick in game:** Venomstone tooltip — dev notes + 2 sources say weapon/trinket/**necklace** (we say weapons + trinkets only); Voidcore weekly purchase — sources say the S1 weekly is gone and the Vault offers a Voidcore instead of gear at 3+ slots (we say a weekly purchase is expected) |
+| 2026-09-13 | **Neck back as the 5th Venomstone slot** (Blizzard dev notes). **D4 Labyrinth tab merged** (`DelveGuide_UI_Labyrinth.lua`, `/dg lab`): this week per character, faction 2836 standing, chambers seen + medians from `labyrinthLog`, rewards (all `verified=false`), 3 tips; **D5 capture**: `|LAB;id~name~tier~sec` appended to submit codes only when a timed chamber exists; aggregator now peels any trailing section (old split dropped the last run of such a code — real bug). Changelogs updated | In-game: tab on live shows the not-available reputation line without error; inside Kindo'jan after 2 chambers each row has a time; `/dg submit` tail ends in `|LAB;` only after a chamber; byte-identical code before any Labyrinth |
+
+| 2026-09-29 | **Research pass** (6 Sonnet agents) after Blizzard dated 12.1.5: **NA Oct 13 / EU Oct 14**. Builds 69848/69952/70077 on Gethe `ptr2`; our API surface unchanged; TOC 120105. Labyrinth, delve-system, community and taint findings in PTR_12.1.5_Findings.md section 7; work list in section 10. Listing figures corrected to 106/41 (4325c5e). 1.11.1 approved on CurseForge, 1 unanswered comment | Live 1.11.1 breaks on patch day (Loot tab bare `GetItemInfoInstant`); map-opening taint is a 1.9.0 regression of the 1.2.1 fix |
+| 2026-09-29 | **Build day** (Nick: go on 1.11.2 and the 2.0.0 fixes). 1.11.2 on `main` (7caebed): Loot tab `C_Item`, map opening via `C_Map.OpenWorldMap` behind a combat + `C_RestrictedActions` guard, Voidcore wording, version drift; independent review, findings fixed; merged into ptr (5db9247). 2.0.0 (d0b7c86, 0aae976): chamber names from the step title, renown via `C_MajorFactions`, Labyrinth progress + reward marks, Venomstone item, glove enhancements (quiet checklist, Loot note), curio Rank 1-5 IDs + Viperwind Idol, namespaced APIs, tracker scrape retired. Verified: real Lua 5.1 parse, Lua 5.1 harnesses for the waypoint/map paths, Labyrinth tab, gloves and curio matching; CI tools green | Tag 1.11.2 only after the retail test (section 10); tooltip-hook move deferred to 2.0.x |
+| 2026-10-01 | **Pre-flight** (Nick: what do I need to test and do before launch). Read the branch as it would ship: Future tab's stale Labyrinth rows removed, the unverified "progress persists" claim and the PTR tip gone, `/dg submit` `|LAB;` and the Labyrinth HUD name chambers by step title, a reload no longer times the chamber in progress, selftest probes the namespaced APIs, "still unfinished" / "no taint" wording dropped. Checked: no 12.1.5-only API in 2.0.0 (76 names vs Gethe live 69933); the SavedVariables upgrade on a copy of the live retail DB (79 rows, 12 weeks kept; keys +1h by design). Retail has TomTom, so the taint test's waypoint step is a `/run` | Section 10 holds the three sessions: retail (gates 1.11.2), 2.0.0 on retail until patch day (Nick's call), one PTR session |
+| 2026-10-01 | **Retail taint test passed** (Nick): `C_Map.OpenWorldMap` leaves `WorldMapFrame.mapID` secure, a waypoint set from insecure code leaves the pin's `owningMap` secure, the in-combat guard fires. **1.11.2 dated and pushed on `main`** (535b82c, release workflow pinned to the commits that shipped 1.11.1), merged here. **Release rehearsal:** `release-dryrun.yml` built the 2.0.0 package through the lint gate and the pinned packager without uploading (run 36937770832, green). **CurseForge changelog** is now `RELEASE_NOTES.md` (the top CHANGELOG section) instead of 230 commit messages. **Future tab** previews Eclipse / Season 3 from Blizzard's own statements; the Sep 13 notes on a Nemesis lair, Agony Mode and a delve tier cap did not survive the re-check | Tag `v1.11.2` on Nick's go. Then: retail junction to this worktree (WoW closed, SavedVariables backed up), the PTR session, a rankings export by Oct 11 |
+| 2026-10-01 | **1.11.2 RELEASED** (tag `v1.11.2` on `main` 89b08aa, run 36940897294: CurseForge upload and GitHub release succeeded; the curated notes went up as the changelog). It carries the **Oct 1 rankings pass** (115 submissions, 42 variants; 19 letters differ from 1.11.1) and the **hold-rule fix** Nick approved (Olds and Ends S to A, Speaking Their Language D to C). Same pass and fix on this line (2d882cd, CI green), which contains `main` again. **Retail now runs 2.0.0**: the `_retail_` link points at this worktree, SavedVariables backed up | Both game clients load this folder: no half-done edits here, use a temporary worktree. Open: Nick's PTR session; ruRU variant names (12); a `--stats` mode for the headline figures |
+| 2026-10-01 | **PTR session (Nick, build 70077, interface 120105).** `/dg selftest` ALL PASS (0 fails, 13 tabs, nothing missing); nothing from DelveGuide in BugGrabber; `/dg share say` and the in-combat map guard work; the delve HUD reads its tier from the header widget. **Labyrinth, three Tier 1 runs** of 3, 3 and 8 chambers (exports #4-#10). A chamber is one scenario of several stages under one step title; eleven chambers seen (3699 A Foul Presence, 3345 Spirit Thieves, 3349 Reliquary Ritual, 3442 Returning the Bounty, 3619 Taken Antiquities, 3577 Reins of the Warlord, 3581 Soul Survivor, 3552 Graverobbers, 3612 Raging Spirits, 3664 Setting Things Right, 3674 Soul Catcher), hub 3342 "Choose Your Path", end state 3721 "Empty Halls". The first two runs were the same three chambers, and the first then showed "Empty Halls" (Nick was on the intro quest); the third drew eight others. About 190 reputation a chamber (570 across three). **Vault credit checked against the game:** World progress read 3 after nine chambers and "Complete 4 World Activities" unlocked on the twelfth (it read 4 after all fourteen), so three chambers are one credit and every run counts. **Fixed from the session** (29dc8a6, then the run-record commit): HUD rows on one line with a stage counter; the tier on the run record and on every chamber entry; a summary on leaving (chat line and Victory toast); **one History row per run** (a row was reattached to any run started within three hours, so the three runs shared one: 14 chambers and 4 credits recorded as 8 and 2, and the second and third runs' first credit went unannounced); the clock after a `/reload` (restored inside the frame the reload finishes in, where `GetTime()` is stale: it ran 9 s fast); an alt no longer resumes a visit another character left open | Not yet seen in game: the leave summary. Untested: whether credit is per run or per three chambers across runs (only runs ending off a multiple of three can tell). A visit left open by logging out inside is still resumed by the same character within three hours. Nits: the hub's Objective row is cut off; the widget says "No active variants" after a `/reload` indoors |
+| 2026-10-01 | **The two follow-ups from the rankings pass.** `localeVariants` gains the first 12 ruRU names (one variant of each delve, from a `/dg submit` MISSING section; every other reported text was already identified). `aggregate_rankings.py --write` now also writes `DelveGuideData.rankingStats` (submissions, graded variants, all-tier runs, most-run, fastest and slowest from the table it just wrote); run on the Oct 1 export it changes nothing, which is the check that the hand-set figures were right. **Wording:** a Labyrinth's three chambers are one vault *credit*, not one vault *slot* (both changelogs, README, listing). README banner no longer announces Season 2's August unlock | Still by hand each pass: the contributors list and the figures quoted in the changelogs and the listing |
+| 2026-10-01 | **Nick, after the session:** "Kinduru was not available in T 1 - also the Lab was bugged and did not count Chamber 8 - it just auto completed it." So a Tier 1 run cannot be ended from the hub (the hub still lists "(Optional) Talk to Kinduru to end the run"), and the third run's eighth chamber is one the game did not count. The addon logged it like any other: "Soul Catcher" (3674), a successful Sha'Kuro encounter and the completion event in the same second, 3m 48s after the seventh. Its count for that run is therefore one ahead of the game's (8 against 7); both are two credits, so nothing shown was wrong, but an uncounted third, sixth or ninth chamber would announce a credit the game did not give. **The log now records what the game counts:** every entry carries the lifetime "chambers completed" statistic (63730) and every chamber entry the Great Vault's World progress, so the next session shows a skipped chamber, and whether credit carries across runs, without anyone having to notice | If the statistic moves per chamber in real time it is the better source for the chamber count than counting completion events (2.0.x, after seeing it in a log). Still not confirmed: the leave summary on screen |
+| 2026-10-09 | **Pre-flight, four days out** (four research passes, an independent review, an offline harness that loads the whole addon in real Lua 5.1 against copies of the retail and PTR SavedVariables). No build after 70077, no API change, no ID moved. **A release blocker, found by running the code rather than parsing it:** `UpdateLDBText` looped over `rankOrder`, a local the Sep 6 helper pass renamed to `RANK_ORDER` (an error at every login once a graded variant is active; 1.11.2 is unaffected), and the tracker strip compared against a deleted `COFFER_KEY_SHARD_ID` (shard world quests always 0). Fixed with them: a delve run record that outlived its run was resumed by the next run of that delve, on any character (6 minutes logged as 31), so it is cleared whenever a session is out in the world; a Labyrinth visit left open by logging out inside was continued by the next run, so only a session that began inside resumes one; log entries carry their character and the three scans count their own; a doubled completion event no longer counts a chamber twice; each character stamps the realm on its own old rows at login (schema 5 did it for the first character only). **Venomstone text** follows Blizzard's content update notes: fully upgraded Hero or Myth (or max-quality Tidal Crafted) pieces only, the sources listed with no guarantee or quantity, the quest that opens them | Left as they are, by choice: the non-English Labyrinth HUD chamber row, a run crossing the weekly reset, roster week keys after schema 4, `ChatEdit_InsertLink` without the deprecation shims, a zero weekly-reset countdown at load. The parse-only CI gate cannot see an undefined global; the harness can, so run it before a tag. Needs one PTR session: `/run DelveGuide.UpdateLDBText()` outdoors, then a Labyrinth run and leave (776343b and 469ac15 have still not run inside one) |
+| 2026-10-12 | **PTR session on the pre-flight fixes, build 70340** (interface 120105; it landed the same afternoon, and against 70077 only three group-finder files differ, nothing this addon calls). `UpdateLDBText` silent, `/dg selftest` ALL PASS, hearth and a zone change clean, nothing from DelveGuide in BugGrabber. **Labyrinth, Tier 1:** three chambers and out (HUD 1, 2, 3; the credit line; the summary and the toast on leaving; one History row, 9m 32s across a `/reload` at 5:30), then straight back in for one chamber: its own visit, not merged, and no row because a row needs a credit. **The log's new fields, first real data:** the game's "chambers completed" statistic moved with every completion (15 to 19 over four chambers), and the Great Vault's World progress read 0 through the third chamber and 1 at the fourth, so three chambers are one credit and the statistic is a usable count. Four more chamber scenarios: 3605 Raging Spirits, 3659 Encroaching Darkness, 3476 Malicious Masks, 3442 Returning the Bounty (again). Venomstone note reworded after Wowhead's guide | Asked for, not built: the summary and toast in the treasure room (step "Collect Your Reward!") instead of at the door. It needs that room's scenario or step ID, which no export holds yet: take `/dg export` there. A run of one or two chambers leaves no History row, by design; say so if that should change. Still open: whether credit carries across runs |

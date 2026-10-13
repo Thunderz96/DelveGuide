@@ -1,0 +1,122 @@
+# CurseForge listing — paste source for 2.0.0
+
+The live listing is still Season 1 text ("preparing to face Nullaeus", a Nullaeus tab
+section, Beacon of Hope, Interface 120001) and mentions none of: the Victory screen, the
+Voidforge tab, the Companion tab, the DataBroker feed, the History community block, Share to
+Chat, `/dg submit`. This file is the replacement, built from README.md after Phase 0 corrected
+it. Paste the **Description** block into the CurseForge project description; the two short
+blocks after it are for the gallery captions and the comment thread.
+
+Figures below (115 submissions / 42 variants) come from the 2026-10-01 rankings pass and match
+`DelveGuideData.rankingStats`. Re-run the aggregator and update both if another form export
+lands before the tag; confirm the Interface line.
+
+---
+
+## Description
+
+**DelveGuide — the in-game reference for Midnight Delves, with rankings measured from real runs.**
+
+Every other delve addon tells you what a variant *is*. DelveGuide tells you how *fast* it is:
+the S–F grades come from **115 submissions of timed runs across 42 variants**, submitted with one
+command and reduced to a median per variant. Not guesswork, not the author's opinion —
+measured, and refreshed every release.
+
+**Display-only, by design.** DelveGuide reads Blizzard's delve UI and never changes it. Your
+Great Vault credit, scenario objectives and companion configuration are untouched.
+
+**Patch 12.1.5 ready** (and still runs on 12.1.0). **Labyrinth support:** DelveGuide
+recognises the Labyrinth of Kindo'jan, keeps it out of your delve rankings — a Labyrinth is
+not a delve — and gives it its own in-run HUD (chamber, tier, lives, objective, chambers
+cleared), its own History rows, and its vault credit in your weekly tallies: one vault credit
+per 3 chambers cleared, at any tier. A Labyrinth tab shows your renown, your progress up the
+tier ladder, the chambers you have seen, and which of the mount, titles and toys you already
+have. This is support rather than a guide — there are no route tips yet.
+
+**Now translatable.** Every string a player sees goes through a translation table. Copy
+`Locales/TEMPLATE.lua`, translate it and open a pull request; there are no translations yet,
+so nothing changes for English players.
+
+### What you get
+
+**Delves tab** — every delve with its variant grade, live **Bountiful** and **Nemesis** flags,
+best-route and known-bug badges, a "how grades work" tooltip, and a *rotates in Xh Ym*
+countdown. Click a row for a native waypoint arrow (TomTom optional).
+
+**In-run HUD** — appears on entry, hides on exit: delve, variant + grade, tier, curio
+recommendation, lives, and a live timer that survives a `/reload`.
+
+**Victory screen** — completion time, weekly delve count, vault ilvl unlocked, and how you did
+against your personal best and the community median.
+
+**Pre-entry checklist** — opens by itself with the delve entrance dialog and checks your Coffer
+Key, Trovehunter's Bounty state, Valeera's role, and whether your Herald's Flute will still
+earn this week's map. Draggable, and it remembers where you put it.
+
+**Compact widget** — shards, restored keys, Voidforge progress and today's high-value
+variants in a small always-on panel, with a bountiful-only filter and one-click **Share to
+Chat**.
+
+**Voidforge tab** — Nebulous Voidcores and Ascendant Venomstones: what you have, where they
+come from, what to upgrade first, and your alts' stockpile. Voidcores are bonus-roll tokens
+you spend after a boss or a completed run for extra loot — they do not drop from delves: the
+Great Vault awards them, and Orin Straylight trades one more a week. Venomstones (drops start
+the week of Oct 20) upgrade weapons, trinkets and necks only, so the priority list is those
+five slots.
+
+**Companion tab** — Valeera's level and XP anywhere (not just inside a delve), plus her live
+role and curios read from the game's own data, checked against the recommendation for your
+spec — in any language, with Blizzard's panel closed.
+
+**History tab** — every run grouped by weekly reset with time, tier, variant and vault ilvl,
+your per-variant medians, and how they compare to the community's.
+
+**Roster tab** — all your level-80 alts: weekly delves, vault slots, keys, item level.
+
+**Nemesis tab** — the season's Nemesis delve in full (Venomfall Deeps / Azta'rec), with the
+previous season kept as a compact legacy reference.
+
+**Also:** Loot tab by tier, with a Cosmetics group checked against the vendors' stock and the
+four delve glove enhancements · Curios
+tab by spec · world-map tooltips with grade and variant · LibDataBroker feed for
+Titan/ElvUI/Bazooka · keybindings · addon compartment entry · ESC > Options signpost ·
+in-game changelog · `/dg selftest` and `/dg export` for bug reports.
+
+### Help rank the delves
+
+DelveGuide times every run. Type `/dg submit`, paste the code into the form it links, and
+your times join the pool. Only clear times are sent — no character or account data.
+Contributors are credited on the Settings tab.
+
+### Requirements
+
+No dependencies. Interface 120105 (12.1.5), also loads on 12.1.0. TomTom optional.
+
+`/dg` opens the window · `/dg help` lists every command · `/dg findpoi <text>` hunts a missing
+delve pin on the map.
+
+---
+
+## Gallery captions (target: 8 images; there are 5 today, the leading rival has 16)
+
+Add at least: the **HUD mid-run** (timer + lives visible), the **Voidforge tab**, the **History
+tab with the community comparison block**, and the **Victory toast with the comparison row**.
+
+1. Delves tab — grades, flags, today's variants, rotation countdown
+2. In-run HUD — variant, grade, tier, lives, live timer
+3. Victory screen — time vs personal best and community median
+4. Pre-entry checklist at a delve entrance
+5. Compact widget with bountiful-only filter
+6. Voidforge tab — currencies and upgrade priority
+7. History tab — weekly runs and community comparison
+8. Companion tab — Valeera's XP and loadout check
+
+---
+
+## Comment for the thread where "not actively playing retail" sits at the top
+
+> Short update: DelveGuide is in active development for 12.1.5 — 2.0.0 is being tested on the
+> PTR now. The rankings have never depended on my own playtime: they're built from the runs
+> you all submit with `/dg submit`, medianed per variant, and refreshed each release. If you
+> want a variant graded that isn't yet, that command is how it gets there. Thanks to everyone
+> who has sent times in.

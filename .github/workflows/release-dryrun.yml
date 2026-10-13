@@ -1,0 +1,88 @@
+name: Release dry run
+
+# Builds the package the way release.yml does -- the same lint gate, the same
+# pinned packager -- with the packager's -d flag, so nothing is uploaded, and
+# with no CurseForge key or write token in reach. It then lists what would
+# ship and fails if the package is not what the release expects.
+#
+# Run it from the Actions tab before a release. It also runs whenever this
+# file itself changes, which is how it was first exercised on the 2.0.0 branch
+# before the workflow existed on the default branch. `branches` is set so a
+# tag push never starts it (path filters are not evaluated for tags).
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '**'
+    paths:
+      - '.github/workflows/release-dryrun.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  package:
+    needs: lint
+    runs-on: ubuntu-24.04   # pinned with lint.yml; see the note there
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Package without uploading
+        uses: BigWigsMods/packager@6d50adb6e8517eefef63f4afb16a6518166a6b28 # v2.5.1
+        with:
+          args: -d
+
+      - name: Show and check what would ship
+        run: |
+          zip=$(ls .release/*.zip | head -n 1)
+          echo "package: ${zip} ($(stat -c %s "${zip}") bytes)"
+          unzip -l "${zip}"
+          names=$(unzip -Z1 "${zip}")
+
+          echo "----- the TOC inside the package -----"
+          unzip -p "${zip}" 'DelveGuide/DelveGuide.toc'
+
+          status=0
+
+          echo "----- every file the TOC lists is in the package, exact case -----"
+          # A Linux builder is case-sensitive and the game on Windows is not, so
+          # a TOC line whose case differs from the folder works for the author
+          # and is one rename away from shipping an addon with no libraries.
+          listed=0
+          # `|| [ -n ... ]`: the TOC's last line has no trailing newline.
+          while IFS= read -r line || [ -n "${line}" ]; do
+            line="${line%$'\r'}"
+            case "${line}" in ''|'#'*) continue ;; esac
+            listed=$((listed + 1))
+            f="DelveGuide/${line//\\//}"
+            if ! grep -Fxq "${f}" <<< "${names}"; then
+              echo "::error::the TOC lists ${line} but the package has no ${f}"
+              status=1
+            fi
+          done < <(unzip -p "${zip}" 'DelveGuide/DelveGuide.toc')
+          echo "${listed} TOC file(s) checked"
+          if [ "${listed}" -eq 0 ]; then
+            echo "::error::the TOC in the package lists no files"
+            status=1
+          fi
+
+          echo "----- nothing that .pkgmeta ignores is in the package -----"
+          # CHANGELOG.md doubles as the manual-changelog check: when the packager
+          # does not pick up RELEASE_NOTES.md it writes its own commit-log
+          # CHANGELOG.md into the package.
+          if grep -E '^DelveGuide/((PLAN_2\.0\.0|PTR_12\.1\.5_Findings|API_12\.1\.5_Research|CHANGELOG|README|RELEASE_NOTES)\.md|Locales/TEMPLATE\.lua|(tools|\.github|\.claude)/.*|\.pkgmeta|\.gitattributes|\.gitignore)$' <<< "${names}"; then
+            echo "::error::the package contains files the release should not ship (listed above)"
+            status=1
+          else
+            echo "none"
+          fi
+
+          exit ${status}

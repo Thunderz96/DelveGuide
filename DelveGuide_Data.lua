@@ -2,6 +2,7 @@
 -- DelveGuide_Data.lua
 -- ============================================================
 DelveGuideData = {}
+local L = DelveGuide.L
 
 -- ============================================================
 -- SECTION 1: DELVE RANKINGS
@@ -103,10 +104,14 @@ DelveGuideData.delves = {
     { name="Twilight Crypts",     zone="Zul'Aman",    variant="Why Did it Have to Be Snakes?", ranking="?", mountable=false, hasBug=false, isBestRoute=false },
     -- Reference IDs -- Coiled Isle uiMapID 2512 / overview 2537 (live, build 69299).
     -- Ring of Glory: widgetSet 2047.  Gnarldor Isle: widgetSet 2044.
-    -- Do NOT key anything on poiID: it changes with Bountiful state (The Darkway
-    -- was 8439 regular / 8440 bountiful on consecutive days) and differs per map
-    -- (Gnarldor Isle is 8760 on 2512 but 8759 on 2537). widgetSetID is the stable
-    -- identifier and is what widgetSetDelves uses.
+    -- Do NOT key anything on a SINGLE poiID -- key on the poiID SET. AreaPOI.db2
+    -- holds one stable row per (delve, bountiful state, map), so a delve owns a
+    -- small fixed set of IDs rather than one: The Darkway is 8439 regular / 8440
+    -- bountiful, and Gnarldor Isle is 8760 on map 2512 / 8759 on 2537. Those
+    -- pairs are that fixed layout, not IDs churning between sessions. Any single
+    -- one of them is still the wrong key, because which member of the set you see
+    -- depends on bountiful state and which map you are looking at. widgetSetID is
+    -- the one-per-delve identifier and is what widgetSetDelves uses.
     -- Venomfall Deeps (S2 Nemesis): instanceID 3079 (PTR; verify inside) -- /way #2512 51.2 30.3.
     -- Torment's Rise (S1 Nemesis, legacy, still enterable): instanceID 2966 (PTR; verify inside).
     -- ============================================================
@@ -146,8 +151,10 @@ DelveGuideData.contributors = {
     "Thunderz", "Tyrania", "Vaelnyssa", "Veloci", "VoteForPedro", "Waketech", "weedyabyss",
     "Widz", "Zaphon", "Zejex", "Zephyrg",
     "Scartotem", "Kudah", "oskarr",
-    -- 2026-09-07 + 2026-09-13 form exports
-    "Aleris-thunderhorn (EU)", "Lowca", "Raifor", "raptor", "aCOOLa", "Bix", "Caldric", "Terrorbytez91",
+    -- 2026-09-07 form export
+    "Aleris-thunderhorn (EU)", "Lowca", "Raifor", "raptor",
+    -- 2026-09-13 form export
+    "aCOOLa", "Bix", "Caldric", "Terrorbytez91",
     -- 2026-10-01 form export
     "Bobaladin", "CamWrynn", "Tawaporah", "Wata",
 }
@@ -195,16 +202,16 @@ DelveGuideData.delversCall = {
 -- player's current rank isn't detected). Ranks 1-10 confirmed for S2.
 -- ============================================================
 DelveGuideData.delversJourney = {
-    { rank=1,  unlock="Curiosity boons & first decor", note="Temporary character buffs from Mislaid Curiosities and Heavy Trunks, plus the first housing decor purchase." },
-    { rank=2,  unlock="Corrosive Reticule",            note="Unlocks the Corrosive Reticule purchase." },
-    { rank=3,  unlock="Shrine of Abundance",           note="Bountiful Delves gain a chance to contain a Shrine of Abundance. The Effigy of Dundun toy becomes purchasable." },
-    { rank=4,  unlock="Gilded Stashes appear",         note="Tier 11 Gilded Stashes begin carrying Hero and Myth Mistcrests -- the first rank that changes your upgrade-currency income rather than cosmetics." },
-    { rank=5,  unlock="Zah'ran & first mount",         note="Extra Curiosity boons, the Zah'ran gear vendor at the end of Tier 6+ Delves, and the Corroded Soul Crusher purchase." },
-    { rank=6,  unlock="Two Restored Coffer Keys",      note="Naleidea Rivergleam hands over two Restored Coffer Keys, plus decor and gravestone options." },
-    { rank=7,  unlock="Delve teleports",               note="The Delve-O-Bot 7001 Midnight Software Update Chip adds Midnight Delves to the bot's teleport destinations." },
-    { rank=8,  unlock="Champion Warbound gear",        note="Champion Warbound gear can appear in Tier 9+ Delves. The Ula'tek Ritual Stone decor unlocks." },
-    { rank=9,  unlock="Hero gear currency",            note="Tier 11 Bountiful Coffers can provide Hero gear or Untainted Mana-Crystals, which Zah'ran accepts for Hero-track items." },
-    { rank=10, unlock="Snake Eater",                   note="The Snake Eater title, and increased Coffer Key Shards from every source." },
+    { rank=1,  unlock=L["Curiosity boons & first decor"], note=L["Temporary character buffs from Mislaid Curiosities and Heavy Trunks, plus the first housing decor purchase."] },
+    { rank=2,  unlock=L["Corrosive Reticule"],            note=L["Unlocks the Corrosive Reticule purchase."] },
+    { rank=3,  unlock=L["Shrine of Abundance"],           note=L["Bountiful Delves gain a chance to contain a Shrine of Abundance. The Effigy of Dundun toy becomes purchasable."] },
+    { rank=4,  unlock=L["Gilded Stashes appear"],         note=L["Tier 11 Gilded Stashes begin carrying Hero and Myth Mistcrests -- the first rank that changes your upgrade-currency income rather than cosmetics."] },
+    { rank=5,  unlock=L["Zah'ran & first mount"],         note=L["Extra Curiosity boons, the Zah'ran gear vendor at the end of Tier 6+ Delves, and the Corroded Soul Crusher purchase."] },
+    { rank=6,  unlock=L["Two Restored Coffer Keys"],      note=L["Naleidea Rivergleam hands over two Restored Coffer Keys, plus decor and gravestone options."] },
+    { rank=7,  unlock=L["Delve teleports"],               note=L["The Delve-O-Bot 7001 Midnight Software Update Chip adds Midnight Delves to the bot's teleport destinations."] },
+    { rank=8,  unlock=L["Champion Warbound gear"],        note=L["Champion Warbound gear can appear in Tier 9+ Delves. The Ula'tek Ritual Stone decor unlocks."] },
+    { rank=9,  unlock=L["Hero gear currency"],            note=L["Tier 11 Bountiful Coffers can provide Hero gear or Untainted Mana-Crystals, which Zah'ran accepts for Hero-track items."] },
+    { rank=10, unlock=L["Snake Eater"],                   note=L["The Snake Eater title, and increased Coffer Key Shards from every source."] },
 }
 
 
@@ -252,6 +259,20 @@ DelveGuideData.nemesisDelves = {
     "Venomfall Deeps",   -- S2 (Azta'rec), The Coiled Isle
 }
 
+-- Nemesis entrances. Same shape as DelveGuideData.mapPins (x/y are 0.0-1.0,
+-- i.e. /way coords over 100) but kept separate, because mapPins feeds the
+-- Delves tab and Nemesis delves are not rotational. The Nemesis tab renders
+-- its /way lines and its waypoint clicks from here, so there is exactly one
+-- number per entrance to correct -- it previously carried its own copy and the
+-- two had already drifted (51.2 31.0 in the tab vs 51.2 30.3 here).
+-- VERIFY IN GAME: stand at the entrance and
+--   /dump C_Map.GetPlayerMapPosition(<mapID>, "player")
+-- then replace the value below. Both were read off the PTR client on 2026-09-06.
+DelveGuideData.nemesisEntrances = {
+    { name="Venomfall Deeps", zone="The Coiled Isle", mapID=2512, x=0.5123, y=0.3033 },  -- verified in game 2026-09-06 (/dg export #33)
+    { name="Torment's Rise",  zone="Voidstorm",       mapID=2405, x=0.6117, y=0.7182 },  -- verified in game 2026-09-06 (/dg export #34)
+}
+
 -- Nemesis access item, tracked on the Delves tab's Weekly Items row.
 -- Centralised for the same reason the trove IDs are: this ID changed between
 -- seasons and was hardcoded in DelveGuide_UI_Delves.lua, so the row silently
@@ -274,6 +295,117 @@ DelveGuideData.trove = {
     -- Season 1 (retired): item 265714, aura 1254631
 }
 
+-- Coffer Key economy. The two currency IDs and the 100/600 numbers used to be
+-- typed out separately in DelveGuide.lua, DelveGuide_Widget.lua,
+-- DelveGuide_Checklist.lua, DelveGuide_UI_Roster.lua and
+-- DelveGuide_UI_Delves.lua -- five files to edit whenever Blizzard reissues the
+-- currency or moves the cap.
+DelveGuideData.cofferKeys = {
+    SHARD_CURRENCY_ID    = 3310,  -- "Coffer Key Shard" (verified in game via /dg currencydebug)
+    RESTORED_CURRENCY_ID = 3028,  -- "Restored Coffer Key" (same source)
+    SHARDS_PER_KEY       = 100,   -- 100 shards restore one key
+    -- Weekly shard cap. Only a fallback: every read prefers the live
+    -- maxWeeklyQuantity off GetCurrencyInfo and drops to this when the currency
+    -- has not been discovered yet on this character.
+    SHARD_WEEKLY_CAP     = 600,
+}
+
+
+-- ── Labyrinths (Patch 12.1.5) ──────────────────────────────
+-- Not delves, and never treated as one. Inside a Labyrinth, scenario type 8,
+-- diffID 208 and diffName "Delves" are all IDENTICAL to a real delve, so every
+-- cheap test says "delve". instanceID is the only stable discriminator: 3043
+-- held across tiers 11, 1 and 8 on PTR build 69594. Outdoors the Labyrinth POI
+-- comes back from GetDelvesForMap like any delve and is keyed by its widget
+-- set; without that set listed here it rendered as a quarantined
+-- "[Missing Translation] Unknown Variant Text" row. See PTR_12.1.5_Findings.md.
+-- verifiedBuild is the PTR build the IDs were read from. Content there was
+-- still placeholder ("[PH]" scenario names), so re-check on the launch build.
+-- Vault credit is granted every three chambers cleared (3 / 6 / 9), at any
+-- tier -- see DelveGuide.LogLabyrinthRun. The Kindo'jan kill at Tier 8+ is a
+-- separate weekly reward (item 285875: one more vault credit and a Heroic Soul
+-- Fragment, once per week per character); it is a tip, not counted in tallies.
+DelveGuideData.labyrinths = {
+    { name = "The Labyrinth of Kindo'jan", instanceID = 3043, widgetSetID = 2316, verifiedBuild = 69594 },
+}
+-- Delve glove enhancements (12.1.5, "Ancient Hash'ey Battle Art"): permanent
+-- bonuses that only work inside delves (about two procs a minute), for gloves
+-- of item level 334 or below. Warband-bound items, not consumed; they are
+-- Labyrinth of Kindo'jan renown rewards (renown 3/5/7/9 on build 70077 --
+-- the levels moved once already, so they are not shown). Enchant IDs, names
+-- and effects from client data (PTR_12.1.5_Findings.md 7.4). Keyed by the
+-- enchant ID in the gloves' item link (item:itemID:ENCHANT:...), which is
+-- what the checklist reads. The checklist only ever shows the green
+-- "applied" line (Thunderz, 2026-09-29: no red reminder); the Loot tab
+-- lists them.
+DelveGuideData.delveGloveEnhancements = {
+    [8727] = { name = "Falco Strikes",     effect = L["Strikes a nearby enemy for Nature damage; each strike has a 20% chance to strike again."] },
+    [8728] = { name = "Ursine's Ironhide", effect = L["A damage-absorbing shield for 15s."] },
+    [8729] = { name = "Heat Wave",         effect = L["Flames for 20s, dealing Fire damage every 4s split among nearby enemies."] },
+    [8730] = { name = "Eye of the Lynx",   effect = L["Haste and Leech for 15s, for you and a random nearby ally."] },
+}
+DelveGuideData.DELVE_GLOVE_ENHANCEMENT_MAX_ILVL = 334
+
+-- Derived lookups; the table above is the single source of truth.
+DelveGuideData.labyrinthInstances  = {}   -- instanceID  -> name
+DelveGuideData.labyrinthWidgetSets = {}   -- widgetSetID -> name
+for _, lab in ipairs(DelveGuideData.labyrinths) do
+    DelveGuideData.labyrinthInstances[lab.instanceID]   = lab.name
+    DelveGuideData.labyrinthWidgetSets[lab.widgetSetID] = lab.name
+end
+
+-- ------------------------------------------------------------
+-- Labyrinth tab content (D4). Two kinds of fact live here:
+--
+--   * numbers we have SEEN: a vault credit every three chambers at any
+--     tier, nine chambers in a full run (achievement 63721), on build
+--     69594. These are what `tips` says.
+--   * rewards, keyed by the game IDs they come from (client data, build
+--     70077, PTR_12.1.5_Findings.md 7.1), so the tab can ask the game which
+--     ones this account already has: achievementID (titles, and the tier
+--     ladder), itemID (toys), mountID. Title IDs are NOT used: they
+--     renumbered between PTR builds, the achievements did not. Rows with no
+--     ID (the transmog, not found in the data) stay verified=false and
+--     render with an "unverified" tag.
+--
+-- Reward `name` is game data and stays unwrapped; `source` is prose and is
+-- wrapped, the same split the loot rows use.
+-- ------------------------------------------------------------
+DelveGuideData.labyrinthContent = {
+    verifiedBuild     = 70077,
+    chambersPerRun    = 9,
+    chambersPerCredit = 3,
+    -- "3 chambers on Tier N" for N = 1..11, in tier order; each one unlocks
+    -- the next tier. The IDs are not contiguous (Tiers 1-3 were added later).
+    tierAchievements  = { 63863, 63864, 63865, 63846, 63847, 63848, 63849, 63850, 63851, 63852, 63853 },
+    statChambers      = 63730,   -- statistic: Labyrinth chambers completed
+    statKills         = 63731,   -- statistic: Kindo'jan defeated
+    rewards = {
+        { name="Loa-Blessed Wayfarer",              group="Mount",        mountID=3144, achievementID=63715, source=L["Kindo'jan solo on Tier 11 (Let Me Solo Him)"] },
+        { name="Loa-Blessed",                       group="Titles",       achievementID=63716, source=L["defeat Kindo'jan"] },
+        { name="Maze Runner",                       group="Titles",       achievementID=63722, source=L["9 chambers in one run on Tier 11"] },
+        { name="Treasure Hound",                    group="Titles",       achievementID=63717, source=L["find every Sturdy Chest"] },
+        { name="Lockpickin'",                       group="Titles",       achievementID=63719, source=L["open the hidden locked door 20 times"] },
+        { name="Lone Raider",                       group="Titles",       achievementID=64118, source=L["Tier 11 solo: 9 chambers, no lives lost"] },
+        { name="Fabled Vanquisher of The First Hash'ey", group="Titles",  achievementID=64039, source=L["Kindo'jan solo on Tier 11 before the first weekly reset after 12.1.5 -- a one-week window"] },
+        { name="of the Labyrinth",                  group="Titles",       renown=9, source=L["Labyrinth renown 9"] },
+        { name="Loa-Blessed Victory",               group="Toys",         itemID=280820, source=L["Kindo'jan drop"] },
+        { name="Trail of Halazzi",                  group="Toys",         itemID=280821, source=L["Ancient Chest"] },
+        { name="Nalorakk's Strength Charm",         group="Toys",         itemID=280822, source=L["Ancient Chest"] },
+        { name="Feathers of Akil'zon",              group="Toys",         itemID=280823, source=L["Ancient Chest"] },
+        { name="Rite of Jan'alai's Flame",          group="Toys",         itemID=280825, source=L["Ancient Chest"] },
+        { name="Kinduru's Spiriting Quill",         group="Toys",         itemID=286643, source=L["quest in Eversong Woods"] },
+        { name="Troll-themed mini-set",             group="Transmog",     source=L["helm, shoulders and cape"],                verified=false },
+        { name="Amani back piece",                  group="Transmog",     source=L["separate from the mini-set"],              verified=false },
+        { name="Two Mythic-track armor pieces",     group="Weekly quest", source=L["your choice, from a six-step weekly chain"] },
+    },
+    tips = {
+        L["Vault credit lands every 3 chambers cleared, at any tier -- it is not tied to a boss kill."],
+        L["A run is up to 9 chambers, which is three vault credits."],
+        L["Kindo'jan on Tier 8 or higher also pays out once a week per character: one more vault credit and a Heroic Soul Fragment."],
+        L["Labyrinth renown unlocks Rank 5 curios (from Bountiful Coffers and Hidden Troves in Tier 8+ Labyrinths) and the delve glove enhancements listed on the Loot tab."],
+    },
+}
 
 -- ============================================================
 -- SECTION 2: DELVE MAP PINS
@@ -317,26 +449,43 @@ DelveGuideData.mapPins = {
     -- ── The Coiled Isle (2512) -- 12.1 Season 2 ───────────
     { name="Gnarldor Isle",       mapID=2512, x=0.6445, y=0.7771 },  -- verified in-game
     { name="The Ring of Glory",   mapID=2512, x=0.7126, y=0.5654 },  -- verified in-game
-    -- Venomfall Deeps (S2 Nemesis) entrance: The Serpent's Tail, /way #2512 51.2 30.3 --
-    -- intentionally not pinned here (Nemesis delves aren't rotational; location lives in the Nemesis tab)
+    -- Venomfall Deeps (S2 Nemesis) entrance: The Serpent's Tail -- intentionally
+    -- not pinned here (Nemesis delves aren't rotational). It lives in
+    -- DelveGuideData.nemesisEntrances, which the Nemesis tab reads.
 }
 
+
+-- Companion friendship/renown faction. Valeera Sanguinar = 2744, confirmed in
+-- the 12.1.5 faction sweep. The Companion tab used to find this by matching
+-- "Valeera"/"Sanguinar" against 501 factions three times over, which never
+-- matched on ruRU/zhCN/zhTW/koKR clients. It now asks C_DelvesUI first and
+-- falls back to this constant. Update at a season flip if the companion changes.
+DelveGuideData.companionFactionID = 2744
 
 -- ============================================================
 -- SECTION 3: CURIOS
 -- ============================================================
 -- Season 2 (12.1) curio set. Season 1's curios were retired at the season
 -- flip. Confirmed via wowhead / in-game (Aug 2026). ranking "?" until the
--- meta settles; id = wowhead spell ID (reference only -- curios match by name).
+-- meta settles. id / ids are the curio's spell IDs, one per rank, Rank 1 to
+-- Rank 5 (build 70077, PTR_12.1.5_Findings.md 7.4): the Companion tab
+-- matches a socketed curio by them, and by English name only as a last
+-- resort, so a missing rank means no match on a non-English client. 12.1.5
+-- adds a Rank 5 to every curio (from Tier 8+ Labyrinth coffers).
 DelveGuideData.curios = {
     -- ── Combat ──
-    { name="Corrosive Bilespear",        id=1248877, description="Chance in combat for your companion to impale the highest- and lowest-health nearby targets for tremendous Nature damage.", curiotype="Combat",  ranking="?" },
-    { name="Ouroboric Curse",            id=1248856, description="At <50% HP: Horrify nearby enemies 6s; you gain +20% primary & +50% leech/avoid/speed for 20s (2 min cd).",                                          curiotype="Combat",  ranking="?" },
-    { name="Essence Trap",               id=1288788, description="In combat your companion may place a trap. An enemy within 3 yds triggers it: slows 20% for 5s, then detonates for moderate Nature damage and stuns for 5s.", curiotype="Combat",  ranking="?" },
+    { name="Corrosive Bilespear",        id=1248877, ids={1248878, 1248877, 1248876, 1248875, 1315061}, description=L["Chance in combat for your companion to impale the highest- and lowest-health nearby targets for tremendous Nature damage."], curiotype="Combat",  ranking="?" },
+    { name="Ouroboric Curse",            id=1248856, ids={1248856, 1248858, 1248859, 1248860, 1315060}, description=L["At <50% HP: Horrify nearby enemies 6s; you gain +20% primary & +50% leech/avoid/speed for 20s (2 min cd)."],                                          curiotype="Combat",  ranking="?" },
+    { name="Essence Trap",               id=1288788, ids={1288788, 1288789, 1288790, 1288791, 1315062}, description=L["In combat your companion may place a trap. An enemy within 3 yds triggers it: slows 20% for 5s, then detonates for moderate Nature damage and stuns for 5s."], curiotype="Combat",  ranking="?" },
+    { name="Viperwind Idol",             id=1288794, ids={1288794, 1288796, 1288797, 1288798, 1314570}, description=L["Your spells can turn you into a venom vortex for 15s: nearby enemies take Nature damage every 0.5s, you take less damage (up to 50%), and your venom trail explodes afterwards. Rank 5 also pulls in enemies beyond 8 yds."], curiotype="Combat",  ranking="?" },
     -- ── Utility ──
-    { name="Soul-Cracking Dreamcatcher", id=1248899, description="When a party member interrupts or crowd-controls an Elite, that enemy takes +15% damage for 10s (stacks up to 1).",                                     curiotype="Utility", ranking="?" },
-    { name="Dundun's Favor",             id=1248894, description="In combat a Mislaid Spirit may appear; walking over a Mislaid Curiosity/Spirit fires 4 Volatile Sprites at random enemies. Curiosity contents auto-loot.", curiotype="Utility", ranking="?" },
-    { name="Venom Infusion",             id=1288782, description="On entering combat the party is Poisoned: 1% current HP/min as Nature, but +1% move & +1% haste per 5% HP missing (reversed for the first 6s).",       curiotype="Utility", ranking="?" },
+    { name="Soul-Cracking Dreamcatcher", id=1248899, ids={1248899, 1248898, 1248897, 1248896, 1315064}, description=L["When a party member interrupts or crowd-controls an Elite, that enemy takes +15% damage for 10s (stacks up to 1)."],                                     curiotype="Utility", ranking="?" },
+    { name="Dundun's Favor",             id=1248894, ids={1248895, 1248894, 1248893, 1248892, 1315063}, description=L["In combat a Mislaid Spirit may appear; walking over a Mislaid Curiosity/Spirit fires 4 Volatile Sprites at random enemies. Curiosity contents auto-loot."], curiotype="Utility", ranking="?" },
+    { name="Venom Infusion",             id=1288782, ids={1288782, 1288783, 1288785, 1288786, 1315065}, description=L["On entering combat the party is Poisoned: 1% current HP/min as Nature, but +1% move & +1% haste per 5% HP missing (reversed for the first 6s)."],       curiotype="Utility", ranking="?" },
+    -- Read off Valeera's trait node on the PTR (2026-09-07, /dg export #2/#3):
+    -- spell 1288805, entry 137816. Description from C_Spell.GetSpellDescription,
+    -- markup stripped.
+    { name="Dusty Loa Totem",            id=1288805, ids={1288801, 1288803, 1288804, 1288805, 1314978}, ranking="?", description=L["On entering combat, and every 60s, gain Might of the Loa (+20% max health, +12% Strength) or Grace of the Loa (+20% Speed, +12% Haste) for 30s."], curiotype="Utility" },
 }
 
 -- ============================================================
@@ -346,50 +495,146 @@ DelveGuideData.curios = {
 -- No source crowns a "best" one, so `use` is an effect-based hint, not a meta.
 -- ============================================================
 DelveGuideData.poisons = {
-    { name="Bloodcrypt Toxin",               id=1251120, base=true,  effect="Enemies hit deal -10% damage & -10% Haste (20s).",                                  use="Survivability -- solo, progression, high tiers." },
-    { name="Poison of the Forgotten Master", id=1249934, base=true,  effect="+5% damage, stacking every 3s up to 5 -- ALL stacks are lost when you take damage.", use="Best when you can avoid damage; weak while getting hit." },
-    { name="Soulthirst Venom",               id=1250826, base=true,  effect="+10% Leech / Avoidance / Speed.",                                                   use="Niche stat-stick." },
-    { name="Frostheart Venom",               base=false, effect="Enemies hit: -30% movement and -20% melee/ranged/cast speed (10s).",               use="Strong control/defense vs melee & caster packs." },
-    { name="Phantasmal Spore Toxin",         base=false, effect="Enemies hit are interrupted and feared for 1s.",                                    use="Interrupt-heavy or caster-dense pulls." },
-    { name="Bursting Toad Toxin",            base=false, effect="Enemies hit occasionally burst: Nature damage every 1s for 8s to enemies within 8 yds.", use="Extra AoE for trash-heavy runs." },
+    { name="Bloodcrypt Toxin",               id=1251120, base=true,  effect=L["Enemies hit deal -10% damage & -10% Haste (20s)."],                                  use=L["Survivability -- solo, progression, high tiers."] },
+    { name="Poison of the Forgotten Master", id=1249934, base=true,  effect=L["+5% damage, stacking every 3s up to 5 -- ALL stacks are lost when you take damage."], use=L["Best when you can avoid damage; weak while getting hit."] },
+    { name="Soulthirst Venom",               id=1250826, base=true,  effect=L["+10% Leech / Avoidance / Speed."],                                                   use=L["Niche stat-stick."] },
+    { name="Frostheart Venom",               base=false, effect=L["Enemies hit: -30% movement and -20% melee/ranged/cast speed (10s)."],               use=L["Strong control/defense vs melee & caster packs."] },
+    { name="Phantasmal Spore Toxin",         base=false, effect=L["Enemies hit are interrupted and feared for 1s."],                                    use=L["Interrupt-heavy or caster-dense pulls."] },
+    { name="Bursting Toad Toxin",            base=false, effect=L["Enemies hit occasionally burst: Nature damage every 1s for 8s to enemies within 8 yds."], use=L["Extra AoE for trash-heavy runs."] },
 }
 
 -- ============================================================
 -- SECTION 4: NOTABLE LOOT
+-- ------------------------------------------------------------
+-- Field convention, added in the 2026-09-06 Season 2 audit so the NEXT audit
+-- is a diff rather than a re-read:
+--   season   = the season the item was introduced in (1 = 12.0, 2 = 12.1).
+--              NOT "retired in": the Season 1 trinkets and weapons below still
+--              drop from the delves that carried over into Season 2.
+--   source   = where it comes from, in as few words as are actually known.
+--   verified = false marks a row taken from a web source and never seen on a
+--              live client. Absent means the row predates this convention.
+--
+-- Audit note (2026-09-06): no public source lists a Season 2 delve-exclusive
+-- TRINKET or WEAPON -- Season 2 delve gear appears to be the generic seasonal
+-- track, not named pieces like Season 1's. The named Season 2 delve rewards
+-- are all cosmetic, and are listed below with slot="Cosmetic". Nothing renders
+-- them yet: DelveGuide_UI_Loot.lua only draws the "Trinket" and "Weapon"
+-- groups, so surfacing them needs a Cosmetic section added there.
+-- Cosmetic item IDs from https://conquestcapped.com/guides/wow/midnight-delves-rewards/
 -- ============================================================
 DelveGuideData.loot = {
-    { name="Withered Saptor's Paw",        id=251782, slot="Trinket", notes="Crits grant Agility / main stat" },
-    { name="Desecrated Chalice",           id=251790, slot="Trinket", notes="Tank: on-damage versatility + damage" },
-    { name="Ever-Collapsing Void Fissure", id=251786, slot="Trinket", notes="On-use ramping haste" },
-    { name="Glorious Crusader's Keepsake", id=251792, slot="Trinket", notes="RNG incarnate idol" },
-    { name="Holy Retributor's Order",      id=251791, slot="Trinket", notes="On-hit damage + heal" },
-    { name="Lost Idol of the Hash'ey",     id=251783, slot="Trinket", notes="On-hit summons a companion" },
-    { name="Sealed Chaos Urn",             id=251787, slot="Trinket", notes="On-use all-stat buff" },
-    { name="Sylvan Wakrapuku",             id=251784, slot="Trinket", notes="On-hit physical proc" },
-    { name="Void-Reaper's Libram",         id=251785, slot="Trinket", notes="Damage proc + crit buff" },
-    { name="Ultradon Cuirass",             id=264694, slot="Trinket", notes="Tank on-use absorb" },
-    { name="Gift of Light",                id=251788, slot="Trinket", notes="Healer: on-hit ally stat buff" },
-    { name="Cosmic Bell",                  id=264701, slot="Trinket", notes="Healer on-use" },
-    { name="Consecrated Chalice",          id=251789, slot="Trinket", notes="Healer on-use absorb" },
-    { name="Lightgrasp Worldroot",         id=251935, slot="Weapon",  notes="Staff with a delve-only banish ability" },
-    { name="Radiant Foil",                 id=251885, slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
-    { name="Abyss Sabre",                  id=251884, slot="Weapon",  notes="2-set 1h sword with on-hit proc" },
+    -- ── Season 1 (12.0) ───────────────────────────────────
+    { name="Withered Saptor's Paw",        id=251782, slot="Trinket", season=1, source=L["delve"], notes=L["Crits grant Agility / main stat"] },
+    { name="Desecrated Chalice",           id=251790, slot="Trinket", season=1, source=L["delve"], notes=L["Tank: on-damage versatility + damage"] },
+    { name="Ever-Collapsing Void Fissure", id=251786, slot="Trinket", season=1, source=L["delve"], notes=L["On-use ramping haste"] },
+    { name="Glorious Crusader's Keepsake", id=251792, slot="Trinket", season=1, source=L["delve"], notes=L["RNG incarnate idol"] },
+    { name="Holy Retributor's Order",      id=251791, slot="Trinket", season=1, source=L["delve"], notes=L["On-hit damage + heal"] },
+    { name="Lost Idol of the Hash'ey",     id=251783, slot="Trinket", season=1, source=L["delve"], notes=L["On-hit summons a companion"] },
+    { name="Sealed Chaos Urn",             id=251787, slot="Trinket", season=1, source=L["delve"], notes=L["On-use all-stat buff"] },
+    { name="Sylvan Wakrapuku",             id=251784, slot="Trinket", season=1, source=L["delve"], notes=L["On-hit physical proc"] },
+    { name="Void-Reaper's Libram",         id=251785, slot="Trinket", season=1, source=L["delve"], notes=L["Damage proc + crit buff"] },
+    { name="Ultradon Cuirass",             id=264694, slot="Trinket", season=1, source=L["delve"], notes=L["Tank on-use absorb"] },
+    { name="Gift of Light",                id=251788, slot="Trinket", season=1, source=L["delve"], notes=L["Healer: on-hit ally stat buff"] },
+    { name="Cosmic Bell",                  id=264701, slot="Trinket", season=1, source=L["delve"], notes=L["Healer on-use"] },
+    { name="Consecrated Chalice",          id=251789, slot="Trinket", season=1, source=L["delve"], notes=L["Healer on-use absorb"] },
+    { name="Lightgrasp Worldroot",         id=251935, slot="Weapon",  season=1, source=L["delve"], notes=L["Staff with a delve-only banish ability"] },
+    { name="Radiant Foil",                 id=251885, slot="Weapon",  season=1, source=L["delve"], notes=L["2-set 1h sword with on-hit proc"] },
+    { name="Abyss Sabre",                  id=251884, slot="Weapon",  season=1, source=L["delve"], notes=L["2-set 1h sword with on-hit proc"] },
+
+    -- ── Season 2 (12.1, The Coiled Isle) ──────────────────
+    -- Every row here is verified=false: sourced from the web, never seen in game.
+    { name="Apophic Soul Crusher",         id=275657, slot="Cosmetic", season=2, verified=false, source=L["Azta'rec, solo Tier ??"],           notes=L["Mount"] },
+    { name="Corroded Soul Crusher",        id=276162, slot="Cosmetic", season=2, verified=true,  source=L["Telemancer Astrandis, 10 Voidlight Marl"], notes=L["Mount (guides say Delver's Journey rank 5 unlocks it)"] },
+    { name="Delver's Arcane Golem",        id=262496, slot="Cosmetic", season=2, verified=false, source=L["Sturdy Chest, Gnarldor Isle"],      notes=L["Mount"] },
+    { name="Giganto Manis",                id=257199, slot="Cosmetic", season=2, verified=false, source=L["Glory of the Midnight Delver"],     notes=L["Mount -- meta achievement"] },
+    { name="Apophic Patagia",              id=276163, slot="Cosmetic", season=2, verified=false, source=L["Azta'rec, any difficulty"],         notes=L["Back"] },
+    { name="Ophidian Patagia",             id=276165, slot="Cosmetic", season=2, verified=true,  source=L["Naleidea Rivergleam, 2500 Undercoin"], notes=L["Back"] },
+    { name="Corroded Patagia",             id=276164, slot="Cosmetic", season=2, verified=false, source=L["Season 2 delves (exact source unverified)"], notes=L["Back"] },
+    { name="Corrosive Victory",            id=275988, slot="Cosmetic", season=2, verified=false, source=L["Season 2 Nemesis intro questline"], notes=L["Toy"] },
+    { name="Effigy of Dundun",             id=276189, slot="Cosmetic", season=2, verified=true,  source=L["Telemancer Astrandis, 10 Voidlight Marl"], notes=L["Toy"] },
+    -- Telemancer Astrandis' stock, /dg export #37 on 2026-09-06 (22 items, all
+    -- priced in Voidlight Marl). Listed: the two above plus the two delve
+    -- items below. Not listed: housing decor (Amani awning, brazier post,
+    -- totem, ritual stone, memorial...), the Reliquary Expedition bag/notes,
+    -- the Cosmetic Surprise Bag, and seven 500-Marl housing chests (Twilight
+    -- Tabernacle, Fungal Chest, Amani Strongbox, Ancient Kaldorei Coffer,
+    -- Root-Wrapped Reliquary, Corewarden's Spoils, Delver's Bountiful Coffer)
+    -- that export #37 had caught uncached and #38 named.
+    { name="Corrosive Reticule",           id=276536, slot="Cosmetic", season=2, verified=true,  source=L["Telemancer Astrandis, 10 Voidlight Marl"], notes="" },
+    { name="Delve-O-Bot 7001: Midnight Software Update Chip", id=275936, slot="Cosmetic", season=2, verified=true, source=L["Telemancer Astrandis, 10 Voidlight Marl"], notes="" },
+    -- Naleidea Rivergleam's stock, read off the PTR with /dg export #36 on
+    -- 2026-09-06 (Silvermoon City, 40 items, all priced in Undercoin). Listed:
+    -- the mounts, pets, toys and transmog. Not listed: the 15 housing-decor
+    -- items (Amani grill, urns, tapestry, canoe...), the consumables (Starter
+    -- Kit, Coffer Key Glue, Restored Coffer Keys, Undercoin/Marl pouches) and
+    -- the flute, which is DelveGuideData.nemesisItem. Item types not stated
+    -- where the name alone does not make them certain; hover shows them.
+    { name="Kreepah'zoyd",                 id=262393, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 10000 Undercoin"], notes="" },
+    { name="Corewarden's Hearthstone",     id=265100, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 10000 Undercoin"], notes=L["Hearthstone toy"] },
+    { name="Midnight Delver's Flare Gun",  id=264414, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes="" },
+    { name="Ensemble: Sprawling Garb",     id=263520, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog set"] },
+    { name="Ensemble: Osseoclad's Wear",   id=263574, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog set"] },
+    { name="Ensemble: Elder Moss Outfit",  id=263575, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog set"] },
+    { name="Ensemble: Rampant Thorn Armor",id=263576, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog set"] },
+    { name="Arsenal: Rootlands Weaponry",  id=263577, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 5000 Undercoin"],  notes=L["Transmog weapon set"] },
+    { name="Spirit Effigy",                id=284056, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes="" },
+    { name="Hexbinder's Spaulders",        id=284055, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes=L["Transmog"] },
+    { name="Twilight Magus's Cowl",        id=264860, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes=L["Transmog"] },
+    { name="Gilded Twilight Spaulder",     id=264853, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes=L["Transmog"] },
+    { name="Dewy Vinepouch",               id=264849, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2500 Undercoin"],  notes=L["Transmog"] },
+    { name="Well Urned Rest",              id=279289, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2000 Undercoin"],  notes="" },
+    { name="Sin'dorei Gravestone",         id=262951, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2000 Undercoin"],  notes="" },
+    { name="Vilebranch Lifeseer",          id=264856, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 2000 Undercoin"],  notes=L["Transmog"] },
+    { name="L00T RAID-R Mini",             id=244193, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 1000 Undercoin"],  notes="" },
+    { name="Delve-O-Bot 7001",             id=230850, slot="Cosmetic", season=2, verified=true, source=L["Naleidea Rivergleam, 500 Undercoin"],   notes="" },
 }
 
 
 -- ============================================================
 -- SECTION 5: FUTURE / PATCH NOTES
 -- ============================================================
+-- The two Season 2 delve currencies, described once. Every tab that mentions
+-- them reads these (Loot, Voidforge, Future) so the wording cannot drift
+-- (review 1.8). What they are, from Thunderz's live play (2026-09-06), which
+-- outranks the tooltip's flavour text ("transmutable into powerful
+-- equipment ... once per difficulty level"):
+--   * Nebulous Voidcore = a BONUS-ROLL token: after a boss or a completed
+--     run you spend one to roll for additional loot. It does NOT drop from
+--     delves at any tier -- the Great Vault awards them, and from the week of
+--     Oct 6 Orin Straylight trades one more a week for gold, Voidlight Marl or
+--     Veteran crests (Blizzard, 2026-09-29). A roll can be used after a Bountiful Delve
+--     of ANY tier (Thunderz rolled after a Tier 1, PTR 2026-09-06), so
+--     MIN_VOIDCORE_TIER in DelveGuide_Voidforge.lua is only about where a roll
+--     is WORTH spending -- the end-of-run loot pool is max from Tier 8.
+--   * Ascendant Venomstone = the UPGRADE material, and it upgrades weapons and
+--     trinkets and necks ONLY (Blizzard's 12.1.5 dev notes: weapon/trinket/necklace)
+--     -- hence the Voidforge tab's slot list is those five slots. The 12.1.5
+--     content update notes add: only a FULLY UPGRADED Season 2 Hero or Myth
+--     piece (or a max-quality Tidal Crafted one) takes them. Blizzard lists the
+--     sources; the 100% drop rate, the once-per-item rule, the item level 344
+--     exclusion and the resulting levels (Hero 328, Myth 340; crafted 325 and
+--     338) are from Wowhead's guide (2026-10-09). No source states a quantity,
+--     so the note gives none.
+DelveGuideData.currencyNotes = {
+    voidcore   = L["Bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve (any tier -- Tier 8+ has the max loot pool) or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. They don't drop from delves: the Great Vault awards them, and Orin Straylight trades one more a week (gold, Voidlight Marl or Veteran Crests)."],
+    venomstone = L["Upgrade material: 10 take one fully upgraded Hero or Myth weapon, trinket or necklace a step further (Hero to 328, Myth to 340), once per item. Unlock them at Orin Straylight, by the Catalyst in Silvermoon City: 'Ancient Depths, Ancient Venom', then 'Ascending with Venomstones' from the Oct 20 reset. After that they always drop from Tier 11 Bountiful Delves, Heroic and Mythic raid bosses, Mythic+ 10 and higher, and the Champion chest from Nightmare Prey hunts."],
+}
+
 DelveGuideData.future = {
     -- ── Later in Season 2 (12.1) ────────────────────────────
-    { category="Later in Season 2", note="Ascendant Venomstones arrive later this season -- the gear-upgrade material. 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful Delve is a guaranteed source." },
-    -- ── Labyrinths (Patch 12.1.5 -- ~Autumn 2026) ───────────
-    { category="Labyrinths (Patch 12.1.5)", note="Confirmed for 12.1.5 (~autumn 2026): a larger, mega-dungeon-inspired Delve variant -- pitched as the difficulty ceiling for players who skip raiding." },
-    { category="Labyrinths (Patch 12.1.5)", note="Multi-boss, playable solo or in a small group, with progress saved between sessions (not a simple repeatable delve)." },
-    { category="Labyrinths (Patch 12.1.5)", note="Different reward structure than Delves: Hero-track gear at mid-to-high difficulty, plus a separate currency track for housing & seasonal vendors." },
-    { category="Labyrinths (Patch 12.1.5)", note="Exact difficulty tiers, lockouts, and Great Vault interaction are still on the PTR -- details may change." },
-    -- ── Also in Patch 12.1.5 ────────────────────────────────
-    { category="Also in 12.1.5", note="A new raid arrives alongside Labyrinths." },
+    { category=L["Later in Season 2"], note=string.format(L["Ascendant Venomstone: %s"], DelveGuideData.currencyNotes.venomstone) },
+    -- ── Eclipse (Patch 12.2) and Season 3 ───────────────────
+    -- BlizzCon 2026, checked 2026-10-01 against Blizzard's "What's Next" panel
+    -- recap and roadmap graphic. Only what Blizzard itself said: its text
+    -- gives no level number for Valeera (press reports 100) and no delve tier
+    -- change, and Agony Mode is a Prey difficulty, not a delve one.
+    { category=L["Eclipse (Patch 12.2) and Season 3"], note=L["Announced at BlizzCon 2026 for early 2027. Season 3 starts shortly after the patch; Blizzard's timing and details can still change."] },
+    { category=L["Eclipse (Patch 12.2) and Season 3"], note=L["A new Nemesis, Astalor Bloodsworn, arrives with Season 3 and brings optional challenges."] },
+    { category=L["Eclipse (Patch 12.2) and Season 3"], note=L["More variations for the existing delves. Blizzard's roadmap also lists new delves, with no details yet."] },
+    { category=L["Eclipse (Patch 12.2) and Season 3"], note=L["Valeera's level cap rises again, and there are new curios to find."] },
+    -- The pre-launch Labyrinth notes that sat here (written before the PTR,
+    -- some since contradicted) went with 2.0.0: the Labyrinth tab covers it.
 }
 
 -- ============================================================
@@ -491,18 +736,46 @@ DelveGuideData.specCurioRecs = {
 -- ============================================================
 -- GRADE COLORS
 -- ============================================================
+-- The one grade palette (Delves tab, Curios, HUD, widget, Settings). The
+-- tier-list convention players already know, warm at the top and cool at the
+-- bottom: S is the only salmon, so it never reads as D or F, and the warm top
+-- grades stay visible over the HUD's green highlight (Thunderz, 2026-09-07 --
+-- replaced two disagreeing palettes whose S was orange next to an orange D).
 DelveGuideData.gradeColors = {
-    S = "|cFFFF8000",
-    A = "|cFF00FF00",
-    B = "|cFF00BFFF",
-    C = "|cFFFFFF00",
-    D = "|cFFFF6600",
-    F = "|cFFFF0000",
+    S = "|cFFFF7F7F",
+    A = "|cFFFFBF7F",
+    B = "|cFFFFDF7F",
+    C = "|cFFFFFF7F",
+    D = "|cFFBFFF7F",
+    F = "|cFF7FFF7F",
 }
 -- ============================================================
 -- SECTION 8: CHANGELOG
 -- ============================================================
 DelveGuideData.changelog = {
+    {
+        version = "2.0.0",
+        date    = "2026-09-TBD",
+        entries = {
+            "Built for patch 12.1.5. It still runs on 12.1.0.",
+            "New Labyrinth tab: this week's runs, your renown, how far up the tier ladder you are, the chambers you have seen with your own times, the rewards with the ones you already have marked, and a few tips. /dg lab opens it.",
+            "Community rankings are the Oct 1 pass: 115 submissions across 42 variants.",
+            "Russian clients: the first 12 delve variant names are recognised, from a player's /dg submit report.",
+            "Loot tab: the four delve glove enhancements, what they do and where they come from. The checklist shows a green line when one is on your gloves.",
+            "Curios: Viperwind Idol added, and Rank 5 curios (new in 12.1.5) are recognised in any language.",
+            "Labyrinths: DelveGuide now recognises the Labyrinth of Kindo'jan. It is not a delve, so it no longer starts a delve timer or leaves half-empty rows in your history. It has its own in-run HUD -- chamber, tier, lives, objective and chambers cleared -- and its runs are logged and counted toward the weekly vault, one vault credit for every 3 chambers cleared, at any tier. When you leave, a summary says what the run came to.",
+            "This is Labyrinth support rather than a Labyrinth guide: there are no route or chamber tips yet.",
+            "The pre-entry checklist finally opens by itself, with the delve entrance dialog. It never fired automatically before: it was watching your target, and a delve entrance is not something you can target. You can drag it, and it remembers where you put it.",
+            "A reload in the middle of a run no longer loses the run. The timer picks up where it was and the variant is kept, so the run still counts toward the rankings.",
+            "The Victory screen now tells you how the run went against your own best for that delve and variant, and against the community median. The same line is printed to chat.",
+            "New: keybindings for the window, HUD and widget; an addon compartment entry; a countdown to the daily variant rotation; a native map waypoint when you click a delve; a Cosmetics group on the Loot tab; and an About block in Settings.",
+            "Nebulous Voidcores are bonus-roll tokens you spend after a boss or a completed run for extra loot -- they do not drop from delves at all. The Great Vault awards them, and Orin Straylight trades one more a week. Ascendant Venomstones upgrade weapons, trinkets and necks only, so the Voidforge priority list is those five slots; their drops start the week of Oct 20.",
+            "Fixed: runs finished near the weekly reset could land in the previous week and go missing from your counts; the Loot tab errored on every render on 12.1.5; tier and lives are read from the delve's own header now, so they work in any language and inside a Labyrinth; the Companion tab reads Valeera's live role and curios from game data instead of the panel text.",
+            "One grade palette everywhere now, in the tier-list convention: S salmon down to F green. The Debug tab is hidden unless you tick it on in Settings; the debug commands still run.",
+            "Every string in the addon can now be translated. Copy Locales/TEMPLATE.lua, translate it, and open a pull request -- there are no translations yet, so English is unchanged.",
+            "Under the hood: tabs reuse their frames instead of leaking a new set on every render, so the window no longer costs you frames-per-second over a session, and a broken tab can no longer take the whole window down.",
+        }
+    },
     {
         version = "1.11.2",
         date    = "2026-10-01",
@@ -900,7 +1173,7 @@ DelveGuideData.changelog = {
     },
     {
         version = "1.5.1",
-        date    = "2026-03-24",
+        date    = "2026-03-23",
         entries = {
             "Hotfix: Resolved a Lua error that triggered when hovering over protected UI elements with map tooltips enabled."
         }
@@ -1103,6 +1376,27 @@ DelveGuideData.changelog = {
         },
     },
     {
+        version = "1.0.4",
+        date    = "2026-03-14",
+        entries = {
+            "Fixed a crash when dragging the minimap button",
+        },
+    },
+    {
+        version = "1.0.2",
+        date    = "2026-03-14",
+        entries = {
+            "Fixed the minimap button drifting to the wrong spot while you dragged it",
+        },
+    },
+    {
+        version = "1.0.1",
+        date    = "2026-03-13",
+        entries = {
+            "The minimap button now moves with a left-click drag",
+        },
+    },
+    {
         version = "1.0.0",
         date    = "2026-03-01",
         entries = {
@@ -1134,7 +1428,10 @@ DelveGuideData.widgetSetDelves = {
     [2044] = "Gnarldor Isle",       -- 12.1, The Coiled Isle
     [2047] = "The Ring of Glory",   -- 12.1, The Coiled Isle
     -- Note: Torment's Rise (set=0) is the Nullaeus Nemesis delve, not a rotational delve.
-    -- Venomfall Deeps (S2 Nemesis) has no world-map delve POI -- detect by instanceID 3079.
+    -- Venomfall Deeps (S2 Nemesis) is likewise widget set 0 -- stated outright rather
+    -- than left implied by its absence here, because set 0 + no widget text is the
+    -- test the scanner uses to recognise a Nemesis delve on non-English clients.
+    -- It also has no world-map delve POI -- detect by instanceID 3079.
 }
 
 
@@ -1216,6 +1513,15 @@ DelveGuideData.localeVariants = {
     ["Gelöste Loa"]                  = "Loosed Loa",
 
     -- Italiano (itIT)
+    -- Five below came in through the rankings form on 2026-09-07 (players'
+    -- own clients report the variant text); each maps to the only English
+    -- variant of that delve it can be. "Blitz del Basilisco" follows the
+    -- deDE "Basiliskenblitz" mapping.
+    ["Il grande giorno"]         = "Game Day",                  -- The Ring of Glory
+    ["Parlare la loro lingua"]   = "Speaking Their Language",   -- Gnarldor Isle
+    ["Crescita esplosuova"]      = "Eggsplosive Growth",        -- The Darkway
+    ["Schiacciamento Caustico"]  = "Caustic Crush",             -- Parhelion Plaza
+    ["Blitz del Basilisco"]      = "Basalisk Blitz",            -- Shadowguard Point
     ["L'Assedio dell'Accademia"] = "Academy Under Siege",       -- Collegiate Calamity
     ["Bagliore Invasivo"]        = "Invasive Glow",             -- Collegiate Calamity
     ["Scorte Tenebrose"]         = "Shadowy Supplies",          -- The Shadow Enclave
@@ -1358,4 +1664,20 @@ DelveGuideData.localeVariants = {
     ["堅守陣線"] = "Holding the Line",           -- Parhelion Plaza
     ["秘法兵團行軍"] = "March of the Arcane Brigade", -- Parhelion Plaza
     ["轟炸任務"] = "Bombing Run",                -- Parhelion Plaza
+
+    -- Русский (ruRU) -- first Russian coverage: one variant of each delve, from the
+    -- MISSING section of a /dg submit report (2026-10-01 form export). Each is a
+    -- direct translation of a variant of the delve it was reported on.
+    ["В глубины за харанирами"]    = "Descent of the Haranir",      -- The Gulf of Memory
+    ["Ключевой матч"]              = "Game Day",                    -- The Ring of Glory
+    ["Факультет страха"]           = "Faculty of Fear",             -- Collegiate Calamity
+    ["Василиск-блиц"]              = "Basalisk Blitz",              -- Shadowguard Point
+    ["Понятным им языком"]         = "Speaking Their Language",     -- Gnarldor Isle
+    ["Прерванный ритуал"]          = "Ritual Interrupted",          -- Atal'Aman
+    ["Освобожденные лоа"]          = "Loosed Loa",                  -- Twilight Crypts
+    ["Гнусная Гнилоножка"]         = "Dastardly Rotstalk",          -- The Grudge Pit
+    ["Марш чародейской дружины"]   = "March of the Arcane Brigade", -- Parhelion Plaza
+    ["Проникай, совершенствуй"]    = "Infiltrate and Ameliorate",   -- The Shadow Enclave
+    ["Сердечник проблемы"]         = "Core of the Problem",         -- Sunkiller Sanctum
+    ["Техник силовых линий"]       = "Leyline Technician",          -- The Darkway
 }

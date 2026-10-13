@@ -1,6 +1,8 @@
 -- ============================================================
 -- DelveGuide_Checklist.lua
 -- ============================================================
+local L = DelveGuide.L
+
 local checklistFrame
 
 local function RunChecklistScan()
@@ -23,35 +25,36 @@ local function RunChecklistScan()
         local NI = (DelveGuideData and DelveGuideData.nemesisItem) or {}
         local flutes = (NI.ITEM_ID and C_Item.GetItemCount(NI.ITEM_ID, true)) or 0
         if flutes > 0 then
-            local label = NI.NAME or "Nemesis flute"
+            local label = NI.NAME or L["Nemesis flute"]
             local troveState = DelveGuide.GetTroveStatus and DelveGuide.GetTroveStatus() or "none"
             local bountyPending = (troveState ~= "weeklyDone")
             table.insert(results, {
-                label = string.format("%s  |cFF00FF44(%d in bags)|r", label, flutes),
+                label = label .. "  |cFF00FF44" .. string.format(L["(%d in bags)"], flutes) .. "|r",
                 ok    = true,
                 tip   = bountyPending
-                    and "Use it at the Abandoned Restoration Stone to summon the Nemesis. Guarantees this week's Trovehunter's Bounty map, which you have not claimed yet. 1 hour cooldown."
-                    or  "Use it at the Abandoned Restoration Stone to summon the Nemesis. You already have this week's Bounty, so no map from this one. 1 hour cooldown.",
+                    and L["Use it at the Abandoned Restoration Stone to summon the Nemesis. Guarantees this week's Trovehunter's Bounty map, which you have not claimed yet. 1 hour cooldown."]
+                    or  L["Use it at the Abandoned Restoration Stone to summon the Nemesis. You already have this week's Bounty, so no map from this one. 1 hour cooldown."],
             })
         end
     end
 
-    local keyInfo = C_CurrencyInfo.GetCurrencyInfo(3310)
+    local CK = DelveGuideData.cofferKeys
+    local keyInfo = C_CurrencyInfo.GetCurrencyInfo(CK.SHARD_CURRENCY_ID)
     local shards = keyInfo and keyInfo.quantity or 0
-    local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(3028)
+    local restoredKeyInfo = C_CurrencyInfo.GetCurrencyInfo(CK.RESTORED_CURRENCY_ID)
     local restoredKeys = restoredKeyInfo and restoredKeyInfo.quantity or 0
-    local hasKey = shards >= 100 or restoredKeys > 0
+    local hasKey = shards >= CK.SHARDS_PER_KEY or restoredKeys > 0
     local keyLabel
     if restoredKeys > 0 then
-        keyLabel = string.format("Coffer Key  |cFF00FF44(%d restored key%s + %d/600 shards)|r",
-            restoredKeys, restoredKeys > 1 and "s" or "", shards)
+        keyLabel = L["Coffer Key"] .. "  |cFF00FF44" .. string.format(L["(%d restored key%s + %d/%d shards)"],
+            restoredKeys, restoredKeys > 1 and "s" or "", shards, CK.SHARD_WEEKLY_CAP) .. "|r"
     else
-        keyLabel = string.format("Coffer Key  |cFF888888(%d/600 shards)|r", shards)
+        keyLabel = L["Coffer Key"] .. "  |cFF888888" .. string.format(L["(%d/%d shards)"], shards, CK.SHARD_WEEKLY_CAP) .. "|r"
     end
     table.insert(results, {
         label = keyLabel,
         ok    = hasKey,
-        tip   = not hasKey and "You need 100 shards (1 key) or a Restored Coffer Key to open a Bountiful Coffer." or nil,
+        tip   = not hasKey and string.format(L["You need %d shards (1 key) or a Restored Coffer Key to open a Bountiful Coffer."], CK.SHARDS_PER_KEY) or nil,
     })
 
     -- Trovehunter's Bounty -- shared state helper (IDs in DelveGuideData.trove)
@@ -60,46 +63,64 @@ local function RunChecklistScan()
     if DelveGuide.GetTroveStatus then troveState, troveCount = DelveGuide.GetTroveStatus() end
 
     if troveState == "active" then
-        table.insert(results, { label="Trovehunter's Bounty  |cFF00FF44(Active)|r", ok=true })
+        table.insert(results, { label="Trovehunter's Bounty  |cFF00FF44" .. L["(Active)"] .. "|r", ok=true })
     elseif troveState == "inBags" then
         table.insert(results, {
-            label = string.format("Trovehunter's Bounty  |cFFFFD700(%d in bags - not active)|r", troveCount),
+            label = "Trovehunter's Bounty  |cFFFFD700" .. string.format(L["(%d in bags - not active)"], troveCount) .. "|r",
             ok    = false,
-            tip   = "Right-click the item to activate it before entering.",
+            tip   = L["Right-click the item to activate it before entering."],
         })
     elseif troveState == "weeklyDone" then
         table.insert(results, {
-            label = "Trovehunter's Bounty  |cFF44FF44(Used this week)|r",
+            label = "Trovehunter's Bounty  |cFF44FF44" .. L["(Used this week)"] .. "|r",
             ok    = true,
-            tip   = "You've already claimed and spent this week's bounty. It resets with the weekly.",
+            tip   = L["You've already claimed and spent this week's bounty. It resets with the weekly."],
         })
     else
         table.insert(results, {
-            label = "Trovehunter's Bounty  |cFFFF4444(None)|r",
+            label = "Trovehunter's Bounty  |cFFFF4444" .. L["(None)"] .. "|r",
             ok    = false,
-            tip   = "Complete the weekly 'Purging the Vaults' on the Coiled Isle to earn one.",
+            tip   = L["Complete the weekly 'Purging the Vaults' on the Coiled Isle to earn one, or use a flute to summon the Nemesis and loot one from it."],
         })
     end
 
-    local valeeraOk, valeeraLabel = false, "|cFFFF4444Not detected|r"
+    local valeeraOk, valeeraLabel = false, "|cFFFF4444" .. L["Not detected"] .. "|r"
     pcall(function()
         if C_DelvesUI and C_DelvesUI.GetCompanionInfoForActivePlayer then
             local companionID = C_DelvesUI.GetCompanionInfoForActivePlayer()
             if companionID and companionID > 0 then
-                local roleNames = { [0]="DPS", [1]="Healer", [2]="Tank" }
+                local roleNames = { [0]=L["DPS"], [1]=L["Healer"], [2]=L["Tank"] }
                 local role = DelvesCompanionConfigurationFrame
                     and DelvesCompanionConfigurationFrame.selectedRole
-                local roleStr = role and roleNames[role] or "check role"
+                local roleStr = role and roleNames[role] or L["check role"]
                 valeeraOk    = true
-                valeeraLabel = "|cFF00FF44Present|r  |cFF888888(" .. roleStr .. ")|r"
+                valeeraLabel = "|cFF00FF44" .. L["Present"] .. "|r  |cFF888888(" .. roleStr .. ")|r"
             end
         end
     end)
     table.insert(results, {
         label = "Valeera  " .. valeeraLabel,
         ok    = valeeraOk,
-        tip   = not valeeraOk and "Open the companion panel to configure Valeera." or nil,
+        tip   = not valeeraOk and L["Open the companion panel to configure Valeera."] or nil,
     })
+
+    -- Delve glove enhancement (12.1.5). Quiet by design (Thunderz,
+    -- 2026-09-29): one green line when an enhancement is applied, nothing
+    -- otherwise -- no red "missing" or "gloves too high" row. The Loot tab
+    -- says they exist and where they come from. The enchant ID is field 2 of
+    -- the item link.
+    pcall(function()
+        local link = GetInventoryItemLink("player", INVSLOT_HAND or 10)
+        if not link then return end
+        local enchantID = tonumber(link:match("item:%d+:(%d+):")) or 0
+        local g = DelveGuideData and DelveGuideData.delveGloveEnhancements and DelveGuideData.delveGloveEnhancements[enchantID]
+        if g then
+            table.insert(results, {
+                label = L["Delve glove enhancement"] .. "  |cFF00FF44(" .. g.name .. ")|r",
+                ok    = true,
+            })
+        end
+    end)
 
     -- (The Season 1 "Building the Voidforge" weekly row was retired in 12.1 --
     -- Season 2 has no weekly shard quest; bonus rolls / upgrades live in the
@@ -117,8 +138,21 @@ DelveGuide.ShowChecklist = function(force)
     if not checklistFrame then
         local f = CreateFrame("Frame", "DelveGuideChecklist", UIParent, "BackdropTemplate")
         f:SetSize(340, 160)
-        f:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
         f:SetFrameStrata("DIALOG")
+        -- ESC closes it like every other window (review 1.15). Needs the
+        -- frame's GLOBAL name, which is why it has one.
+        tinsert(UISpecialFrames, "DelveGuideChecklist")
+
+        -- Draggable. A dragged position is remembered and then wins over the
+        -- default anchor (the positioning block further down, run on each show).
+        f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
+        local function StopDrag()
+            f:StopMovingOrSizing()
+            DelveGuideDB.checklistX = f:GetLeft()
+            DelveGuideDB.checklistY = f:GetTop() - UIParent:GetHeight()
+        end
+        f:SetScript("OnDragStart", f.StartMoving)
+        f:SetScript("OnDragStop", StopDrag)
         f:SetBackdrop({
             bgFile   = "Interface\\ChatFrame\\ChatFrameBackground",
             edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -130,22 +164,50 @@ DelveGuide.ShowChecklist = function(force)
 
         local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         title:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -10)
-        title:SetText("|cFFFFD700[DelveGuide]|r  Pre-Entry Checklist")
+        title:SetText("|cFFFFD700[DelveGuide]|r  " .. L["Pre-Entry Checklist"])
 
         local closeBtn = CreateFrame("Button", nil, f, "UIPanelCloseButton")
         closeBtn:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
-        closeBtn:SetScript("OnClick", function()
-            DelveGuideDB.checklistDismissed = true
-            f:Hide()
-        end)
+        -- X only closes. It used to set checklistDismissed too, which made it a
+        -- silent session-long suppress: walk away and back and nothing showed.
+        -- The "Don't show again this session" box is the suppress.
+        closeBtn:SetScript("OnClick", function() f:Hide() end)
 
+        -- Rows are Buttons, not bare FontStrings, so a row's tip can live in a
+        -- GameTooltip on hover (review 1.7). Inline, a long tip wrapped: the
+        -- flute row's is ~160 chars, and a FontString pinned only at its top
+        -- has no height cap, so it grew three or four lines downward over the
+        -- rows below it and into the dismiss checkbox. Same shape as the
+        -- widget's varLines rows.
         f.rows = {}
         for i = 1, 6 do
-            local row = f:CreateFontString(nil, "OVERLAY")
-            row:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 11)
+            local row = CreateFrame("Button", nil, f)
+            row:SetSize(316, 22)
             row:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -(24 + (i-1)*22))
-            row:SetWidth(316)
-            row:SetJustifyH("LEFT")
+            row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestLogTitleHighlight", "ADD")
+
+            local fs = row:CreateFontString(nil, "OVERLAY")
+            fs:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 11)
+            fs:SetAllPoints()
+            fs:SetJustifyH("LEFT")
+            -- One line, always: WoW ellipsises the overflow instead of wrapping.
+            fs:SetWordWrap(false)
+            row.label = fs
+
+            -- The rows cover nearly the whole window, so forward their drags
+            -- or it stops being movable anywhere but its edges.
+            row:RegisterForDrag("LeftButton")
+            row:SetScript("OnDragStart", function() f:StartMoving() end)
+            row:SetScript("OnDragStop", StopDrag)
+
+            row:SetScript("OnEnter", function(self)
+                if not self.tip then return end
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText(self.tipTitle or "")
+                GameTooltip:AddLine(self.tip, 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            row:SetScript("OnLeave", function() GameTooltip:Hide() end)
             f.rows[i] = row
         end
 
@@ -160,9 +222,22 @@ DelveGuide.ShowChecklist = function(force)
         local cblbl = f:CreateFontString(nil, "OVERLAY")
         cblbl:SetFont(GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF", 10)
         cblbl:SetPoint("LEFT", cb, "RIGHT", 2, 0)
-        cblbl:SetText("|cFF888888Don't show again this session|r")
+        cblbl:SetText("|cFF888888" .. L["Don't show again this session"] .. "|r")
 
         checklistFrame = f
+    end
+
+    -- Where to put it, each time it shows. A position the user dragged to
+    -- wins. Otherwise sit just above the delve entrance dialog, which is the
+    -- thing the checklist is about and what it used to cover when it opened
+    -- dead-centre. With no dialog on screen (/dg check), centre it.
+    checklistFrame:ClearAllPoints()
+    if DelveGuideDB.checklistX and DelveGuideDB.checklistY then
+        checklistFrame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", DelveGuideDB.checklistX, DelveGuideDB.checklistY)
+    elseif DelvesDifficultyPickerFrame and DelvesDifficultyPickerFrame:IsShown() then
+        checklistFrame:SetPoint("BOTTOM", DelvesDifficultyPickerFrame, "TOP", 0, 8)
+    else
+        checklistFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
     end
 
     local results = RunChecklistScan()
@@ -174,17 +249,21 @@ DelveGuide.ShowChecklist = function(force)
         if r then
             local icon
             if r.ok == true then
-                icon = "|cFF00FF44(OK)|r "
+                icon = "|cFF00FF44" .. L["(OK)"] .. "|r "
             elseif r.ok == false then
                 icon = "|cFFFF4444X|r "
             else
                 icon = "|cFFFF8844?|r " 
             end
             local text = icon .. r.label
-            if r.tip then text = text .. "  |cFF888888" .. r.tip .. "|r" end
-            row:SetText(text)
+            -- "(?)" so the hover is discoverable; the tip is the tooltip now.
+            if r.tip then text = text .. "  |cFF888888(?)|r" end
+            row.label:SetText(text)
+            row.tip = r.tip
+            row.tipTitle = r.label
             row:Show()
         else
+            row.tip = nil
             row:Hide()
         end
     end
@@ -192,9 +271,59 @@ DelveGuide.ShowChecklist = function(force)
     checklistFrame:Show()
 end
 
+-- Called when the entrance dialog closes (walked away, entered, cancelled).
+-- Frames cannot be destroyed in WoW; hidden is what the player sees.
+DelveGuide.HideChecklist = function()
+    if checklistFrame and checklistFrame:IsShown() then checklistFrame:Hide() end
+end
+
+-- Every name that means "delve entrance", hashed once at load: catalogued
+-- delves, Nemesis delves and Labyrinths. OnTargetChanged used to walk all three
+-- lists on every PLAYER_TARGET_CHANGED -- ~50 string comparisons per target
+-- swap, and in a raid that fires constantly. All three source tables are
+-- static: DelveGuideData.delves and friends are built once in the data file and
+-- never appended to, so a load-time hash can never go stale.
+--
+-- Building this is safe even though the lookup key may be secret. The VALUES
+-- here come from the addon's own data file and are ordinary strings; the only
+-- secret value involved is the key we index WITH, and that stays inside the
+-- pcall below exactly as before.
+local delveNameSet = {}
+do
+    for _, d in ipairs((DelveGuideData and DelveGuideData.delves) or {}) do
+        if d.name then delveNameSet[d.name] = true end
+    end
+    -- Nemesis delves are deliberately absent from DelveGuideData.delves.
+    for _, n in ipairs((DelveGuideData and DelveGuideData.nemesisDelves) or {}) do
+        delveNameSet[n] = true
+    end
+    -- Labyrinths (12.1.5). Assumes the entrance object carries the
+    -- Labyrinth's name like delve entrances do -- unverified on the PTR.
+    for _, lab in ipairs((DelveGuideData and DelveGuideData.labyrinths) or {}) do
+        if lab.name then delveNameSet[lab.name] = true end
+    end
+end
+
+-- NOTE: as of the PLAYER_INTERACTION_MANAGER_FRAME_SHOW (type 79) trigger this
+-- is no longer how the pre-entry checklist normally fires -- delve entrances
+-- are game objects, not units, so they were never targetable and this path
+-- almost certainly never matched. It is kept as a second trigger rather than
+-- deleted, and cheapened so that being effectively dead costs nothing. If the
+-- interaction trigger proves reliable in the field, this and its
+-- PLAYER_TARGET_CHANGED registration can go.
 DelveGuide.OnTargetChanged = function()
     if not DelveGuideDB.checklistEnabled then return end
     if DelveGuideDB.checklistDismissed then return end
+
+    -- Cheapest possible rejection of the common case. A protected unit name is
+    -- never a delve, and in a raid nearly every target change produces one, so
+    -- test for it before paying for the pcall. issecretvalue does not exist on
+    -- every client build; when it is missing this is simply skipped and the
+    -- pcall below remains the only line of defence, as it was before.
+    -- UnitName() itself never raises -- only comparing or indexing with what it
+    -- returns does -- so fetching the name out here is safe.
+    local targetName = UnitName("target")
+    if issecretvalue and issecretvalue(targetName) then return end
 
     -- EVERYTHING that touches the target name stays inside one pcall. In
     -- Midnight, UnitName("target") can return a SECRET STRING (protected unit
@@ -209,20 +338,17 @@ DelveGuide.OnTargetChanged = function()
     -- name is never a delve.
     local matched = false
     pcall(function()
-        local targetName = UnitName("target")
         if not targetName or targetName == "" then return end
 
         -- Localized -> English first, so the checklist fires on non-EN clients.
+        -- This mapping is what makes delveNameSet's English-only keys enough:
+        -- localizedToEnglish is populated at runtime by the POI scan, so its
+        -- keys cannot be baked into a load-time set, but one index through it
+        -- converts a localized name to a key the set does have.
         local engName = (DelveGuide.localizedToEnglish
                          and DelveGuide.localizedToEnglish[targetName]) or targetName
 
-        for _, d in ipairs((DelveGuideData and DelveGuideData.delves) or {}) do
-            if d.name == engName then matched = true; return end
-        end
-        -- Nemesis delves are deliberately absent from DelveGuideData.delves.
-        for _, n in ipairs((DelveGuideData and DelveGuideData.nemesisDelves) or {}) do
-            if n == engName then matched = true; return end
-        end
+        if delveNameSet[engName] then matched = true end
     end)
 
     if matched and DelveGuide.ShowChecklist then

@@ -6,22 +6,33 @@ on:
       - 'v*'
 
 jobs:
+  # The parse/lint gate. A job can only `needs:` another job in the SAME
+  # workflow, so the checks live in a reusable workflow that this job calls and
+  # that also runs standalone on branch pushes and pull requests.
+  lint:
+    uses: ./.github/workflows/lint.yml
+
   release:
-    runs-on: ubuntu-latest
+    needs: lint
+    runs-on: ubuntu-24.04   # pinned with lint.yml; see the note there
     permissions:
       contents: write
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
-        # Pinned to the commits that built and uploaded 1.11.1 (run 34153060090),
-        # the same pins the 2.0.0 line carries. packager@v2 has since moved to
-        # v2.6.1, which has never released this project.
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        # Pinned to a full commit SHA, not the moving v4 tag. This job holds
+        # CF_API_KEY and contents:write, so whoever controls the tag controls
+        # the release; a SHA is immutable, a tag is not.
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
       - name: Package and upload
+        # Same reasoning. This is v2.5.1, the packager that shipped 1.11.1 and
+        # that the live line is pinned to as well; the moving v2 tag has since
+        # gone on to v2.6.1. Bump it deliberately, and run the release dry run
+        # (release-dryrun.yml) first.
         uses: BigWigsMods/packager@6d50adb6e8517eefef63f4afb16a6518166a6b28 # v2.5.1
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}

@@ -11,9 +11,10 @@
 --       Blizzard's own tooltip lists per-character totals, so an account-wide
 --       read may be possible -- see /dg currencydebug.
 --   * Ascendant Venomstone -- GEAR-UPGRADE material, arriving later this
---       season. 10 upgrade one weapon/trinket/neck; a Tier 11 Bountiful
---       Delve is a guaranteed source (~1-2 each, unconfirmed). Currency/
---       item ID is unknown until it goes live -- fill it in then.
+--       season. 10 raise one fully upgraded Hero/Myth weapon/trinket/neck;
+--       Tier 11 Bountiful Delves are the delve source (a 100% drop per
+--       Wowhead; no quantity stated anywhere). It is a bag item, 280562,
+--       not a currency (build 70077).
 --
 -- The old 12.0.5 "Building the Voidforge" weekly (Elementary Voidcore
 -- Shards) and Ascendant Voidcore upgrade loop are retired.
@@ -29,16 +30,16 @@ DelveGuide.Voidforge = {
                                      -- leftovers, not what you earned this season. If a
                                      -- season-scoped figure is wanted, check whether
                                      -- info.totalEarned matches the tooltip (/dg currencydebug).
-    VENOMSTONE_CURRENCY_ID  = nil,  -- "Ascendant Venomstone" -- not live yet (arrives later in
-                                     -- S2). Set this when it appears as a currency...
-    VENOMSTONE_ITEM_ID      = nil,  -- ...or set this if it turns out to be a bag item instead.
+    VENOMSTONE_CURRENCY_ID  = nil,  -- "Ascendant Venomstone" is a bag item, not a currency:
+    VENOMSTONE_ITEM_ID      = 280562, -- item 280562 (12.1.5 PTR data, build 70077). Drops open
+                                     -- the week of Oct 20; until then the count reads 0.
     VENOMSTONE_PER_UPGRADE  = 10,   -- 10 Venomstones upgrade one eligible piece.
     MIN_VOIDCORE_TIER       = 8,    -- A recommendation, not a rule: the tier from which a Bountiful Delve's
                                      -- end-of-run loot is the max pool (Tiers 9-11 match 8), so a Voidcore
                                      -- bonus roll there draws from the best pool. A roll is ACCEPTED at any
                                      -- tier (Thunderz rolled after a Tier 1 on the PTR, 2026-09-06), and
                                      -- Voidcores do not drop from delves at all.
-    VENOMSTONE_TIER         = 11,   -- T11 Bountiful Delves guarantee an Ascendant Venomstone.
+    VENOMSTONE_TIER         = 11,   -- T11 Bountiful Delves are the delve source of Ascendant Venomstones.
 }
 
 -- Returns a snapshot of current Voidforge state. Any field can be nil
@@ -90,42 +91,49 @@ DelveGuide.IsDelveVoidcoreEligible = function(tierNum)
 end
 
 -- Equipment slot scan -- powers the Voidforge tab's "upgrade priority" table.
--- We map slot IDs -> human labels here so the UI doesn't have to. Slot 4 (shirt),
--- 18 (legacy ranged), and 19 (tabard) are skipped because they don't take ilvl
--- upgrades from Voidcores.
+-- Ascendant Venomstones upgrade weapons, trinkets and necks ONLY (Blizzard's
+-- 12.1.5 PTR dev notes, 2026-09-03: "weapon/trinket/necklace"; confirmed by
+-- the build-69594 datamining), so these five are the only slots here. The tab
+-- used to list all sixteen with armour marked [low]; that implied armour could
+-- be upgraded at all, which it cannot.
 --
--- `tier` controls upgrade priority (lower = recommend first):
---   1 = weapons & trinkets (highest stat-per-ilvl, biggest DPS/HPS gain)
---   2 = everything else
--- Within a tier, items sort ASC by ilvl, and empty slots beat both tiers.
+-- `tier` is kept (all 1) so the sort and the UI's prefix logic stay as they
+-- were; empty slots still sort first, then ASC by ilvl.
 local SLOT_INFO = {
     { id = 16, label = "Main Hand", tier = 1 },
     { id = 17, label = "Off Hand",  tier = 1 },
     { id = 13, label = "Trinket 1", tier = 1 },
     { id = 14, label = "Trinket 2", tier = 1 },
-    { id = 1,  label = "Head",      tier = 2 },
-    { id = 2,  label = "Neck",      tier = 2 },
-    { id = 3,  label = "Shoulder",  tier = 2 },
-    { id = 15, label = "Back",      tier = 2 },
-    { id = 5,  label = "Chest",     tier = 2 },
-    { id = 9,  label = "Wrist",     tier = 2 },
-    { id = 10, label = "Hands",     tier = 2 },
-    { id = 6,  label = "Waist",     tier = 2 },
-    { id = 7,  label = "Legs",      tier = 2 },
-    { id = 8,  label = "Feet",      tier = 2 },
-    { id = 11, label = "Finger 1",  tier = 2 },
-    { id = 12, label = "Finger 2",  tier = 2 },
+    { id = 2,  label = "Neck",      tier = 1 },
 }
 
 DelveGuide.VoidforgeSlots = SLOT_INFO
 
--- Returns a list of {slot, label, tier, ilvl, link, empty} for every gear slot
--- worth upgrading. Sort order: empty slots first, then weapons/trinkets ASC by
--- ilvl, then everything else ASC by ilvl. Weapons & trinkets get bumped to the
--- top because each ilvl on them carries a much larger stat budget than armor.
+-- Returns a list of {slot, label, tier, ilvl, link, empty} for the five
+-- Venomstone-upgradeable slots. Sort order: empty slots first, then ASC by
+-- ilvl, so the lowest weapon, trinket or neck is the first upgrade target.
 DelveGuide.GetVoidforgeSlotPriority = function()
     local out = {}
+
+    -- A two-hander or a ranged weapon leaves the off-hand legitimately empty,
+    -- and empty slots sort to the top -- so the tab opened with "[empty] Off
+    -- Hand" as the first upgrade target for every such spec. Skip the row in
+    -- exactly that case: Fury warriors can Titan's Grip two two-handers, so if
+    -- anything IS equipped off-hand the row stays.
+    local skipOffHand = false
+    pcall(function()
+        if GetInventoryItemLink("player", INVSLOT_OFFHAND or 17) then return end
+        local mhLink = GetInventoryItemLink("player", INVSLOT_MAINHAND or 16)
+        if not mhLink then return end
+        if not (C_Item and C_Item.GetItemInfoInstant) then return end
+        local _, _, _, equipLoc = C_Item.GetItemInfoInstant(mhLink)
+        skipOffHand = (equipLoc == "INVTYPE_2HWEAPON")
+                   or (equipLoc == "INVTYPE_RANGED")
+                   or (equipLoc == "INVTYPE_RANGEDRIGHT")
+    end)
+
     for _, s in ipairs(SLOT_INFO) do
+        local skip = skipOffHand and s.id == (INVSLOT_OFFHAND or 17)
         local link = GetInventoryItemLink("player", s.id)
         local ilvl = 0
         if link then
@@ -138,14 +146,16 @@ DelveGuide.GetVoidforgeSlotPriority = function()
                 if ok and type(effective) == "number" then ilvl = effective end
             end
         end
-        table.insert(out, {
-            slot  = s.id,
-            label = s.label,
-            tier  = s.tier,
-            ilvl  = ilvl,
-            link  = link,
-            empty = link == nil,
-        })
+        if not skip then
+            table.insert(out, {
+                slot  = s.id,
+                label = s.label,
+                tier  = s.tier,
+                ilvl  = ilvl,
+                link  = link,
+                empty = link == nil,
+            })
+        end
     end
     table.sort(out, function(a, b)
         if a.empty ~= b.empty then return a.empty end

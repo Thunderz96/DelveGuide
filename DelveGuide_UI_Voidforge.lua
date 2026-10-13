@@ -3,10 +3,11 @@
 -- ============================================================
 -- Surfaces the Season 2 delve reward economy from DelveGuide_Voidforge.lua
 -- (Nebulous Voidcore bonus rolls + Ascendant Venomstone upgrades) plus:
---   * lowest-ilvl gear slots (best Venomstone upgrade targets)
+--   * the five Venomstone-upgradeable slots (weapons + trinkets + neck) by ilvl
 --   * cross-character stockpile rolled up from DelveGuideDB.roster.
 -- ============================================================
 local UI = DelveGuide.UI
+local L = DelveGuide.L
 
 -- Color helpers kept local; everything else routes through UI.CreateRow.
 -- Bands are read from DelveGuideData.tierRewards so they rescale with the
@@ -29,38 +30,39 @@ DelveGuide.RenderVoidforge = function()
     local cf = UI.NewContentFrame(); local y = 10
     UI.EnsureFontFiles()
 
-    y = y + UI.CreateHeader(cf, y, "Voidforge  --  Bonus Rolls & Gear Upgrades") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888Season 2 splits the delve reward economy in two: Nebulous Voidcores are bonus-roll tokens (roll for extra loot after a run), and Ascendant Venomstones -- arriving later this season -- upgrade your gear (10 per piece).|r") + 8
+    y = y + UI.CreateHeader(cf, y, L["Voidforge  --  Bonus Rolls & Gear Upgrades"]) + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888" .. L["Season 2 splits the delve reward economy in two: Nebulous Voidcores are bonus-roll tokens (roll for additional loot after a boss or a run), and Ascendant Venomstones -- arriving later this season -- upgrade weapons, trinkets and necks (10 per piece)."] .. "|r") + 8
 
     local s = DelveGuide.GetVoidforgeStatus and DelveGuide.GetVoidforgeStatus() or { configured = false }
 
     -- ---- Bonus Rolls (Nebulous Voidcore) ----
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Bonus Rolls  --  Nebulous Voidcore|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Bonus Rolls  --  Nebulous Voidcore"] .. "|r") + 4
     if s.cores then
         local capStr = s.coreMax and ("/" .. s.coreMax) or ""
-        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Nebulous Voidcores:|r |cFFFFFFFF%d%s|r |cFF888888(bonus roll after a raid boss / M+ / Bountiful Delve / Nightmare Prey)|r", s.cores, capStr)) + 2
+        y = y + UI.CreateRow(cf, y, "|cFFAA66CC  " .. L["Nebulous Voidcores:"] .. "|r |cFFFFFFFF" .. s.cores .. capStr
+            .. "|r |cFF888888" .. L["(bonus roll after a raid boss / M+ / Bountiful Delve / Nightmare Prey)"] .. "|r") + 2
     else
-        y = y + UI.CreateRow(cf, y, "|cFF888888  None yet -- the Great Vault awards them, plus a weekly trade with Orin Straylight from the week of Oct 6. (Populates in-game or after a /reload.)|r") + 2
+        y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["None yet -- the Great Vault awards them, and Orin Straylight trades one more a week. (Populates in-game or after a /reload.)"] .. "|r") + 2
     end
     y = y + 6
 
     -- ---- Gear Upgrades (Ascendant Venomstone) ----
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Gear Upgrades  --  Ascendant Venomstone|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Gear Upgrades  --  Ascendant Venomstone"] .. "|r") + 4
     local perUp = (DelveGuide.Voidforge and DelveGuide.Voidforge.VENOMSTONE_PER_UPGRADE) or 10
     if s.venomstones then
         local ready = math.floor(s.venomstones / perUp)
-        y = y + UI.CreateRow(cf, y, string.format("|cFFAA66CC  Ascendant Venomstones:|r |cFFFFFFFF%d|r |cFF888888(%d/%d toward the next upgrade -- %d ready)|r",
-            s.venomstones, s.venomstones % perUp, perUp, ready)) + 2
+        y = y + UI.CreateRow(cf, y, "|cFFAA66CC  " .. L["Ascendant Venomstones:"] .. "|r |cFFFFFFFF" .. s.venomstones .. "|r |cFF888888"
+            .. string.format(L["(%d/%d toward the next upgrade -- %d ready)"], s.venomstones % perUp, perUp, ready) .. "|r") + 2
     else
-        y = y + UI.CreateRow(cf, y, string.format("|cFF888888  Arriving later this season. %d upgrade one weapon / trinket / neck; a Tier 11 Bountiful Delve is a guaranteed source (~1-2 each). Your count appears here once it goes live.|r", perUp)) + 2
+        y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Your count appears here once Venomstones go live."] .. "|r") + 2
     end
     y = y + 6
 
     -- ---- Where to Earn ----
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Where to Earn|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Where to Earn"] .. "|r") + 4
     local sources = {
-        { tag = "|cFFAA66CCVoidcores|r",   text = "The Great Vault. From the week of Oct 6, Orin Straylight also trades one a week (gold, Voidlight Marl or Veteran Crests)." },
-        { tag = "|cFFAA66CCVenomstones|r", text = "Tier 11 Bountiful Delves guarantee one (~1-2); also Heroic/Mythic raid and M+10+. Live later this season." },
+        { tag = "|cFFAA66CCVoidcores|r",   text = (DelveGuideData.currencyNotes and DelveGuideData.currencyNotes.voidcore or "") },
+        { tag = "|cFFAA66CCVenomstones|r", text = (DelveGuideData.currencyNotes and DelveGuideData.currencyNotes.venomstone or "") },
     }
     for _, src in ipairs(sources) do
         y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. src.tag .. " |r|cFF888888" .. src.text .. "|r") + 2
@@ -68,12 +70,12 @@ DelveGuide.RenderVoidforge = function()
     y = y + 8
 
     -- ---- Slot Upgrade Priority ----
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Upgrade Priority|r") + 4
-    y = y + UI.CreateRow(cf, y, "|cFF888888  Weapons & trinkets first (largest stat-per-ilvl gain), then armor by lowest ilvl. Hover for tooltip, shift-click to chat-link.|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Upgrade Priority"] .. "|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Your five Venomstone slots, lowest item level first. A piece must be fully upgraded on the Hero or Myth track (or be max-quality Tidal crafted) before it can take a stone, and item level 344 pieces cannot. Hover for tooltip, shift-click to chat-link."] .. "|r") + 4
 
     local slotData = DelveGuide.GetVoidforgeSlotPriority and DelveGuide.GetVoidforgeSlotPriority() or {}
     if #slotData == 0 then
-        y = y + UI.CreateRow(cf, y, "|cFF888888  (No equipped gear detected -- log in and reopen this tab.)|r") + 4
+        y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["(No equipped gear detected -- log in and reopen this tab.)"] .. "|r") + 4
     else
         local _, rSize, rH = UI.GetScaledSizes()
         local ROW_FONT_FILE = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
@@ -102,32 +104,27 @@ DelveGuide.RenderVoidforge = function()
         end
         lowest = lowest or 0
 
-        y = y + UI.CreateRow(cf, y, string.format("|cFFCCCCCC  Equipped average: %s  --  Lowest: %s  --  Gap: |cFFFFD700%d|r |cFF888888ilvls|r",
-            ColorIlvl(avg), ColorIlvl(lowest), avg > 0 and (avg - lowest) or 0)) + 6
+        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Equipped average:"] .. " " .. ColorIlvl(avg)
+            .. "  --  " .. L["Lowest:"] .. " " .. ColorIlvl(lowest)
+            .. "  --  " .. L["Gap:"] .. " |cFFFFD700" .. (avg > 0 and (avg - lowest) or 0) .. "|r |cFF888888" .. L["ilvls"] .. "|r") + 6
 
-        local tier2Rank = 0
         for _, row in ipairs(slotData) do
-            local btn = CreateFrame("Button", nil, cf)
+            local btn = UI.AcquireButton()
             btn:SetPoint("TOPLEFT", cf, "TOPLEFT", 16, -y)
             btn:SetSize(UI.WINDOW_W - 80, rH)
-            local fs = btn:CreateFontString(nil, "OVERLAY")
+            local fs = UI.AcquireFontString("OVERLAY")
             fs:SetFont(ROW_FONT_FILE, rSize); fs:SetAllPoints(btn); fs:SetJustifyH("LEFT")
 
             local prefix
             if row.empty then
-                prefix = "|cFFFF4444[empty]   |r "
-            elseif row.tier == 1 then
-                prefix = "|cFFFF8000[priority]|r "
+                prefix = "|cFFFF4444" .. L["[empty]"] .. "   |r "
             else
-                tier2Rank = tier2Rank + 1
-                if tier2Rank <= 4 then
-                    prefix = "|cFFFFD700[low]     |r "
-                else
-                    prefix = "          "
-                end
+                -- Every listed slot is upgradeable now; the old [priority]/[low]
+                -- split against armour rows has nothing left to contrast with.
+                prefix = "          "
             end
 
-            local linkText = row.link or "|cFF888888(empty slot)|r"
+            local linkText = row.link or ("|cFF888888" .. L["(empty slot)"] .. "|r")
             fs:SetText(string.format("%s|cFFAAAAAA%-10s|r  %s  %s",
                 prefix, row.label, ColorIlvl(row.ilvl), linkText))
 
@@ -150,7 +147,7 @@ DelveGuide.RenderVoidforge = function()
     y = y + 8
 
     -- ---- Cross-Character Stockpile ----
-    y = y + UI.CreateRow(cf, y, "|cFFFFD700Alt Stockpile  --  All Cached Characters|r") + 4
+    y = y + UI.CreateRow(cf, y, "|cFFFFD700" .. L["Alt Stockpile  --  All Cached Characters"] .. "|r") + 4
 
     local roster = DelveGuideDB.roster or {}
     local rosterKeys = {}
@@ -159,7 +156,7 @@ DelveGuide.RenderVoidforge = function()
     end
 
     if #rosterKeys == 0 then
-        y = y + UI.CreateRow(cf, y, "|cFF888888  Log in on each alt to populate this list. Voidforge state is captured at PLAYER_ENTERING_WORLD.|r") + 4
+        y = y + UI.CreateRow(cf, y, "|cFF888888  " .. L["Log in on each alt to populate this list. Voidforge state is captured at PLAYER_ENTERING_WORLD."] .. "|r") + 4
     else
         table.sort(rosterKeys, function(a, b)
             local va, vb = roster[a].voidforge or {}, roster[b].voidforge or {}
@@ -173,7 +170,7 @@ DelveGuide.RenderVoidforge = function()
             totalStones = totalStones + (v.venomstones or 0)
         end
 
-        y = y + UI.CreateRow(cf, y, string.format("|cFFCCCCCC  Account totals: |cFFAA66CC%d|r Voidcores, |cFFAA66CC%d|r Venomstones",
+        y = y + UI.CreateRow(cf, y, "|cFFCCCCCC  " .. L["Account totals:"] .. string.format(" |cFFAA66CC%d|r Voidcores, |cFFAA66CC%d|r Venomstones",
             totalCores, totalStones)) + 6
 
         for _, k in ipairs(rosterKeys) do

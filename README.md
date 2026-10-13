@@ -9,7 +9,7 @@
 
 DelveGuide is a World of Warcraft addon built for players who want to get the most out of Midnight's Delve system. Whether you're farming vault slots across multiple alts, hunting Bountiful Delves, optimizing your curio loadout, or preparing to face the Season 2 Nemesis Azta'rec — DelveGuide has you covered.
 
-> 🆕 **Patch 12.1 "Curse of Ula'tek" / Season 2 ready** — The Coiled Isle, the new **Ring of Glory** and **Gnarldor Isle** delves, venom variants on existing delves, and a full **Venomfall Deeps** (Azta'rec) Nemesis guide. *(Bountiful Delves, Coffer Keys, and the seasonal Great Vault unlock with Season 2 on Aug 18.)*
+> 🆕 **Patch 12.1.5 ready** — support for the **Labyrinth of Kindo'jan** (its own HUD, History rows, vault credit and a Labyrinth tab), **delve glove enhancements**, **Rank 5 curios** and **Ascendant Venomstones**. Everything for Season 2 is still here: The Coiled Isle, the **Ring of Glory** and **Gnarldor Isle** delves, and a full **Venomfall Deeps** (Azta'rec) Nemesis guide.
 
 ---
 
@@ -33,6 +33,23 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 - **Draggable**, **lockable**, and **resizable** — remembers its position between sessions
 - Toggle manually with `/dg hud` (works as a preview outside Delves)
 
+### 🌀 Labyrinths (12.1.5)
+
+- Recognises **the Labyrinth of Kindo'jan**. A Labyrinth is not a Delve, so it no longer starts a Delve timer or files Delve-shaped rows in your History
+- Its own in-run HUD view: **Labyrinth · current chamber · tier · lives · objective progress · chambers cleared · time in**
+- Runs are logged in History and their vault credit counts toward the weekly tallies — **one vault credit per 3 chambers cleared, at any tier**, the same credit a Delve gives
+- Labyrinth **support**, not a Labyrinth guide: there are no route or chamber tips yet
+
+### 🧭 Labyrinth Tab
+
+- **This week** — per character: chambers cleared, vault credits earned, best tier seen, time spent
+- **Renown** — your renown with *The Labyrinth of Kindo'jan* (faction 2836, a renown track like Delver's Journey); says so plainly when the client is too old to have it
+- **Progress** — how far up the tier ladder you are (the eleven "3 chambers on Tier N" achievements), plus lifetime chambers cleared and Kindo'jan kills
+- **Chambers seen** — built from your own runs, one row per chamber objective: how often it came up, its median clear time, and when you last saw it. Chamber content is re-rolled per run, so this is your sample, not a catalogue
+- **Rewards** — mount, titles, toys, transmog and the weekly quest line, each marked **earned**, **collected** or **not yet** from your own account (rows with no game ID yet are tagged **unverified**)
+- **Tips** — only what the game data confirms: credit every 3 chambers at any tier, 9 chambers to a full run, Kindo'jan's weekly Tier 8+ reward, what renown unlocks
+- Opens with `/dg labyrinth` (alias `/dg lab`)
+
 ### 🏆 Victory Screen
 
 - Animated toast on **Delve completion** with fade in/hold/fade out
@@ -42,9 +59,10 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 
 ### ✅ Pre-Entry Checklist
 
-- Triggers automatically when you **target a Delve entrance**
-- Verifies: Coffer Key Shards · Restored Coffer Keys · Bountiful Delve token · Beacon of Hope · **Voidforge weekly progress**
-- Catches you before you waste a Bountiful run with missing keys or unfilled Voidforge shards
+- Opens automatically with the **Delve entrance dialog** (the tier picker), above it and out of the way — draggable, and it remembers where you put it
+- Verifies: **Coffer Key** (shard count + Restored Coffer Keys) · **Trovehunter's Bounty** (active / in bags but not activated / already used this week) · **Valeera** and her selected role
+- Also flags a **Scalebound Herald's Flute** in your bags, and tells you whether using it will still earn this week's Bounty map
+- Catches you before you waste a Bountiful run with no key, or enter with your Bounty still sitting unactivated in your bags
 
 ### 📦 Compact Widget
 
@@ -59,10 +77,10 @@ DelveGuide is a World of Warcraft addon built for players who want to get the mo
 
 The Voidforge tab tracks Season 2's two delve reward currencies:
 
-- **Nebulous Voidcore** — the bonus-roll token. Spend one to roll for extra loot after a raid boss, M+, Nightmare Prey, or a Bountiful Delve of any tier. They don't drop from delves: the Great Vault awards them, and from the week of Oct 6 Orin Straylight trades one more a week.
-- **Ascendant Venomstone** — the gear-upgrade material *(arriving later this season)*. 10 upgrade one weapon/trinket/neck, and a Tier 11 Bountiful Delve is a guaranteed source.
+- **Nebulous Voidcore** — the bonus-roll token. After a raid boss, Mythic+ dungeon, Bountiful Delve or Nightmare Prey Hunt, spend one to roll for additional loot; one item per difficulty level until your spec's pool is exhausted. They don't drop from delves: the Great Vault awards them, and Orin Straylight trades one more a week (gold, Voidlight Marl or Veteran Crests).
+- **Ascendant Venomstone** — the gear-upgrade material *(from the week of Oct 20, after Orin Straylight's quest "Ascending with Venomstones")*. 10 raise one fully upgraded Hero or Myth weapon, trinket or neck (or a max-quality Tidal Crafted one), the only slots they apply to; Tier 11 Bountiful Delves are the delve source.
 
-Plus a **slot upgrade priority** scan (weapons & trinkets first, then armor by lowest ilvl) and an **alt stockpile** rollup across your cached characters.
+Plus an **upgrade priority** scan of the five Venomstone slots (weapons, trinkets and neck, lowest ilvl first) and an **alt stockpile** rollup across your cached characters.
 
 ### 📊 DataBroker Feed
 
@@ -98,7 +116,7 @@ Spec-by-spec curio recommendations for every class and specialization.
 Live status panel for **Valeera Sanguinar**:
 
 - **XP / level bar** — works anywhere, not just inside delves. Reads from her friendship reputation faction so you can check progress between runs.
-- **Role detection** (DPS / Healer / Tank) and **live curio loadout scan** when the Blizzard Companion panel is open
+- **Role detection** (DPS / Healer / Tank) and **live curio loadout scan**, read from the game's own companion data — works in any language and with Blizzard's Companion panel closed
 - Spec-aware curio recommendations with mismatch warnings when your equipped curios don't match the rec
 - Auto-discovery scans for the companion faction on first render and caches the ID per-character (`/dg companionscan` to re-scan, `/dg companionfaction <id>` to pin manually)
 
@@ -126,36 +144,69 @@ Roadmap for upcoming features and planned data additions, kept in-game so you ca
 
 ---
 
+## 🚫 What DelveGuide does not do
+
+- It does **not** show treasure or curiosity locations inside a Delve — there are no in-Delve maps, routes, or object pins.
+- It tells you which Delve to run and what to bring; once you're inside, you're on your own.
+
+---
+
 ## ⌨️ Slash Commands
 
 | Command | Description |
 | --- | --- |
 | `/dg` | Open / close DelveGuide |
+| `/dg show` / `/dg hide` | Open or close the window explicitly |
 | `/dg scan` | Rescan active Delve variants |
 | `/dg map` | Open the world map |
-| `/dg hud` | Toggle the in-run HUD |
+| `/dg hud` | Toggle the in-run HUD (works as a preview outside Delves) |
+| `/dg resethud` | Reset the HUD position |
 | `/dg widget` | Toggle the compact widget |
 | `/dg resetwidget` | Reset widget position to center |
 | `/dg bountiful` | Toggle the widget's bountiful-only filter |
 | `/dg check` | Show the pre-entry checklist |
 | `/dg minimap` | Toggle the minimap button |
 | `/dg roster` | Open the Roster tab |
+| `/dg voidforge` (`forge`) | Open the Voidforge tab |
+| `/dg journey` (`quests`, `quest`) | Open the Journey tab — Delver's Journey ranks and Delver's Call quests |
+| `/dg questscan` | Scan your quest log for Delver's Call quest IDs |
 | `/dg companionscan` | Re-scan for the companion reputation faction |
 | `/dg companionfaction <id>` | Manually pin the companion faction ID |
 | `/dg share [channel]` | Share active variants to chat (party/guild/say/raid) |
+| `/dg submit` (`rank`) | Copy your run times to submit for the community rankings |
+| `/dg export` | Snapshot zone / delve / quest data to SavedVariables for bug reports |
+| `/dg exportclear` | Clear the export snapshots |
 | `/dg tier <1-11>` | Manually set the current Delve tier in the HUD |
 | `/dg font <0.6-2.0>` | Main UI font scale |
 | `/dg widgetfont <0.6-2.0>` | Widget-only font scale (independent from main) |
 | `/dg help` | Show all available commands |
 
-> Debug commands available for bug reports and localization fixes: `dump`, `chatdump`, `huddump`, `tierdebug`, `checkdebug`, `specinfo`, `findplaza`.
+> An unrecognised command prints the help rather than opening or closing the window.
+
+> Debug commands available for bug reports and localization fixes: `selftest`, `dump`, `chatdump`, `huddump`, `tierdebug`, `checkdebug`, `specinfo`, `currencydebug`, `vaultdebug`, `findpoi <text>` (with `findplaza` as a shorthand), `testrun`. They always run; tick **Show Debug tab** in Settings to have `/dg help` list them too.
 
 ---
+
+## 🏆 Help rank the delves
+
+The S–F rankings aren't guesswork — they're built from players' own timed runs, and yours can go in too.
+
+1. Run some Delves. DelveGuide times every run automatically.
+2. Type `/dg submit`. It hands you a code, pre-selected — just press Ctrl+C.
+3. Paste the code into the form: **<https://forms.gle/BwrGBZkRmbQdwufN8>**
+
+Only clear times are included — no character or account data. Submitted times are pooled, reduced to a median per variant, and shipped back as the rankings you see in-game. Contributors are credited on the Settings tab.
+
+---
+
+## 🌍 Translating
+
+Every string a player sees goes through a lookup table, so DelveGuide can show your language without a code change. Copy `Locales/TEMPLATE.lua` to `Locales/<locale>.lua` (for example `Locales/deDE.lua`), set the locale on its first code line, translate the right-hand side of each line, delete the lines you did not translate (they fall back to English), add the file to `DelveGuide.toc` directly after `DelveGuide_Locale.lua`, and open a pull request. Keep `%s` / `%d` placeholders in the same order. Delve, variant and item names are game data and are not in the template; those live in the locale tables inside `DelveGuide_Data.lua`.
 
 ## 📋 Requirements
 
 - **No dependencies required** — works out of the box
-- Compatible with **World of Warcraft: Midnight** — current through **Patch 12.1 "Curse of Ula'tek" / Season 2** (Interface 120100; also loads on 120000 / 120001 / 120005)
+- Compatible with **World of Warcraft: Midnight** — current through **Patch 12.1.5** (Interface 120105; also loads on 120000 / 120001 / 120005 / 120100)
 - TomTom is **optionally supported** for waypoint pins
 
 ---

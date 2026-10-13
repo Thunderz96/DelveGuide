@@ -3,10 +3,23 @@
 -- Auto-shows while inside a known Delve, hides on exit.
 -- ============================================================
 
+local L = DelveGuide.L
+
 local HUD_W, HUD_H = 290, 196
+
+-- A persisted run start older than this is a stale record from a run that was
+-- never finished (logout, disconnect), not something to resume. Three hours
+-- comfortably exceeds any real delve.
+local RUN_RESUME_MAX = 3 * 60 * 60
 
 local hudFrame  = nil
 local lockBtn   = nil
+
+-- /dg hud force-shows the HUD outside a delve so the player can see and place
+-- it. Without this flag the watchdog's next pass (2s later) called UpdateHUD,
+-- found no delve, and hid it again -- the toggle looked like it did nothing.
+-- Cleared as soon as there is real content to show, or by toggling off.
+local previewMode = false
 
 -- ── helpers ──────────────────────────────────────────────────
 
@@ -35,6 +48,10 @@ local function IsInDelveScenario()
     local inScenario = false
     pcall(function() inScenario = C_Scenario.IsInScenario() end)
     if not inScenario then return false end
+    -- A Labyrinth (12.1.5) is a type-8 scenario named "Delves" in its hub, so
+    -- every test below would say yes. It is not a delve run: no timer, no tier,
+    -- no history row. Gating here switches all of those off from one place.
+    if DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName() then return false end
     if GetCurrentDelveName() then return true end          -- recognised by name
     local sName = ""
     pcall(function() sName = C_Scenario.GetInfo() or "" end)
@@ -57,7 +74,66 @@ local function IsInsideDelve()
     return GetCurrentDelveName() ~= nil
 end
 
+-- One reader for the lives row. The same criteria scan used to be duplicated
+-- verbatim at both call sites (UpdateHUD and the SCENARIO_CRITERIA_UPDATE fast
+-- path). Returns the coloured lives string, or nil when no criterion looks like
+-- a lives/deaths counter -- callers decide what to show for nil.
+local function ReadLivesText()
+    -- Primary: the header widget's lives entry (DelveGuide.ReadDelveLives).
+    -- Lives were never a scenario criterion, so the scan below only stays as
+    -- a fallback for a client whose header widget is not readable.
+    do
+        local lives, deaths = DelveGuide.ReadDelveLives and DelveGuide.ReadDelveLives()
+        if lives then
+            local t = "|cFF00FF88" .. lives .. "|r"
+            if deaths and deaths > 0 then t = t .. "  |cFF888888" .. string.format(L["(%d death%s)"], deaths, deaths == 1 and "" or "s") .. "|r" end
+            return t
+        end
+    end
+    local livesText
+    pcall(function()
+        local numCrit = DelveGuide.GetCriteriaCount()
+        for i = 1, (numCrit or 0) do
+            local crit = DelveGuide.GetCriteria(i)
+            if crit then
+                local desc  = crit.description  and crit.description:lower()  or ""
+                local qStr  = crit.quantityString and crit.quantityString:lower() or ""
+                local searchText = desc .. " " .. qStr
+                -- EN: lives/life, death, charge  |  DE: leben  |  FR: vie  |  IT: vita/vite  |  ES: vida
+                -- PT: vida  |  KO: 생명/목숨  |  ZH: 生命/命
+                if searchText:find("li[fv]") or searchText:find("death") or searchText:find("charge")
+                    or searchText:find("leben") or searchText:find("vie") or searchText:find("vit[ae]")
+                    or searchText:find("vida") or searchText:find("생명") or searchText:find("목숨")
+                    or searchText:find("生命") or searchText:find("命") then
+                    livesText = "|cFF00FF88" .. (crit.quantityString or "?") .. "|r"
+                    return
+                end
+            end
+        end
+    end)
+    return livesText
+end
+
 -- ── build ────────────────────────────────────────────────────
+
+-- The value column starts just past the widest label and runs to the right
+-- edge. The labels used to sit in a fixed 76px box, which a wider UI font
+-- overflowed ("Compani..." on the PTR, 2026-10-01), and the two views use
+-- different label sets, so this runs on build, on resize and on a view change.
+local function LayoutRows()
+    if not (hudFrame and hudFrame.rows and hudFrame.labels) then return end
+    local widest = 0
+    for _, lbl in pairs(hudFrame.labels) do
+        widest = math.max(widest, lbl:GetStringWidth() or 0)
+    end
+    local x = math.max(88, math.ceil(widest) + 16)
+    local w = math.max(40, hudFrame:GetWidth() - x - 8)
+    for _, val in pairs(hudFrame.rows) do
+        val:ClearAllPoints()
+        val:SetPoint("TOPLEFT", hudFrame, "TOPLEFT", x, val.yOff)
+        val:SetWidth(w)
+    end
+end
 
 local function BuildHUD()
     if hudFrame then return end
@@ -120,7 +196,7 @@ local function BuildHUD()
 
     local hdrTitle = hudFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     hdrTitle:SetPoint("LEFT", hdrBg, "LEFT", 6, 0)
-    hdrTitle:SetText("|cFF00BFFFDelveGuide|r  |cFF555555--|r  |cFF888888IN RUN|r")
+    hdrTitle:SetText("|cFF00BFFFDelveGuide|r  |cFF555555--|r  |cFF888888" .. L["IN RUN"] .. "|r")
 
     lockBtn = CreateFrame("Button", nil, hudFrame)
     lockBtn:SetSize(14, 14)
@@ -143,7 +219,7 @@ local function BuildHUD()
     lockBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         local locked = DelveGuideDB and DelveGuideDB.hudLocked
-        GameTooltip:AddLine(locked and "|cFFFF4444Locked|r -- click to unlock" or "|cFF44FF44Unlocked|r -- click to lock")
+        GameTooltip:AddLine(locked and ("|cFFFF4444" .. L["Locked"] .. "|r -- " .. L["click to unlock"]) or ("|cFF44FF44" .. L["Unlocked"] .. "|r -- " .. L["click to lock"]))
         GameTooltip:Show()
     end)
     lockBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -169,6 +245,7 @@ local function BuildHUD()
     end)
 
     local rows = {}
+    local labels = {}
     local function MakeRow(key, label, yOff)
         local _, rSize = DelveGuide.UI.GetScaledSizes()
         local fontFile = GameFontNormalSmall:GetFont() or "Fonts\\FRIZQT__.TTF"
@@ -177,38 +254,38 @@ local function BuildHUD()
         lbl:SetFont(fontFile, rSize)
         lbl:SetPoint("TOPLEFT", hudFrame, "TOPLEFT", 10, yOff)
         lbl:SetText("|cFF666666" .. label .. ":|r")
-        lbl:SetWidth(76)
         lbl:SetJustifyH("LEFT")
 
         local val = hudFrame:CreateFontString(nil, "OVERLAY")
         val:SetFont(fontFile, rSize)
-        val:SetPoint("TOPLEFT", hudFrame, "TOPLEFT", 88, yOff)
-        val:SetWidth(startW - 96)
         val:SetJustifyH("LEFT")
+        -- One line per row, always. Rows sit 18px apart, and a value that
+        -- wrapped printed straight over the row below it (the Labyrinth view
+        -- on the PTR, 2026-10-01). Too long now truncates instead.
+        val:SetWordWrap(false)
         val:SetText("|cFF888888--|r")
+        val.yOff = yOff    -- LayoutRows places the value column
         rows[key] = val
+        lbl.default = label
+        labels[key] = lbl
     end
 
-    MakeRow("delve",     "Delve",     -30)
-    MakeRow("variant",   "Variant",   -48)
-    MakeRow("grade",     "Grade",     -66)
-    MakeRow("tier",      "Tier",      -84)
-    MakeRow("curio",     "Companion", -102)
-    MakeRow("nemesis",   "Nemesis",   -120)
-    MakeRow("bountiful", "Bountiful", -138)
-    MakeRow("lives",     "Lives",     -156)
-    MakeRow("timer",     "Time",      -174)
+    MakeRow("delve",     L["Delve"],     -30)
+    MakeRow("variant",   L["Variant"],   -48)
+    MakeRow("grade",     L["Grade"],     -66)
+    MakeRow("tier",      L["Tier"],      -84)
+    MakeRow("curio",     L["Companion"], -102)
+    MakeRow("nemesis",   L["Nemesis"],   -120)
+    MakeRow("bountiful", L["Bountiful"], -138)
+    MakeRow("lives",     L["Lives"],     -156)
+    MakeRow("timer",     L["Time"],      -174)
 
     hudFrame.rows = rows
+    hudFrame.labels = labels
+    LayoutRows()
 
     -- Dynamically stretch row text widths when dragged!
-    hudFrame:HookScript("OnSizeChanged", function(self, width, height)
-        if self.rows then
-            for _, val in pairs(self.rows) do
-                val:SetWidth(width - 96)
-            end
-        end
-    end)
+    hudFrame:HookScript("OnSizeChanged", LayoutRows)
 
     -- Tick the timer display once per second (OnUpdate only fires when frame is shown)
     local timerElapsed = 0
@@ -221,8 +298,9 @@ local function BuildHUD()
         timerElapsed = timerElapsed + dt
         if timerElapsed < 1.0 then return end
         timerElapsed = 0
-        if self.rows and self.rows.timer and DelveGuide.runStartTime then
-            local elapsed = GetTime() - DelveGuide.runStartTime
+        local start = DelveGuide.runStartTime or DelveGuide.labyrinthEnteredAt
+        if self.rows and self.rows.timer and start then
+            local elapsed = GetTime() - start
             local mins = math.floor(elapsed / 60)
             local secs = math.floor(elapsed % 60)
             self.rows.timer:SetText(string.format("|cFF00BFFF%dm %02ds|r", mins, secs))
@@ -234,6 +312,18 @@ end
 
 -- Returns: tierNum|nil, methodLabel|nil  (the label powers /dg tierdebug)
 local function AutoDetectDelveTier()
+    -- Method 0: the delve header widget's own tierText, read from the scenario
+    -- step's widget set (DelveGuide.ReadDelveHeaderWidget). This is the data
+    -- the objective tracker renders. Confirmed at Tiers 8 and 9 and in a
+    -- Tier 11 Labyrinth, so the old Method 3 -- a scrape of the objective
+    -- tracker's FontStrings, walked once a second -- is gone: it read
+    -- Blizzard's frames from addon code and was a taint suspect.
+    do
+        local info = DelveGuide.ReadDelveHeaderWidget and DelveGuide.ReadDelveHeaderWidget()
+        local n = info and info.tierText and tonumber((tostring(info.tierText):match("(%d+)")))
+        if n and n >= 1 and n <= 11 then return n, "0: header widget" end
+    end
+
     -- Method 1: Instance Difficulty Name (locale-independent — grab any number 1-11)
     local _, _, _, difficultyName = GetInstanceInfo()
     if difficultyName and difficultyName ~= "" then
@@ -271,84 +361,135 @@ local function AutoDetectDelveTier()
     end)
     if scenarioTier then return scenarioTier, "2: scenario/step name" end
 
-    -- Method 3: Objective-tracker scrape.
-    -- The Delves tracker block renders as:
-    --     Delves                       <- generic header
-    --     0/1 <objective text>
-    --     <Delve Name>                 <- strong anchor
-    --     9                            <- TIER (always right after the name)
-    --     5                            <- lives
-    --     2
-    -- So the tier is the first bare number AFTER the delve-name line. Taking
-    -- the first number after the generic "Delves" header instead is what let a
-    -- stale/partial tracker report the previous run's tier, so that stays only
-    -- as a weak fallback.
-    local tracker = _G["ObjectiveTrackerFrame"] or _G["ScenarioObjectiveTracker"]
-    if tracker then
-        local zoneName = GetRealZoneText() or ""
-        -- Only trust the zone name as an anchor when we're actually in a known
-        -- delve (otherwise an overworld zone header could arm the match).
-        local delveAnchor = GetCurrentDelveName() and zoneName or nil
+    return nil, nil
+end
 
-        local foundDelveHeader, afterDelveName = false, false
-        local strongTier, weakTier, explicitTier = nil, nil, nil
+-- Row labels for the two views. The delve view re-applies the defaults on
+-- every refresh so a Labyrinth's labels can never linger into a delve.
+local LAB_LABELS = {
+    delve = L["Labyrinth"], variant = L["Chamber"], grade = L["Step"], tier = L["Objective"],
+    curio = L["Cleared"], nemesis = L["Note"], bountiful = L["Tier"], lives = L["Lives"], timer = L["Time"],
+}
+local function ApplyLabels(overrides)
+    if not (hudFrame and hudFrame.labels) then return end
+    -- Called on every refresh; only a change of view needs any work.
+    if hudFrame.labelSet == (overrides or false) then return end
+    hudFrame.labelSet = overrides or false
+    for key, lbl in pairs(hudFrame.labels) do
+        lbl:SetText("|cFF666666" .. ((overrides and overrides[key]) or lbl.default or key) .. ":|r")
+    end
+    LayoutRows()
+end
 
-        local function SearchForTier(frame)
-            if not frame or frame:IsForbidden() then return end
-
-            for _, r in ipairs({frame:GetRegions()}) do
-                if r:GetObjectType() == "FontString" and r:IsShown() then
-                    local txt = r:GetText()
-                    if txt and txt ~= "" then
-                        -- Clean all color codes and whitespace
-                        local cleanTxt = txt:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn[%w_]+:", ""):gsub("|r", ""):gsub("^%s+", ""):gsub("%s+$", "")
-
-                        -- An explicit "Tier N" always wins outright.
-                        local tier = cleanTxt:match("Tier %s*(%d+)") or cleanTxt:match("Tier: %s*(%d+)") or cleanTxt:match("Difficulty: %s*(%d+)")
-                        if tier then explicitTier = tonumber(tier); return end
-
-                        if delveAnchor and cleanTxt == delveAnchor then
-                            afterDelveName  = true
-                            foundDelveHeader = true
-                        elseif cleanTxt == "Delves" or (scenarioName ~= "" and cleanTxt == scenarioName) then
-                            foundDelveHeader = true
-                        elseif cleanTxt:match("^%d+$") then
-                            local num = tonumber(cleanTxt)
-                            if num and num >= 1 and num <= 11 then
-                                if afterDelveName and not strongTier then
-                                    strongTier = num
-                                    return
-                                elseif foundDelveHeader and not weakTier then
-                                    weakTier = num
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-
-            for _, child in ipairs({frame:GetChildren()}) do
-                SearchForTier(child)
-                if explicitTier or strongTier then return end
-            end
-        end
-
-        SearchForTier(tracker)
-        local result = explicitTier or strongTier or weakTier
-        if result then
-            return result, explicitTier and "3: explicit Tier text"
-                        or strongTier and "3: after delve name"
-                        or "3: under Delves header (weak)"
+-- Chambers completed since this run's "enter" entry in the observation log.
+local function CountChambersThisRun()
+    local n = 0
+    local me = UnitName("player")
+    local log = DelveGuideDB and DelveGuideDB.labyrinthLog or {}
+    for i = #log, 1, -1 do
+        local e = log[i]
+        -- The log is account-wide: this character's entries only.
+        if e.char == nil or e.char == me then
+            if e.kind == "enter" then break end
+            if e.kind == "chamber" then n = n + 1 end
         end
     end
+    return n
+end
 
-    return nil, nil
+-- D6: the HUD inside a Labyrinth. Not a delve run -- no variant, grade or
+-- readable tier -- but the same overlay can show what a Labyrinth does have:
+-- which chamber, which step, objective progress (criteria come as a count,
+-- 5/6, or a percentage, 42%), chambers cleared this run, and time since
+-- entry. Reuses the nine delve rows under different labels.
+local function UpdateLabyrinthHUD(name)
+    hudFrame:Show()
+    ApplyLabels(LAB_LABELS)
+    local rows = hudFrame.rows
+    rows.delve:SetText("|cFFFFD700" .. name .. "|r")
+
+    local scen, step, stage, stages = "", "", nil, nil
+    pcall(function() scen, stage, stages = C_Scenario.GetInfo() end)
+    scen = scen or ""
+    pcall(function() step = C_Scenario.GetStepInfo() or "" end)
+    -- Since build 69848 every chamber's scenario is named after the Labyrinth
+    -- itself, which the row above already shows; the step title is then the
+    -- chamber's only name, so it takes the Chamber row.
+    if scen == name then scen, step = step, "" end
+    -- Between chambers the hub reports the generic "Delves" scenario.
+    if scen == "" or scen == "Delves" then scen = "|cFF888888" .. L["Choose your path"] .. "|r" end
+    rows.variant:SetText(scen)
+    -- A chamber is several stages under one title ("A Foul Presence" was four,
+    -- PTR 2026-10-01). With the title on the row above, this row counts them.
+    if step == "" and stage and stages and stages > 1 then step = stage .. " / " .. stages end
+    rows.grade:SetText(step ~= "" and step or "|cFF888888--|r")
+
+    local parts = {}
+    pcall(function()
+        for i = 1, (DelveGuide.GetCriteriaCount() or 0) do
+            local c = DelveGuide.GetCriteria(i)
+            if c and c.description and #parts < 2 then
+                local prog
+                if c.quantityString and c.quantityString:find("%%") then
+                    prog = c.quantityString
+                elseif c.totalQuantity and c.totalQuantity > 0 then
+                    prog = tostring(c.quantity or 0) .. "/" .. tostring(c.totalQuantity)
+                else
+                    prog = c.quantityString or ""
+                end
+                table.insert(parts, c.description .. " |cFF00BFFF" .. prog .. "|r")
+            end
+        end
+    end)
+    rows.tier:SetText(#parts > 0 and table.concat(parts, "  |cFF555555\194\183|r  ") or "|cFF888888--|r")
+
+    local cleared = CountChambersThisRun()
+    local credits = math.floor(cleared / 3)
+    -- Both rows are kept short: the HUD can be 250px wide, and what did not fit
+    -- used to wrap over the rows below.
+    rows.curio:SetText(string.format("|cFF00FF44%d|r |cFF888888%s|r", cleared, L["this run"])
+        .. (credits > 0 and ("  |cFFFFD700" .. string.format(L["%d vault credit%s"], credits, credits == 1 and "" or "s") .. "|r") or ""))
+    rows.nemesis:SetText("|cFF888888" .. L["Vault credit every 3 chambers"] .. "|r")
+    -- The Labyrinth's tier IS readable: the same header widget carried
+    -- tierText = "11" inside Kindo'jan on 69594. Read it directly here since
+    -- the delve tier machinery is bypassed in a Labyrinth (A2).
+    do
+        local info = DelveGuide.ReadDelveHeaderWidget and DelveGuide.ReadDelveHeaderWidget()
+        local t = info and info.tierText and tonumber((tostring(info.tierText):match("(%d+)")))
+        -- Never clear it on a failed read: the widget is gone for a moment as
+        -- each chamber completes, which is exactly when the run record is
+        -- written -- the row came out as tier "?" (PTR, 2026-10-01). Leaving
+        -- the Labyrinth clears it (TrackLabyrinthPresence).
+        if t then DelveGuide.labyrinthTierNum = t end
+        t = DelveGuide.labyrinthTierNum
+        rows.bountiful:SetText(t and ("|cFF00FF44" .. t .. "|r") or "|cFF888888--|r")
+    end
+    rows.lives:SetText(ReadLivesText() or "|cFF888888--|r")
+    if DelveGuide.labyrinthEnteredAt then
+        local elapsed = GetTime() - DelveGuide.labyrinthEnteredAt
+        rows.timer:SetText(string.format("|cFF00BFFF%dm %02ds|r", math.floor(elapsed / 60), math.floor(elapsed % 60)))
+    else
+        rows.timer:SetText("|cFF888888--|r")
+    end
 end
 
 local function UpdateHUD()
     if not hudFrame then BuildHUD() end
 
+    -- Labyrinth (12.1.5): the delve tests below all say "not a delve" for it
+    -- (A2), which is correct for timing and history -- but it deserves a HUD.
+    local labName = DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName()
+    if labName then
+        previewMode = false
+        if DelveGuideDB and not DelveGuideDB.hudEnabled then hudFrame:Hide(); return end
+        UpdateLabyrinthHUD(labName)
+        return
+    end
+
     if not IsInsideDelve() then
+        -- A preview the player asked for with /dg hud stays up until they toggle
+        -- it off; there are no live values to refresh, so leave the rows alone.
+        if previewMode then return end
         hudFrame:Hide()
         return
     end
@@ -367,12 +508,26 @@ local function UpdateHUD()
         DelveGuide.SetAutoDelveTier(autoTier)
     end
 
+    -- Run finished: SCENARIO_COMPLETED hides the HUD, but the scenario stays
+    -- live while the player loots and lingers, so IsInsideDelve() is still true
+    -- and the watchdog's next pass put the HUD straight back up. runCompleted is
+    -- therefore a display gate too -- EvaluateDelveState clears it on exit.
+    -- Placed after the tier detection above on purpose: that must keep running.
+    -- An explicit /dg hud still wins, so the toggle is never a no-op.
+    if DelveGuide.runCompleted and not previewMode then
+        hudFrame:Hide()
+        return
+    end
+
     if DelveGuideDB and not DelveGuideDB.hudEnabled then
         hudFrame:Hide()
         return
     end
 
+    -- Live content from here on, so the preview has served its purpose.
+    previewMode = false
     hudFrame:Show()
+    ApplyLabels(nil)
 
     local rows = hudFrame.rows
     local zoneName = ""
@@ -382,7 +537,7 @@ local function UpdateHUD()
     rows.delve:SetText("|cFFFFD700" .. zoneName .. "|r")
 
     -- Variant + grade — cross-ref activeVariants exposed by main addon
-    local varText   = "|cFF888888Unknown|r"
+    local varText   = "|cFF888888" .. L["Unknown"] .. "|r"
     local gradeText = "|cFF888888?|r"
     local activeVars = (DelveGuide and DelveGuide.activeVariants) or {}
 
@@ -394,11 +549,13 @@ local function UpdateHUD()
     if DelveGuideData and DelveGuideData.delves then
         for _, d in ipairs(DelveGuideData.delves) do
             if d.name == engZoneName and activeVars[d.variant] then
-                local gc = (DelveGuideData.gradeColors and DelveGuideData.gradeColors[d.ranking]) or "|cFFFFFFFF"
                 varText   = d.variant
-                gradeText = gc .. d.ranking .. "|r"
-                    .. (d.isBestRoute and "  |cFF00FF88[Best Route]|r" or "")
-                    .. (d.hasBug     and "  |cFFFF4444[Bug]|r"        or "")
+                -- One palette: UI.GradeColor is the same lookup with the same
+                -- white fallback, and the HUD's hand-rolled copy would have
+                -- gone on disagreeing with the Delves tab silently.
+                gradeText = DelveGuide.UI.GradeColor(d.ranking)
+                    .. (d.isBestRoute and ("  |cFF00FF88[" .. L["Best Route"] .. "]|r") or "")
+                    .. (d.hasBug     and ("  |cFFFF4444[" .. L["Bug"] .. "]|r")        or "")
                 break
             end
         end
@@ -416,9 +573,9 @@ local function UpdateHUD()
     if tierNum then
         rows.tier:SetText(string.format("%s%d|r |cFF888888(%s)|r",
             isManual and "|cFFCCCCCC" or "|cFF00FF44", tierNum,
-            isManual and "Manual" or "Auto"))
+            isManual and L["Manual"] or L["Auto"]))
     else
-        rows.tier:SetText("|cFFFF4444Unknown |cFF555555(/dg tier N)|r")
+        rows.tier:SetText("|cFFFF4444" .. L["Unknown"] .. " |cFF555555(/dg tier N)|r")
     end
 
     -- Companion recommendation. The old per-spec combat/utility curio picks
@@ -427,9 +584,9 @@ local function UpdateHUD()
     -- per-spec Season 2 curio recs exist.
     local curioText = "|cFF888888--|r"
     pcall(function()
-        local specIndex = GetSpecialization()
+        local specIndex = C_SpecializationInfo.GetSpecialization()
         if specIndex then
-            local specID = GetSpecializationInfo(specIndex)
+            local specID = C_SpecializationInfo.GetSpecializationInfo(specIndex)
             local rec = specID and DelveGuideData.specCurioRecs and DelveGuideData.specCurioRecs[specID]
             if rec and rec.companion then
                 curioText = "Valeera: |cFF00CFFF" .. rec.companion .. "|r"
@@ -443,36 +600,14 @@ local function UpdateHUD()
     local info = activeDelves[engZoneName]
 
     rows.nemesis:SetText(
-        (info and info.nemesis) and "|cFFFF4444[!] ACTIVE|r" or "|cFF00FF44None|r"
+        (info and info.nemesis) and ("|cFFFF4444[!] " .. L["ACTIVE"] .. "|r") or ("|cFF00FF44" .. L["None"] .. "|r")
     )
     rows.bountiful:SetText(
-        (info and info.bountiful) and "|cFFFFD700Yes|r" or "|cFF888888No|r"
+        (info and info.bountiful) and ("|cFFFFD700" .. L["Yes"] .. "|r") or ("|cFF888888" .. L["No"] .. "|r")
     )
 
-    -- Lives: scan scenario criteria for a deaths/lives entry
-    -- Check both description and quantityString, with locale-independent fallbacks
-    local livesText = "|cFF888888--|r"
-    pcall(function()
-        local numCrit = DelveGuide.GetCriteriaCount()
-        for i = 1, (numCrit or 0) do
-            local crit = DelveGuide.GetCriteria(i)
-            if crit then
-                local desc  = crit.description  and crit.description:lower()  or ""
-                local qStr  = crit.quantityString and crit.quantityString:lower() or ""
-                local searchText = desc .. " " .. qStr
-                -- EN: lives/life, death, charge  |  DE: leben  |  FR: vie  |  IT: vita/vite  |  ES: vida
-                -- PT: vida  |  KO: 생명/목숨  |  ZH: 生命/命
-                if searchText:find("li[fv]") or searchText:find("death") or searchText:find("charge")
-                    or searchText:find("leben") or searchText:find("vie") or searchText:find("vit[ae]")
-                    or searchText:find("vida") or searchText:find("생명") or searchText:find("목숨")
-                    or searchText:find("生命") or searchText:find("命") then
-                    livesText = "|cFF00FF88" .. (crit.quantityString or "?") .. "|r"
-                    break
-                end
-            end
-        end
-    end)
-    rows.lives:SetText(livesText)
+    -- Lives row: one shared reader (see ReadLivesText).
+    rows.lives:SetText(ReadLivesText() or "|cFF888888--|r")
 
     -- Timer: show elapsed time since entering delve
     if DelveGuide.runStartTime then
@@ -487,9 +622,40 @@ end
 
 -- ── shared state evaluation ──────────────────────────────────
 -- One authority for "are we in a delve, is the run timed, is the tier known".
+-- The variant of the delve the player is standing in, from the outdoor scan
+-- cache the HUD already uses. Captured into DelveGuideDB.activeRun when a run
+-- starts, because a /reload inside the instance empties that cache and the
+-- completion handler then logged the run with no variant -- a row that can
+-- never reach the rankings. The persisted copy survives the reload.
+local function CurrentRunVariant()
+    local variant
+    pcall(function()
+        local zone = GetRealZoneText() or ""
+        local l10n = DelveGuide and DelveGuide.localizedToEnglish
+        local eng = (l10n and l10n[zone]) or zone
+        local av = (DelveGuide and DelveGuide.activeVariants) or {}
+        for _, d in ipairs((DelveGuideData and DelveGuideData.delves) or {}) do
+            if d.name == eng and av[d.variant] then variant = d.variant; break end
+        end
+    end)
+    return variant
+end
+
 -- Called both from zone events (immediate response) and from a watchdog ticker
 -- (recovery), so a mistimed single read can never strand the HUD or the timer.
 local function EvaluateDelveState()
+    -- Standing in the open world with nothing left over from a run is the common
+    -- case, and there is nothing here to do -- but the else-branch below owns the
+    -- "left the delve" cleanup, so this must not skip that first pass after
+    -- leaving. Only bail when there is no leftover run state, no HUD on screen
+    -- and no Labyrinth to drive; after the one cleanup pass all of those are
+    -- false and the 2s ticker costs a handful of comparisons.
+    if not IsInInstance() and not DelveGuide.inDelveInstance
+       and not (DelveGuide.runStartTime or DelveGuide.runCompleted or DelveGuide.currentDelveTierNum)
+       and not (hudFrame and hudFrame:IsShown())
+       and not (DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName()) then
+        return
+    end
     if not hudFrame then BuildHUD() end
     -- Time any delve scenario, even one we can't name; only the HUD's *display*
     -- needs a recognised name (UpdateHUD hides itself when it has none).
@@ -498,8 +664,34 @@ local function EvaluateDelveState()
     if nowInside then
         -- Start the run timer once per run. runCompleted guards against
         -- restarting it while the player lingers inside after finishing.
+        --
+        -- GetTime() is session uptime and resets on /reload, so a reload
+        -- mid-run used to restart the timer from zero and log a fabricated
+        -- fast time straight into the community median. The start is now also
+        -- persisted as wall clock in DelveGuideDB.activeRun; if a record for
+        -- THIS instance is found and is recent, the timer resumes from it
+        -- instead of starting fresh. Cleared on completion (main handler) and
+        -- on leaving (below), so it cannot bleed into the next run.
         if not DelveGuide.runStartTime and not DelveGuide.runCompleted then
-            DelveGuide.runStartTime = GetTime()
+            local instanceID = select(8, GetInstanceInfo())
+            local ar = DelveGuideDB and DelveGuideDB.activeRun
+            if ar and ar.instanceID == instanceID and ar.startEpoch
+               and (time() - ar.startEpoch) >= 0 and (time() - ar.startEpoch) < RUN_RESUME_MAX then
+                DelveGuide.runStartTime = GetTime() - (time() - ar.startEpoch)
+                DelveGuide.runResumed   = true
+            else
+                DelveGuide.runStartTime = GetTime()
+                DelveGuide.runResumed   = nil
+                if DelveGuideDB then
+                    DelveGuideDB.activeRun = { startEpoch = time(), instanceID = instanceID, variant = CurrentRunVariant() }
+                end
+            end
+        end
+        -- The variant may not resolve on the very first tick after entry; keep
+        -- trying while the run is live until it does.
+        do
+            local ar = DelveGuideDB and DelveGuideDB.activeRun
+            if ar and not ar.variant then ar.variant = CurrentRunVariant() end
         end
         UpdateHUD()
     else
@@ -508,9 +700,15 @@ local function EvaluateDelveState()
         if DelveGuide.runStartTime or DelveGuide.runCompleted or DelveGuide.currentDelveTierNum then
             DelveGuide.runStartTime = nil
             DelveGuide.runCompleted = nil
+            DelveGuide.runResumed   = nil
+            if DelveGuideDB then DelveGuideDB.activeRun = nil end
             if DelveGuide.ClearDelveTier then DelveGuide.ClearDelveTier() end
         end
-        if hudFrame and hudFrame:IsShown() then UpdateHUD() end
+        -- Inside a Labyrinth nowInside is false by design (A2); still drive the
+        -- HUD so the Labyrinth view appears on entry and refreshes each tick.
+        if (hudFrame and hudFrame:IsShown()) or (DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName()) then
+            UpdateHUD()
+        end
     end
 end
 
@@ -531,6 +729,12 @@ hudEvents:SetScript("OnEvent", function(_, event)
     end
     -- Delve completed — hide immediately, no zone check needed
     if event == "SCENARIO_COMPLETED" then
+        -- A Labyrinth chamber completing is not the run ending: keep the view
+        -- up and refresh it (chamber count, next step) instead of hiding.
+        if DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName() then
+            UpdateHUD()
+            return
+        end
         -- Do NOT clear runStartTime here. This frame and the main addon's frame
         -- BOTH listen for SCENARIO_COMPLETED, and WoW does not guarantee which
         -- one fires first. Clearing it here meant that whenever this frame won
@@ -543,26 +747,15 @@ hudEvents:SetScript("OnEvent", function(_, event)
         return
     end
     if event == "SCENARIO_CRITERIA_UPDATE" then
+        -- Labyrinth: the objective row IS the criteria; refresh the whole view.
+        if DelveGuide.GetLabyrinthName and DelveGuide.GetLabyrinthName() then
+            UpdateHUD()
+            return
+        end
         -- Fast path: refresh lives row if HUD is visible
         if hudFrame and hudFrame:IsShown() and hudFrame.rows then
-            pcall(function()
-                local numCrit = DelveGuide.GetCriteriaCount()
-                for i = 1, (numCrit or 0) do
-                    local crit = DelveGuide.GetCriteria(i)
-                    if crit then
-                        local desc  = crit.description  and crit.description:lower()  or ""
-                        local qStr  = crit.quantityString and crit.quantityString:lower() or ""
-                        local searchText = desc .. " " .. qStr
-                        if searchText:find("li[fv]") or searchText:find("death") or searchText:find("charge")
-                            or searchText:find("leben") or searchText:find("vie") or searchText:find("vit[ae]")
-                            or searchText:find("vida") or searchText:find("생명") or searchText:find("목숨")
-                            or searchText:find("生命") or searchText:find("命") then
-                            hudFrame.rows.lives:SetText("|cFF00FF88" .. (crit.quantityString or "?") .. "|r")
-                            break
-                        end
-                    end
-                end
-            end)
+            local t = ReadLivesText()
+            if t then hudFrame.rows.lives:SetText(t) end
         end
         return
     end
@@ -587,11 +780,15 @@ DelveGuide.UpdateHUD = UpdateHUD
 DelveGuide.ToggleHUD = function()
     if not hudFrame then BuildHUD() end
     if hudFrame:IsShown() then
+        previewMode = false
         hudFrame:Hide()
     else
+        previewMode = false
         UpdateHUD()  -- only shows if actually in a delve
         if not hudFrame:IsShown() then
-            -- Force-show for manual toggle outside a delve (preview mode)
+            -- Force-show for manual toggle outside a delve (preview mode).
+            -- previewMode keeps the watchdog from hiding it again 2s later.
+            previewMode = true
             hudFrame:Show()
         end
     end
