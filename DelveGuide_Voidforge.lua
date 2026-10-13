@@ -12,9 +12,9 @@
 --       read may be possible -- see /dg currencydebug.
 --   * Ascendant Venomstone -- GEAR-UPGRADE material, arriving later this
 --       season. 10 raise one fully upgraded Hero/Myth weapon/trinket/neck;
---       Tier 11 Bountiful Delves are the delve source (Blizzard lists the
---       sources, with no guarantee and no quantity). It is a bag item,
---       280562, not a currency (build 70077).
+--       Tier 11 Bountiful Delves are the delve source (a 100% drop per
+--       Wowhead; no quantity stated anywhere). It is a bag item, 280562,
+--       not a currency (build 70077).
 --
 -- The old 12.0.5 "Building the Voidforge" weekly (Elementary Voidcore
 -- Shards) and Ascendant Voidcore upgrade loop are retired.
