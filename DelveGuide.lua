@@ -176,77 +176,86 @@ local function CopyDefault(v)
     return copy
 end
 
-local MIGRATIONS = {
-    -- 2: purge missingTranslations entries that are no longer actually missing.
-    -- This swept the whole table on every single login; the entries it removes
-    -- can only be created by versions before this one, so once is enough.
-    --   * Nemesis delves (no rotational variant, so their widget text is empty)
-    --   * variants that have since been added to the data table -- every Season 2
-    --     variant was logged as "missing" during the window before it was
-    --     catalogued, and nothing ever cleared those records afterwards, so the
-    --     Debug tab kept reporting translations that had long since been added.
-    [2] = function(db)
-        local knownVariants = {}
-        if DelveGuideData and DelveGuideData.delves then
-            for _, d in ipairs(DelveGuideData.delves) do
-                if d.variant then knownVariants[d.variant] = true end
+-- Purge missingTranslations entries that are no longer actually missing:
+--   * Nemesis delves (no rotational variant, so their widget text is empty)
+--   * variants that have since been added to the data table -- every Season 2
+--     variant was logged as "missing" during the window before it was
+--     catalogued, and nothing ever cleared those records afterwards, so the
+--     Debug tab kept reporting translations that had long since been added.
+-- This was migration 2 only, on the reasoning that the entries it removes can
+-- only be created by older versions, so once is enough. That holds for the
+-- junk rules but not for the translation rules: an entry becomes stale when a
+-- LATER version adds its localeVariants key, and by then migration 2 has long
+-- run. ruRU showed it: 32 names added in one batch, all 26 already-logged ones
+-- stayed in the Debug tab and the login warning. So it now runs on every load
+-- as well; the table is capped at 40 entries, so the sweep is cheap.
+local function PurgeMissingTranslations(db)
+    local knownVariants = {}
+    if DelveGuideData and DelveGuideData.delves then
+        for _, d in ipairs(DelveGuideData.delves) do
+            if d.variant then knownVariants[d.variant] = true end
+        end
+    end
+    for key, entry in pairs(db.missingTranslations) do
+        local stale = false
+        if entry and (entry.delve == "Torment's Rise" or entry.delve == "Venomfall Deeps") then
+            stale = true
+        elseif entry and entry.text then
+            for variant in pairs(knownVariants) do
+                if string.find(entry.text, variant, 1, true) then stale = true; break end
+            end
+            -- ...and entries whose LOCALIZED name has since been added. This is
+            -- the case that actually matters: a "missing translation" is by
+            -- definition non-English, so a purge that only checked English
+            -- names could never clear one. Records survived forever and the
+            -- Debug tab / login warning kept reporting variants long after
+            -- they were mapped -- reported on esMX (GitHub #5) for Destello
+            -- invasor and Potenciamiento ogro, which resolved correctly in
+            -- game while still being listed as missing.
+            if not stale and DelveGuideData and DelveGuideData.localeVariants then
+                for locName in pairs(DelveGuideData.localeVariants) do
+                    if string.find(entry.text, locName, 1, true) then stale = true; break end
+                end
             end
         end
-        for key, entry in pairs(db.missingTranslations) do
-            local stale = false
-            if entry and (entry.delve == "Torment's Rise" or entry.delve == "Venomfall Deeps") then
+        -- Blurb garbage. Before 1.9.0 the recorder stored widgetTexts[1],
+        -- which on a Bountiful delve is the multi-line coffer blurb, and the
+        -- table is keyed BY that text. The blurb embeds a live countdown
+        -- ("Tiempo restante: 9 h 17 min") and a shard count, so every single
+        -- scan minted a brand-new key and the table grew without limit --
+        -- one reporter's /dg submit code came out 116,701 characters over
+        -- what the form would accept. A real variant line is short and
+        -- single-line, so anything else is junk and can never match a
+        -- variant name to be purged by the rules above.
+        if not stale and entry and entry.text then
+            if #entry.text > 80 or string.find(entry.text, string.char(10), 1, true) then
                 stale = true
-            elseif entry and entry.text then
-                for variant in pairs(knownVariants) do
-                    if string.find(entry.text, variant, 1, true) then stale = true; break end
-                end
-                -- ...and entries whose LOCALIZED name has since been added. This is
-                -- the case that actually matters: a "missing translation" is by
-                -- definition non-English, so a purge that only checked English
-                -- names could never clear one. Records survived forever and the
-                -- Debug tab / login warning kept reporting variants long after
-                -- they were mapped -- reported on esMX (GitHub #5) for Destello
-                -- invasor and Potenciamiento ogro, which resolved correctly in
-                -- game while still being listed as missing.
-                if not stale and DelveGuideData and DelveGuideData.localeVariants then
-                    for locName in pairs(DelveGuideData.localeVariants) do
-                        if string.find(entry.text, locName, 1, true) then stale = true; break end
-                    end
-                end
             end
-            -- Blurb garbage. Before 1.9.0 the recorder stored widgetTexts[1],
-            -- which on a Bountiful delve is the multi-line coffer blurb, and the
-            -- table is keyed BY that text. The blurb embeds a live countdown
-            -- ("Tiempo restante: 9 h 17 min") and a shard count, so every single
-            -- scan minted a brand-new key and the table grew without limit --
-            -- one reporter's /dg submit code came out 116,701 characters over
-            -- what the form would accept. A real variant line is short and
-            -- single-line, so anything else is junk and can never match a
-            -- variant name to be purged by the rules above.
-            if not stale and entry and entry.text then
-                if #entry.text > 80 or string.find(entry.text, string.char(10), 1, true) then
-                    stale = true
-                end
-            end
-            if stale then db.missingTranslations[key] = nil end
         end
+        if stale then db.missingTranslations[key] = nil end
+    end
 
-        -- Hard cap regardless of cause. Unidentified variants are a handful per
-        -- locale; anything beyond this is a bug producing junk, and the cost of
-        -- that junk is a submission code nobody can paste. Keep the newest.
-        local MAX_MISSING = 40
-        local keys = {}
-        for k in pairs(db.missingTranslations) do table.insert(keys, k) end
-        if #keys > MAX_MISSING then
-            table.sort(keys, function(a, b)
-                local ea, eb = db.missingTranslations[a], db.missingTranslations[b]
-                return (ea and ea.firstSeen or "") > (eb and eb.firstSeen or "")
-            end)
-            for i = MAX_MISSING + 1, #keys do
-                db.missingTranslations[keys[i]] = nil
-            end
+    -- Hard cap regardless of cause. Unidentified variants are a handful per
+    -- locale; anything beyond this is a bug producing junk, and the cost of
+    -- that junk is a submission code nobody can paste. Keep the newest.
+    local MAX_MISSING = 40
+    local keys = {}
+    for k in pairs(db.missingTranslations) do table.insert(keys, k) end
+    if #keys > MAX_MISSING then
+        table.sort(keys, function(a, b)
+            local ea, eb = db.missingTranslations[a], db.missingTranslations[b]
+            return (ea and ea.firstSeen or "") > (eb and eb.firstSeen or "")
+        end)
+        for i = MAX_MISSING + 1, #keys do
+            db.missingTranslations[keys[i]] = nil
         end
-    end,
+    end
+end
+
+local MIGRATIONS = {
+    -- 2: the first purge of missingTranslations. Kept as a migration so the
+    -- version stamp still means what it did; InitSavedVars repeats it each load.
+    [2] = PurgeMissingTranslations,
 
     -- 3: history rows logged in a Labyrinth before kind="labyrinth" existed
     -- (12.1.5 PTR) look like delve runs with no variant. Tag rather than delete:
@@ -320,6 +329,9 @@ local function InitSavedVars()
         end
         DelveGuideDB.dbVersion = reached
     end
+
+    -- Every load, not just once: see PurgeMissingTranslations.
+    PurgeMissingTranslations(DelveGuideDB)
 
     -- checklistDismissed is session-only; reset on every load. Deliberately not
     -- a default -- it must be forced back to false even when it is already set.

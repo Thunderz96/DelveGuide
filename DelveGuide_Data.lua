@@ -1680,4 +1680,43 @@ DelveGuideData.localeVariants = {
     ["Проникай, совершенствуй"]    = "Infiltrate and Ameliorate",   -- The Shadow Enclave
     ["Сердечник проблемы"]         = "Core of the Problem",         -- Sunkiller Sanctum
     ["Техник силовых линий"]       = "Leyline Technician",          -- The Darkway
+
+    -- Русский (ruRU) batch 2 -- the other 32, which completes ruRU. Taken from the
+    -- client's own widget strings (UiWidgetStringSource.db2, ruRU, via wago.tools):
+    -- the "Story Variant: ..." text the POI scan reads, paired with the English
+    -- row of the same ID. The 12 above match that table exactly. Do NOT use the
+    -- "<Delve> Stories" achievement criteria instead: five of them are worded
+    -- differently from the POI text (e.g. "Бедствие" vs "Критическая угроза").
+    ["Аннигиляция тотемов"]        = "Totem Annihilation",          -- Atal'Aman
+    ["С жабами поведешься"]        = "Toadly Unbecoming",           -- Atal'Aman
+    ["Ядовитые пары"]              = "Venomous Vapors",             -- Atal'Aman
+    ["Академия в осаде"]           = "Academy Under Siege",         -- Collegiate Calamity
+    ["Проникающее сияние"]         = "Invasive Glow",               -- Collegiate Calamity
+    ["Стихийное противоядие"]      = "An Elementary Antidote",      -- Collegiate Calamity
+    ["Заход на цель"]              = "Bombing Run",                 -- Parhelion Plaza
+    ["Держать строй"]              = "Holding the Line",            -- Parhelion Plaza
+    ["Едкое сокрушение"]           = "Caustic Crush",               -- Parhelion Plaza
+    ["Украденная мана"]            = "Stolen Mana",                 -- Shadowguard Point
+    ["Критическая угроза"]         = "Calamitous",                  -- Shadowguard Point
+    ["Пойманные звери"]            = "Capture Wildlife",            -- Shadowguard Point
+    ["Гравитационный эффект"]      = "The Gravitational Effect",    -- Sunkiller Sanctum
+    ["Неожиданные последствия"]    = "Not What I Expected",         -- Sunkiller Sanctum
+    ["Фокусировщики на пределе"]   = "Focusers Under Pressure",     -- The Darkway
+    ["Огр-мотор"]                  = "Ogre Powered",                -- The Darkway
+    ["Змеиный омлет"]              = "Eggsplosive Growth",          -- The Darkway
+    ["Светоцветное нашествие"]     = "Lightbloom Invasion",         -- The Grudge Pit
+    ["Чемпион арены"]              = "Arena Champion",              -- The Grudge Pit
+    ["Грибное лекарство"]          = "Fungal Pharmacon",            -- The Grudge Pit
+    ["Закуска для мотыльков Альн"] = "Alnmoth Munchies",            -- The Gulf of Memory
+    ["Спасение от спорозавров"]    = "Sporasaur Special",           -- The Gulf of Memory
+    ["Месть предателю"]            = "Traitor's Due",               -- The Shadow Enclave
+    ["Зеркальный блеск"]           = "Mirror Shine",                -- The Shadow Enclave
+    ["Сумеречные склады"]          = "Shadowy Supplies",            -- The Shadow Enclave
+    ["В ловушке!"]                 = "Trapped!",                    -- Twilight Crypts
+    ["Незваный гость"]             = "Party Crasher",               -- Twilight Crypts
+    ["Ну почему именно змеи?"]     = "Why Did it Have to Be Snakes?", -- Twilight Crypts
+    ["Ночь открытых дверей"]       = "Open Night",                  -- The Ring of Glory
+    ["Ваш питомец у нас"]          = "Adopt-a-thon",                -- The Ring of Glory
+    ["Древности и ценности"]       = "Olds and Ends",               -- Gnarldor Isle
+    ["Костяное приключение Минчи"] = "Minchi's Osseous Adventure",  -- Gnarldor Isle
 }
